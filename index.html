@@ -7,71 +7,87 @@
 
 <style>
 :root {
-    --bg: #000000;
-    --card-bg: #111111;
-    --card-hover: #1a1a1a;
+    --bg: #050505;
+    --card-bg: #0f0f0f;
+    --card-hover: #161616;
+    --accent: #ffffff;
     --text-primary: #ffffff;
-    --text-secondary: #888888;
-    --border: rgba(255, 255, 255, 0.1);
-    --font: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", "PingFang SC", sans-serif;
+    --text-secondary: #86868b; /* Apple Style Secondary */
+    --border: rgba(255, 255, 255, 0.08);
+    --border-bright: rgba(255, 255, 255, 0.15);
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
 body {
     background: var(--bg);
     color: var(--text-primary);
     font-family: var(--font);
     -webkit-font-smoothing: antialiased;
-    line-height: 1.6;
+    line-height: 1.5;
+    overflow-x: hidden;
 }
-a { text-decoration: none; color: inherit; }
 
-/* 导航 */
+/* 自定义滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+a { text-decoration: none; color: inherit; transition: 0.2s; }
+
+/* 导航 - 增加毛玻璃与细线 */
 nav {
     position: fixed;
-    top: 0; width: 100%; height: 50px;
-    background: rgba(0,0,0,0.9);
+    top: 0; width: 100%; height: 60px;
+    background: rgba(0,0,0,0.7);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     z-index: 1000;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 40px;
+    gap: 50px;
+    border-bottom: 1px solid var(--border);
 }
+
 nav a {
     color: var(--text-secondary);
-    font-size: 11px;
-    letter-spacing: 2px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    transition: 0.3s;
+    font-weight: 500;
 }
-nav a:hover { color: #fff; }
+nav a:hover { color: var(--accent); }
 
-/* Header */
+/* Header - 优化字间距 */
 header {
-    padding: 140px 20px 80px;
+    padding: 160px 20px 100px;
     text-align: center;
 }
 .brand-name {
-    font-size: 3.5rem;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
     font-weight: 200;
-    letter-spacing: 12px;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
+    margin-right: -0.3em; /* 抵消最后的间距使视觉居中 */
 }
 .brand-sub {
     color: var(--text-secondary);
-    margin-top: 15px;
-    font-size: 0.9rem;
-    letter-spacing: 4px;
+    margin-top: 20px;
+    font-size: 0.75rem;
+    letter-spacing: 0.5em;
     font-weight: 300;
+    text-transform: uppercase;
 }
 
-/* 人物部分 (Split Screen) */
+/* 人物部分 (Split Screen) - 增加遮罩效果 */
 .team-split {
     display: flex;
     width: 100%;
-    height: 85vh;
-    overflow: hidden;
+    height: 90vh;
+    background: #000;
 }
 .member-section {
     position: relative;
@@ -81,94 +97,143 @@ header {
     align-items: center;
     overflow: hidden;
     cursor: pointer;
-    border-right: 1px solid #111;
+    transition: flex 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.member-section:hover { flex: 1.2; }
+
 .member-bg {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     background-size: cover;
     background-position: center;
-    filter: brightness(0.6);
-    transition: transform 0.8s ease;
+    filter: grayscale(0.4) brightness(0.5);
+    transition: transform 1.2s cubic-bezier(0.2, 1, 0.3, 1), filter 0.6s;
 }
-.member-section:hover .member-bg { transform: scale(1.05); filter: brightness(0.8); }
+.member-section:hover .member-bg {
+    transform: scale(1.08);
+    filter: grayscale(0) brightness(0.7);
+}
+
+/* 渐变遮罩让文字更清晰 */
+.member-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; width: 100%; height: 40%;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    z-index: 1;
+}
+
 .member-content { position: relative; z-index: 2; text-align: center; }
-.member-name { font-size: 3rem; font-weight: 700; text-transform: uppercase; }
-.member-role { font-size: 0.8rem; letter-spacing: 3px; color: rgba(255,255,255,0.7); text-transform: uppercase; }
+.member-role {
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.member-name { font-size: 3.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
 
-/* 标题样式 */
+/* 激活态样式 */
+.member-section.active { flex: 1.5; }
+.member-section.active .member-bg { filter: grayscale(0) brightness(0.8); }
+
+/* 作品部分网格 */
+#works { padding: 120px 5%; max-width: 1400px; margin: 0 auto; }
 .section-title {
-    font-size: 2rem; font-weight: 200; letter-spacing: 6px;
-    text-align: center; margin-bottom: 60px; text-transform: uppercase;
-}
-.category-header {
-    font-size: 1.2rem; font-weight: 300; letter-spacing: 4px;
-    color: var(--text-secondary); margin: 60px 0 30px;
-    text-transform: uppercase; border-bottom: 1px solid var(--border);
-    display: inline-block; padding-bottom: 8px;
+    font-size: 1.5rem; font-weight: 300; letter-spacing: 8px;
+    text-align: center; margin-bottom: 80px; text-transform: uppercase;
+    color: var(--text-primary);
 }
 
-/* 服务网格 (Bento) */
+.album-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 40px 30px;
+}
+.album-item {
+    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+}
+.album-item:hover { transform: translateY(-10px); }
+
+.album-cover {
+    width: 100%; aspect-ratio: 1/1;
+    background: #111; border-radius: 8px;
+    overflow: hidden; margin-bottom: 18px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+.album-cover img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.6s;
+}
+.album-item:hover img { transform: scale(1.1); }
+
+/* 服务 Bento 网格优化 */
+.category-header {
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 3px;
+    color: var(--text-secondary); margin: 80px 0 30px;
+    text-transform: uppercase; border-left: 2px solid #fff;
+    padding-left: 15px;
+}
+
 .bento-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 40px;
+    gap: 24px;
 }
 .bento-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 32px;
+    border-radius: 28px;
+    padding: 40px;
     display: flex;
     flex-direction: column;
-    transition: 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.bento-card:hover { background: var(--card-hover); border-color: rgba(255,255,255,0.3); }
-.span-2 { grid-column: span 2; }
-.span-3 { grid-column: span 3; }
+.bento-card:hover {
+    background: var(--card-hover);
+    border-color: var(--border-bright);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+}
 
 .popular-label {
     align-self: flex-start;
     background: #fff; color: #000;
-    font-size: 10px; font-weight: 700;
-    padding: 4px 12px; border-radius: 20px;
-    margin-bottom: 15px; letter-spacing: 1px;
+    font-size: 9px; font-weight: 800;
+    padding: 5px 14px; border-radius: 20px;
+    margin-bottom: 25px; letter-spacing: 1px;
 }
-.price { font-size: 2.5rem; font-weight: 200; margin: 20px 0; }
-.service-name { font-size: 1.2rem; font-weight: 600; margin-bottom: 10px; }
-.service-desc { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px; flex-grow: 1; }
+.price { font-size: 3rem; font-weight: 200; margin: 15px 0 25px; font-variant-numeric: tabular-nums; }
+.service-name { font-size: 1.25rem; font-weight: 600; margin-bottom: 12px; letter-spacing: -0.02em; }
+.service-desc { font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 30px; flex-grow: 1; line-height: 1.6; }
 
-.feature-list { list-style: none; border-top: 1px solid var(--border); }
+.feature-list { list-style: none; margin-top: 20px; }
 .feature-list li {
     display: flex; justify-content: space-between;
-    padding: 14px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border);
+    padding: 16px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
 }
+.feature-list li span:last-child { color: var(--text-primary); font-weight: 500; }
 
-/* 条款细则 */
+/* 条款 */
 .terms {
-    margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--border);
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 40px; color: var(--text-secondary); font-size: 0.8rem;
+    margin-top: 100px; padding: 60px 0; border-top: 1px solid var(--border);
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 50px; color: var(--text-secondary); font-size: 0.85rem;
 }
-.terms h5 { color: #fff; margin-bottom: 10px; font-size: 0.9rem; letter-spacing: 1px; }
+.terms h5 { color: #fff; margin-bottom: 15px; font-size: 0.8rem; letter-spacing: 2px; }
 
-footer { padding: 100px 20px; text-align: center; border-top: 1px solid var(--border); }
-
-/* 作品部分网格 */
-#works { padding: 100px 5%; max-width: 1400px; margin: 0 auto; }
-.album-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 40px;
+footer {
+    padding: 120px 20px; text-align: center;
+    background: linear-gradient(to bottom, var(--bg), #000);
 }
-.album-cover { width: 100%; aspect-ratio: 1/1; background: #111; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
-.album-cover img { width: 100%; height: 100%; object-fit: cover; }
 
 @media (max-width: 900px) {
     .team-split { flex-direction: column; height: auto; }
-    .member-section { height: 50vh; }
+    .member-section { height: 60vh; width: 100%; }
+    .member-name { font-size: 2.5rem; }
     .bento-grid { grid-template-columns: 1fr; }
     .span-2, .span-3 { grid-column: span 1; }
-    .brand-name { font-size: 2.2rem; letter-spacing: 6px; }
+    header { padding: 120px 20px 60px; }
 }
 </style>
 </head>
@@ -176,7 +241,7 @@ footer { padding: 100px 20px; text-align: center; border-top: 1px solid var(--bo
 <body>
 
 <nav>
-    <a href="#team">People</a>
+    <a href="#team">Producers</a>
     <a href="#works">Works</a>
     <a href="#pricing">Services</a>
 </nav>
@@ -187,15 +252,15 @@ footer { padding: 100px 20px; text-align: center; border-top: 1px solid var(--bo
 </header>
 
 <section class="team-split" id="team">
-    <div class="member-section" onclick="renderAlbums('cookdao')">
-        <div class="member-bg" style="background-image: url('');"></div>
+    <div class="member-section" onclick="handleMemberClick(this, 'cookdao')">
+        <div class="member-bg" style="background-image: url('https://raw.githubusercontent.com/CU-MUSIC/cu-music.github.io/refs/heads/main/pics/ChatGPT%20Image%202025%E5%B9%B412%E6%9C%8831%E6%97%A5%2001_37_25.png');"></div>
         <div class="member-content">
             <div class="member-role">Mixing Engineer</div>
             <div class="member-name">Chefdao</div>
         </div>
     </div>
-    <div class="member-section" onclick="renderAlbums('uin')">
-        <div class="member-bg" style="background-image: url('');"></div>
+    <div class="member-section" onclick="handleMemberClick(this, 'uin')">
+        <div class="member-bg" style="background-image: url('https://raw.githubusercontent.com/CU-MUSIC/cu-music.github.io/refs/heads/main/pics/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_2025-12-31_005323_255.jpg');"></div>
         <div class="member-content">
             <div class="member-role">Producer / Songwriter</div>
             <div class="member-name">Uin</div>
@@ -208,7 +273,7 @@ footer { padding: 100px 20px; text-align: center; border-top: 1px solid var(--bo
     <div id="album-container" class="album-grid"></div>
 </section>
 
-<section id="pricing" style="max-width: 1200px; margin: 0 auto; padding: 100px 20px;">
+<section id="pricing" style="max-width: 1200px; margin: 0 auto; padding: 40px 20px 100px;">
     <h2 class="section-title">Pricing & Services</h2>
 
     <div class="category-header">Engineering Services</div>
@@ -217,12 +282,15 @@ footer { padding: 100px 20px; text-align: center; border-top: 1px solid var(--bo
             <div class="popular-label">MOST POPULAR</div>
             <div class="service-name">完整贴唱混音 (Vocal Mixing)</div>
             <div class="price">¥450</div>
-            <p class="service-desc">包含“基础混音”与“人声制作”以及母带全流程。高性价比的一站式发行级标准。</p>
-            <div style="font-size: 0.85rem; color: #fff; font-weight: 300;">⏱ 交付周期：5-7工作日</div>
+            <p class="service-desc">包含基础混音与人声制作以及母带全流程。高性价比的一站式发行级标准。</p>
+            <div style="font-size: 0.75rem; color: #fff; font-weight: 500; opacity: 0.6; display: flex; align-items: center; gap: 8px;">
+                <span style="width: 6px; height: 6px; background: #34c759; border-radius: 50%;"></span>
+                交付周期：5-7 工作日
+            </div>
         </div>
 
         <div class="bento-card">
-            <div class="service-name">单曲母带 (Mastering)</div>
+            <div class="service-name">单曲母带</div>
             <div class="price">¥200</div>
             <p class="service-desc">提升响度、动态控制、频段平衡，适配全球流媒体分发标准。</p>
         </div>
@@ -236,21 +304,21 @@ footer { padding: 100px 20px; text-align: center; border-top: 1px solid var(--bo
         <div class="bento-card">
             <div class="service-name">人声制作</div>
             <div class="price">¥299</div>
-            <p class="service-desc">专注于人声效果设计。包含创意延迟、特殊混响、切片及空间构建。</p>
+            <p class="service-desc">专注于人声效果设计。包含创意延迟、空间构建等。</p>
         </div>
 
         <div class="bento-card">
             <div class="service-name">专业录制</div>
-            <div class="price">¥300<span style="font-size: 0.8rem; color: var(--text-secondary);"> /hr</span></div>
+            <div class="price">¥300<small style="font-size: 0.4em; margin-left: 5px; color: var(--text-secondary);">/ HOUR</small></div>
             <p class="service-desc">高端声学环境与硬件链。提供监制引导，2小时起预约。</p>
         </div>
 
         <div class="bento-card span-3">
             <div class="service-name">分轨混音 (Stem Mixing)</div>
             <ul class="feature-list">
-                <li><span>简易分轨 (8轨以内)</span><span>¥1,000</span></li>
+                <li><span>简易分轨 (8 轨以内)</span><span>¥1,000</span></li>
                 <li><span>常规分轨 (流行 / 说唱 / R&B)</span><span>¥1,500 起</span></li>
-                <li><span>复杂分轨 (60-100轨 / 大编制)</span><span>¥3,000 起</span></li>
+                <li><span>复杂分轨 (60-100 轨 / 大编制)</span><span>¥3,000 起</span></li>
             </ul>
         </div>
     </div>
@@ -258,22 +326,22 @@ footer { padding: 100px 20px; text-align: center; border-top: 1px solid var(--bo
     <div class="category-header">Songwriting & Production</div>
     <div class="bento-grid">
         <div class="bento-card span-2">
-            <div class="service-name">编曲制作 (Beat Making)</div>
+            <div class="service-name">编曲制作 (Arrangement)</div>
             <p class="service-desc">从基础租赁到独家商业定制，覆盖多种音乐风格的编曲需求。</p>
             <ul class="feature-list">
                 <li><span>非定制租赁 (MP3/WAV)</span><span>¥180 - ¥380</span></li>
                 <li><span>买断 (Exclusive)</span><span>¥1,500 起</span></li>
-                <li><span style="color:#fff; font-weight: 600;">定制编曲 (Custom Production)</span><span style="color:#fff; font-weight: 600;">¥3,000 - ¥5,000</span></li>
+                <li><span style="color:#fff;">定制编曲 (Custom Production)</span><span style="color:#fff;">¥3,000 - ¥5,000</span></li>
             </ul>
         </div>
 
         <div class="bento-card">
             <div class="service-name">词曲创作</div>
             <p class="service-desc">通过抓耳的旋律与富有故事性的文字构建整首作品的核心。</p>
-            <ul class="feature-list">
-                <li><span>作词 (Lyric Writing)</span><span>¥280</span></li>
-                <li><span>作曲 (Composition)</span><span>¥480</span></li>
-                <li><span style="color:#fff; font-weight: 600;">词曲全包 bundle</span><span style="color:#fff; font-weight: 600;">¥680</span></li>
+            <ul class="feature-list" style="border: none;">
+                <li><span>作词</span><span>¥280</span></li>
+                <li><span>作曲</span><span>¥480</span></li>
+                <li style="border: none;"><span style="color:#fff;">词曲全包 Bundle</span><span style="color:#fff;">¥680</span></li>
             </ul>
         </div>
     </div>
@@ -285,55 +353,80 @@ footer { padding: 100px 20px; text-align: center; border-top: 1px solid var(--bo
         </div>
         <div>
             <h5>REVISIONS</h5>
-            <p>母带定稿前提供3次免费修改。母带完成后如需重混需额外支付服务费。</p>
+            <p>母带定稿前提供 3 次免费修改。母带完成后如需重混需额外支付服务费。</p>
         </div>
         <div>
             <h5>DELIVERY</h5>
-            <p>包含：成品WAV、带伴唱版本、纯伴奏版本及各个对应格式。</p>
-        </div>
-        <div>
-            <h5>CYPHER</h5>
-            <p>默认仅含基础伴奏拼接。如需制作复杂衔接（切分/Drop等）按 ¥100/处计费。</p>
+            <p>包含：成品 WAV、带伴唱版本、纯伴奏版本及各个对应格式。</p>
         </div>
     </div>
 </section>
 
 <footer>
-    <div class="brand-name" style="font-size: 1.5rem; letter-spacing: 8px;">C/U MUSIC</div>
-    <div style="margin-top: 20px; color: var(--text-secondary); font-size: 0.9rem;">
-        <p>Booking via WeChat: <strong>Cookdao</strong></p>
-        <p style="margin-top: 10px; opacity: 0.4;">&copy; 2025 ALL RIGHTS RESERVED.</p>
+    <div class="brand-name" style="font-size: 1.2rem; letter-spacing: 12px; opacity: 0.8;">C/U MUSIC</div>
+    <div style="margin-top: 40px; color: var(--text-secondary); font-size: 0.8rem;">
+        <p style="letter-spacing: 1px;">Booking via WeChat: <span style="color: #fff; font-weight: 600; margin-left: 10px;">Cookdao</span></p>
+        <p style="margin-top: 30px; opacity: 0.3; font-size: 0.7rem;">&copy; 2025 C/U MUSIC STUDIO. ALL RIGHTS RESERVED.</p>
     </div>
 </footer>
 
 <script>
 const albums = [
-    { link:"https://music.163.com/album?id=350777340", image:"http://p1.music.126.net/_-rFuALruNFFlRfoEslp7A==/109951172303441948.jpg", artist:"Føxco", title:"Fear Of Nothing", year:"2025", credits:['cookdao'] },
-    { link:"https://music.163.com/album?id=349892857", image:"http://p1.music.126.net/Z0XW7Vb1WHMnn0Z0aZ3tVw==/109951172263038796.jpg", artist:"安伊涵", title:"BAD DESIRE", year:"2025", credits:['cookdao','uin'] },
-    { link:"https://music.163.com/album?id=285430095", image:"http://p2.music.126.net/fUvIMTUbos3A397_tb6Tzw==/109951172032384990.jpg", artist:"Uin", title:"首尔病 (Take Me Out)", year:"2024", credits:['uin'] }
+  { link: "https://music.163.com/album?id=263242113", image: "http://p1.music.126.net/QpNRZsfMP5J4tOlziA8Pnw==/109951170504642760.jpg", year: "2025", artist: "Rapeter", title: "IMGOOD别担心我", credits:['cookdao'] },
+  { link: "https://music.163.com/album?id=350777340", image: "http://p1.music.126.net/_-rFuALruNFFlRfoEslp7A==/109951172303441948.jpg", year: "2025", artist: "Føxco", title: "Fear Of Nothing", credits:['cookdao']  },
+  { link: "https://music.163.com/album?id=349892857", image: "http://p1.music.126.net/Z0XW7Vb1WHMnn0Z0aZ3tVw==/109951172263038796.jpg", year: "2025", artist: "安伊涵", title: "BAD DESIRE", credits:['cookdao','uin']  },
+  { link: "https://music.163.com/album?id=273398421", image: "http://p2.music.126.net/EZUw2Idccw7OkinISOXpeQ==/109951171093017111.jpg", year: "2025", artist: "RioT婷", title: "小巴辣子", credits:['cookdao']  },
+  { link: "https://music.163.com/album?id=285430095", image: "http://p2.music.126.net/fUvIMTUbos3A397_tb6Tzw==/109951172032384990.jpg", year: "2025", artist: "Uin", title: "首尔病(Take Me Out)", credits:['cookdao','uin'] },
+  { link: "https://music.163.com/album?id=276925482", image: "http://p2.music.126.net/m0opMAaNB1eOGnd30EYFZg==/109951171387080337.jpg", year: "2025", artist: "焦娇JoJo", title: "陕北女子", credits:['cookdao'] },
+  { link: "https://music.163.com/album?id=270573035", image: "http://p1.music.126.net/NrbdvLw7jhqKWzPYLUzEOw==/109951170927016553.jpg", year: "2025", artist: "YOUNGLEGO", title: "快人一步", credits:['cookdao'] },
+  { link: "https://music.163.com/album?id=267552392", image: "http://p2.music.126.net/dLO3LfOGdQ-X3P6I02yrWA==/109951170673486612.jpg", year: "2025", artist: "Ele Jazz", title: "太空规则", credits:['cookdao'] },
+  { link: "https://music.163.com/album?id=262350947", image: "http://p2.music.126.net/tg23znRitSin1BsH9cNRpw==/109951170470853706.jpg", year: "2025", artist: "Rapeter", title: "Shower", credits:['cookdao'] },
+  { link: "https://music.163.com/album?id=258535006", image: "http://p1.music.126.net/K0FP9U0dC9uzP1MP4WrdIA==/109951170344988605.jpg", year: "2025", artist: "西冷", title: "果体，苹果，你", credits:['cookdao'] },
+  { link: "https://music.163.com/album?id=247380991", image: "http://p1.music.126.net/oeWWJJjJ0c0erzqBoiVD3g==/109951169946775974.jpg", year: "2024", artist: "Cee", title: "侬CYPHER了伐", credits:['cookdao'] },
+  { link: "https://music.163.com/album?id=189753745", image: "http://p1.music.126.net/rA734NyZbO-HTxi0L4CGcQ==/109951169433203470.jpg", year: "2024", artist: "Ele Jazz", title: "Palette Mixtape", credits:['cookdao'] },
 ];
 
 const container = document.getElementById('album-container');
 
-function renderAlbums(filter = 'all') {
-    container.innerHTML = '';
-    const filtered = filter === 'all' ? albums : albums.filter(a => a.credits.includes(filter));
-    filtered.forEach(a => {
-        const div = document.createElement('a');
-        div.className = 'album-item';
-        div.href = a.link; div.target = "_blank";
-        div.innerHTML = `
-            <div class="album-cover"><img src="${a.image}"></div>
-            <div class="album-info" style="text-align: left;">
-                <h4 style="font-size: 1rem; font-weight: 500;">${a.title}</h4>
-                <p style="color: #888; font-size: 0.85rem;">${a.artist} · ${a.year}</p>
-            </div>
-        `;
-        container.appendChild(div);
-    });
+function handleMemberClick(element, filter) {
+    // 切换激活状态视觉
+    document.querySelectorAll('.member-section').forEach(m => m.classList.remove('active'));
+    element.classList.add('active');
+
+    // 平滑滚动到作品区
+    document.getElementById('works').scrollIntoView({ behavior: 'smooth' });
+
+    // 渲染作品
+    renderAlbums(filter);
 }
 
-window.onload = () => renderAlbums('all');
+function renderAlbums(filter = 'all') {
+    container.style.opacity = '0';
+    setTimeout(() => {
+        container.innerHTML = '';
+        const filtered = filter === 'all' ? albums : albums.filter(a => a.credits.includes(filter));
+        filtered.forEach(a => {
+            const div = document.createElement('a');
+            div.className = 'album-item';
+            div.href = a.link; div.target = "_blank";
+            div.innerHTML = `
+                <div class="album-cover"><img src="${a.image}" loading="lazy"></div>
+                <div class="album-info">
+                    <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;">${a.title}</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.8rem; letter-spacing: 0.5px;">${a.artist} · ${a.year}</p>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        container.style.opacity = '1';
+    }, 300);
+}
+
+// 初始加载全部
+window.onload = () => {
+    renderAlbums('all');
+    container.style.transition = 'opacity 0.5s ease';
+};
 </script>
 
 </body>
