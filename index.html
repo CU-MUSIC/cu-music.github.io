@@ -37,7 +37,7 @@ body {
 
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 
-/* 导航 - 增加毛玻璃与细线 */
+/* 导航 */
 nav {
     position: fixed;
     top: 0; width: 100%; height: 60px;
@@ -61,7 +61,7 @@ nav a {
 }
 nav a:hover { color: var(--accent); }
 
-/* Header - 优化字间距 */
+/* Header */
 header {
     padding: 160px 20px 100px;
     text-align: center;
@@ -71,7 +71,7 @@ header {
     font-weight: 200;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    margin-right: -0.3em; /* 抵消最后的间距使视觉居中 */
+    margin-right: -0.3em;
 }
 .brand-sub {
     color: var(--text-secondary);
@@ -82,7 +82,7 @@ header {
     text-transform: uppercase;
 }
 
-/* 人物部分 (Split Screen) - 增加遮罩效果 */
+/* 人物部分 (Split Screen) */
 .team-split {
     display: flex;
     width: 100%;
@@ -114,7 +114,6 @@ header {
     filter: grayscale(0) brightness(0.7);
 }
 
-/* 渐变遮罩让文字更清晰 */
 .member-section::after {
     content: '';
     position: absolute;
@@ -132,6 +131,24 @@ header {
     margin-bottom: 10px;
 }
 .member-name { font-size: 3.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+
+/* 个人网页链接样式 */
+.personal-link {
+    display: inline-block;
+    margin-top: 15px;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 6px 15px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+.personal-link:hover {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+}
 
 /* 激活态样式 */
 .member-section.active { flex: 1.5; }
@@ -167,7 +184,7 @@ header {
 }
 .album-item:hover img { transform: scale(1.1); }
 
-/* 服务 Bento 网格优化 */
+/* 服务 Bento 网格 */
 .category-header {
     font-size: 0.8rem; font-weight: 600; letter-spacing: 3px;
     color: var(--text-secondary); margin: 80px 0 30px;
@@ -257,6 +274,7 @@ footer {
         <div class="member-content">
             <div class="member-role">Mixing Engineer</div>
             <div class="member-name">Chefdao</div>
+            <a href="https://cookdao.github.io/" class="personal-link" target="_blank" onclick="event.stopPropagation();">Visit Website</a>
         </div>
     </div>
     <div class="member-section" onclick="handleMemberClick(this, 'uin')">
@@ -341,7 +359,7 @@ footer {
             <ul class="feature-list" style="border: none;">
                 <li><span>作词</span><span>¥280</span></li>
                 <li><span>作曲</span><span>¥480</span></li>
-                <li style="border: none;"><span style="color:#fff;">词曲全包 Bundle</span><span style="color:#fff;">¥680</span></li>
+                <li><li style="border: none;"><span style="color:#fff;">词曲全包 Bundle</span><span style="color:#fff;">¥680</span></li>
             </ul>
         </div>
     </div>
@@ -366,6 +384,7 @@ footer {
     <div class="brand-name" style="font-size: 1.2rem; letter-spacing: 12px; opacity: 0.8;">C/U MUSIC</div>
     <div style="margin-top: 40px; color: var(--text-secondary); font-size: 0.8rem;">
         <p style="letter-spacing: 1px;">Booking via WeChat: <span style="color: #fff; font-weight: 600; margin-left: 10px;">Cookdao</span></p>
+        <p style="margin-top: 10px;"><a href="https://cookdao.github.io/" target="_blank" style="text-decoration: underline; opacity: 0.6;">Visit Personal Website</a></p>
         <p style="margin-top: 30px; opacity: 0.3; font-size: 0.7rem;">&copy; 2025 C/U MUSIC STUDIO. ALL RIGHTS RESERVED.</p>
     </div>
 </footer>
@@ -389,14 +408,9 @@ const albums = [
 const container = document.getElementById('album-container');
 
 function handleMemberClick(element, filter) {
-    // 切换激活状态视觉
     document.querySelectorAll('.member-section').forEach(m => m.classList.remove('active'));
     element.classList.add('active');
-
-    // 平滑滚动到作品区
     document.getElementById('works').scrollIntoView({ behavior: 'smooth' });
-
-    // 渲染作品
     renderAlbums(filter);
 }
 
@@ -422,7 +436,6 @@ function renderAlbums(filter = 'all') {
     }, 300);
 }
 
-// 初始加载全部
 window.onload = () => {
     renderAlbums('all');
     container.style.transition = 'opacity 0.5s ease';
