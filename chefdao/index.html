@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<title>刀大厨 ChefDao</title>
+
+<style>
+:root {
+  --bg:#000;
+  --text-main:#fff;
+  --text-dim:#86868b;
+  --font-pro:-apple-system,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
+  --easing:cubic-bezier(0.16,1,0.3,1);
+  --cols: 8; 
+}
+
+body {
+  margin:0;
+  background:#000;
+  color:#fff;
+  font-family:var(--font-pro);
+  overflow:hidden;
+}
+
+/* ================= Intro ================= */
+
+#intro-overlay {
+  position:fixed;
+  inset:0;
+  background:#000;
+  z-index:9999;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+}
+
+#intro-grid {
+  display:grid;
+  width:100vw;
+  height:100vh;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-auto-rows: calc(100vw / var(--cols)); 
+  gap: 0; 
+  align-content:start;
+  filter:brightness(1);
+  transition:filter 1.5s ease;
+  visibility:hidden;
+}
+
+#intro-grid.dimmed { filter:brightness(.3); }
+
+@media (max-width:768px){
+  :root { --cols: 3; }
+}
+
+.grid-cell { position:relative; width: 100%; height: 100%; overflow: hidden; }
+.grid-cell img { width:100%; height:100%; object-fit:cover; display: block; border-radius: 0; }
+
+.flying-unit {
+  position:fixed;
+  z-index:10001;
+  pointer-events:none;
+  opacity: 0;
+  object-fit: cover;
+  border-radius: 0;
+  will-change: transform, opacity;
+}
+
+/* ================= UI ================= */
+
+#intro-ui {
+  position:absolute;
+  z-index:10002;
+  opacity:0;
+  transition:opacity 1s var(--easing);
+  pointer-events: none;
+  /* 修改：增加布局容器，使两个按钮并排 */
+  display: flex;
+  gap: 20px;
+}
+#intro-ui.visible { opacity:1; pointer-events: all; }
+
+.enter-btn, .pricing-btn {
+  background:#fff;
+  color:#000;
+  border:none;
+  padding:18px 45px;
+  border-radius:40px;
+  font-size:12px;
+  letter-spacing:4px;
+  font-weight:600;
+  cursor:pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* Pricing 按钮稍微做一点点视觉降级，让主按钮更突出 */
+.pricing-btn {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.enter-btn:active, .pricing-btn:active { transform: scale(0.95); }
+
+@media (max-width:480px) {
+  #intro-ui { flex-direction: column; align-items: center; gap: 15px; }
+}
+
+/* ================= Content ================= */
+
+#albums-container {
+  max-width:1100px; 
+  margin:0 auto;
+  padding:150px 40px;
+  display:none;
+  opacity:0;
+}
+
+body.content-visible { overflow:auto; }
+body.content-visible #albums-container { display:block; opacity:1; transition:opacity 1.5s; }
+
+.album-row {
+  display:flex;
+  align-items:center;
+  gap:80px;
+  margin-bottom:200px;
+  opacity:0;
+  transform:translateY(60px);
+  transition:all 1.2s var(--easing);
+}
+
+.album-row.is-visible { opacity:1; transform:translateY(0); }
+
+@media (min-width:769px){
+  .album-row.reverse { flex-direction:row-reverse; }
+  .album-row.reverse .album-info { text-align:right; }
+}
+
+.album-cover-wrapper {
+  flex:1; 
+  aspect-ratio:1/1;
+  position:relative;
+  box-shadow:0 40px 100px rgba(0,0,0,.6);
+}
+
+.album-cover-wrapper img { width:100%; height:100%; object-fit:cover; border-radius: 0; }
+
+.album-info { flex:1; }
+
+/* Highlight 标识样式 */
+.highlight-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #fff;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+}
+
+.year { color:var(--text-dim); margin-bottom:12px; font-size: 16px; }
+.artist { color:var(--text-dim); margin:8px 0; font-size: 20px; }
+.title {
+  font-size:clamp(32px,4.5vw,56px);
+  font-weight:700;
+  margin:0;
+  line-height:1.1;
+  color: var(--text-main);
+}
+
+@media (max-width:768px) {
+  .album-row { flex-direction: column; gap: 40px; margin-bottom: 120px; }
+  .album-row.reverse .album-info { text-align: left; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="intro-overlay">
+  <div id="intro-grid"></div>
+  <div id="intro-ui">
+	<button id="enter-site-btn" class="enter-btn">ENTER</button>
+	<a href="https://cookdao.github.io/pricing/" class="pricing-btn">PRICING</a>
+  </div>
+</div>
+
+<div id="albums-container"></div>
+
+<script src="albums.js"></script>
+<script>
+/* ========= Utils ========= */
+function shuffle(arr) {
+  return arr.slice().sort(() => Math.random() - 0.5);
+}
+
+/* ========= Intro Logic ========= */
+
+function initHybridAnimation(){
+  const grid = document.getElementById('intro-grid');
+  const cols = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols').trim());
+  const cellWidth = window.innerWidth / cols;
+  const rows = Math.ceil(window.innerHeight / cellWidth) + 1;
+  const totalCells = cols * rows;
+
+  const highlights = shuffle(albums.filter(a => a.highlighted));
+  const others = shuffle(albums.filter(a => !a.highlighted));
+  let combined = [...highlights, ...others];
+  
+  const displayPool = [];
+  for(let i=0; i<totalCells; i++) {
+	displayPool.push(combined[i % combined.length]);
+  }
+
+  grid.innerHTML = displayPool.map(item => `
+	<div class="grid-cell">
+	  <img src="${item.image}" style="opacity:0">
+	</div>
+  `).join('');
+  
+  grid.style.visibility = 'visible';
+
+  const cells = document.querySelectorAll('.grid-cell');
+  let loaded = 0;
+
+  cells.forEach((cell, i) => {
+	const rect = cell.getBoundingClientRect();
+	const fly = document.createElement('img');
+	fly.src = displayPool[i].image;
+	fly.className = 'flying-unit';
+	
+	const angle = Math.random() * Math.PI * 2;
+	const distance = Math.max(window.innerWidth, window.innerHeight) * 1.5;
+	
+	fly.style.width = rect.width + 'px';
+	fly.style.height = rect.height + 'px';
+	fly.style.left = '0px';
+	fly.style.top = '0px';
+	
+	const startX = window.innerWidth/2 + Math.cos(angle) * distance;
+	const startY = window.innerHeight/2 + Math.sin(angle) * distance;
+	
+	fly.style.transform = `translate(${startX}px, ${startY}px) scale(0.3)`;
+	document.body.appendChild(fly);
+
+	setTimeout(() => {
+	  requestAnimationFrame(() => {
+		fly.style.transition = `transform ${1.2 + Math.random()*0.8}s var(--easing), opacity 0.8s ease`;
+		fly.style.opacity = '1';
+		fly.style.transform = `translate(${rect.left}px, ${rect.top}px) scale(1)`;
+	  });
+	}, i * 15); 
+
+	setTimeout(() => {
+	  const targetImg = cell.querySelector('img');
+	  if(targetImg) targetImg.style.opacity = 1;
+	  fly.remove();
+	  if(++loaded === totalCells) {
+		grid.classList.add('dimmed');
+		document.getElementById('intro-ui').classList.add('visible');
+	  }
+	}, 2500 + (i * 15)); 
+  });
+}
+
+/* ========= Content Logic ========= */
+
+function generateContent(){
+  document.getElementById('albums-container').innerHTML = albums.map((a,i)=>`
+	<div class="album-row ${i%2?'reverse':''}">
+	  <div class="album-cover-wrapper">
+		<a href="${a.link}" target="_blank"><img src="${a.image}"></a>
+	  </div>
+	  <div class="album-info">
+		${a.highlighted ? '<div class="highlight-badge">Featured Work</div>' : ''}
+		<div class="year">${a.year}</div>
+		<div class="artist">${a.artist}</div>
+		<h2 class="title">${a.title}</h2>
+	  </div>
+	</div>`).join('');
+}
+
+function enterSite(){
+  document.getElementById('intro-overlay').style.opacity = 0;
+  setTimeout(() => {
+	document.getElementById('intro-overlay').remove();
+	document.body.classList.add('content-visible');
+	const obs = new IntersectionObserver(es => {
+	  es.forEach(e => e.isIntersecting && e.target.classList.add('is-visible'));
+	}, {threshold:.1});
+	document.querySelectorAll('.album-row').forEach(r => obs.observe(r));
+  }, 1200);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  generateContent();
+  setTimeout(initHybridAnimation, 400);
+  document.getElementById('enter-site-btn').onclick = enterSite;
+});
+</script>
+</body>
+</html>
