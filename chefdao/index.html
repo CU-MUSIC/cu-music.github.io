@@ -4,7 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <title>刀大厨 ChefDao</title>
-<!-- 提前建立与图片 CDN 的连接，减少首次请求的 DNS + TCP 耗时 -->
 <link rel="preconnect" href="https://p1.music.126.net" crossorigin>
 <link rel="preconnect" href="https://p2.music.126.net" crossorigin>
 <link rel="dns-prefetch" href="https://y.qq.com">
@@ -14,7 +13,6 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-Y46B4MCLFN');
 </script>
 
@@ -22,10 +20,10 @@
 :root {
   --bg:#000;
   --text-main:#fff;
-  --text-dim:#98989d; /* 稍微调亮一点灰，提升移动端可读性 */
+  --text-dim:#98989d;
   --font-pro:-apple-system,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
   --easing:cubic-bezier(0.16,1,0.3,1);
-  --cols: 8; 
+  --cols: 8;
 }
 
 body {
@@ -34,359 +32,291 @@ body {
   color:#fff;
   font-family:var(--font-pro);
   overflow:hidden;
-  -webkit-font-smoothing: antialiased; /* 让字体在暗色背景更清晰 */
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ================= Intro ================= */
-
 #intro-overlay {
-  position:fixed;
-  inset:0;
-  background:#000;
-  z-index:9999;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  overflow:hidden;
+  position:fixed; inset:0; background:#000; z-index:9999;
+  display:flex; justify-content:center; align-items:center; overflow:hidden;
 }
-
 #intro-grid {
-  display:grid;
-  width:100vw;
-  height:100vh;
+  display:grid; width:100vw; height:100vh;
   grid-template-columns: repeat(var(--cols), 1fr);
-  grid-auto-rows: calc(100vw / var(--cols)); 
-  gap: 0; 
-  align-content:start;
-  filter:brightness(1);
-  transition:filter 1.5s ease;
-  visibility:hidden;
+  grid-auto-rows: calc(100vw / var(--cols));
+  gap:0; align-content:start;
+  filter:brightness(1); transition:filter 1.5s ease; visibility:hidden;
 }
-
-#intro-grid.dimmed { filter:brightness(.2); /* 稍微更暗一点，突出按钮 */ }
-
-@media (max-width:1000px){
-  :root { --cols: 4; }
-}
-
-.grid-cell { 
-  position:relative; 
-  width: 100%; 
-  height: 100%; 
-  overflow: hidden; 
-  /* 【修改】增加深色背景占位，防止图片未加载时出现白色闪烁 */
-  background-color: #1a1a1a; 
-}
-.grid-cell img { width:100%; height:100%; object-fit:cover; display: block; border-radius: 0; }
-
+#intro-grid.dimmed { filter:brightness(.2); }
+@media (max-width:1000px){ :root { --cols: 4; } }
+.grid-cell { position:relative; width:100%; height:100%; overflow:hidden; background-color:#1a1a1a; }
+.grid-cell img { width:100%; height:100%; object-fit:cover; display:block; border-radius:0; }
 .flying-unit {
-  position:fixed;
-  z-index:10001;
-  pointer-events:none;
-  opacity: 0;
-  object-fit: cover;
-  border-radius: 0;
-  will-change: transform, opacity;
+  position:fixed; z-index:10001; pointer-events:none;
+  opacity:0; object-fit:cover; border-radius:0; will-change:transform,opacity;
 }
 
-/* ================= UI Buttons ================= */
-
+/* ================= Intro UI ================= */
 #intro-ui {
-  position:absolute;
-  z-index:10002;
-  opacity:0;
-  transition:opacity 1s var(--easing);
-  pointer-events: none;
-  display: flex;
-  gap: 20px;
-  /* 确保按钮在最上层且居中 */
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  position:absolute; z-index:10002; opacity:0;
+  transition:opacity 1s var(--easing); pointer-events:none;
+  display:flex; gap:20px; left:50%; top:50%; transform:translate(-50%,-50%);
 }
-#intro-ui.visible { opacity:1; pointer-events: all; }
-
+#intro-ui.visible { opacity:1; pointer-events:all; }
 .enter-btn, .pricing-btn {
-  background:#fff;
-  color:#000;
-  border:none;
-  padding:18px 45px;
-  border-radius:100px; /* 全圆角 */
-  font-size:13px; /* 稍微大一点点 */
-  letter-spacing:3px;
-  font-weight:700;
-  cursor:pointer;
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  min-width: 140px;
+  background:#fff; color:#000; border:none; padding:18px 45px;
+  border-radius:100px; font-size:13px; letter-spacing:3px; font-weight:700;
+  cursor:pointer; transition:transform 0.2s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.2s ease;
+  text-decoration:none; display:flex; align-items:center; justify-content:center;
+  white-space:nowrap; min-width:140px;
 }
-
 .pricing-btn {
-  background: rgba(255, 255, 255, 0.15); /* 改为磨砂玻璃风格，更高级 */
-  color: #fff;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.15); color:#fff;
+  backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2);
 }
-
-.enter-btn:active, .pricing-btn:active { transform: scale(0.92); opacity: 0.8; }
-
-/* 增加的 Spotify 按钮样式 */
+.enter-btn:active, .pricing-btn:active { transform:scale(0.92); opacity:0.8; }
 .spotify-link {
-  position: absolute;
-  bottom: -50px; /* 固定在下方不影响原有flex布局 */
-  left: 50%;
-  transform: translateX(-50%);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 2px;
-  text-decoration: none;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  transition: all 0.3s ease;
+  position:absolute; bottom:-50px; left:50%; transform:translateX(-50%);
+  color:rgba(255,255,255,0.5); font-size:11px; font-weight:500; letter-spacing:2px;
+  text-decoration:none; text-transform:uppercase; display:flex; align-items:center;
+  gap:8px; white-space:nowrap; transition:all 0.3s ease;
 }
-
-.spotify-link:hover {
-  color: #1DB954; /* 悬停时变为 Spotify 品牌绿 */
-  transform: translateX(-50%) scale(1.05);
-}
-
+.spotify-link:hover { color:#1DB954; transform:translateX(-50%) scale(1.05); }
 @media (max-width:480px) {
-  #intro-ui { 
-  flex-direction: column; 
-  gap: 16px; 
-  width: 80%; /* 限制宽度 */
-  }
-  .enter-btn, .pricing-btn {
-  width: 100%; /* 移动端按钮全宽 */
-  padding: 16px 0;
-  }
-  .spotify-link {
-  bottom: -45px; /* 移动端距离稍微调整 */
-  }
+  #intro-ui { flex-direction:column; gap:16px; width:80%; }
+  .enter-btn, .pricing-btn { width:100%; padding:16px 0; }
+  .spotify-link { bottom:-45px; }
 }
 
-/* ================= Content Layout ================= */
+/* ================= Content Nav ================= */
+#content-nav {
+  position:fixed; top:0; left:0; right:0; z-index:1000;
+  display:none; justify-content:center; align-items:center; gap:40px;
+  padding:20px 0; background:linear-gradient(to bottom,rgba(0,0,0,0.85),transparent);
+  backdrop-filter:blur(0px);
+}
+#content-nav.visible { display:flex; }
+.nav-link {
+  font-size:11px; letter-spacing:3px; font-weight:600; text-transform:uppercase;
+  color:rgba(255,255,255,0.4); cursor:pointer; padding:6px 0;
+  border-bottom:1px solid transparent; transition:all 0.2s ease;
+}
+.nav-link.active { color:#fff; border-bottom-color:#fff; }
+.nav-link:hover { color:rgba(255,255,255,0.8); }
+
+/* ================= Year Watermark ================= */
+#year-watermark {
+  position:fixed; top:50%; left:0;
+  transform:translateY(-50%);
+  font-size:clamp(60px, 20vw, 220px);
+  font-weight:800; color:#fff; letter-spacing:-0.02em;
+  pointer-events:none; z-index:0; white-space:nowrap; opacity:0; user-select:none;
+}
+#year-watermark.sweeping {
+  animation:year-sweep 2.4s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes year-sweep {
+  0%   { opacity:0;    transform:translateY(-50%) translateX(-6%); }
+  18%  { opacity:0.09; }
+  65%  { opacity:0.06; }
+  100% { opacity:0;    transform:translateY(-50%) translateX(14%); }
+}
+
+/* ================= Works Section ================= */
+#works-section { display:none; }
 
 #albums-container {
-  max-width:1100px; 
-  margin:0 auto;
-  padding:150px 40px;
-  display:none;
-  opacity:0;
+  max-width:1100px; margin:0 auto; padding:150px 40px 40px;
+  opacity:0; transition:opacity 1.5s;
 }
+#albums-container.visible { opacity:1; }
 
-body.content-visible { 
-  overflow-y: auto; 
-  -webkit-overflow-scrolling: touch; /* iOS 惯性滚动 */
+#albums-all {
+  max-width:1100px; margin:0 auto; padding:0 40px;
+  display:none;
 }
-body.content-visible #albums-container { display:block; opacity:1; transition:opacity 1.5s; }
+#albums-all.open { display:block; }
 
 .album-row {
-  display:flex;
-  align-items:center;
-  gap:80px;
-  margin-bottom:200px;
-  opacity:0;
-  transform:translateY(60px);
-  transition:all 1.2s var(--easing);
+  display:flex; align-items:center; gap:80px; margin-bottom:200px;
+  opacity:0; transform:translateY(60px); transition:all 1.2s var(--easing);
 }
-
 .album-row.is-visible { opacity:1; transform:translateY(0); }
 
-/* PC端布局逻辑 */
 @media (min-width:769px){
   .album-row.reverse { flex-direction:row-reverse; }
   .album-row.reverse .album-info { text-align:right; }
-  /* PC端如果右对齐，Badge也要跟随 */
-  .album-row.reverse .highlight-wrapper { display: flex; justify-content: flex-end; }
+  .album-row.reverse .highlight-wrapper { display:flex; justify-content:flex-end; }
 }
 
 .album-cover-wrapper {
-  flex:1.2; /* 图片稍微大一点 */
-  aspect-ratio:1/1;
-  position:relative;
-  /* 阴影更加柔和 */
-  box-shadow: 0 20px 80px -20px rgba(255,255,255,0.1); 
-  transition: transform 0.5s ease;
+  flex:1.2; aspect-ratio:1/1; position:relative;
+  box-shadow:0 20px 80px -20px rgba(255,255,255,0.1); transition:transform 0.5s ease;
 }
+.album-cover-wrapper:hover { transform:scale(1.02); }
+.album-cover-wrapper img { width:100%; height:100%; object-fit:cover; display:block; }
 
-.album-cover-wrapper:hover {
-  transform: scale(1.02);
-}
+.album-info { flex:1; position:relative; z-index:2; min-width:0; }
 
-.album-cover-wrapper img { width:100%; height:100%; object-fit:cover; display: block;}
-
-.album-info { 
-  flex:1; 
-  position: relative;
-  z-index: 2;
-  min-width: 0; /* 极其重要：这让 flex 子元素能够正确缩减并触发省略号 */
-}
-
-/* ================= Typography Refinement (参考截图优化) ================= */
-
-/* Featured Work 胶囊 */
 .highlight-badge {
-  display: inline-block;
-  padding: 6px 16px;
-  background: rgba(255, 255, 255, 0.15); /* 稍微亮一点的半透明 */
-  border: 0.5px solid rgba(255, 255, 255, 0.3);
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  color: #fff;
-  margin-bottom: 24px; /* 胶囊到底下的距离 */
-  text-transform: uppercase;
-  backdrop-filter: blur(4px);
+  display:inline-flex; align-items:center; justify-content:center; height:28px;
+  padding:6px 16px; background:rgba(255,255,255,0.15);
+  border:0.5px solid rgba(255,255,255,0.3); border-radius:100px;
+  font-size:11px; font-weight:600; letter-spacing:1.5px; color:#fff;
+  margin-bottom:0; text-transform:uppercase; backdrop-filter:blur(4px); box-sizing:border-box;
 }
+.meta-group { margin-bottom:16px; }
+.year { color:var(--text-dim); font-size:15px; margin-bottom:4px; font-weight:500; }
+.artist { color:var(--text-dim); font-size:15px; font-weight:500; }
+.title { font-size:clamp(32px,4.5vw,56px); font-weight:700; margin:0; line-height:1.1; color:var(--text-main); }
 
-/* 元信息组：年份和艺术家 */
-.meta-group {
-  margin-bottom: 16px;
-}
-
-.year { 
-  color: var(--text-dim); 
-  font-size: 15px; 
-  margin-bottom: 4px; /* 年份和名字离得近一点 */
-  font-weight: 500;
-}
-.artist { 
-  color: var(--text-dim); 
-  font-size: 15px; 
-  font-weight: 500;
-}
-
-/* 标题 */
-.title {
-  font-size:clamp(32px,4.5vw,56px);
-  font-weight:700;
-  margin:0;
-  line-height:1.1;
-  color: var(--text-main);
-}
-
-/* ================= Mobile Optimization (移动端竖屏核心) ================= */
-
-@media (max-width:768px) {
-  #albums-container {
-  padding: 100px 24px; /* 减小容器内边距 */
-  }
-
-  .album-row { 
-  flex-direction: column !important; /* 强制垂直排列，取消左右交错 */
-  align-items: flex-start; /* 强制左对齐 */
-  gap: 32px; /* 图片和文字的间距 */
-  margin-bottom: 140px; 
-  }
-
-  .album-cover-wrapper {
-  width: 100%;
-  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8); /* 移动端阴影可以重一点，增加立体感 */
-  }
-
-  .album-info { 
-  width: 100%;
-  text-align: left !important; /* 移动端强制左对齐 */
-  padding-left: 4px; /* 微调视觉平衡 */
-  }
-
-  /* 即使是 Reverse 的行，在移动端也必须左对齐 */
-  .album-row.reverse .highlight-wrapper { 
-    justify-content: flex-start; 
-  }
-
-  /* 调整移动端字体大小以匹配截图 */
-  .highlight-badge {
-    font-size: 10px;
-    padding: 5px 14px;
-    margin-bottom: 20px;
-  }
-
-  .year {
-    font-size: 14px;
-    margin-bottom: 2px;
-  }
-  
-  .artist {
-    font-size: 14px;
-    margin-bottom: 12px; /* 名字和标题拉开一点距离 */
-  }
-
-  .title {
-    font-size: 38px; /* 移动端固定一个舒适的大尺寸 */
-  }
-}
-
-/* 1. 基础标签样式 */
 .badge {
-    padding: 5px 15px; 
-    border: 1.5px solid rgba(255,255,255,0.4); /* 边框粗细和透明度 */
-    border-radius: 100px; 
-    font-size: 10px; 
-    font-weight: 500;
-    letter-spacing: 2px; /* 字间距，越大越高级 */
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.8);
+  display:inline-flex; align-items:center; justify-content:center; height:28px;
+  padding:5px 15px; border:1.5px solid rgba(255,255,255,0.4); border-radius:100px;
+  font-size:10px; font-weight:500; letter-spacing:2px; text-transform:uppercase;
+  color:rgba(255,255,255,0.8); box-sizing:border-box;
 }
-
-/* 2. 优雅的奖项标签（重点修改这里） */
 .award-badge {
-    border-color: #d4af37; /* 金色边框 */
-    color: #d4af37;        /* 金色文字 */
-    background: rgba(212, 175, 55, 0.05); /* 极淡的金色背景 */
-    position: relative;
-    overflow: hidden;
+  border-color:#d4af37; color:#d4af37; background:rgba(212,175,55,0.05);
+  position:relative; overflow:hidden;
 }
-
-/* 3. 流光效果（如果不想要动态，可以删除这一段） */
 .award-badge::after {
-    content: ''; 
-    position: absolute; 
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.2), transparent);
-    transform: translateX(-100%); 
-    animation: shine 3s infinite; /* 3s 是流光速度 */
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,0.2),transparent);
+  transform:translateX(-100%); animation:shine 3s infinite;
 }
-@keyframes shine { 100% { transform: translateX(100%); } }
-/* 确保多个标签并排显示，并有间距 */
-.highlight-wrapper {
-  display: flex;
-  gap: 10px;        /* 两个标签之间的距离 */
-  flex-wrap: wrap;  /* 手机端如果太长自动换行 */
-  margin-bottom: 24px;
-}
+@keyframes shine { 100% { transform:translateX(100%); } }
+.highlight-wrapper { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; }
+@media (min-width:769px){ .album-row.reverse .highlight-wrapper { justify-content:flex-end; } }
 
-/* 统一 Featured 标签和 Award 标签的基础高度和对齐 */
-.highlight-badge, .badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px; /* 统一高度更整齐 */
-  box-sizing: border-box;
+/* ================= Expand Button ================= */
+#expand-wrap {
+  text-align:center; padding:0 0 80px; display:none;
 }
-
-/* 修正 PC 端右对齐逻辑 */
-@media (min-width:769px){
-  .album-row.reverse .highlight-wrapper { 
-    justify-content: flex-end; 
-  }
+#expand-wrap.visible { display:block; }
+#expand-btn {
+  background:transparent; border:1px solid rgba(255,255,255,0.2);
+  color:rgba(255,255,255,0.6); padding:14px 36px; border-radius:100px;
+  font-size:12px; letter-spacing:2px; cursor:pointer; font-weight:500;
+  transition:all 0.2s ease;
 }
+#expand-btn:hover { border-color:rgba(255,255,255,0.5); color:#fff; }
 
+/* ================= About Section ================= */
+#about-section {
+  display:none; padding:120px 40px 80px; max-width:900px; margin:0 auto;
+  opacity:0; transition:opacity 0.5s ease;
+}
+#about-section.visible { display:block; }
+#about-section.fadein { opacity:1; }
+
+.about-photos {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:60px;
+}
+.about-photo { aspect-ratio:1/1; overflow:hidden; background:#111; }
+.about-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+
+.about-bio h2 { font-size:clamp(36px,5vw,56px); font-weight:700; margin:0 0 24px; }
+.about-bio p { font-size:16px; line-height:1.7; color:rgba(255,255,255,0.7); margin:0 0 12px; }
+
+.about-certs {
+  display:flex; flex-wrap:wrap; gap:16px; margin:40px 0;
+}
+.cert-item {
+  flex:1; min-width:160px; background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px 24px;
+  display:flex; align-items:center; gap:16px;
+}
+.cert-num { font-size:28px; font-weight:700; white-space:nowrap; }
+.cert-label { font-size:13px; color:rgba(255,255,255,0.6); line-height:1.5; }
+.cert-label small { display:block; font-size:11px; color:rgba(255,255,255,0.35); margin-top:4px; }
+
+/* ================= Awards ================= */
+.about-awards-list { margin-top:48px; }
+.about-awards-heading {
+  font-family:var(--font-pro); font-size:11px; letter-spacing:0.25em;
+  text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:20px;
+}
+.nomination-cards { display:flex; flex-direction:column; gap:0; margin-bottom:16px; }
+.nom-card {
+  display:flex; align-items:baseline; gap:0; padding:18px 20px;
+  border-left:1px solid rgba(255,255,255,0.1);
+  transition:border-color 0.2s;
+}
+.nom-card + .nom-card { border-top:1px solid rgba(255,255,255,0.05); }
+.nom-category {
+  min-width:200px; font-size:11px; letter-spacing:0.1em;
+  color:rgba(255,255,255,0.5); text-transform:uppercase; flex-shrink:0;
+}
+.nom-title { font-size:16px; font-weight:600; flex:1; }
+.nom-artist { font-size:13px; color:rgba(255,255,255,0.4); white-space:nowrap; margin-left:16px; }
+
+.chart-entry {
+  display:flex; align-items:center; gap:20px; padding:20px 24px;
+  background:rgba(255,255,255,0.04); border-radius:12px;
+  border:1px solid rgba(255,255,255,0.07); margin-top:16px;
+}
+.chart-rank { font-size:2rem; font-weight:800; color:rgba(255,255,255,0.3); min-width:40px; }
+.chart-info { flex:1; }
+.chart-label { font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:0.1em; margin-bottom:4px; }
+.chart-title { font-size:15px; font-weight:600; }
+.chart-artist { font-size:13px; color:rgba(255,255,255,0.4); }
+
+/* ================= Floating WeChat ================= */
+#float-contact {
+  position:fixed; bottom:28px; right:28px; z-index:999;
+  background:rgba(20,20,20,0.85); backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,0.1); border-radius:100px;
+  padding:12px 22px; cursor:pointer; display:none;
+  align-items:center; gap:10px; font-size:14px; font-weight:500;
+  transition:all 0.2s ease; user-select:none;
+}
+#float-contact.visible { display:flex; }
+#float-contact:hover { background:rgba(40,40,40,0.95); border-color:rgba(255,255,255,0.2); }
+.wc-dot { width:8px; height:8px; border-radius:50%; background:#07c160; flex-shrink:0; }
+#wechat-toast {
+  position:fixed; bottom:76px; right:28px; z-index:1000;
+  background:rgba(20,20,20,0.95); backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,0.12); border-radius:12px;
+  padding:14px 20px; font-size:13px; color:rgba(255,255,255,0.8);
+  pointer-events:none; opacity:0; transition:opacity 0.2s, transform 0.2s;
+  transform:translateY(8px); white-space:nowrap;
+}
+#wechat-toast.show { opacity:1; transform:translateY(0); }
+
+/* ================= Mobile ================= */
+@media (max-width:768px) {
+  #albums-container { padding:100px 24px 40px; }
+  #albums-all { padding:0 24px; }
+  .album-row { flex-direction:column !important; align-items:flex-start; gap:32px; margin-bottom:140px; }
+  .album-cover-wrapper { width:100%; box-shadow:0 10px 40px -10px rgba(0,0,0,0.8); }
+  .album-info { width:100%; text-align:left !important; padding-left:4px; }
+  .album-row.reverse .highlight-wrapper { justify-content:flex-start; }
+  .highlight-badge { font-size:10px; padding:5px 14px; }
+  .year { font-size:14px; margin-bottom:2px; }
+  .artist { font-size:14px; margin-bottom:12px; }
+  .title { font-size:38px; }
+
+  #float-contact { left:50%; right:auto; transform:translateX(-50%); bottom:28px; }
+  #wechat-toast { left:50%; right:auto; transform:translateX(-50%) translateY(8px); }
+  #wechat-toast.show { transform:translateX(-50%) translateY(0); }
+
+  .nom-card { flex-direction:column; align-items:flex-start; gap:4px; padding:14px 14px 14px 16px; }
+  .nom-category { min-width:unset; white-space:normal; font-size:10px; color:rgba(255,255,255,0.4); }
+  .nom-title { font-size:14px; }
+  .nom-artist { white-space:normal; color:rgba(255,255,255,0.35); margin-left:0; }
+  .chart-rank { font-size:1.4rem; min-width:32px; }
+  .chart-title { font-size:13px; }
+  .about-certs { gap:10px; }
+  #about-section { padding:80px 20px 80px; }
+  .about-photos { grid-template-columns:repeat(2,1fr); }
+}
 </style>
 </head>
 
 <body>
 
+<!-- Intro -->
 <div id="intro-overlay">
   <div id="intro-grid"></div>
   <div id="intro-ui">
@@ -399,40 +329,248 @@ body.content-visible #albums-container { display:block; opacity:1; transition:op
   </div>
 </div>
 
-<div id="albums-container"></div>
+<!-- Content Nav -->
+<nav id="content-nav">
+  <span class="nav-link active" data-tab="works">WORKS</span>
+  <span class="nav-link" data-tab="about">ABOUT</span>
+</nav>
+
+<!-- Year Watermark -->
+<div id="year-watermark"></div>
+
+<!-- Works -->
+<div id="works-section">
+  <div id="albums-container"></div>
+  <div id="expand-wrap">
+    <button id="expand-btn"></button>
+  </div>
+  <div id="albums-all"></div>
+</div>
+
+<!-- About -->
+<section id="about-section">
+  <div class="about-photos" id="about-photos"></div>
+  <div class="about-bio">
+    <h2>ChefDao</h2>
+    <p>Audio Engineer &amp; Producer based in Seoul, KR. Founder of C/U Music Studio alongside producer &amp; songwriter Uin.</p>
+    <p>100+ songs across 10+ albums since 2022, spanning Hip-Hop, R&amp;B, Pop and beyond.</p>
+    <div class="about-certs">
+      <div class="cert-item">
+        <span class="cert-num">10×</span>
+        <span class="cert-label">Diamond Single<small>网易云 钻石单曲 · 10M+ streams</small></span>
+      </div>
+      <div class="cert-item">
+        <span class="cert-num">3×</span>
+        <span class="cert-label">Platinum Single<small>网易云 铂金单曲 · 5M+ streams</small></span>
+      </div>
+      <div class="cert-item">
+        <span class="cert-num">100M+</span>
+        <span class="cert-label">Total Streams<small>across Chinese platforms</small></span>
+      </div>
+    </div>
+    <div class="about-awards-list">
+      <p class="about-awards-heading">2025 CHMA 中文说唱音乐奖</p>
+      <div class="nomination-cards">
+        <div class="nom-card">
+          <span class="nom-category">最佳流行说唱专辑 · 提名</span>
+          <span class="nom-title">IMGOOD别担心我</span>
+          <span class="nom-artist">Rapeter</span>
+        </div>
+        <div class="nom-card">
+          <span class="nom-category">最佳陷阱说唱专辑 · 提名</span>
+          <span class="nom-title">快人一步</span>
+          <span class="nom-artist">YOUNGLEGO</span>
+        </div>
+        <div class="nom-card">
+          <span class="nom-category">年度单曲 · 提名</span>
+          <span class="nom-title">NO HOOK FREESTYLE Pt.4</span>
+          <span class="nom-artist">Rapeter</span>
+        </div>
+      </div>
+      <div class="chart-entry">
+        <span class="chart-rank">#6</span>
+        <div class="chart-info">
+          <div class="chart-label">网易云 · 2025年度热门专辑 TOP 10</div>
+          <div class="chart-title">IMGOOD别担心我</div>
+          <div class="chart-artist">Rapeter</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Floating WeChat -->
+<div id="float-contact">
+  <span class="wc-dot"></span>
+  <span>WeChat: cookdao</span>
+</div>
+<div id="wechat-toast">微信号已复制 · cookdao</div>
 
 <script src="album.js"></script>
 <script>
-/* ========= Utils ========= */
-function shuffle(arr) {
-  return arr.slice().sort(() => Math.random() - 0.5);
-}
+const CURRENT_YEAR = '2026';
 
-// 网易云 CDN 支持 ?param=WxH 取缩略图，其他来源原样返回
+/* ========= Utils ========= */
+function shuffle(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
+
 function thumbUrl(url) {
   if (url && url.includes('music.126.net')) return url + '?param=200y200';
   return url;
 }
 
-/* 【添加】预加载图片 helper 函数 */
 function preloadImages(imageUrls) {
-  const promises = imageUrls.map(url => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = url;
-      // 成功或失败都算完成，避免一张图卡死整个流程
-      img.onload = () => resolve(url);
-      img.onerror = () => resolve(url); 
-    });
-  });
-  return Promise.all(promises);
+  return Promise.all(imageUrls.map(url => new Promise(resolve => {
+    const img = new Image(); img.src = url;
+    img.onload = img.onerror = () => resolve(url);
+  })));
 }
 
-/* ========= Intro Logic (修改为 Async 以支持预加载) ========= */
+/* ========= Build album row ========= */
+function buildRow(a, i, isFeatured) {
+  const awardList = a.award ? a.award.split('&').map(s => s.trim()) : [];
+  return `
+  <div class="album-row ${i % 2 ? 'reverse' : ''}" data-year="${a.year}">
+    <div class="album-cover-wrapper">
+      <a href="${a.link}" target="_blank"><img src="${a.image}" loading="lazy"></a>
+    </div>
+    <div class="album-info">
+      <div class="highlight-wrapper">
+        ${isFeatured ? '<div class="highlight-badge">Featured Work</div>' : ''}
+        ${awardList.map(t => `<div class="badge award-badge">✧ ${t}</div>`).join('')}
+      </div>
+      <div class="meta-group">
+        <div class="year">${a.year}</div>
+        <div class="artist">${a.artist}</div>
+      </div>
+      <h2 class="title">${a.title}</h2>
+    </div>
+  </div>`;
+}
 
-async function initHybridAnimation(){
+/* ========= Generate content ========= */
+function generateContent() {
+  const seen = new Set();
+  const featured = albums.filter(a => {
+    if ((a.highlighted || a.year === CURRENT_YEAR) && !seen.has(a.link)) {
+      seen.add(a.link); return true;
+    }
+    return false;
+  });
+  const rest = albums.filter(a => !seen.has(a.link));
+
+  document.getElementById('albums-container').innerHTML =
+    featured.map((a, i) => buildRow(a, i, a.highlighted || a.year === CURRENT_YEAR)).join('');
+
+  if (rest.length) {
+    document.getElementById('albums-all').innerHTML =
+      rest.map((a, i) => buildRow(a, i, false)).join('');
+    const btn = document.getElementById('expand-btn');
+    btn.textContent = `View All Works · ${rest.length} more`;
+    document.getElementById('expand-wrap').classList.add('visible');
+  }
+}
+
+/* ========= Expand ========= */
+function initExpand() {
+  document.getElementById('expand-btn').addEventListener('click', function() {
+    const allEl = document.getElementById('albums-all');
+    allEl.classList.add('open');
+    document.getElementById('expand-wrap').style.display = 'none';
+    const obs = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); obs.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    allEl.querySelectorAll('.album-row').forEach(r => obs.observe(r));
+  });
+}
+
+/* ========= Year Watermark ========= */
+function initYearWatermark() {
+  const wm = document.getElementById('year-watermark');
+  let lastYear = null;
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const yr = e.target.dataset.year;
+      if (!yr || yr === lastYear) return;
+      lastYear = yr;
+      wm.textContent = yr;
+      wm.classList.remove('sweeping');
+      void wm.offsetWidth;
+      wm.classList.add('sweeping');
+      wm.addEventListener('animationend', () => wm.classList.remove('sweeping'), { once: true });
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('.album-row[data-year]').forEach(r => obs.observe(r));
+}
+
+/* ========= Nav ========= */
+function initNav() {
+  const nav = document.getElementById('content-nav');
+  nav.classList.add('visible');
+  nav.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      nav.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      const tab = link.dataset.tab;
+      const worksEl = document.getElementById('works-section');
+      const aboutEl = document.getElementById('about-section');
+      if (tab === 'works') {
+        worksEl.style.display = 'block';
+        aboutEl.classList.remove('fadein');
+        setTimeout(() => { aboutEl.style.display = 'none'; }, 300);
+      } else {
+        worksEl.style.display = 'none';
+        aboutEl.style.display = 'block';
+        setTimeout(() => aboutEl.classList.add('fadein'), 10);
+        // build photo grid if not yet built
+        const grid = document.getElementById('about-photos');
+        if (!grid.dataset.built) {
+          grid.dataset.built = '1';
+          const aboutPhotos = []; // 在这里添加照片文件名，例如: ['about/1.jpg','about/2.jpg']
+          grid.innerHTML = aboutPhotos.map(p =>
+            `<div class="about-photo"><img src="${p}" loading="lazy"></div>`
+          ).join('') || '';
+        }
+      }
+    });
+  });
+}
+
+/* ========= Float Contact ========= */
+function initFloatContact() {
+  const btn = document.getElementById('float-contact');
+  const toast = document.getElementById('wechat-toast');
+  btn.classList.add('visible');
+  btn.addEventListener('click', () => {
+    navigator.clipboard?.writeText('cookdao').catch(() => {});
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  });
+}
+
+/* ========= Reveal content ========= */
+function revealContent() {
+  document.body.style.overflow = 'auto';
+  document.body.style.overflowX = 'hidden';
+  document.getElementById('works-section').style.display = 'block';
+  const container = document.getElementById('albums-container');
+  requestAnimationFrame(() => container.classList.add('visible'));
+
+  const obs = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  container.querySelectorAll('.album-row').forEach(r => obs.observe(r));
+
+  initYearWatermark();
+  initNav();
+  initFloatContact();
+  initExpand();
+  localStorage.setItem('chefdao_visited', '1');
+}
+
+/* ========= Intro Animation ========= */
+async function initHybridAnimation() {
   const grid = document.getElementById('intro-grid');
-  // 重新获取计算后的 cols，确保响应式变化被捕获
   const cols = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols').trim());
   const cellWidth = window.innerWidth / cols;
   const rows = Math.ceil(window.innerHeight / cellWidth) + 1;
@@ -440,154 +578,92 @@ async function initHybridAnimation(){
 
   const highlights = shuffle(albums.filter(a => a.highlighted));
   const others = shuffle(albums.filter(a => !a.highlighted));
-  let combined = [...highlights, ...others];
-  
-  // 防止图片不够填充网格
-  if (combined.length === 0) return; 
+  const combined = [...highlights, ...others];
+  if (!combined.length) return;
 
   const displayPool = [];
-  for(let i=0; i<totalCells; i++) {
-  displayPool.push(combined[i % combined.length]);
-  }
+  for (let i = 0; i < totalCells; i++) displayPool.push(combined[i % combined.length]);
 
-  // 先把 DOM 建好，但此时图片还没加载完，所以我们在 CSS 里加了背景色
-  grid.innerHTML = displayPool.map(item => `
-  <div class="grid-cell">
-    <img src="${thumbUrl(item.image)}" style="opacity:0">
-  </div>
-  `).join('');
-  
+  grid.innerHTML = displayPool.map(item =>
+    `<div class="grid-cell"><img src="${thumbUrl(item.image)}" style="opacity:0"></div>`
+  ).join('');
   grid.style.visibility = 'visible';
 
   const cells = document.querySelectorAll('.grid-cell');
-  let loaded = 0;
-
-  // 优化：减少移动端生成的飞入图片数量，提升性能
   const isMobile = window.innerWidth < 768;
-  const maxFlying = isMobile ? 30 : 50; // 移动端只飞15张，PC飞50张，其余直接淡入
-  
-  /* 【添加】 提取即将飞入动画的图片URL进行预加载 */
-  const imagesToPreload = displayPool.slice(0, maxFlying).map(item => thumbUrl(item.image));
-  
-  // 等待这些核心图片加载完毕，再启动动画
-  await preloadImages(imagesToPreload);
+  const maxFlying = isMobile ? 30 : 50;
+
+  await preloadImages(displayPool.slice(0, maxFlying).map(item => thumbUrl(item.image)));
 
   cells.forEach((cell, i) => {
-  const targetImg = cell.querySelector('img');
-  
-  // 如果超过最大动画数量，直接显示，不做飞入动画，节省GPU
-  if (i >= maxFlying) {
-      setTimeout(() => {
-        if(targetImg) targetImg.style.opacity = 0.4; // 稍微暗一点作为背景
-        if(++loaded === cells.length) { 
-         // finish logic handled by timeout mostly
-        }
-      }, 100);
+    const targetImg = cell.querySelector('img');
+    if (i >= maxFlying) {
+      setTimeout(() => { if (targetImg) targetImg.style.opacity = 0.4; }, 100);
       return;
-  }
-
-  const rect = cell.getBoundingClientRect();
-  const fly = document.createElement('img');
-  
-  // 因为上面 await preloadImages 已经执行，这里浏览器会直接从缓存取图，显示速度极快
-  fly.src = thumbUrl(displayPool[i].image);
-  fly.className = 'flying-unit';
-  
-  const angle = Math.random() * Math.PI * 2;
-  const distance = Math.max(window.innerWidth, window.innerHeight) * 1.2;
-  
-  fly.style.width = rect.width + 'px';
-  fly.style.height = rect.height + 'px';
-  fly.style.left = '0px';
-  fly.style.top = '0px';
-  
-  const startX = window.innerWidth/2 + Math.cos(angle) * distance;
-  const startY = window.innerHeight/2 + Math.sin(angle) * distance;
-  
-  fly.style.transform = `translate(${startX}px, ${startY}px) scale(0.5)`; // 初始scale改大一点，看起来更自然
-  document.body.appendChild(fly);
-
-  // 错落的时间
-  setTimeout(() => {
-    requestAnimationFrame(() => {
-    fly.style.transition = `transform ${1.5 + Math.random()}s var(--easing), opacity 0.5s ease`;
-    fly.style.opacity = '1';
-    fly.style.transform = `translate(${rect.left}px, ${rect.top}px) scale(1)`;
-    });
-  }, i * 30); 
-
-  setTimeout(() => {
-    if(targetImg) targetImg.style.opacity = 1;
-    fly.remove();
-    // 动画结束触发 UI 显示
-    if(i === maxFlying - 1 || i === cells.length - 1) {
-    grid.classList.add('dimmed');
-    document.getElementById('intro-ui').classList.add('visible');
     }
-  }, 2200 + (i * 30)); 
+    const rect = cell.getBoundingClientRect();
+    const fly = document.createElement('img');
+    fly.src = thumbUrl(displayPool[i].image);
+    fly.className = 'flying-unit';
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.max(window.innerWidth, window.innerHeight) * 1.2;
+    fly.style.width = rect.width + 'px';
+    fly.style.height = rect.height + 'px';
+    fly.style.left = '0px';
+    fly.style.top = '0px';
+    const startX = window.innerWidth / 2 + Math.cos(angle) * distance;
+    const startY = window.innerHeight / 2 + Math.sin(angle) * distance;
+    fly.style.transform = `translate(${startX}px, ${startY}px) scale(0.5)`;
+    document.body.appendChild(fly);
+
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        fly.style.transition = `transform ${1.5 + Math.random()}s var(--easing), opacity 0.5s ease`;
+        fly.style.opacity = '1';
+        fly.style.transform = `translate(${rect.left}px, ${rect.top}px) scale(1)`;
+      });
+    }, i * 30);
+
+    setTimeout(() => {
+      if (targetImg) targetImg.style.opacity = 1;
+      fly.remove();
+      if (i === maxFlying - 1 || i === cells.length - 1) {
+        grid.classList.add('dimmed');
+        document.getElementById('intro-ui').classList.add('visible');
+      }
+    }, 2200 + i * 30);
   });
 }
 
-/* ========= Content Logic ========= */
-
-function generateContent(){
-  document.getElementById('albums-container').innerHTML = albums.map((a, i) => {
-    // 处理多奖项逻辑：如果有奖项，按 & 符号拆分成数组，并去掉多余空格
-    const awardList = a.award ? a.award.split('&').map(item => item.trim()) : [];
-
-    return `
-    <div class="album-row ${i % 2 ? 'reverse' : ''}">
-      <div class="album-cover-wrapper">
-        <a href="${a.link}" target="_blank"><img src="${a.image}"></a>
-      </div>
-      <div class="album-info">
-        <div class="highlight-wrapper">
-          ${a.highlighted ? '<div class="highlight-badge">Featured Work</div>' : ''}
-          
-          ${awardList.map(awardTitle => `
-            <div class="badge award-badge">✧ ${awardTitle}</div>
-          `).join('')}
-        </div>
-        
-        <div class="meta-group">
-          <div class="year">${a.year}</div>
-          <div class="artist">${a.artist}</div>
-        </div>
-        <h2 class="title">${a.title}</h2>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function enterSite(){
-  document.getElementById('intro-overlay').style.opacity = 0;
+/* ========= Enter Site ========= */
+function enterSite() {
+  const overlay = document.getElementById('intro-overlay');
+  overlay.style.transition = 'opacity 1s ease';
+  overlay.style.opacity = '0';
   setTimeout(() => {
-  document.getElementById('intro-overlay').remove();
-  document.body.classList.add('content-visible');
-  
-  const obs = new IntersectionObserver(es => {
-    es.forEach(e => {
-      if(e.isIntersecting) {
-        e.target.classList.add('is-visible');
-        obs.unobserve(e.target); // 动画只触发一次
-      }
-    });
-  }, {threshold: 0.15}); // 稍微提高阈值，防止误触
-  
-  document.querySelectorAll('.album-row').forEach(r => obs.observe(r));
+    overlay.remove();
+    revealContent();
   }, 1000);
 }
 
+/* ========= Init ========= */
 document.addEventListener('DOMContentLoaded', () => {
   generateContent();
+
+  // Returning visitor: skip intro
+  if (localStorage.getItem('chefdao_visited')) {
+    document.getElementById('intro-overlay').remove();
+    revealContent();
+    return;
+  }
+
   setTimeout(initHybridAnimation, 200);
   document.getElementById('enter-site-btn').onclick = enterSite;
 });
 
-// 注册 Service Worker，让图片在首次加载后缓存到本地
+// Service Worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/chefdao/sw.js', { scope: '/chefdao/' })
-    .catch(() => {}); // 静默失败，不影响页面功能
+  navigator.serviceWorker.register('/chefdao/sw.js', { scope: '/chefdao/' }).catch(() => {});
 }
 </script>
 </body>
