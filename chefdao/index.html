@@ -131,11 +131,6 @@ body {
 }
 #albums-container.visible { opacity:1; }
 
-#albums-all {
-  max-width:1100px; margin:0 auto; padding:0 40px;
-  display:none;
-}
-#albums-all.open { display:block; }
 
 .album-row {
   display:flex; align-items:center; gap:80px; margin-bottom:200px;
@@ -201,6 +196,29 @@ body {
   transition:all 0.2s ease;
 }
 #expand-btn:hover { border-color:rgba(255,255,255,0.5); color:#fff; }
+
+/* ================= Compact Grid (rest albums) ================= */
+#albums-all {
+  max-width:1100px; margin:0 auto; padding:0 40px 80px;
+  display:none;
+}
+#albums-all.open { display:grid; grid-template-columns:repeat(4,1fr); gap:24px 20px; }
+.album-compact {
+  opacity:0; transform:translateY(24px); transition:all 0.8s var(--easing);
+  cursor:pointer;
+}
+.album-compact.is-visible { opacity:1; transform:translateY(0); }
+.album-compact-cover {
+  width:100%; aspect-ratio:1/1; overflow:hidden; margin-bottom:12px;
+  background:#111;
+}
+.album-compact-cover img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.4s ease; }
+.album-compact:hover .album-compact-cover img { transform:scale(1.04); }
+.album-compact-year { font-size:11px; color:rgba(255,255,255,0.35); margin-bottom:2px; }
+.album-compact-artist { font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:5px; }
+.album-compact-title { font-size:14px; font-weight:600; line-height:1.3; }
+@media (max-width:900px){ #albums-all.open { grid-template-columns:repeat(3,1fr); } }
+@media (max-width:600px){ #albums-all.open { grid-template-columns:repeat(2,1fr); gap:16px 12px; } #albums-all { padding:0 24px 60px; } }
 
 /* ================= About Section ================= */
 #about-section {
@@ -447,11 +465,23 @@ function buildRow(a, i, isFeatured) {
   </div>`;
 }
 
+/* ========= Build compact card (rest albums) ========= */
+function buildCompactCard(a) {
+  return `
+  <div class="album-compact">
+    <a href="${a.link}" target="_blank" style="text-decoration:none;color:inherit">
+      <div class="album-compact-cover"><img src="${a.image}" loading="lazy"></div>
+      <div class="album-compact-year">${a.year} · ${a.artist}</div>
+      <div class="album-compact-title">${a.title}</div>
+    </a>
+  </div>`;
+}
+
 /* ========= Generate content ========= */
 function generateContent() {
   const seen = new Set();
   const featured = albums.filter(a => {
-    if ((a.highlighted || a.year === CURRENT_YEAR) && !seen.has(a.link)) {
+    if (a.highlighted && !seen.has(a.link)) {
       seen.add(a.link); return true;
     }
     return false;
@@ -459,11 +489,11 @@ function generateContent() {
   const rest = albums.filter(a => !seen.has(a.link));
 
   document.getElementById('albums-container').innerHTML =
-    featured.map((a, i) => buildRow(a, i, a.highlighted || a.year === CURRENT_YEAR)).join('');
+    featured.map((a, i) => buildRow(a, i, true)).join('');
 
   if (rest.length) {
     document.getElementById('albums-all').innerHTML =
-      rest.map((a, i) => buildRow(a, i, false)).join('');
+      rest.map(a => buildCompactCard(a)).join('');
     const btn = document.getElementById('expand-btn');
     btn.textContent = `View All Works · ${rest.length} more`;
     document.getElementById('expand-wrap').classList.add('visible');
@@ -479,7 +509,7 @@ function initExpand() {
     const obs = new IntersectionObserver(es => {
       es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); obs.unobserve(e.target); } });
     }, { threshold: 0.1 });
-    allEl.querySelectorAll('.album-row').forEach(r => obs.observe(r));
+    allEl.querySelectorAll('.album-compact').forEach(r => obs.observe(r));
   });
 }
 
