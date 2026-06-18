@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>cookin</title>
+<link rel="icon" href="https://www.emojiall.com/images/240/apple/1f373.png" type="image/png"/>
+<meta property="og:title" content="大厨菜单"/>
+<meta property="og:description" content="刀大厨混音母带"/>
+<meta property="og:url" content="https://cookdao.github.io/"/>
+
+<style>
+  :root {
+    --bg-color: #e7e5e0;
+    --accent-gold: gold;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-color);
+  }
+
+  /* =========================================
+     全屏翻页动画
+     ========================================= */
+  #intro-grid {
+    display: grid;
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* 宽高由 JS 精确计算后写入 style，确保格子绝对正方形 */
+    gap: 0;
+    filter: brightness(0.72);
+    overflow: hidden;
+  }
+
+  .grid-cell {
+    /* 宽高同样由 JS 精确写入，CSS 不再负责尺寸 */
+    position: relative;
+    flex-shrink: 0;
+    perspective: 1000px;
+    overflow: hidden;
+    background-color: #ccc;
+  }
+
+  .grid-cell-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    /* 翻页时间改为 1.8s，更慢更优雅 */
+    transition: transform 1.8s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  .grid-cell.flipped .grid-cell-inner {
+    transform: rotateY(180deg);
+  }
+
+  .grid-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .grid-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .grid-front { background-color: #bbb; }
+  .grid-back  { background-color: #bbb; transform: rotateY(180deg); }
+</style>
+</head>
+<body>
+
+<div id="intro-grid"></div>
+
+<script src="album.js"></script>
+
+<script>
+  // --- 数据分类 ---
+  let priorityAlbums = [];
+  let normalAlbums   = [];
+
+  if (typeof albums !== 'undefined') {
+    albums.forEach(a => {
+      if (a.highlighted || a.year === "2025") {
+        priorityAlbums.push(a);
+      } else {
+        normalAlbums.push(a);
+      }
+    });
+  } else {
+    console.error("Albums data not found. Please check album.js.");
+  }
+
+  // Fisher-Yates 洗牌
+  function shuffleArray(array) {
+    let arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // 加权随机取图（70% 高优先级）
+  function getWeightedRandomImage() {
+    if (typeof albums === 'undefined') return "";
+    const isPriority = Math.random() < 0.7;
+    if (isPriority && priorityAlbums.length > 0) {
+      return priorityAlbums[Math.floor(Math.random() * priorityAlbums.length)].image;
+    }
+    return albums[Math.floor(Math.random() * albums.length)].image;
+  }
+
+  // --- 构建网格 ---
+  // 核心思路：用 JS 计算出整数像素的 cellSize，
+  // 再通过 grid-template-columns/rows 固定每列/每行宽高，
+  // 每个格子也设置相同的精确 width/height，绝对保证正方形。
+  function initIntroGrid() {
+    const gridContainer = document.getElementById('intro-grid');
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // 期望格子尺寸（最小值），手机端更小
+    const targetSize = vw <= 600 ? 100 : 200;
+
+    // 列数 = 向上取整，保证覆盖整屏宽度
+    const cols     = Math.ceil(vw / targetSize);
+    // 精确正方形边长 = 屏宽 / 列数（浮点数，下方取整处理）
+    const cellSize = Math.floor(vw / cols);
+    // 行数 = 向上取整，再多一行防止底部露白
+    const rows     = Math.ceil(vh / cellSize) + 1;
+
+    // 将网格容器设为精确像素尺寸
+    gridContainer.style.width  = `${cols * cellSize}px`;
+    gridContainer.style.height = `${rows * cellSize}px`;
+    // 固定列宽行高，完全由像素决定，不做任何拉伸
+    gridContainer.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+    gridContainer.style.gridTemplateRows    = `repeat(${rows}, ${cellSize}px)`;
+
+    const totalCells = cols * rows;
+
+    let displayQueue = [
+      ...shuffleArray(priorityAlbums),
+      ...shuffleArray(normalAlbums)
+    ];
+
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < totalCells; i++) {
+      const cell     = document.createElement('div');
+      cell.className = 'grid-cell';
+      // 每个格子也明确指定宽高，双重保证
+      cell.style.width  = `${cellSize}px`;
+      cell.style.height = `${cellSize}px`;
+
+      const albumData = displayQueue[i % displayQueue.length] || {};
+      const imgUrl    = albumData.image || "";
+
+      cell.innerHTML = `
+        <div class="grid-cell-inner">
+          <div class="grid-face grid-front">
+            <img src="${imgUrl}" alt="" loading="eager">
+          </div>
+          <div class="grid-face grid-back">
+            <img src="" alt="" loading="eager">
+          </div>
+        </div>
+      `;
+      fragment.appendChild(cell);
+    }
+    gridContainer.appendChild(fragment);
+  }
+
+  // --- 翻页动画：同一时间只翻一张，间隔 3800ms ---
+  let isFlipping = false;
+
+  function startGridAnimation() {
+    const cells = document.querySelectorAll('.grid-cell');
+    if (cells.length === 0) return;
+
+    // CSS transition 时长 1.8s；间隔 3800ms，留足余量保证不重叠
+    setInterval(() => {
+      if (isFlipping) return;   // 上一张还在翻，跳过
+      isFlipping = true;
+
+      const randomCell = cells[Math.floor(Math.random() * cells.length)];
+      const inner      = randomCell.querySelector('.grid-cell-inner');
+      const frontImg   = inner.querySelector('.grid-front img');
+      const backImg    = inner.querySelector('.grid-back img');
+      const isFlipped  = randomCell.classList.contains('flipped');
+      const newImage   = getWeightedRandomImage();
+
+      if (isFlipped) {
+        frontImg.src = newImage;
+        randomCell.classList.remove('flipped');
+      } else {
+        backImg.src = newImage;
+        randomCell.classList.add('flipped');
+      }
+
+      // 1.8s 后翻页完成，解锁
+      setTimeout(() => { isFlipping = false; }, 1800);
+
+    }, 3800);
+  }
+
+  // --- 启动 ---
+  document.addEventListener('DOMContentLoaded', () => {
+    initIntroGrid();
+    startGridAnimation();
+  });
+</script>
+
+</body>
+</html>

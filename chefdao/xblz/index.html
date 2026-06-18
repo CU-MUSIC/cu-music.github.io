@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小巴辣子 · 一周年回忆录</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #f0ead8;
+      --ink: #1a1610;
+      --faded: #8a7d6a;
+      --grain-opacity: 0.04;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: #0e0c09;
+      color: var(--cream);
+      font-family: 'Georgia', 'Times New Roman', serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Film grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* ── Hero ── */
+    #hero {
+      position: relative;
+      height: 100svh;
+      min-height: 500px;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    #hero-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: brightness(0.55) saturate(0.8);
+    }
+
+    #hero-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        transparent 30%,
+        rgba(14,12,9,0.6) 70%,
+        #0e0c09 100%
+      );
+    }
+
+    #hero-text {
+      position: relative;
+      z-index: 2;
+      padding: 0 40px 60px;
+      max-width: 700px;
+    }
+
+    #hero-year-badge {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--faded);
+      border: 1px solid rgba(240,234,216,0.2);
+      padding: 5px 12px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    #hero-title {
+      font-size: clamp(48px, 10vw, 96px);
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--cream);
+      margin-bottom: 16px;
+    }
+
+    #hero-subtitle {
+      font-size: 14px;
+      color: var(--faded);
+      letter-spacing: 0.08em;
+      font-family: 'Courier New', monospace;
+    }
+
+    #hero-scroll-hint {
+      position: absolute;
+      bottom: 28px;
+      right: 40px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: rgba(240,234,216,0.3);
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+    }
+    #hero-scroll-hint::after {
+      content: '';
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(to bottom, rgba(240,234,216,0.3), transparent);
+    }
+
+    /* ── Anniversary banner ── */
+    #anniversary {
+      text-align: center;
+      padding: 80px 40px 60px;
+      position: relative;
+    }
+    #anniversary-line {
+      width: 1px;
+      height: 60px;
+      background: linear-gradient(to bottom, transparent, rgba(240,234,216,0.2));
+      margin: 0 auto 40px;
+    }
+    #anniversary-label {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--faded);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #anniversary-text {
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 400;
+      color: var(--cream);
+      line-height: 1.5;
+    }
+    #anniversary-date {
+      margin-top: 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--faded);
+      letter-spacing: 0.15em;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: rgba(240,234,216,0.15);
+      margin: 60px auto;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--faded);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    /* ── Photo journal ── */
+    #journal {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px 120px;
+    }
+
+    .photo-entry {
+      margin-bottom: 80px;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .photo-entry.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Full-width photo */
+    .photo-entry.full .photo-wrap {
+      width: 100%;
+    }
+
+    /* Side-by-side pair */
+    .photo-entry.pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .photo-entry.pair .photo-block:last-child .photo-wrap {
+      margin-top: 40px;
+    }
+
+    /* Offset single */
+    .photo-entry.offset-right .photo-wrap {
+      width: 72%;
+      margin-left: auto;
+    }
+    .photo-entry.offset-left .photo-wrap {
+      width: 72%;
+    }
+
+    .photo-block { position: relative; }
+
+    .photo-wrap {
+      position: relative;
+      overflow: hidden;
+      background: #1a1610;
+    }
+
+    .photo-wrap img {
+      width: 100%;
+      display: block;
+      filter: saturate(0.85) brightness(0.95);
+      transition: filter 0.4s ease;
+    }
+    .photo-wrap:hover img { filter: saturate(1) brightness(1); }
+
+    /* Caption */
+    .photo-caption {
+      margin-top: 12px;
+      padding: 0 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .caption-text {
+      font-size: 13px;
+      color: rgba(240,234,216,0.45);
+      font-style: italic;
+      line-height: 1.5;
+    }
+    .caption-index {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      color: rgba(240,234,216,0.2);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── Closing ── */
+    #closing {
+      text-align: center;
+      padding: 0 40px 120px;
+    }
+    #closing-quote {
+      font-size: clamp(16px, 3vw, 22px);
+      color: rgba(240,234,216,0.4);
+      font-style: italic;
+      line-height: 1.8;
+      max-width: 540px;
+      margin: 0 auto 40px;
+    }
+    #back-link {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--faded);
+      text-decoration: none;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(240,234,216,0.15);
+      padding-bottom: 2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #back-link:hover { color: var(--cream); border-color: rgba(240,234,216,0.4); }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      #hero-text { padding: 0 24px 48px; }
+      #hero-scroll-hint { right: 24px; }
+      #anniversary { padding: 60px 24px 40px; }
+      #journal { padding: 0 16px 80px; }
+      .photo-entry.pair { grid-template-columns: 1fr; gap: 16px; }
+      .photo-entry.pair .photo-block:last-child .photo-wrap { margin-top: 0; }
+      .photo-entry.offset-right .photo-wrap,
+      .photo-entry.offset-left .photo-wrap { width: 88%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hero -->
+<section id="hero">
+  <img id="hero-img" src="http://p2.music.126.net/EZUw2Idccw7OkinISOXpeQ==/109951171093017111.jpg" alt="小巴辣子">
+  <div id="hero-gradient"></div>
+  <div id="hero-text">
+    <h1 id="hero-title">小巴辣子</h1>
+    <p id="hero-subtitle">RioT婷 &amp; CheezeK &amp; 刀大厨 ChefDao</p>
+  </div>
+  <div id="hero-scroll-hint">SCROLL</div>
+</section>
+
+<!-- Photo journal -->
+<section id="journal">
+  <div id="photo-grid"></div>
+</section>
+
+<div style="text-align:center;padding:60px 0">
+  <a id="back-link" href="../">← Back to Works</a>
+</div>
+
+<script>
+  // 照片已按拍摄时间从旧到新排列，日期从 EXIF 读取后硬编码
+  const photos = [
+  { file: '61.jpeg', date: "'24.03.30", caption: '', layout: 'full' },
+  { file: '60.jpeg', date: "'24.09.30", caption: '', layout: 'pair' },
+  { file: '59.jpg',  date: "'24.10.16", caption: '', layout: 'pair' },
+  { file: '58.jpg',  date: "'24.10.16", caption: '', layout: 'pair' },
+  { file: '57.jpg',  date: "'24.10.16", caption: '', layout: 'pair' },
+  { file: '56.jpg',  date: "'24.10.16", caption: '', layout: 'offset-right' },
+  { file: '55.jpg',  date: "'24.10.16", caption: '', layout: 'full' },
+  { file: '54.jpg',  date: "'24.10.16", caption: '', layout: 'pair' },
+  { file: '53.jpg',  date: "'24.10.16", caption: '', layout: 'pair' },
+  { file: '52.jpg',  date: "'24.10.16", caption: '', layout: 'pair' },
+  { file: '51.jpg',  date: "'24.10.17", caption: '', layout: 'pair' },
+  { file: '50.jpeg', date: "'24.10.28", caption: '', layout: 'offset-left' },
+  { file: '49.011.jpg', date: "'24.10.28", caption: '', layout: 'full' },
+  { file: '48.jpeg', date: "'24.10.28", caption: '', layout: 'pair' },
+  { file: '47.jpg',  date: "'24.11.05", caption: '', layout: 'pair' },
+  { file: '46.jpg',  date: "'24.11.05", caption: '', layout: 'pair' },
+  { file: '45.029.jpg', date: "'24.11.05", caption: '', layout: 'pair' },
+  { file: '44.jpg',  date: "'24.11.05", caption: '', layout: 'offset-right' },
+  { file: '43.jpg',  date: "'24.11.06", caption: '', layout: 'full' },
+  { file: '42.jpg',  date: "'24.11.06", caption: '', layout: 'pair' },
+  { file: '41.jpg',  date: "'24.11.06", caption: '', layout: 'pair' },
+  { file: '40.jpg',  date: "'24.11.27", caption: '盖码饭', layout: 'pair' },
+  { file: '39.jpeg', date: "'24.11.27", caption: '', layout: 'pair' },
+  { file: '38.jpeg', date: "'24.11.27", caption: '', layout: 'offset-left' },
+  { file: '37.jpeg', date: "'24.11.27", caption: '', layout: 'full' },
+  { file: '36.jpeg', date: "'24.11.27", caption: '', layout: 'pair' },
+  { file: '35.jpg',  date: "'24.11.27", caption: '', layout: 'pair' },
+  { file: '34.jpeg', date: "'24.11.27", caption: '', layout: 'pair' },
+  { file: '33.jpg',  date: "'24.11.27", caption: '', layout: 'pair' },
+  { file: '32.jpeg', date: "'24.12.22", caption: '', layout: 'offset-right' },
+  { file: '31.jpg',  date: "'25.02.22", caption: '', layout: 'full' },
+  { file: '30.jpeg', date: "'25.03.09", caption: '', layout: 'pair' },
+  { file: '29.jpeg', date: "'25.03.09", caption: '', layout: 'pair' },
+  { file: '28.jpeg', date: "'25.03.09", caption: '', layout: 'pair' },
+  { file: '27.jpeg', date: "'25.03.09", caption: '', layout: 'pair' },
+  { file: '26.jpeg', date: "'25.03.23", caption: '', layout: 'offset-left' },
+  { file: '25.jpeg', date: "'25.03.23", caption: '', layout: 'full' },
+  { file: '24.jpeg', date: "'25.03.23", caption: '', layout: 'pair' },
+  { file: '23.jpg',  date: "'25.03.23", caption: '', layout: 'pair' },
+  { file: '22.jpeg', date: "'25.03.24", caption: '', layout: 'pair' },
+  { file: '20.jpeg', date: "'25.04.22", caption: '', layout: 'pair' },
+  { file: '19.jpeg', date: "'25.04.22", caption: '', layout: 'offset-right' },
+  { file: '18.jpg',  date: "'25.04.22", caption: '乖乖', layout: 'full' },
+  { file: '17.jpg',  date: "'25.04.22", caption: '', layout: 'pair' },
+  { file: '16.jpeg', date: "'25.04.22", caption: '', layout: 'pair' },
+  { file: '15.jpeg', date: "'25.04.22", caption: '', layout: 'pair' },
+  { file: '14.jpeg', date: "'25.04.22", caption: '', layout: 'pair' },
+  { file: '13.jpeg', date: "'25.04.22", caption: '老凤祥', layout: 'offset-left' },
+  { file: '12.jpeg', date: "'25.05.20", caption: '混音混到半夜，Riot直接睡着', layout: 'full' },
+  { file: '11.jpeg', date: "'25.05.20", caption: '', layout: 'pair' },
+  { file: '10.jpg',  date: "'25.05.22", caption: '我的小黄', layout: 'pair' },
+  { file: '9.jpeg',  date: "'25.05.25", caption: '站着工作对身体好', layout: 'pair' },
+  { file: '8.jpeg',  date: "'25.05.27", caption: '', layout: 'pair' },
+  { file: '7.jpeg',  date: "'25.05.27", caption: '', layout: 'offset-right' },
+  { file: '6.jpeg',  date: "'25.05.28", caption: '生日', layout: 'full' },
+  { file: '5.jpeg',  date: "'25.05.28", caption: '准备发布', layout: 'pair' },
+  { file: '4.jpeg',  date: "'25.06.15", caption: '', layout: 'pair' },
+  { file: '3.jpeg',  date: "'25.06.15", caption: '', layout: 'pair' },
+  { file: '2.jpeg',  date: "'25.06.15", caption: '', layout: 'pair' },
+  ];
+
+  function buildGrid() {
+    const grid = document.getElementById('photo-grid');
+    grid.innerHTML = '';
+    let i = 0, idx = 1;
+    while (i < photos.length) {
+      const p = photos[i];
+      const layout = p.layout || 'full';
+      const entry = document.createElement('div');
+      entry.className = 'photo-entry ' + layout;
+
+      if (layout === 'pair' && photos[i + 1]) {
+        [photos[i], photos[i + 1]].forEach((ph, j) => {
+          const block = document.createElement('div');
+          block.className = 'photo-block';
+          block.innerHTML = photoHTML(ph, idx + j);
+          entry.appendChild(block);
+        });
+        i += 2; idx += 2;
+      } else {
+        entry.innerHTML = '<div class="photo-block">' + photoHTML(p, idx) + '</div>';
+        i++; idx++;
+      }
+      grid.appendChild(entry);
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.photo-entry').forEach(el => observer.observe(el));
+  }
+
+  function photoHTML(p, idx) {
+    return `
+      <div class="photo-wrap">
+        <img src="${p.file}" alt="${p.caption || ''}" loading="lazy">
+      </div>
+      <div class="photo-caption">
+        <span class="caption-text">${p.caption || ''}</span>
+        <span class="caption-index">${p.date ? p.date + ' · ' : ''}${String(idx).padStart(2, '0')}</span>
+      </div>`;
+  }
+
+  buildGrid();
+  // (end)
+  const grid = document.getElementById('photo-grid');
+  if (photos.length === 0) {
+    grid.innerHTML = '<p style="text-align:center;color:rgba(240,234,216,0.2);font-family:Courier New,monospace;font-size:12px;letter-spacing:.15em;">// PHOTOS COMING SOON</p>';
+  } else {
+    Promise.all(photos.map(p =>
+      exifr.parse(p.file, ['DateTimeOriginal']).catch(() => null)
+    )).then(results => {
+      photos.forEach((p, i) => {
+        p._date = results[i]?.DateTimeOriginal ? new Date(results[i].DateTimeOriginal) : null;
+      });
+      photos.sort((a, b) => {
+        if (!a._date && !b._date) return 0;
+        if (!a._date) return 1;
+        if (!b._date) return -1;
+        return a._date - b._date;
+      });
+      renderGrid(photos);
+    });
+  }
+</script>
+</body>
+</html>

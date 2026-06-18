@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<title>Rates | ChefDao</title>
+	<style>
+		:root {
+			--bg: #080808;
+			--surface: #111111;
+			--surface-hover: #161616;
+			--text-primary: #f0f0f0;
+			--text-secondary: #888;
+			--text-dim: #555;
+			--gold: #c9a227;
+			--gold-bg: rgba(201, 162, 39, 0.07);
+			--border: rgba(255, 255, 255, 0.08);
+			--border-hover: rgba(255, 255, 255, 0.2);
+			--font: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+			--ease: cubic-bezier(0.16, 1, 0.3, 1);
+			--r: 14px;
+		}
+		* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+		html { scroll-behavior: smooth; }
+		body { background: var(--bg); color: var(--text-primary); font-family: var(--font); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+		.container { max-width: 960px; margin: 0 auto; padding: 72px 24px; padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+		.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 48px; gap: 12px; }
+		.back-nav { display: inline-flex; align-items: center; color: var(--text-secondary); text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; transition: color 0.2s; min-height: 44px; flex-shrink: 0; }
+		.back-nav:hover { color: var(--text-primary); }
+		.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 100px; padding: 4px; }
+		.lang-btn { background: none; border: none; color: var(--text-secondary); font-family: var(--font); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; padding: 6px 12px; border-radius: 100px; cursor: pointer; transition: background 0.2s, color 0.2s; min-height: 32px; white-space: nowrap; }
+		.lang-btn:hover { color: var(--text-primary); }
+		.lang-btn.active { background: var(--surface-hover); color: var(--text-primary); border: 0.5px solid var(--border-hover); }
+		.hero { margin-bottom: 80px; }
+		.hero h1 { font-size: clamp(36px, 9vw, 72px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 16px; }
+		.hero-sub { color: var(--text-secondary); font-size: 15px; max-width: 480px; line-height: 1.7; }
+		.service-section { margin-bottom: 72px; }
+		.section-head { margin-bottom: 28px; }
+		.step-tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+		.step-tag.gold { color: var(--gold); }
+		.section-head h2 { font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: -0.02em; }
+		.subsection { margin-bottom: 40px; }
+		.sub-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 0.5px solid var(--border); }
+		.sub-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+		.sub-desc { font-size: 12px; color: var(--text-secondary); }
+		.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+		.price-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.3s var(--ease), background 0.3s var(--ease), transform 0.3s var(--ease); cursor: default; position: relative; overflow: hidden; }
+		.price-card:hover { border-color: var(--border-hover); background: var(--surface-hover); transform: translateY(-3px); }
+		.price-card.featured { border-color: rgba(201, 162, 39, 0.3); }
+		.price-card.featured::before { content: ""; position: absolute; inset: 0; background: var(--gold-bg); border-radius: inherit; pointer-events: none; }
+		.card-price { display: flex; align-items: baseline; gap: 2px; line-height: 1; }
+		.card-price-num { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
+		.card-price-unit { font-size: 13px; color: var(--text-secondary); margin-left: 1px; }
+		.card-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-top: 4px; }
+		.card-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.65; flex-grow: 1; }
+		.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+		.tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border: 0.5px solid var(--border); color: var(--text-secondary); }
+		.tag.gold { border-color: rgba(201, 162, 39, 0.5); color: var(--gold); }
+		.partner-box { margin-top: 96px; padding: 56px 40px; background: #0d0d0d; border: 0.5px solid var(--border); border-radius: 20px; text-align: center; }
+		.partner-box .step-tag { margin-bottom: 14px; }
+		.partner-box h2 { font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+		.partner-intro { font-size: 14px; color: var(--text-secondary); max-width: 380px; margin: 0 auto 40px; line-height: 1.7; }
+		.partner-box .card-grid { text-align: left; }
+		.section-divider { height: 0.5px; background: var(--border); margin: 72px 0; }
+		footer { text-align: center; color: var(--text-dim); font-size: 11px; letter-spacing: 0.06em; padding-bottom: env(safe-area-inset-bottom); }
+		.floating-cta { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap; }
+		.floating-btn { display: flex; align-items: center; gap: 10px; background: rgba(17,17,17,0.85); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 0.5px solid var(--border-hover); color: var(--text-primary); padding: 14px 28px; border-radius: 100px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s; min-height: 52px; }
+		.floating-btn:hover { background: #fff; color: #000; border-color: #fff; }
+		.floating-btn:active { transform: scale(0.97); }
+		.btn-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
+		.floating-btn:hover .btn-dot { background: #000; }
+		#services-container { transition: opacity 0.18s ease; }
+		#services-container.fading { opacity: 0; }
+		@media (max-width: 600px) {
+			.container { padding: 48px 16px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+			.hero { margin-bottom: 56px; }
+			.card-grid { grid-template-columns: 1fr; }
+			.partner-box { padding: 36px 20px; }
+			.service-section { margin-bottom: 56px; }
+			.section-divider { margin: 56px 0; }
+			.lang-btn { padding: 6px 10px; font-size: 10px; }
+		}
+		@media (min-width: 601px) and (max-width: 800px) {
+			.card-grid { grid-template-columns: repeat(2, 1fr); }
+		}
+
+		/* ── FAQ ───────────────────────────────────────────── */
+		.faq-section {
+			margin-top: 80px;
+			padding-top: 72px;
+			border-top: 0.5px solid var(--border);
+		}
+		.faq-head { margin-bottom: 40px; }
+		.faq-item {
+			border-bottom: 0.5px solid var(--border);
+		}
+		.faq-question {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 20px;
+			padding: 22px 0;
+			cursor: pointer;
+			user-select: none;
+			-webkit-user-select: none;
+			min-height: 64px;
+			transition: opacity 0.2s;
+		}
+		.faq-question:hover { opacity: 0.75; }
+		.faq-q-inner { display: flex; gap: 18px; align-items: baseline; flex: 1; min-width: 0; }
+		.faq-num {
+			font-size: 10px;
+			font-weight: 700;
+			letter-spacing: 0.1em;
+			color: var(--gold);
+			flex-shrink: 0;
+			min-width: 20px;
+			padding-top: 1px;
+		}
+		.faq-q-text {
+			font-size: 15px;
+			font-weight: 600;
+			letter-spacing: -0.01em;
+			color: var(--text-primary);
+			line-height: 1.55;
+		}
+		.faq-toggle {
+			font-size: 20px;
+			font-weight: 300;
+			color: var(--text-dim);
+			flex-shrink: 0;
+			line-height: 1;
+			transition: transform 0.35s var(--ease), color 0.2s;
+			margin-top: 1px;
+		}
+		.faq-item.open .faq-toggle {
+			transform: rotate(45deg);
+			color: var(--text-secondary);
+		}
+		.faq-answer {
+			max-height: 0;
+			overflow: hidden;
+			transition: max-height 0.45s var(--ease);
+		}
+		.faq-answer-inner {
+			padding: 0 0 28px 38px;
+			color: var(--text-secondary);
+			font-size: 14px;
+			line-height: 1.85;
+		}
+		.faq-answer-inner p { margin-bottom: 10px; }
+		.faq-answer-inner p:last-child { margin-bottom: 0; }
+		.faq-answer-inner ul {
+			list-style: none;
+			padding: 0;
+			margin: 10px 0 0;
+			display: flex;
+			flex-direction: column;
+			gap: 5px;
+		}
+		.faq-answer-inner li::before {
+			content: "·";
+			color: var(--gold);
+			margin-right: 10px;
+			font-weight: 700;
+		}
+		@media (max-width: 600px) {
+			.faq-section { margin-top: 56px; padding-top: 56px; }
+			.faq-q-text { font-size: 14px; }
+			.faq-answer-inner { padding-left: 28px; font-size: 13px; }
+			.faq-question { padding: 20px 0; min-height: 56px; }
+			.faq-num { font-size: 9px; }
+		}
+	</style>
+</head>
+<body>
+
+<div class="container">
+	<div class="top-bar">
+		<a id="back-link" href="https://cumusic.work/chefdao/" class="back-nav">← Back to Works</a>
+		<div class="lang-switcher" role="group" aria-label="Language">
+			<button class="lang-btn active" data-lang="zh" onclick="switchLang('zh')">中文</button>
+			<button class="lang-btn" data-lang="en" onclick="switchLang('en')">EN</button>
+			<button class="lang-btn" data-lang="ko" onclick="switchLang('ko')">한국어</button>
+		</div>
+	</div>
+	<div class="hero">
+		<h1 id="hero-title"></h1>
+		<p class="hero-sub" id="hero-sub"></p>
+	</div>
+	<div id="services-container"></div>
+	<div id="faq-container"></div>
+	<footer><p id="footer-text"></p></footer>
+</div>
+
+<div class="floating-cta">
+	<button class="floating-btn" onclick="copyContact()">
+		<span class="btn-dot"></span>
+		<span id="cta-label"></span>
+	</button>
+</div>
+
+<script>
+var CONTACT = { wechat: "Cookdao" };
+var currentLang = "zh";
+
+var I18N = {
+	zh: {
+		lang: "zh-CN",
+		back: "← Back to Works",
+		heroTitle: "Service<br>Rates.",
+		heroSub: "ChefDao Studio 音频工程服务报价。<br>所有档位均含简易母带处理。",
+		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
+		ctaLabel: "联系我们: CookDao",
+		ctaCopied: "微信号已复制 ✓",
+		partnerIntro: "除后期工程外，我们也提供从灵感策划到完整配器的全案创作",
+		services: [
+			{
+				id: "recording", step: "Step 01", title: "录音 Recording",
+				items: [{ title: "专业人声录制", price: "¥300", unit: "/hr", desc: "提供人声监制指导。2小时起预约，请提前确认档期。", tags: ["2H 起约"] }]
+			},
+			{
+				id: "mixing", step: "Step 02", title: "混音 Mixing",
+				subsections: [
+					{
+						name: "Vocal Mix", desc: "人声混音工程",
+						items: [
+							{ title: "高级全案制作", price: "¥600", unit: "", desc: "极致人声表现方案。含深度氛围设计与 2 小时精细音编（修音/对齐）。", tags: ["深度定制"] },
+							{ title: "标准贴唱混音", price: "¥450", unit: "", desc: "含 1 小时基础音编。创意制作仅限单次方案，不支持持续改稿。", tags: ["商业推荐"], featured: true },
+							{ title: "基础混音", price: "¥300", unit: "", desc: "侧重音色优化与基础平衡。适合追求原始听感的独立作品。", tags: ["基础平衡"] }
+						]
+					},
+					{
+						name: "Multitrack Mix", desc: "分轨混音 · Stems include mastering",
+						items: [
+							{ title: "简易分轨", price: "¥1,000", unit: "", desc: "Stems Mix 或极简配器项目。适合原声乐器较少的作品。", tags: ["8 轨以内"] },
+							{ title: "标准分轨", price: "¥1,500+", unit: "", desc: "Urban Music / 流行说唱常规规格。包含完整的动态与空间处理。", tags: ["商业规格"] },
+							{ title: "复杂分轨", price: "¥3,000+", unit: "", desc: "60–100 轨以上复杂工程。电影感音效设计与史诗级动态处理。", tags: ["大型工程"] }
+						]
+					}
+				]
+			},
+			{
+				id: "addons", step: "Step 03", title: "附加服务",
+				items: [
+					{ title: "音频编辑 Editing", price: "¥150", unit: "/hr", desc: "精细修音、人声清晰度优化、音频对齐等基础处理。", tags: ["1H 起约"] },
+					{ title: "人声制作 Production", price: "¥300", unit: "", desc: "追求极致氛围。含特殊效果处理、空间构建。素材需免修或另计音编。", tags: ["氛围设计"] }
+				]
+			},
+			{
+				id: "mastering", step: "Step 04", title: "母带 Mastering",
+				items: [{ title: "单曲母带处理", price: "¥200", unit: "", desc: "适用于已完成混音的歌曲。响度、动态与频谱最终优化。", tags: ["商业标准"] }]
+			},
+			{
+				id: "production", step: "Team Support", title: "创作支持", type: "partner",
+				items: [
+					{ title: "定制编曲 Custom", price: "¥3,000+", unit: "", desc: "根据歌手音色量身打造，100% 独家授权。", tags: ["独家授权"] },
+					{ title: "词曲全包创作", price: "¥5,000+", unit: "", desc: "专业词曲作者助力，提供商业级旋律与文案方案。", tags: ["全案策划"] }
+				]
+			}
+		],
+		// ── FAQ（中文）────────────────────────────────────────────────────────────
+		// 修改方式：直接编辑下面每条 { q, a, list } 即可
+		// · q      问题文字
+		// · a      回答正文（可选）
+		// · list   要点列表（可选，数组形式）
+		// 新增问题：复制一个 { q, a, list } 块粘贴到 faqItems 末尾即可
+		faqTitle: "FAQ",
+		faqStep: "常见问题",
+		faqItems: [
+			{
+				q: "什么风格都可以接吗？",
+				a: "只要是我长期在听、在研究的风格，基本都可以接。目前主要擅长偏律动、氛围和人声表达的方向，比如：",
+				list: ["Hip-Hop", "R&B", "Urban Music", "Indie Pop", "Synth Pop", "Afro", "Trap", "Rage", "Jersey Club", "Pluggnb，以及很多偏黑人音乐体系的风格"]
+			},
+			{
+				q: "你只做混音吗？",
+				a: "不只是混音。我更偏向「Vocal Producer + Mixing Engineer」的工作方式，会一起处理：",
+				list: ["Vocal Production", "人声音编", "和声 / 叠唱设计", "效果器氛围", "空间与层次", "最终混音", "基础母带"]
+			},
+			{
+				q: "你会帮忙改 Demo 吗？",
+				a: "会。很多项目其实从 Demo 阶段就已经决定了上限，我通常会一起给：",
+				list: ["编排建议", "人声录制建议", "Hook / 情绪方向", "Vocal 层次建议", "混音前修正意见"]
+			},
+			{
+				q: "可以先免费试听 / 试混吗？",
+				a: "一般不提供免费完整试混。因为混音本身就是高强度创作和判断工作。如果你不确定适不适合，可以：",
+				list: ["发 reference", "发一小段 demo", "30%定金 试混"]
+			},
+			{
+				q: "一首歌大概多久？",
+				a: "通常：",
+				list: ["简单项目：1–3 天", "正常单曲：3–7 天", "深度制作项目：视复杂度而定"]
+			},
+			{
+				q: "修改次数有限制吗？",
+				a: "正常范围内的修改都可以。我更在意最后作品是否成立，而不是卡死修改次数。但如果中途大幅改编排、换人声、重做方向，会按新工时计算。"
+			},
+			{
+				q: "没有母带工程师怎么办？",
+				a: "可以直接跟我沟通预算。很多情况下，可以通过快速结款、简化流程，把预算优先留给专业母带工程师。大部分混音师其实都愿意配合真正认真做作品的人。"
+			},
+			{
+				q: "你最在意什么？",
+				a: "审美、情绪、完成度。技术只是基础，真正决定作品上线的是：",
+				list: ["情绪是否成立", "人声是否有角色感", "氛围是否统一", "听感是否有记忆点"]
+			},
+			{
+				q: "怎么开始合作？",
+				a: "直接发给我：",
+				list: ["Demo", "干声", "Reference", "你的预算", "截止时间"]
+			}
+		]
+	},
+	en: {
+		lang: "en",
+		back: "← Back to Works",
+		heroTitle: "Service<br>Rates.",
+		heroSub: "ChefDao Studio audio engineering rates.<br>All tiers include light mastering.",
+		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
+		ctaLabel: "Get in touch: CookDao",
+		ctaCopied: "WeChat ID Copied ✓",
+		partnerIntro: "Beyond post-production, we also offer full creative services from concept to arrangement.",
+		services: [
+			{
+				id: "recording", step: "Step 01", title: "Recording",
+				items: [{ title: "Vocal Recording Session", price: "$50", unit: "/hr", desc: "Professional vocal direction included. Min. 2-hour booking — please confirm availability in advance.", tags: ["2H Min."] }]
+			},
+			{
+				id: "mixing", step: "Step 02", title: "Mixing",
+				subsections: [
+					{
+						name: "Vocal Mix", desc: "Vocal mixing services",
+						items: [
+							{ title: "Premium Full Mix", price: "$90", unit: "", desc: "Maximum vocal expression. Includes deep ambience design and 2 hrs of precision editing (pitch / alignment).", tags: ["Deep Custom"] },
+							{ title: "Full Vocal Mix", price: "$70", unit: "", desc: "Our top recommendation. Includes 1 hr of basic editing. Creative decisions are made once — revisions are not ongoing.", tags: ["Best Value"], featured: true },
+							{ title: "Standard Mix", price: "$50", unit: "", desc: "Focused on tonal shaping and basic balance. Ideal for independent tracks with a raw, natural feel.", tags: ["Essential"] }
+						]
+					},
+					{
+						name: "Multitrack Mix", desc: "Stems mix · Includes mastering",
+						items: [
+							{ title: "Simple Multitrack", price: "$140", unit: "", desc: "Stems Mix or minimal arrangement projects. Best suited for acoustic works with fewer instruments.", tags: ["8 Tracks Max"] },
+							{ title: "Standard Multitrack", price: "$210+", unit: "", desc: "Urban / Pop-Rap production spec. Full dynamic and spatial processing included.", tags: ["Commercial"] },
+							{ title: "Complex Multitrack", price: "$420+", unit: "", desc: "60–100+ track projects. Cinematic sound design and epic dynamic treatment.", tags: ["Large Scale"] }
+						]
+					}
+				]
+			},
+			{
+				id: "addons", step: "Step 03", title: "Add-ons",
+				items: [
+					{ title: "Audio Editing", price: "$30", unit: "/hr", desc: "Pitch correction, vocal clarity enhancement, audio alignment and other foundational work.", tags: ["1H Min."] },
+					{ title: "Vocal Production", price: "$50", unit: "", desc: "Designed for maximum atmosphere. Includes FX processing and spatial construction. Pitch-clean vocals required, or editing billed separately.", tags: ["Atmosphere"] }
+				]
+			},
+			{
+				id: "mastering", step: "Step 04", title: "Mastering",
+				items: [{ title: "Single Mastering", price: "$30", unit: "", desc: "For fully mixed tracks. Loudness, dynamics, and spectral optimization to commercial standards.", tags: ["Commercial"] }]
+			},
+			{
+				id: "production", step: "Team Support", title: "Creative Services", type: "partner",
+				items: [
+					{ title: "Custom Arrangement", price: "$420+", unit: "", desc: "Tailored to the artist's voice and style. 100% exclusive licensing included.", tags: ["Exclusive"] },
+					{ title: "Full Songwriting", price: "$700+", unit: "", desc: "Professional lyricists and composers. Commercial-grade melody and lyric packages.", tags: ["Full Package"] }
+				]
+			}
+		],
+		faqTitle: "FAQ",
+		faqStep: "Questions",
+		faqItems: [
+			{
+				q: "Do you work with any genre?",
+				a: "As long as it's something I've been listening to and studying for a long time, generally yes. My main strengths are in rhythm-driven, atmospheric, and vocal-expressive directions, including:",
+				list: ["Hip-Hop", "R&B", "Urban Music", "Indie Pop", "Synth Pop", "Afro", "Trap", "Rage", "Jersey Club", "Pluggnb, and many styles within the Black music tradition"]
+			},
+			{
+				q: "Is mixing all you do?",
+				a: "No. I work more as a \"Vocal Producer + Mixing Engineer,\" handling everything together:",
+				list: ["Vocal Production", "Vocal editing & comping", "Harmony / layering design", "FX & atmosphere", "Space & depth", "Final mix", "Basic mastering"]
+			},
+			{
+				q: "Will you help fix my demo?",
+				a: "Yes. A lot of projects have their ceiling determined at the demo stage. I typically offer:",
+				list: ["Arrangement feedback", "Vocal recording advice", "Hook / emotional direction", "Vocal layering suggestions", "Pre-mix corrections"]
+			},
+			{
+				q: "Can I get a free trial mix?",
+				a: "Generally no. Mixing is high-intensity creative and critical work. If you're not sure we're a fit, you can:",
+				list: ["Send a reference track", "Share a short demo clip", "Talk through the direction first"]
+			},
+			{
+				q: "How long does a track take?",
+				a: "Typically:",
+				list: ["Simple project: 1–3 days", "Standard single: 3–7 days", "Deep production: depends on complexity"]
+			},
+			{
+				q: "Is there a revision limit?",
+				a: "Normal revisions are fine. I care more about whether the final work holds up than counting edits. That said, major mid-project changes — new arrangement, new vocals, new direction — will be billed as a new project."
+			},
+			{
+				q: "What if I don't have a mastering engineer?",
+				a: "Talk to me about your budget. Often we can streamline the process so the budget is saved for a proper mastering engineer. Most mixing engineers are happy to work with people who are serious about their music."
+			},
+			{
+				q: "What matters most to you?",
+				a: "Aesthetic, emotion, completeness. Technique is just the baseline. What really determines whether a track lands:",
+				list: ["Does the emotion land?", "Does the vocal have character?", "Is the atmosphere coherent?", "Is there something to remember?"]
+			},
+			{
+				q: "How do I get started?",
+				a: "Just send me:",
+				list: ["Demo", "Dry vocals", "Reference tracks", "Your budget", "Deadline"]
+			}
+		]
+	},
+	ko: {
+		lang: "ko",
+		back: "← 작품으로 돌아가기",
+		heroTitle: "Service<br>Rates.",
+		heroSub: "ChefDao Studio 오디오 엔지니어링 요금표.<br>모든 항목에 간편 마스터링이 포함됩니다.",
+		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
+		ctaLabel: "문의하기: CookDao",
+		ctaCopied: "WeChat ID 복사됨 ✓",
+		partnerIntro: "후반 작업 외에도 기획부터 편곡까지 전체 창작 서비스를 제공합니다.",
+		services: [
+			{
+				id: "recording", step: "Step 01", title: "레코딩 Recording",
+				items: [{ title: "전문 보컬 레코딩", price: "₩60,000", unit: "/hr", desc: "보컬 디렉팅 포함. 최소 2시간 예약 — 사전에 스케줄을 확인해 주세요.", tags: ["최소 2H"] }]
+			},
+			{
+				id: "mixing", step: "Step 02", title: "믹싱 Mixing",
+				subsections: [
+					{
+						name: "Vocal Mix", desc: "보컬 믹싱",
+						items: [
+							{ title: "프리미엄 전체 믹스", price: "₩120,000", unit: "", desc: "최상급 보컬 표현 패키지. 심층 앰비언스 디자인과 2시간 정밀 편집(피치/얼라인먼트) 포함.", tags: ["딥 커스텀"] },
+							{ title: "풀 보컬 믹스", price: "₩90,000", unit: "", desc: "가장 추천하는 플랜. 1시간 기본 편집 포함. 크리에이티브 결정은 1회에 한하며, 지속적인 수정은 지원하지 않습니다.", tags: ["추천"], featured: true },
+							{ title: "베이직 믹스", price: "₩60,000", unit: "", desc: "음색 최적화와 기본 밸런스에 집중. 자연스러운 원음 느낌을 원하는 인디 작품에 적합.", tags: ["기본형"] }
+						]
+					},
+					{
+						name: "Multitrack Mix", desc: "멀티트랙 믹싱 · 마스터링 포함",
+						items: [
+							{ title: "심플 멀티트랙", price: "₩200,000", unit: "", desc: "Stems Mix 또는 소규모 편성 프로젝트. 어쿠스틱 악기가 적은 작품에 적합.", tags: ["8트랙 이하"] },
+							{ title: "스탠다드 멀티트랙", price: "₩300,000+", unit: "", desc: "Urban / 팝 랩 상업 규격. 완전한 다이나믹 및 공간 처리 포함.", tags: ["상업 규격"] },
+							{ title: "컴플렉스 멀티트랙", price: "₩600,000+", unit: "", desc: "60–100트랙 이상의 대형 프로젝트. 영화적 사운드 디자인과 에픽 다이나믹 처리.", tags: ["대형 프로젝트"] }
+						]
+					}
+				]
+			},
+			{
+				id: "addons", step: "Step 03", title: "추가 서비스",
+				items: [
+					{ title: "오디오 편집 Editing", price: "₩30,000", unit: "/hr", desc: "피치 보정, 보컬 선명도 향상, 오디오 얼라인먼트 등 기본 편집 작업.", tags: ["최소 1H"] },
+					{ title: "보컬 프로덕션", price: "₩60,000", unit: "", desc: "최상의 앰비언스를 위한 특수 이펙트 처리 및 공간 구성. 피치 교정이 필요 없는 소재 필요, 또는 편집 비용 별도.", tags: ["앰비언스"] }
+				]
+			},
+			{
+				id: "mastering", step: "Step 04", title: "마스터링 Mastering",
+				items: [{ title: "싱글 마스터링", price: "₩40,000", unit: "", desc: "믹싱이 완료된 트랙에 적용. 라우드니스, 다이나믹, 스펙트럼 최종 최적화.", tags: ["상업 기준"] }]
+			},
+			{
+				id: "production", step: "Team Support", title: "크리에이티브 서비스", type: "partner",
+				items: [
+					{ title: "커스텀 편곡", price: "₩600,000+", unit: "", desc: "아티스트의 음색과 스타일에 맞춘 맞춤 제작. 100% 독점 라이선스 포함.", tags: ["독점 라이선스"] },
+					{ title: "풀 작사·작곡", price: "₩1,000,000+", unit: "", desc: "전문 작사·작곡가 참여. 상업적 수준의 멜로디 및 가사 제공.", tags: ["풀 패키지"] }
+				]
+			}
+		],
+		faqTitle: "FAQ",
+		faqStep: "자주 묻는 질문",
+		faqItems: [
+			{
+				q: "어떤 장르든 작업 가능한가요?",
+				a: "오랫동안 듣고 연구해온 장르라면 대부분 가능합니다. 현재 주로 리듬감, 분위기, 보컬 표현에 강점이 있으며, 주요 장르는 다음과 같습니다:",
+				list: ["Hip-Hop", "R&B", "Urban Music", "Indie Pop", "Synth Pop", "Afro", "Trap", "Rage", "Jersey Club", "Pluggnb 등 블랙 뮤직 계열 장르"]
+			},
+			{
+				q: "믹싱만 하시나요?",
+				a: "아닙니다. 저는 \"Vocal Producer + Mixing Engineer\" 방식으로 작업합니다. 아래 전반을 함께 담당합니다:",
+				list: ["Vocal Production", "보컬 편집 & 컴핑", "화음 / 레이어 디자인", "이펙트 & 분위기", "공간감 & 깊이", "최종 믹싱", "기본 마스터링"]
+			},
+			{
+				q: "데모 수정도 도와주시나요?",
+				a: "네. 많은 프로젝트는 데모 단계에서 이미 완성도의 한계가 결정됩니다. 주로 다음을 함께 제안합니다:",
+				list: ["편곡 피드백", "보컬 녹음 조언", "훅 / 감정 방향 설정", "보컬 레이어 제안", "믹싱 전 수정 의견"]
+			},
+			{
+				q: "무료 시험 믹싱이 가능한가요?",
+				a: "일반적으로 제공하지 않습니다. 믹싱은 고강도 창작 작업이기 때문입니다. 방향이 맞는지 확인하고 싶다면:",
+				list: ["레퍼런스 트랙 전송", "짧은 데모 클립 공유", "먼저 방향 협의"]
+			},
+			{
+				q: "곡 작업에 얼마나 걸리나요?",
+				a: "보통:",
+				list: ["간단한 프로젝트: 1–3일", "일반 싱글: 3–7일", "심층 제작: 복잡도에 따라 상이"]
+			},
+			{
+				q: "수정 횟수에 제한이 있나요?",
+				a: "일반적인 범위 내 수정은 모두 가능합니다. 수정 횟수보다 최종 결과물의 완성도를 더 중요하게 생각합니다. 다만, 편곡 대폭 변경·보컬 교체·방향 전환 등은 새 작업 시간으로 별도 산정됩니다."
+			},
+			{
+				q: "마스터링 엔지니어가 없으면 어떻게 하나요?",
+				a: "예산에 대해 먼저 상의해 주세요. 많은 경우 프로세스를 간소화해 전문 마스터링 엔지니어에게 예산을 우선 배분할 수 있습니다. 대부분의 믹싱 엔지니어는 진지하게 작업에 임하는 분들과 기꺼이 협력합니다."
+			},
+			{
+				q: "가장 중요하게 생각하는 것은 무엇인가요?",
+				a: "심미성, 감정, 완성도입니다. 기술은 기본일 뿐이며, 결과물의 성패는 다음에 달려 있습니다:",
+				list: ["감정이 전달되는가?", "보컬에 캐릭터가 있는가?", "분위기가 일관성 있는가?", "기억에 남는 무언가가 있는가?"]
+			},
+			{
+				q: "어떻게 시작하면 되나요?",
+				a: "아래 내용을 바로 보내주세요:",
+				list: ["데모", "드라이 보컬", "레퍼런스 트랙", "예산", "마감일"]
+			}
+		]
+	}
+};
+
+function renderCard(item) {
+	var fc = item.featured ? " featured" : "";
+	var goldClass = item.featured ? " gold" : "";
+	var tags = "";
+	if (item.tags && item.tags.length) {
+		for (var i = 0; i < item.tags.length; i++) {
+			tags += "<span class=\"tag" + goldClass + "\">" + item.tags[i] + "</span>";
+		}
+	}
+	var unit = item.unit ? "<span class=\"card-price-unit\">" + item.unit + "</span>" : "";
+	var tagsHtml = tags ? "<div class=\"card-tags\">" + tags + "</div>" : "";
+	return "<div class=\"price-card" + fc + "\">"
+		+ "<div class=\"card-price\"><span class=\"card-price-num\">" + item.price + "</span>" + unit + "</div>"
+		+ "<div class=\"card-title\">" + item.title + "</div>"
+		+ "<div class=\"card-desc\">" + item.desc + "</div>"
+		+ tagsHtml
+		+ "</div>";
+}
+
+function renderService(svc, t) {
+	var i, html, sub, cards;
+	if (svc.type === "partner") {
+		cards = "";
+		for (i = 0; i < svc.items.length; i++) { cards += renderCard(svc.items[i]); }
+		return "<div class=\"partner-box\">"
+			+ "<div class=\"step-tag gold\">" + svc.step + "</div>"
+			+ "<h2>" + svc.title + "</h2>"
+			+ "<p class=\"partner-intro\">" + t.partnerIntro + "</p>"
+			+ "<div class=\"card-grid\">" + cards + "</div>"
+			+ "</div>";
+	}
+	var inner = "";
+	if (svc.subsections) {
+		for (i = 0; i < svc.subsections.length; i++) {
+			sub = svc.subsections[i];
+			cards = "";
+			for (var j = 0; j < sub.items.length; j++) { cards += renderCard(sub.items[j]); }
+			inner += "<div class=\"subsection\">"
+				+ "<div class=\"sub-head\"><h3>" + sub.name + "</h3><span class=\"sub-desc\">" + sub.desc + "</span></div>"
+				+ "<div class=\"card-grid\">" + cards + "</div>"
+				+ "</div>";
+		}
+	} else {
+		cards = "";
+		for (i = 0; i < svc.items.length; i++) { cards += renderCard(svc.items[i]); }
+		inner = "<div class=\"card-grid\">" + cards + "</div>";
+	}
+	return "<div class=\"service-section\">"
+		+ "<div class=\"section-head\">"
+		+ "<div class=\"step-tag\">" + svc.step + "</div>"
+		+ "<h2>" + svc.title + "</h2>"
+		+ "</div>" + inner + "</div>"
+		+ "<div class=\"section-divider\"></div>";
+}
+
+function renderFAQ(t) {
+	if (!t.faqItems || !t.faqItems.length) return "";
+	var items = "";
+	for (var i = 0; i < t.faqItems.length; i++) {
+		var item = t.faqItems[i];
+		var num = (i + 1 < 10 ? "0" : "") + (i + 1);
+		var bodyHtml = "";
+		if (item.a) bodyHtml += "<p>" + item.a + "</p>";
+		if (item.list && item.list.length) {
+			bodyHtml += "<ul>";
+			for (var j = 0; j < item.list.length; j++) {
+				bodyHtml += "<li>" + item.list[j] + "</li>";
+			}
+			bodyHtml += "</ul>";
+		}
+		items += "<div class=\"faq-item\" id=\"faq-item-" + i + "\">"
+			+ "<div class=\"faq-question\" onclick=\"toggleFaq(" + i + ")\" role=\"button\" tabindex=\"0\" aria-expanded=\"false\">"
+			+ "<div class=\"faq-q-inner\">"
+			+ "<span class=\"faq-num\">" + num + "</span>"
+			+ "<span class=\"faq-q-text\">" + item.q + "</span>"
+			+ "</div>"
+			+ "<span class=\"faq-toggle\">+</span>"
+			+ "</div>"
+			+ "<div class=\"faq-answer\" id=\"faq-answer-" + i + "\">"
+			+ "<div class=\"faq-answer-inner\">" + bodyHtml + "</div>"
+			+ "</div>"
+			+ "</div>";
+	}
+	return "<div class=\"faq-section\">"
+		+ "<div class=\"faq-head section-head\">"
+		+ "<div class=\"step-tag\">" + t.faqStep + "</div>"
+		+ "<h2>" + t.faqTitle + "</h2>"
+		+ "</div>"
+		+ items
+		+ "</div>";
+}
+
+function toggleFaq(index) {
+	var item = document.getElementById("faq-item-" + index);
+	var answer = document.getElementById("faq-answer-" + index);
+	var inner = answer.querySelector(".faq-answer-inner");
+	var isOpen = item.classList.contains("open");
+	// Close all
+	var allItems = document.querySelectorAll(".faq-item");
+	var allAnswers = document.querySelectorAll(".faq-answer");
+	for (var i = 0; i < allItems.length; i++) {
+		allItems[i].classList.remove("open");
+		allAnswers[i].style.maxHeight = "0";
+		var btn = allItems[i].querySelector(".faq-question");
+		if (btn) btn.setAttribute("aria-expanded", "false");
+	}
+	// Open clicked if it was closed
+	if (!isOpen) {
+		item.classList.add("open");
+		answer.style.maxHeight = inner.scrollHeight + "px";
+		item.querySelector(".faq-question").setAttribute("aria-expanded", "true");
+	}
+}
+
+function render(lang) {
+	var t = I18N[lang];
+	var i, html = "";
+	document.documentElement.lang = t.lang;
+	document.getElementById("hero-title").innerHTML = t.heroTitle;
+	document.getElementById("hero-sub").innerHTML = t.heroSub;
+	document.getElementById("footer-text").textContent = t.footer;
+	document.getElementById("cta-label").textContent = t.ctaLabel;
+	document.getElementById("back-link").textContent = t.back;
+	for (i = 0; i < t.services.length; i++) { html += renderService(t.services[i], t); }
+	document.getElementById("services-container").innerHTML = html;
+	document.getElementById("faq-container").innerHTML = renderFAQ(t);
+}
+
+function switchLang(lang) {
+	if (lang === currentLang) return;
+	currentLang = lang;
+	var btns = document.querySelectorAll(".lang-btn");
+	for (var i = 0; i < btns.length; i++) {
+		if (btns[i].getAttribute("data-lang") === lang) {
+			btns[i].classList.add("active");
+		} else {
+			btns[i].classList.remove("active");
+		}
+	}
+	var container = document.getElementById("services-container");
+	container.classList.add("fading");
+	setTimeout(function() {
+		render(lang);
+		container.classList.remove("fading");
+	}, 160);
+}
+
+function copyContact() {
+	var t = I18N[currentLang];
+	var label = document.getElementById("cta-label");
+	navigator.clipboard.writeText(CONTACT.wechat).then(function() {
+		label.textContent = t.ctaCopied;
+		window.location.href = "weixin://"; 
+		setTimeout(function() { label.textContent = t.ctaLabel; }, 2200);
+	}).catch(function() {
+		label.textContent = CONTACT.wechat;
+		window.location.href = "weixin://"; 
+		setTimeout(function() { label.textContent = t.ctaLabel; }, 2200);
+	});
+}
+
+document.addEventListener("DOMContentLoaded", function() { render("zh"); });
+</script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<title>刀大厨 ChefDao</title>
+<!-- 提前建立与图片 CDN 的连接，减少首次请求的 DNS + TCP 耗时 -->
+<link rel="preconnect" href="https://p1.music.126.net" crossorigin>
+<link rel="preconnect" href="https://p2.music.126.net" crossorigin>
+<link rel="dns-prefetch" href="https://y.qq.com">
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-Y46B4MCLFN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-Y46B4MCLFN');
+</script>
+
+<style>
+:root {
+  --bg:#000;
+  --text-main:#fff;
+  --text-dim:#98989d; /* 稍微调亮一点灰，提升移动端可读性 */
+  --font-pro:-apple-system,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
+  --easing:cubic-bezier(0.16,1,0.3,1);
+  --cols: 8; 
+}
+
+body {
+  margin:0;
+  background:#000;
+  color:#fff;
+  font-family:var(--font-pro);
+  overflow:hidden;
+  -webkit-font-smoothing: antialiased; /* 让字体在暗色背景更清晰 */
+}
+
+/* ================= Intro ================= */
+
+#intro-overlay {
+  position:fixed;
+  inset:0;
+  background:#000;
+  z-index:9999;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+}
+
+#intro-grid {
+  display:grid;
+  width:100vw;
+  height:100vh;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-auto-rows: calc(100vw / var(--cols)); 
+  gap: 0; 
+  align-content:start;
+  filter:brightness(1);
+  transition:filter 1.5s ease;
+  visibility:hidden;
+}
+
+#intro-grid.dimmed { filter:brightness(.2); /* 稍微更暗一点，突出按钮 */ }
+
+@media (max-width:1000px){
+  :root { --cols: 4; }
+}
+
+.grid-cell { 
+  position:relative; 
+  width: 100%; 
+  height: 100%; 
+  overflow: hidden; 
+  /* 【修改】增加深色背景占位，防止图片未加载时出现白色闪烁 */
+  background-color: #1a1a1a; 
+}
+.grid-cell img { width:100%; height:100%; object-fit:cover; display: block; border-radius: 0; }
+
+.flying-unit {
+  position:fixed;
+  z-index:10001;
+  pointer-events:none;
+  opacity: 0;
+  object-fit: cover;
+  border-radius: 0;
+  will-change: transform, opacity;
+}
+
+/* ================= UI Buttons ================= */
+
+#intro-ui {
+  position:absolute;
+  z-index:10002;
+  opacity:0;
+  transition:opacity 1s var(--easing);
+  pointer-events: none;
+  display: flex;
+  gap: 20px;
+  /* 确保按钮在最上层且居中 */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+#intro-ui.visible { opacity:1; pointer-events: all; }
+
+.enter-btn, .pricing-btn {
+  background:#fff;
+  color:#000;
+  border:none;
+  padding:18px 45px;
+  border-radius:100px; /* 全圆角 */
+  font-size:13px; /* 稍微大一点点 */
+  letter-spacing:3px;
+  font-weight:700;
+  cursor:pointer;
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  min-width: 140px;
+}
+
+.pricing-btn {
+  background: rgba(255, 255, 255, 0.15); /* 改为磨砂玻璃风格，更高级 */
+  color: #fff;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.enter-btn:active, .pricing-btn:active { transform: scale(0.92); opacity: 0.8; }
+
+/* 增加的 Spotify 按钮样式 */
+.spotify-link {
+  position: absolute;
+  bottom: -50px; /* 固定在下方不影响原有flex布局 */
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-decoration: none;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.spotify-link:hover {
+  color: #1DB954; /* 悬停时变为 Spotify 品牌绿 */
+  transform: translateX(-50%) scale(1.05);
+}
+
+@media (max-width:480px) {
+  #intro-ui { 
+  flex-direction: column; 
+  gap: 16px; 
+  width: 80%; /* 限制宽度 */
+  }
+  .enter-btn, .pricing-btn {
+  width: 100%; /* 移动端按钮全宽 */
+  padding: 16px 0;
+  }
+  .spotify-link {
+  bottom: -45px; /* 移动端距离稍微调整 */
+  }
+}
+
+/* ================= Content Layout ================= */
+
+#albums-container {
+  max-width:1100px; 
+  margin:0 auto;
+  padding:150px 40px;
+  display:none;
+  opacity:0;
+}
+
+body.content-visible { 
+  overflow-y: auto; 
+  -webkit-overflow-scrolling: touch; /* iOS 惯性滚动 */
+}
+body.content-visible #albums-container { display:block; opacity:1; transition:opacity 1.5s; }
+
+.album-row {
+  display:flex;
+  align-items:center;
+  gap:80px;
+  margin-bottom:200px;
+  opacity:0;
+  transform:translateY(60px);
+  transition:all 1.2s var(--easing);
+}
+
+.album-row.is-visible { opacity:1; transform:translateY(0); }
+
+/* PC端布局逻辑 */
+@media (min-width:769px){
+  .album-row.reverse { flex-direction:row-reverse; }
+  .album-row.reverse .album-info { text-align:right; }
+  /* PC端如果右对齐，Badge也要跟随 */
+  .album-row.reverse .highlight-wrapper { display: flex; justify-content: flex-end; }
+}
+
+.album-cover-wrapper {
+  flex:1.2; /* 图片稍微大一点 */
+  aspect-ratio:1/1;
+  position:relative;
+  /* 阴影更加柔和 */
+  box-shadow: 0 20px 80px -20px rgba(255,255,255,0.1); 
+  transition: transform 0.5s ease;
+}
+
+.album-cover-wrapper:hover {
+  transform: scale(1.02);
+}
+
+.album-cover-wrapper img { width:100%; height:100%; object-fit:cover; display: block;}
+
+.album-info { 
+  flex:1; 
+  position: relative;
+  z-index: 2;
+  min-width: 0; /* 极其重要：这让 flex 子元素能够正确缩减并触发省略号 */
+}
+
+/* ================= Typography Refinement (参考截图优化) ================= */
+
+/* Featured Work 胶囊 */
+.highlight-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.15); /* 稍微亮一点的半透明 */
+  border: 0.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #fff;
+  margin-bottom: 24px; /* 胶囊到底下的距离 */
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+
+/* 元信息组：年份和艺术家 */
+.meta-group {
+  margin-bottom: 16px;
+}
+
+.year { 
+  color: var(--text-dim); 
+  font-size: 15px; 
+  margin-bottom: 4px; /* 年份和名字离得近一点 */
+  font-weight: 500;
+}
+.artist { 
+  color: var(--text-dim); 
+  font-size: 15px; 
+  font-weight: 500;
+}
+
+/* 标题 */
+.title {
+  font-size:clamp(32px,4.5vw,56px);
+  font-weight:700;
+  margin:0;
+  line-height:1.1;
+  color: var(--text-main);
+}
+
+/* ================= Mobile Optimization (移动端竖屏核心) ================= */
+
+@media (max-width:768px) {
+  #albums-container {
+  padding: 100px 24px; /* 减小容器内边距 */
+  }
+
+  .album-row { 
+  flex-direction: column !important; /* 强制垂直排列，取消左右交错 */
+  align-items: flex-start; /* 强制左对齐 */
+  gap: 32px; /* 图片和文字的间距 */
+  margin-bottom: 140px; 
+  }
+
+  .album-cover-wrapper {
+  width: 100%;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8); /* 移动端阴影可以重一点，增加立体感 */
+  }
+
+  .album-info { 
+  width: 100%;
+  text-align: left !important; /* 移动端强制左对齐 */
+  padding-left: 4px; /* 微调视觉平衡 */
+  }
+
+  /* 即使是 Reverse 的行，在移动端也必须左对齐 */
+  .album-row.reverse .highlight-wrapper { 
+    justify-content: flex-start; 
+  }
+
+  /* 调整移动端字体大小以匹配截图 */
+  .highlight-badge {
+    font-size: 10px;
+    padding: 5px 14px;
+    margin-bottom: 20px;
+  }
+
+  .year {
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  
+  .artist {
+    font-size: 14px;
+    margin-bottom: 12px; /* 名字和标题拉开一点距离 */
+  }
+
+  .title {
+    font-size: 38px; /* 移动端固定一个舒适的大尺寸 */
+  }
+}
+
+/* 1. 基础标签样式 */
+.badge {
+    padding: 5px 15px; 
+    border: 1.5px solid rgba(255,255,255,0.4); /* 边框粗细和透明度 */
+    border-radius: 100px; 
+    font-size: 10px; 
+    font-weight: 500;
+    letter-spacing: 2px; /* 字间距，越大越高级 */
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.8);
+}
+
+/* 2. 优雅的奖项标签（重点修改这里） */
+.award-badge {
+    border-color: #d4af37; /* 金色边框 */
+    color: #d4af37;        /* 金色文字 */
+    background: rgba(212, 175, 55, 0.05); /* 极淡的金色背景 */
+    position: relative;
+    overflow: hidden;
+}
+
+/* 3. 流光效果（如果不想要动态，可以删除这一段） */
+.award-badge::after {
+    content: ''; 
+    position: absolute; 
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.2), transparent);
+    transform: translateX(-100%); 
+    animation: shine 3s infinite; /* 3s 是流光速度 */
+}
+@keyframes shine { 100% { transform: translateX(100%); } }
+/* 确保多个标签并排显示，并有间距 */
+.highlight-wrapper {
+  display: flex;
+  gap: 10px;        /* 两个标签之间的距离 */
+  flex-wrap: wrap;  /* 手机端如果太长自动换行 */
+  margin-bottom: 24px;
+}
+
+/* 统一 Featured 标签和 Award 标签的基础高度和对齐 */
+.highlight-badge, .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px; /* 统一高度更整齐 */
+  box-sizing: border-box;
+}
+
+/* 修正 PC 端右对齐逻辑 */
+@media (min-width:769px){
+  .album-row.reverse .highlight-wrapper { 
+    justify-content: flex-end; 
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="intro-overlay">
+  <div id="intro-grid"></div>
+  <div id="intro-ui">
+    <button id="enter-site-btn" class="enter-btn">ENTER</button>
+    <a href="https://cumusic.work/chefdao/price" class="pricing-btn">PRICING</a>
+    <a href="https://open.spotify.com/playlist/3EL0fe1exRUvfPIvgQdL0O" target="_blank" class="spotify-link">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.84.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.56.3z"/></svg>
+      Spotify Playlist
+    </a>
+  </div>
+</div>
+
+<div id="albums-container"></div>
+
+<script src="album.js"></script>
+<script>
+/* ========= Utils ========= */
+function shuffle(arr) {
+  return arr.slice().sort(() => Math.random() - 0.5);
+}
+
+// 网易云 CDN 支持 ?param=WxH 取缩略图，其他来源原样返回
+function thumbUrl(url) {
+  if (url && url.includes('music.126.net')) return url + '?param=200y200';
+  return url;
+}
+
+/* 【添加】预加载图片 helper 函数 */
+function preloadImages(imageUrls) {
+  const promises = imageUrls.map(url => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = url;
+      // 成功或失败都算完成，避免一张图卡死整个流程
+      img.onload = () => resolve(url);
+      img.onerror = () => resolve(url); 
+    });
+  });
+  return Promise.all(promises);
+}
+
+/* ========= Intro Logic (修改为 Async 以支持预加载) ========= */
+
+async function initHybridAnimation(){
+  const grid = document.getElementById('intro-grid');
+  // 重新获取计算后的 cols，确保响应式变化被捕获
+  const cols = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols').trim());
+  const cellWidth = window.innerWidth / cols;
+  const rows = Math.ceil(window.innerHeight / cellWidth) + 1;
+  const totalCells = cols * rows;
+
+  const highlights = shuffle(albums.filter(a => a.highlighted));
+  const others = shuffle(albums.filter(a => !a.highlighted));
+  let combined = [...highlights, ...others];
+  
+  // 防止图片不够填充网格
+  if (combined.length === 0) return; 
+
+  const displayPool = [];
+  for(let i=0; i<totalCells; i++) {
+  displayPool.push(combined[i % combined.length]);
+  }
+
+  // 先把 DOM 建好，但此时图片还没加载完，所以我们在 CSS 里加了背景色
+  grid.innerHTML = displayPool.map(item => `
+  <div class="grid-cell">
+    <img src="${thumbUrl(item.image)}" style="opacity:0">
+  </div>
+  `).join('');
+  
+  grid.style.visibility = 'visible';
+
+  const cells = document.querySelectorAll('.grid-cell');
+  let loaded = 0;
+
+  // 优化：减少移动端生成的飞入图片数量，提升性能
+  const isMobile = window.innerWidth < 768;
+  const maxFlying = isMobile ? 30 : 50; // 移动端只飞15张，PC飞50张，其余直接淡入
+  
+  /* 【添加】 提取即将飞入动画的图片URL进行预加载 */
+  const imagesToPreload = displayPool.slice(0, maxFlying).map(item => thumbUrl(item.image));
+  
+  // 等待这些核心图片加载完毕，再启动动画
+  await preloadImages(imagesToPreload);
+
+  cells.forEach((cell, i) => {
+  const targetImg = cell.querySelector('img');
+  
+  // 如果超过最大动画数量，直接显示，不做飞入动画，节省GPU
+  if (i >= maxFlying) {
+      setTimeout(() => {
+        if(targetImg) targetImg.style.opacity = 0.4; // 稍微暗一点作为背景
+        if(++loaded === cells.length) { 
+         // finish logic handled by timeout mostly
+        }
+      }, 100);
+      return;
+  }
+
+  const rect = cell.getBoundingClientRect();
+  const fly = document.createElement('img');
+  
+  // 因为上面 await preloadImages 已经执行，这里浏览器会直接从缓存取图，显示速度极快
+  fly.src = thumbUrl(displayPool[i].image);
+  fly.className = 'flying-unit';
+  
+  const angle = Math.random() * Math.PI * 2;
+  const distance = Math.max(window.innerWidth, window.innerHeight) * 1.2;
+  
+  fly.style.width = rect.width + 'px';
+  fly.style.height = rect.height + 'px';
+  fly.style.left = '0px';
+  fly.style.top = '0px';
+  
+  const startX = window.innerWidth/2 + Math.cos(angle) * distance;
+  const startY = window.innerHeight/2 + Math.sin(angle) * distance;
+  
+  fly.style.transform = `translate(${startX}px, ${startY}px) scale(0.5)`; // 初始scale改大一点，看起来更自然
+  document.body.appendChild(fly);
+
+  // 错落的时间
+  setTimeout(() => {
+    requestAnimationFrame(() => {
+    fly.style.transition = `transform ${1.5 + Math.random()}s var(--easing), opacity 0.5s ease`;
+    fly.style.opacity = '1';
+    fly.style.transform = `translate(${rect.left}px, ${rect.top}px) scale(1)`;
+    });
+  }, i * 30); 
+
+  setTimeout(() => {
+    if(targetImg) targetImg.style.opacity = 1;
+    fly.remove();
+    // 动画结束触发 UI 显示
+    if(i === maxFlying - 1 || i === cells.length - 1) {
+    grid.classList.add('dimmed');
+    document.getElementById('intro-ui').classList.add('visible');
+    }
+  }, 2200 + (i * 30)); 
+  });
+}
+
+/* ========= Content Logic ========= */
+
+function generateContent(){
+  document.getElementById('albums-container').innerHTML = albums.map((a, i) => {
+    // 处理多奖项逻辑：如果有奖项，按 & 符号拆分成数组，并去掉多余空格
+    const awardList = a.award ? a.award.split('&').map(item => item.trim()) : [];
+
+    return `
+    <div class="album-row ${i % 2 ? 'reverse' : ''}">
+      <div class="album-cover-wrapper">
+        <a href="${a.link}" target="_blank"><img src="${a.image}"></a>
+      </div>
+      <div class="album-info">
+        <div class="highlight-wrapper">
+          ${a.highlighted ? '<div class="highlight-badge">Featured Work</div>' : ''}
+          
+          ${awardList.map(awardTitle => `
+            <div class="badge award-badge">✧ ${awardTitle}</div>
+          `).join('')}
+        </div>
+        
+        <div class="meta-group">
+          <div class="year">${a.year}</div>
+          <div class="artist">${a.artist}</div>
+        </div>
+        <h2 class="title">${a.title}</h2>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function enterSite(){
+  document.getElementById('intro-overlay').style.opacity = 0;
+  setTimeout(() => {
+  document.getElementById('intro-overlay').remove();
+  document.body.classList.add('content-visible');
+  
+  const obs = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if(e.isIntersecting) {
+        e.target.classList.add('is-visible');
+        obs.unobserve(e.target); // 动画只触发一次
+      }
+    });
+  }, {threshold: 0.15}); // 稍微提高阈值，防止误触
+  
+  document.querySelectorAll('.album-row').forEach(r => obs.observe(r));
+  }, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  generateContent();
+  setTimeout(initHybridAnimation, 200);
+  document.getElementById('enter-site-btn').onclick = enterSite;
+});
+
+// 注册 Service Worker，让图片在首次加载后缓存到本地
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/chefdao/sw.js', { scope: '/chefdao/' })
+    .catch(() => {}); // 静默失败，不影响页面功能
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/Users/chefdao/Documents/chefdao website/cu-music.github.io-main/.claude\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(brew install *)",
+      "Bash(pdftoppm -v)",
+      "Bash(/opt/homebrew/bin/pdftoppm -png -r 150 -f 1 -l 6 \"/Users/chefdao/Pictures/HU MIAOJUN.pdf\" /tmp/ppt_page)",
+      "Read(//private/tmp/**)",
+      "Bash(/opt/homebrew/bin/pdftoppm -png -r 150 -f 5 -l 20 \"/Users/chefdao/Pictures/HU MIAOJUN.pdf\" /tmp/ppt_page)",
+      "Bash(ls *.jpeg *.jpg)",
+      "Bash(exiftool -DateTimeOriginal 60.jpeg)",
+      "Bash(/opt/homebrew/bin/exiftool -DateTimeOriginal 60.jpeg)",
+      "Bash(grep -E '\\\\.\\(jpg|jpeg|png\\)$')",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(/opt/homebrew/bin/exiftool -DateTimeOriginal -FileName *.jpeg *.jpg)",
+      "Bash(brew list *)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/local/bin/**)"
+    ]
+  }
+}

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<title>ChefDao — Vocal Production Guide</title>
+<script src="data.js"></script>
+<style>
+:root {
+  --bg: #000;
+  --surface: #0a0a0a;
+  --surface2: #111;
+  --text: #fff;
+  --dim: #6e6e73;
+  --dim2: #3a3a3c;
+  --gold: #d4af37;
+  --gold-faint: rgba(212,175,55,0.08);
+  --gold-border: rgba(212,175,55,0.25);
+  --border: rgba(255,255,255,0.07);
+  --border-mid: rgba(255,255,255,0.13);
+  --sidebar-w: 210px;
+  --nav-h: 52px;
+  --font: -apple-system,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
+  --font-mono: "SF Mono","Fira Code",monospace;
+  --ease: cubic-bezier(0.16,1,0.3,1);
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ─── Password Screen ───────────────────────────── */
+#pw-screen {
+  position: fixed; inset: 0;
+  background: #000;
+  z-index: 9999;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.9s var(--ease);
+}
+#pw-screen.fade-out { opacity:0; pointer-events:none; }
+
+.pw-eyebrow {
+  font-size: 10px; letter-spacing: 4px;
+  color: var(--dim); text-transform: uppercase;
+  margin-bottom: 52px;
+}
+.pw-title {
+  font-size: clamp(34px,7vw,64px);
+  font-weight: 600; letter-spacing: -1.5px;
+  text-align: center; line-height: 1.05;
+  margin-bottom: 12px;
+}
+.pw-subtitle {
+  font-size: 14px; color: var(--dim);
+  letter-spacing: 0.2px; margin-bottom: 52px; text-align: center;
+}
+.pw-form {
+  display: flex; flex-direction: column;
+  align-items: stretch; gap: 12px;
+  width: 100%; max-width: 300px; padding: 0 24px;
+}
+.pw-input {
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid var(--border-mid);
+  color: #fff; font-family: var(--font-mono);
+  font-size: 13px; letter-spacing: 5px;
+  padding: 15px 18px; outline: none;
+  text-align: center; border-radius: 10px;
+  transition: border-color 0.25s; -webkit-appearance: none;
+}
+.pw-input:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.06); }
+.pw-input::placeholder { letter-spacing: 3px; color: var(--dim2); font-size: 11px; }
+.pw-btn {
+  background: #fff; color: #000; border: none;
+  padding: 15px; font-family: var(--font);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; border-radius: 10px;
+  transition: transform 0.18s, opacity 0.18s; -webkit-appearance: none;
+}
+.pw-btn:active { transform: scale(0.96); opacity: 0.85; }
+.pw-error {
+  font-size: 12px; color: #ff453a;
+  text-align: center; height: 16px;
+  transition: opacity 0.3s; opacity: 0;
+}
+.pw-error.show { opacity: 1; }
+.pw-footer-nav {
+  position: fixed; bottom: 40px; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 32px;
+}
+.pw-footer-nav a {
+  font-size: 12px; color: var(--dim);
+  text-decoration: none; transition: color 0.2s;
+}
+.pw-footer-nav a:hover { color: #fff; }
+
+/* ─── Layout Shell ──────────────────────────────── */
+#main { display: none; opacity: 0; transition: opacity 1s var(--ease); }
+#main.visible { opacity: 1; }
+
+/* Top Nav */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--nav-h);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 24px; z-index: 200;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 0.5px solid var(--border);
+}
+.nav-brand {
+  font-size: 13px; font-weight: 600;
+  color: #fff; text-decoration: none;
+}
+.nav-right {
+  display: flex; align-items: center; gap: 28px;
+}
+.nav-right a {
+  font-size: 12px; color: var(--dim);
+  text-decoration: none; transition: color 0.2s;
+}
+.nav-right a:hover, .nav-right a.active { color: #fff; }
+
+/* ─── Sidebar ───────────────────────────────────── */
+.sidebar {
+  position: fixed;
+  top: var(--nav-h); left: 0;
+  width: var(--sidebar-w);
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  background: var(--bg);
+  border-right: 0.5px solid var(--border);
+  padding: 32px 0;
+  z-index: 100;
+  scrollbar-width: none;
+}
+.sidebar::-webkit-scrollbar { display: none; }
+
+.sidebar-section-label {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 2.5px;
+  color: var(--dim2); text-transform: uppercase;
+  padding: 0 20px 10px;
+}
+
+.sidebar-item {
+  display: flex; align-items: center;
+  gap: 10px; padding: 9px 20px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  position: relative;
+  user-select: none;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.04); }
+.sidebar-item.active { color: #fff; }
+.sidebar-item.active::before {
+  content: '';
+  position: absolute; left: 0; top: 20%; bottom: 20%;
+  width: 2px; background: var(--gold);
+  border-radius: 0 2px 2px 0;
+}
+
+.sidebar-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--dim2);
+  flex-shrink: 0;
+  transition: background 0.18s;
+}
+.sidebar-item.active .sidebar-dot { background: var(--gold); }
+
+.sidebar-name {
+  font-size: 13px; color: var(--dim);
+  transition: color 0.18s; flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-item.active .sidebar-name { color: #fff; }
+
+.sidebar-count {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--dim2);
+}
+
+.sidebar-divider {
+  height: 0.5px; background: var(--border);
+  margin: 16px 20px;
+}
+
+/* ─── Main Content ──────────────────────────────── */
+.content {
+  margin-left: var(--sidebar-w);
+  padding-top: var(--nav-h);
+  min-height: 100vh;
+}
+
+/* Category Hero */
+.cat-hero {
+  padding: 64px 48px 48px;
+  border-bottom: 0.5px solid var(--border);
+}
+.cat-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 3px;
+  color: var(--gold); text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.cat-eyebrow-line {
+  flex: 1; height: 0.5px;
+  background: var(--gold-border);
+}
+.cat-title {
+  font-size: clamp(32px,4vw,52px);
+  font-weight: 700; letter-spacing: -1.5px;
+  line-height: 1; margin-bottom: 12px;
+}
+.cat-desc {
+  font-size: 14px; color: var(--dim);
+  line-height: 1.6; max-width: 520px;
+}
+
+/* Technique Sections */
+.techniques-wrap {
+  padding: 0 48px 80px;
+}
+
+.technique-block {
+  padding: 48px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.technique-block:last-child { border-bottom: none; }
+
+.tech-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 24px;
+  margin-bottom: 32px;
+}
+.tech-header-left { flex: 1; }
+.tech-label {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 2.5px;
+  color: var(--gold); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.tech-title {
+  font-size: clamp(22px,2.5vw,30px);
+  font-weight: 600; letter-spacing: -0.8px;
+  line-height: 1.1; margin-bottom: 12px;
+}
+.tech-desc {
+  font-size: 14px; color: var(--dim);
+  line-height: 1.65; max-width: 480px;
+}
+
+/* Song Cards */
+.songs-stack { display: flex; flex-direction: column; gap: 1px; }
+
+.song-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.25s;
+}
+.song-card:hover { border-color: var(--border-mid); }
+
+/* Song Top Row */
+.song-top {
+  display: flex; align-items: center;
+  gap: 14px; padding: 16px 20px;
+}
+.song-play-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 0.5px solid var(--border-mid);
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: border-color 0.2s, background 0.2s;
+}
+.song-play-btn:hover { border-color: var(--gold); background: var(--gold-faint); }
+.song-play-btn svg { fill: var(--dim); transition: fill 0.2s; }
+.song-play-btn:hover svg { fill: var(--gold); }
+.song-play-btn.playing svg { fill: #1db954; }
+.song-play-btn.playing { border-color: #1db954; background: rgba(29,185,84,0.06); }
+
+.song-info { flex: 1; min-width: 0; }
+.song-name {
+  font-size: 14px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.song-meta-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 2px;
+}
+.song-artist { font-size: 12px; color: var(--dim); }
+.song-genre {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 1px;
+  color: var(--dim2); border: 0.5px solid var(--border-mid);
+  padding: 1px 7px; border-radius: 3px; text-transform: uppercase;
+}
+
+.song-actions {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.song-ts {
+  font-family: var(--font-mono);
+  font-size: 11px; color: rgba(212,175,55,0.6);
+  letter-spacing: 0.5px;
+  background: var(--gold-faint);
+  border: 0.5px solid var(--gold-border);
+  padding: 3px 9px; border-radius: 4px;
+}
+
+.icon-btn {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  border: 0.5px solid var(--border-mid);
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.icon-btn:hover { border-color: var(--border-mid); background: rgba(255,255,255,0.05); }
+.icon-btn svg { transition: stroke 0.2s; }
+
+/* Copy tooltip */
+.icon-btn .tip {
+  position: absolute; bottom: calc(100% + 6px);
+  left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  color: #fff; font-size: 10px;
+  letter-spacing: 0.5px; padding: 4px 8px;
+  border-radius: 5px; white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.icon-btn.copied .tip { opacity: 1; }
+
+/* Waveform */
+.waveform-wrap {
+  padding: 0 20px 16px;
+  position: relative;
+}
+canvas.waveform {
+  width: 100%; height: 56px;
+  display: block; border-radius: 6px;
+  cursor: crosshair;
+}
+
+/* Spotify embed */
+.spotify-wrap {
+  padding: 0 16px 16px;
+  display: none;
+}
+.spotify-wrap.open { display: block; }
+.spotify-wrap iframe {
+  border-radius: 8px;
+  border: 0.5px solid var(--border);
+}
+
+/* ─── Footer ────────────────────────────────────── */
+.site-footer {
+  margin-left: var(--sidebar-w);
+  padding: 40px 48px;
+  border-top: 0.5px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between;
+}
+.footer-copy { font-size: 12px; color: var(--dim); }
+.footer-links { display: flex; gap: 24px; }
+.footer-links a {
+  font-size: 12px; color: var(--dim);
+  text-decoration: none; transition: color 0.2s;
+}
+.footer-links a:hover { color: #fff; }
+
+/* ─── Mobile ────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    top: unset; left: unset;
+    border-right: none;
+    border-bottom: 0.5px solid var(--border);
+    padding: 12px 0;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0;
+  }
+  .sidebar-section-label,
+  .sidebar-divider { display: none; }
+  .sidebar-item {
+    padding: 8px 16px;
+    white-space: nowrap;
+    border-radius: 0;
+  }
+  .sidebar-item.active::before { display: none; }
+  .sidebar-item.active {
+    border-bottom: 2px solid var(--gold);
+  }
+  .sidebar-count { display: none; }
+
+  .content { margin-left: 0; }
+  .cat-hero { padding: 32px 20px 28px; }
+  .techniques-wrap { padding: 0 20px 60px; }
+  .site-footer { margin-left: 0; padding: 32px 20px; flex-direction: column; gap: 16px; align-items: flex-start; }
+  .nav { padding: 0 18px; }
+
+  /* Mobile: sidebar becomes a horizontal scroller above content */
+  #main { display: flex; flex-direction: column; }
+  .sidebar { order: 1; }
+  .content { order: 2; }
+  .site-footer { order: 3; }
+}
+
+@media (max-width: 480px) {
+  .song-top { padding: 12px 14px; }
+  .song-actions { gap: 6px; }
+  .waveform-wrap { padding: 0 14px 12px; }
+  .spotify-wrap { padding: 0 10px 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Password Screen ─────────────────────────── -->
+<div id="pw-screen">
+  <p class="pw-eyebrow">ChefDao Studio</p>
+  <h1 class="pw-title">Vocal Production<br>Guide</h1>
+  <p class="pw-subtitle">每月更新 · 限定访问</p>
+  <div class="pw-form">
+    <input class="pw-input" type="password" id="pw-input"
+      placeholder="PASSWORD" maxlength="24"
+      autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <button class="pw-btn" id="pw-btn">进入</button>
+    <p class="pw-error" id="pw-error">密码错误，请重试</p>
+  </div>
+  <nav class="pw-footer-nav">
+    <a href="https://cumusic.work/chefdao/">作品</a>
+    <a href="https://cumusic.work/chefdao/price/">价格</a>
+  </nav>
+</div>
+
+<!-- ── Main Shell ──────────────────────────────── -->
+<div id="main">
+
+  <nav class="nav">
+    <a class="nav-brand" href="https://cumusic.work/chefdao/">ChefDao</a>
+    <div class="nav-right">
+      <a href="https://cumusic.work/chefdao/">作品</a>
+      <a href="https://cumusic.work/chefdao/price/">价格</a>
+      <a href="#" class="active">VP 指南</a>
+    </div>
+  </nav>
+
+  <!-- Sidebar (populated by JS) -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- Main Content -->
+  <main class="content" id="content"></main>
+
+  <footer class="site-footer">
+    <span class="footer-copy" id="footer-copy">© 2026 ChefDao Studio</span>
+    <div class="footer-links">
+      <a href="https://cumusic.work/chefdao/">作品</a>
+      <a href="https://cumusic.work/chefdao/price/">价格</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  const DATA = window.CHEFDAO_DATA || { password:'', volume:'Vol.01', desc:'', categories:[], techniques:[] };
+
+  /* ── Password ──────────────────────────────── */
+  const pwInput = document.getElementById('pw-input');
+  const pwErr   = document.getElementById('pw-error');
+
+  function unlock() {
+    if (pwInput.value.trim() === DATA.password) {
+      const s = document.getElementById('pw-screen');
+      s.classList.add('fade-out');
+      setTimeout(() => {
+        s.style.display = 'none';
+        const m = document.getElementById('main');
+        m.style.display = 'flex';
+        requestAnimationFrame(() => { m.classList.add('visible'); init(); });
+      }, 900);
+    } else {
+      pwErr.classList.add('show');
+      pwInput.value = '';
+      pwInput.focus();
+      setTimeout(() => pwErr.classList.remove('show'), 2200);
+    }
+  }
+
+  document.getElementById('pw-btn').addEventListener('click', unlock);
+  pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+
+  /* ── Waveform ──────────────────────────────── */
+  function seededRand(seed) {
+    let s = [...seed].reduce((a,c) => (a + c.charCodeAt(0)) | 0, 42);
+    return () => { s = ((s * 9301 + 49297) % 233280); return s / 233280; };
+  }
+
+  function parseTs(ts) {
+    if (!ts) return null;
+    const low = ts.toLowerCase();
+    if (low === '开头' || low === 'intro') return 0.05;
+    if (low === 'hook' || low === '副歌') return 0.38;
+    if (low === 'outro') return 0.85;
+    // SS or M:SS or MM:SS
+    const clean = ts.replace(/s$/i,'');
+    const parts = clean.split(':');
+    if (parts.length === 2) {
+      const secs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      return Math.min(secs / 220, 0.92);
+    }
+    if (parts.length === 1 && !isNaN(parseInt(parts[0]))) {
+      return Math.min(parseInt(parts[0]) / 220, 0.92);
+    }
+    return null;
+  }
+
+  function drawWaveform(canvas, seed, tsStr) {
+    const dpr = window.devicePixelRatio || 1;
+    const W   = canvas.offsetWidth;
+    const H   = canvas.offsetHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const rand  = seededRand(seed);
+    const BARS  = Math.floor(W / 4);
+    const barW  = W / BARS;
+    const gap   = barW * 0.25;
+    const tsPos = parseTs(tsStr);
+    const markerX = tsPos != null ? tsPos * W : null;
+
+    const mid = H / 2;
+
+    for (let i = 0; i < BARS; i++) {
+      const x = i * barW;
+      const r = rand();
+      // Slight envelope: quieter at edges
+      const env = Math.sin((i / BARS) * Math.PI) * 0.3 + 0.7;
+      const h   = (0.12 + r * 0.88) * env;
+      const topH   = h * mid * 0.95;
+      const botH   = h * mid * 0.65;
+
+      const played = markerX != null && x < markerX;
+      const alpha  = played ? 0.55 : 0.2;
+
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.beginPath();
+      ctx.roundRect(x + gap/2, mid - topH, barW - gap, topH, 1);
+      ctx.fill();
+
+      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.55})`;
+      ctx.beginPath();
+      ctx.roundRect(x + gap/2, mid, barW - gap, botH, 1);
+      ctx.fill();
+    }
+
+    // Marker line
+    if (markerX != null) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(212,175,55,0.75)';
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(markerX, 4);
+      ctx.lineTo(markerX, H - 4);
+      ctx.stroke();
+      ctx.restore();
+
+      // Bubble
+      const bubbleTxt = tsStr;
+      const bPad = 6, bH = 18;
+      ctx.font = `500 10px ${DATA.fontMono || 'monospace'}`;
+      const tw = ctx.measureText(bubbleTxt).width;
+      const bW = tw + bPad * 2;
+      let bx = markerX - bW / 2;
+      bx = Math.max(2, Math.min(W - bW - 2, bx));
+      const by = 3;
+
+      ctx.fillStyle = 'rgba(212,175,55,0.9)';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bW, bH, 4);
+      ctx.fill();
+
+      ctx.fillStyle = '#000';
+      ctx.textAlign  = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(bubbleTxt, bx + bPad, by + bH / 2);
+    }
+  }
+
+  /* ── Copy ──────────────────────────────────── */
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      btn.querySelector('.tip').textContent = '已复制';
+      setTimeout(() => btn.classList.remove('copied'), 1800);
+    });
+  }
+
+  /* ── Render ────────────────────────────────── */
+  let activeCatId = null;
+
+  function buildSidebar() {
+    const sb = document.getElementById('sidebar');
+    let html = `<div class="sidebar-section-label">${DATA.volume || 'Vol.01'}</div>`;
+
+    DATA.categories.forEach((cat, i) => {
+      const count = DATA.techniques.filter(t => t.category === cat.id).length;
+      html += `
+        <div class="sidebar-item${i === 0 ? ' active' : ''}"
+             data-cat="${cat.id}"
+             onclick="switchCat('${cat.id}')">
+          <span class="sidebar-dot"></span>
+          <span class="sidebar-name">${cat.name}</span>
+          ${count ? `<span class="sidebar-count">${count}</span>` : ''}
+        </div>`;
+      if (i < DATA.categories.length - 1 && DATA.categories[i+1].group !== cat.group) {
+        html += '<div class="sidebar-divider"></div>';
+      }
+    });
+
+    sb.innerHTML = html;
+    activeCatId = DATA.categories[0]?.id;
+  }
+
+  window.switchCat = function(id) {
+    activeCatId = id;
+    document.querySelectorAll('.sidebar-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.cat === id);
+    });
+    renderContent(id);
+    document.getElementById('content').scrollTop = 0;
+    window.scrollTo({ top: document.querySelector('.content').offsetTop - 52, behavior: 'smooth' });
+  };
+
+  function renderContent(catId) {
+    const cat   = DATA.categories.find(c => c.id === catId);
+    const techs = DATA.techniques.filter(t => t.category === catId);
+    const cont  = document.getElementById('content');
+
+    if (!cat) { cont.innerHTML = ''; return; }
+
+    let html = `
+      <div class="cat-hero">
+        <div class="cat-eyebrow">
+          ${cat.name}
+          <span class="cat-eyebrow-line"></span>
+        </div>
+        <h1 class="cat-title">${cat.name}</h1>
+        <p class="cat-desc">${cat.desc || ''}</p>
+      </div>
+      <div class="techniques-wrap">`;
+
+    if (!techs.length) {
+      html += `<p style="color:var(--dim);font-size:14px;padding:48px 0">即将更新...</p>`;
+    }
+
+    techs.forEach(tech => {
+      html += `
+        <div class="technique-block">
+          <div class="tech-header">
+            <div class="tech-header-left">
+              <div class="tech-label">${tech.name}</div>
+              <div class="tech-title">${tech.title}</div>
+              <div class="tech-desc">${tech.desc}</div>
+            </div>
+          </div>
+          <div class="songs-stack">
+            ${(tech.songs || []).map((s, si) => renderSongCard(s, `${tech.name}-${si}`)).join('')}
+          </div>
+        </div>`;
+    });
+
+    html += `</div>`;
+    cont.innerHTML = html;
+
+    // Draw waveforms after DOM ready
+    requestAnimationFrame(() => {
+      cont.querySelectorAll('canvas.waveform').forEach(cvs => {
+        drawWaveform(cvs, cvs.dataset.seed, cvs.dataset.ts);
+      });
+    });
+  }
+
+  function renderSongCard(s, uid) {
+    const hasSpotify = !!s.spotifyId;
+    const hasLink    = !!s.link;
+    const hasTs      = !!s.timestamp;
+    const copyVal    = s.title + (s.artist ? ` — ${s.artist}` : '');
+
+    return `
+      <div class="song-card" id="card-${uid}">
+        <div class="song-top">
+          ${hasSpotify
+            ? `<button class="song-play-btn" title="Spotify" onclick="toggleSpotify('${uid}')">
+                 <svg width="13" height="13" viewBox="0 0 13 13"><polygon points="3,2 11,6.5 3,11"/></svg>
+               </button>`
+            : `<div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                 <div style="width:6px;height:6px;border-radius:50%;background:var(--dim2)"></div>
+               </div>`}
+
+          <div class="song-info">
+            <div class="song-name">${s.title}</div>
+            <div class="song-meta-row">
+              ${s.artist ? `<span class="song-artist">${s.artist}</span>` : ''}
+              ${s.genre  ? `<span class="song-genre">${s.genre}</span>`  : ''}
+            </div>
+          </div>
+
+          <div class="song-actions">
+            ${hasTs ? `<span class="song-ts">${s.timestamp}</span>` : ''}
+
+            ${hasLink
+              ? `<a class="icon-btn" href="${s.link}" target="_blank" rel="noopener" title="打开链接">
+                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--dim)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                     <polyline points="1,10 10,1"/><polyline points="4,1 10,1 10,7"/>
+                   </svg>
+                 </a>`
+              : ''}
+
+            <button class="icon-btn" title="复制歌名"
+              onclick='(function(b){ navigator.clipboard.writeText(${JSON.stringify(copyVal)}).then(()=>{ b.classList.add("copied"); b.querySelector(".tip").textContent="已复制"; setTimeout(()=>b.classList.remove("copied"),1800); }); })(this)'>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--dim)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="3" width="7" height="8" rx="1.5"/>
+                <path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9"/>
+              </svg>
+              <span class="tip"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Waveform -->
+        <div class="waveform-wrap">
+          <canvas class="waveform"
+            data-seed="${s.title}"
+            data-ts="${s.timestamp || ''}"
+            style="height:56px">
+          </canvas>
+        </div>
+
+        <!-- Spotify embed (toggled) -->
+        ${hasSpotify
+          ? `<div class="spotify-wrap" id="spotify-${uid}">
+               <iframe
+                 src="https://open.spotify.com/embed/track/${s.spotifyId}?utm_source=generator"
+                 width="100%" height="152"
+                 frameborder="0"
+                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                 loading="lazy">
+               </iframe>
+             </div>`
+          : ''}
+      </div>`;
+  }
+
+  window.toggleSpotify = function(uid) {
+    const wrap = document.getElementById(`spotify-${uid}`);
+    const btn  = document.querySelector(`#card-${uid} .song-play-btn`);
+    if (!wrap) return;
+    const open = wrap.classList.toggle('open');
+    btn && btn.classList.toggle('playing', open);
+  };
+
+  /* ── Init ──────────────────────────────────── */
+  function init() {
+    document.getElementById('footer-copy').textContent = `© 2026 ChefDao Studio · ${DATA.volume || ''}`;
+    buildSidebar();
+    if (DATA.categories.length) renderContent(DATA.categories[0].id);
+
+    // Resize observer for redrawing waveforms
+    const ro = new ResizeObserver(() => {
+      document.querySelectorAll('canvas.waveform').forEach(cvs => {
+        drawWaveform(cvs, cvs.dataset.seed, cvs.dataset.ts);
+      });
+    });
+    ro.observe(document.getElementById('content'));
+  }
+
+})();
+</script>
+</body>
+</html>
