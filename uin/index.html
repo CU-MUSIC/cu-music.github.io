@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UIN 尤因</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:    #E8000A;
+      --red2:   #B80008;
+      --white:  #EDEBE6;
+      --mono:   'Space Mono', monospace;
+
+      /* section backgrounds — different shades of dark red */
+      --bg-hero:     #060606;
+      --bg-info:     #0a0000;
+      --bg-dj:       #130001;
+      --bg-producer: #0d0002;
+      --bg-works:    #070000;
+      --bg-contact:  #040000;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-hero);
+      color: var(--white);
+      font-family: var(--mono);
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    ::selection { background: var(--red); color: #000; }
+
+    /* ── CURSOR ── */
+    .cursor {
+      width: 6px; height: 6px;
+      background: var(--red);
+      border-radius: 50%;
+      position: fixed; z-index: 9999;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: exclusion;
+      transition: width .15s, height .15s;
+    }
+
+    /* ── HERO ── */
+    #hero {
+      position: relative;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .hero-photo {
+      position: absolute;
+      inset: -40px;           /* overshoot to hide blur edges */
+      background: url('img/uin-red.jpg') 40% center / cover no-repeat;
+      filter: blur(36px) contrast(1.6) saturate(2.0) brightness(0.55);
+    }
+
+    /* animated orbs on top of blurred photo */
+    .hero-orbs {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      mix-blend-mode: screen;
+    }
+
+    .orb-1 {
+      width: 60vw; height: 60vw;
+      background: radial-gradient(circle, #c20006 0%, transparent 70%);
+      top: -15%; left: -10%;
+      opacity: 0.35;
+      animation: drift1 18s ease-in-out infinite alternate;
+    }
+
+    .orb-2 {
+      width: 45vw; height: 45vw;
+      background: radial-gradient(circle, #9b0004 0%, transparent 70%);
+      bottom: -5%; right: -5%;
+      opacity: 0.25;
+      animation: drift2 22s ease-in-out infinite alternate;
+    }
+
+    @keyframes drift1 {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(15vw, 10vh) scale(1.15); }
+    }
+    @keyframes drift2 {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(-12vw,-15vh) scale(0.9); }
+    }
+
+    /* multi-layer overlay */
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom,
+          rgba(6,0,0,0.45) 0%,
+          rgba(6,0,0,0.20) 35%,
+          rgba(12,0,1,0.65) 75%,
+          rgba(19,0,1,0.90) 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-eyebrow {
+      font-size: 15px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.5);
+      margin-bottom: 24px;
+    }
+
+    .hero-name {
+      font-size: clamp(26px, 3.6vw, 44px);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--white);
+      line-height: 1.9;
+    }
+
+    .hero-name .cn {
+      color: rgba(237,235,230,0.4);
+      font-size: 0.82em;
+    }
+
+    .hero-sub {
+      margin-top: 28px;
+      font-size: 14px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--red);
+    }
+
+    .hero-bottom {
+      position: absolute;
+      bottom: 36px; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 44px;
+      z-index: 2;
+    }
+
+    .hero-bottom span {
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.25);
+    }
+
+    .scroll-line {
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 1px; height: 55px;
+      background: linear-gradient(to bottom, transparent, var(--red));
+      z-index: 2;
+      animation: linepulse 2.2s ease-in-out infinite;
+    }
+    @keyframes linepulse { 0%,100%{opacity:.2} 50%{opacity:.9} }
+
+    /* ── SHARED SECTION STYLES ── */
+    .section {
+      padding: 100px 60px;
+      max-width: 1060px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 13px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 52px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .section-label::after {
+      content:''; flex:1; height:1px;
+      background: rgba(237,235,230,0.06);
+    }
+
+    /* ── INFORMATION ── */
+    #info { background: var(--bg-info); }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px 80px;
+    }
+
+    .info-bio {
+      grid-column: 1 / -1;
+      font-size: 16px;
+      line-height: 2;
+      letter-spacing: 0.05em;
+      color: rgba(237,235,230,0.72);
+      text-transform: uppercase;
+      max-width: 680px;
+    }
+
+    .info-col-label {
+      font-size: 12px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.28);
+      margin-bottom: 14px;
+    }
+
+    .info-col-value {
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.68);
+      line-height: 2.2;
+    }
+
+    .info-col-value a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(232,0,10,0.35);
+      transition: color .2s, border-color .2s;
+    }
+    .info-col-value a:hover { color: var(--red); border-color: var(--red); }
+
+    /* ── DJ ── */
+    #dj { background: var(--bg-dj); }
+
+    .dj-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+    }
+
+    .dj-photo-wrap {
+      position: relative;
+    }
+
+    .dj-photo {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+      filter: grayscale(15%) contrast(1.1);
+    }
+
+    .dj-photo-caption {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.2);
+      margin-top: 14px;
+    }
+
+    .dj-text { padding-top: 8px; }
+
+    .dj-stat {
+      font-size: clamp(38px, 5vw, 68px);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--red);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .dj-stat-label {
+      font-size: 13px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.4);
+      margin-bottom: 44px;
+    }
+
+    .dj-bio-text {
+      font-size: 14px;
+      line-height: 2;
+      letter-spacing: 0.05em;
+      color: rgba(237,235,230,0.65);
+      text-transform: uppercase;
+      margin-bottom: 44px;
+    }
+
+    .dj-acts-label {
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.28);
+      margin-bottom: 14px;
+    }
+
+    .dj-acts {
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.6);
+      line-height: 2.2;
+    }
+
+    .dj-acts span { color: var(--red); }
+
+    /* ── PRODUCER ── */
+    #producer { background: var(--bg-producer); }
+
+    .producer-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+    }
+
+    .producer-text { order: -1; }
+
+    .producer-photo {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+      filter: grayscale(10%) contrast(1.05);
+    }
+
+    .producer-bio-text {
+      font-size: 14px;
+      line-height: 2;
+      letter-spacing: 0.05em;
+      color: rgba(237,235,230,0.65);
+      text-transform: uppercase;
+      margin-bottom: 44px;
+    }
+
+    .producer-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px 40px;
+      margin-bottom: 48px;
+    }
+
+    .stat-num {
+      font-size: clamp(22px, 3vw, 34px);
+      font-weight: 700;
+      color: var(--red);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-desc {
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.35);
+      line-height: 1.7;
+    }
+
+    .tracks-label {
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.28);
+      margin-bottom: 14px;
+    }
+
+    .tracks-list {
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.6);
+      line-height: 2.4;
+    }
+
+    .tracks-list span { color: var(--red); margin-right: 10px; }
+
+    /* ── WORKS ── */
+    #works { background: var(--bg-works); }
+
+    .work-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid rgba(237,235,230,0.07);
+      padding: 26px 0;
+      align-items: center;
+      text-decoration: none;
+      transition: background .15s;
+    }
+    .work-card:last-child { border-bottom: 1px solid rgba(237,235,230,0.07); }
+    .work-card:hover .work-arrow { transform: translateX(5px); color: var(--red); }
+
+    .work-left { display: flex; flex-direction: column; gap: 8px; }
+
+    .work-tag {
+      font-size: 12px;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--red);
+    }
+
+    .work-title {
+      font-size: 18px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .work-right {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .work-meta {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.32);
+      line-height: 2;
+    }
+
+    .work-arrow {
+      font-size: 18px;
+      color: rgba(237,235,230,0.25);
+      transition: transform .25s, color .25s;
+    }
+
+    .work-card.placeholder .work-title { color: rgba(237,235,230,0.2); }
+    .work-card.placeholder .work-tag   { color: rgba(232,0,10,0.3); }
+
+    /* ── CONTACT ── */
+    #contact { background: var(--bg-contact); }
+
+    .contact-email {
+      display: inline-block;
+      font-size: clamp(14px, 2vw, 22px);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--white);
+      text-decoration: none;
+      border-bottom: 1px solid var(--red);
+      padding-bottom: 3px;
+      margin-bottom: 60px;
+      transition: color .2s;
+    }
+    .contact-email:hover { color: var(--red); }
+
+    .contact-socials {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 40px;
+      padding-top: 36px;
+      border-top: 1px solid rgba(237,235,230,0.06);
+    }
+
+    .social-link {
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.45);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color .2s;
+    }
+    .social-link::before { content:'↗'; color: var(--red); }
+    .social-link:hover { color: var(--white); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg-contact);
+      border-top: 1px solid rgba(237,235,230,0.05);
+      padding: 28px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-copy {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.16);
+    }
+
+    .footer-cu {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.16);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .footer-cu:hover { color: var(--red); }
+
+    .footer-top {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(237,235,230,0.16);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .footer-top:hover { color: var(--red); }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.75s ease, transform 0.75s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .section { padding: 72px 28px; }
+      .info-grid { grid-template-columns: 1fr; gap: 40px; }
+      .dj-layout, .producer-layout { grid-template-columns: 1fr; }
+      .producer-text { order: 0; }
+      .work-card { grid-template-columns: 1fr; gap: 12px; }
+      footer { padding: 24px 28px; flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+
+  <!-- ── HERO ── -->
+  <section id="hero">
+    <div class="hero-photo"></div>
+    <div class="hero-orbs">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Shanghai · Seoul</div>
+      <div class="hero-name">
+        UIN<br>
+        <span class="cn">尤因</span>
+      </div>
+      <div class="hero-sub">Producer · DJ · Songwriter</div>
+    </div>
+    <div class="hero-bottom">
+      <span>© 2026</span>
+      <span>Scroll ↓</span>
+    </div>
+    <div class="scroll-line"></div>
+  </section>
+
+  <!-- ── INFORMATION ── -->
+  <section id="info">
+    <div class="section">
+      <div class="section-label">Information</div>
+      <div class="info-grid">
+
+        <p class="info-bio reveal">
+          Uin (尤因 / 유인) is an electronic hip-hop
+          producer, DJ and songwriter active between
+          Shanghai and Seoul. Grounded in club culture
+          and driven by cross-genre curiosity, her sound
+          bridges electronic, hip-hop, R&B and K-POP —
+          forged across two cities, three languages,
+          one relentless sonic identity.
+        </p>
+
+        <div class="reveal">
+          <div class="info-col-label">General Inquiries</div>
+          <div class="info-col-value">
+            <a href="mailto:uin2002jh@gmail.com">uin2002jh@gmail.com</a>
+          </div>
+        </div>
+
+        <div class="reveal">
+          <div class="info-col-label">Genres</div>
+          <div class="info-col-value">Electronic · Hip-Hop · R&B · K-POP</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DJ ── -->
+  <section id="dj">
+    <div class="section">
+      <div class="section-label">DJ</div>
+      <div class="dj-layout">
+
+        <div class="dj-photo-wrap reveal">
+          <img class="dj-photo" src="img/uin-003.jpg" alt="Uin DJing" />
+          <div class="dj-photo-caption">Yeahmao Club, Shanghai</div>
+        </div>
+
+        <div class="dj-text">
+          <div class="dj-stat reveal">60+</div>
+          <div class="dj-stat-label reveal">Performances</div>
+
+          <div class="dj-bio-text reveal">
+            Active in Shanghai for 3 years as resident
+            DJ at Yeahmao Club and performance DJ
+            across 60+ shows. Spanning electronic,
+            hip-hop and pop, each set is a live
+            exploration of her evolving artistry.
+          </div>
+
+          <div class="dj-acts-label reveal">Notable Collaborations</div>
+          <div class="dj-acts reveal">
+            <span>·</span> Lexie Liu — Tencent Game Event<br>
+            <span>·</span> Danny K · FFFELEVEN · Sino — 2727 Tour<br>
+            <span>·</span> 1SHOT — 侬 Cypher 了伐<br>
+            <span>·</span> Gali Shanghai Concert After Party
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PRODUCER ── -->
+  <section id="producer">
+    <div class="section">
+      <div class="section-label">Producer</div>
+      <div class="producer-layout">
+
+        <div class="producer-text">
+          <div class="producer-bio-text reveal">
+            From DJ to producer, Uin moved to Seoul
+            to study Performing Arts at Hongik University,
+            pursuing professional music production.
+            Her work spans electronic, pop, hip-hop
+            and R&B — built in studios between
+            Shanghai and Seoul.
+          </div>
+
+          <div class="producer-stats reveal">
+            <div>
+              <div class="stat-num">200K+</div>
+              <div class="stat-desc">Streams</div>
+            </div>
+            <div>
+              <div class="stat-num">1M+</div>
+              <div class="stat-desc">Short-form<br>video views</div>
+            </div>
+            <div>
+              <div class="stat-num">500+</div>
+              <div class="stat-desc">TikTok<br>challenges</div>
+            </div>
+            <div>
+              <div class="stat-num">10+</div>
+              <div class="stat-desc">Released<br>projects</div>
+            </div>
+          </div>
+
+          <div class="tracks-label reveal">Selected Works</div>
+          <div class="tracks-list reveal">
+            <span>—</span> Trick or Treat<br>
+            <span>—</span> 首尔病 (Take Me Out)<br>
+            <span>—</span> Bad Desire<br>
+            <span>—</span> 美丽新世界
+          </div>
+        </div>
+
+        <div class="reveal">
+          <img class="producer-photo" src="img/uin-007.jpg" alt="Uin in the studio" />
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SELECTED WORK ── -->
+  <section id="works">
+    <div class="section">
+      <div class="section-label">Selected Work</div>
+
+      <div class="work-card placeholder">
+        <div class="work-left">
+          <div class="work-tag">Coming Soon</div>
+          <div class="work-title">— 2026 —</div>
+        </div>
+        <div class="work-right">
+          <div class="work-meta">2026</div>
+          <div class="work-arrow">↗</div>
+        </div>
+      </div>
+
+      <a class="work-card" href="https://music.163.com/#/artist?id=36283900" target="_blank" rel="noopener">
+        <div class="work-left">
+          <div class="work-tag">Streaming</div>
+          <div class="work-title">NetEase Music Catalog</div>
+        </div>
+        <div class="work-right">
+          <div class="work-meta">网易云音乐<br>Catalog</div>
+          <div class="work-arrow">↗</div>
+        </div>
+      </a>
+
+      <a class="work-card" href="https://www.beatstars.com/produin" target="_blank" rel="noopener">
+        <div class="work-left">
+          <div class="work-tag">Beats</div>
+          <div class="work-title">BeatStars</div>
+        </div>
+        <div class="work-right">
+          <div class="work-meta">Prod_Uin<br>Beat Catalog</div>
+          <div class="work-arrow">↗</div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── CONTACT ── -->
+  <section id="contact">
+    <div class="section">
+      <div class="section-label">Contact</div>
+      <a href="mailto:uin2002jh@gmail.com" class="contact-email">uin2002jh@gmail.com</a>
+      <div class="contact-socials">
+        <a href="https://www.instagram.com/is_uinnnn" target="_blank" rel="noopener" class="social-link">Instagram</a>
+        <a href="https://www.xiaohongshu.com/user/profile/5f2e0ff4000000000100a82c" target="_blank" rel="noopener" class="social-link">小红书</a>
+        <a href="https://music.163.com/#/artist?id=36283900" target="_blank" rel="noopener" class="social-link">NetEase Music</a>
+        <a href="https://www.youtube.com/@prod_uin" target="_blank" rel="noopener" class="social-link">YouTube</a>
+        <a href="https://www.beatstars.com/produin" target="_blank" rel="noopener" class="social-link">BeatStars</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <span class="footer-copy">© 2026 Uin 尤因 · All Rights Reserved</span>
+    <a href="https://cumusic.work/" target="_blank" rel="noopener" class="footer-cu">Rights & Management — CU Music</a>
+    <a href="#hero" class="footer-top">↑ Top</a>
+  </footer>
+
+  <script>
+    // Cursor
+    const cur = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      cur.style.left = e.clientX + 'px';
+      cur.style.top  = e.clientY + 'px';
+    });
+    document.querySelectorAll('a, .work-card').forEach(el => {
+      el.addEventListener('mouseenter', () => { cur.style.width='14px'; cur.style.height='14px'; });
+      el.addEventListener('mouseleave', () => { cur.style.width='6px';  cur.style.height='6px'; });
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
