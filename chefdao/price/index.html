@@ -34,16 +34,21 @@
 		.hero { margin-bottom: 80px; }
 		.hero h1 { font-size: clamp(36px, 9vw, 72px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 16px; }
 		.hero-sub { color: var(--text-secondary); font-size: 15px; max-width: 480px; line-height: 1.7; }
-		.service-section { margin-bottom: 72px; }
+		.service-section { margin-bottom: 64px; }
 		.section-head { margin-bottom: 28px; }
-		.step-tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+		.step-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; gap: 6px; }
+		.step-tag::before { content: ""; display: block; width: 18px; height: 1px; background: currentColor; opacity: 0.6; }
 		.step-tag.gold { color: var(--gold); }
+		.step-tag.silver { color: #aaa; }
+		.step-tag.gold::before, .step-tag.silver::before { display: none; }
 		.section-head h2 { font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: -0.02em; }
-		.subsection { margin-bottom: 40px; }
-		.sub-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 0.5px solid var(--border); }
-		.sub-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-		.sub-desc { font-size: 12px; color: var(--text-secondary); }
-		.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+		.subsection { margin-bottom: 36px; }
+		.subsection:last-child { margin-bottom: 0; }
+		.sub-head { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 0.5px solid var(--border); }
+		.sub-head h3 { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+		.sub-desc { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+		.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: stretch; }
+		.card-grid.solo { max-width: 380px; }
 		.price-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.3s var(--ease), background 0.3s var(--ease), transform 0.3s var(--ease); cursor: default; position: relative; overflow: hidden; }
 		.price-card:hover { border-color: var(--border-hover); background: var(--surface-hover); transform: translateY(-3px); }
 		.price-card.featured { border-color: rgba(201, 162, 39, 0.3); }
@@ -61,7 +66,7 @@
 		.partner-box h2 { font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
 		.partner-intro { font-size: 14px; color: var(--text-secondary); max-width: 380px; margin: 0 auto 40px; line-height: 1.7; }
 		.partner-box .card-grid { text-align: left; }
-		.section-divider { height: 0.5px; background: var(--border); margin: 72px 0; }
+		.section-divider { height: 0.5px; background: var(--border); margin: 64px 0; }
 		footer { text-align: center; color: var(--text-dim); font-size: 11px; letter-spacing: 0.06em; padding-bottom: env(safe-area-inset-bottom); }
 		.floating-cta { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap; }
 		.floating-btn { display: flex; align-items: center; gap: 10px; background: rgba(17,17,17,0.85); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 0.5px solid var(--border-hover); color: var(--text-primary); padding: 14px 28px; border-radius: 100px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s; min-height: 52px; }
@@ -72,16 +77,104 @@
 		#services-container { transition: opacity 0.18s ease; }
 		#services-container.fading { opacity: 0; }
 		@media (max-width: 600px) {
-			.container { padding: 48px 16px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
-			.hero { margin-bottom: 56px; }
+			.container { padding: 40px 16px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+			.hero { margin-bottom: 48px; }
+			.hero-sub { font-size: 13px; }
 			.card-grid { grid-template-columns: 1fr; }
+			.card-grid.solo { max-width: 100%; }
+			.price-card { padding: 18px 16px; }
+			.card-price-num { font-size: 24px; }
+			.card-price-orig { font-size: 16px; }
+			.card-price-row { gap: 6px; }
+			.sub-head { padding-bottom: 10px; margin-bottom: 12px; }
+			.sub-head h3 { font-size: 11px; }
+			.sub-desc { font-size: 10px; }
+			.section-head h2 { font-size: 20px; }
+			.section-head { margin-bottom: 20px; }
+			.subsection { margin-bottom: 28px; }
 			.partner-box { padding: 36px 20px; }
-			.service-section { margin-bottom: 56px; }
-			.section-divider { margin: 56px 0; }
+			.service-section { margin-bottom: 48px; }
+			.section-divider { margin: 48px 0; }
 			.lang-btn { padding: 6px 10px; font-size: 10px; }
+			.pl-highlights { grid-template-columns: 1fr 1fr; gap: 8px; }
+			.pl-highlight-item { padding: 10px 12px; }
+			.pl-deposit-num { font-size: 26px; }
+			.pl-desc { font-size: 12px; }
+			.pl-cta { font-size: 11px; padding: 8px 14px; }
+			.ci-chip { font-size: 10px; padding: 2px 7px; }
+			.projectlead-card { padding: 18px 16px; }
+			.step-tag { font-size: 9px; }
+			.step-tag::before { width: 14px; }
 		}
 		@media (min-width: 601px) and (max-width: 800px) {
 			.card-grid { grid-template-columns: repeat(2, 1fr); }
+			.card-grid.solo { max-width: 380px; }
+		}
+
+		/* ── Bundle Card ──────────────────────────────────── */
+		.bundle-card {
+			background: var(--surface); border: 0.5px solid rgba(201,162,39,0.35);
+			border-radius: var(--r); padding: 28px 32px; position: relative; overflow: hidden;
+		}
+		.bundle-card::before {
+			content: ""; position: absolute; inset: 0;
+			background: var(--gold-bg); pointer-events: none;
+		}
+		.bundle-price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+		.bundle-original { font-size: 18px; color: var(--text-dim); text-decoration: line-through; font-weight: 500; }
+		.bundle-arrow { font-size: 13px; color: var(--text-dim); }
+		.bundle-price { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; }
+		.bundle-items { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+		.bundle-item {
+			font-size: 12px; color: var(--text-secondary); padding: 4px 12px;
+			border: 0.5px solid var(--border); border-radius: 100px;
+		}
+		.bundle-plus { color: var(--text-dim); font-size: 13px; }
+		.bundle-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 14px; }
+		.bundle-tip {
+			font-size: 12px; color: var(--gold); padding: 10px 14px; line-height: 1.7;
+			background: rgba(201,162,39,0.06); border: 0.5px solid rgba(201,162,39,0.2); border-radius: 8px;
+		}
+		@media (max-width:600px) { .bundle-card { padding: 20px; } }
+
+		/* ── Card orig price (strikethrough) ─────────────── */
+		.card-price-orig { font-size: 20px; color: rgba(255,255,255,0.38); text-decoration: line-through; font-weight: 500; align-self: flex-end; margin-bottom: 4px; }
+		.card-price-row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 8px; }
+
+		/* ── Card includes breakdown ──────────────────────── */
+		.card-includes {
+			margin-top: 12px; padding: 10px 12px;
+			background: rgba(255,255,255,0.04); border-radius: 8px;
+		}
+		.ci-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+		.ci-chip { font-size: 11px; color: var(--text-secondary); padding: 3px 9px; border: 0.5px solid var(--border); border-radius: 100px; white-space: nowrap; }
+		.ci-chip strong { color: var(--text-primary); font-weight: 600; }
+		.ci-sep { font-size: 11px; color: var(--text-dim); }
+		.ci-total-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+		.ci-orig { font-size: 11px; color: var(--text-dim); text-decoration: line-through; }
+		.ci-arrow { font-size: 11px; color: var(--text-dim); }
+		.ci-saving { font-size: 11px; color: var(--gold); font-weight: 600; padding: 2px 8px; background: rgba(201,162,39,0.1); border-radius: 100px; }
+
+		/* ── Project Lead card ─────────────────────────────── */
+		.step-tag.silver { color: #aaa; }
+		.projectlead-card {
+			background: var(--surface); border: 0.5px solid rgba(255,255,255,0.15);
+			border-radius: var(--r); padding: 28px 32px;
+		}
+		.pl-highlights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+		.pl-highlight-item { padding: 12px 14px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; }
+		.pl-highlight-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
+		.pl-highlight-value { font-size: 12px; color: var(--text-primary); font-weight: 500; line-height: 1.4; }
+		.pl-price-block { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+		.pl-deposit { display: flex; flex-direction: column; gap: 3px; }
+		.pl-deposit-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+		.pl-deposit-num { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; }
+		.pl-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 14px; }
+		.pl-cta { display: inline-block; font-size: 12px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.06em; padding: 9px 18px; border: 0.5px solid rgba(255,255,255,0.25); border-radius: 100px; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+		.pl-cta:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.05); }
+		@media (max-width:600px) {
+			.projectlead-card { padding: 20px; }
+			.pl-highlights { grid-template-columns: 1fr 1fr; }
 		}
 
 		/* ── FAQ ───────────────────────────────────────────── */
@@ -213,7 +306,7 @@ var I18N = {
 		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
 		ctaLabel: "联系我们: CookDao",
 		ctaCopied: "微信号已复制 ✓",
-		partnerIntro: "除后期工程外，我们也提供从灵感策划到完整配器的全案创作",
+		partnerIntro: "除后期工程外，我们也提供从灵感策划到完整配器的全案创作，以及专辑 / EP 深度项目负责人服务。",
 		services: [
 			{
 				id: "recording", step: "Step 01", title: "录音 Recording",
@@ -223,15 +316,32 @@ var I18N = {
 				id: "mixing", step: "Step 02", title: "混音 Mixing",
 				subsections: [
 					{
-						name: "Vocal Mix", desc: "人声混音工程",
+						name: "音频编辑 Audio Editing", desc: "修音与切片对齐，混音前置基础",
 						items: [
-							{ title: "高级全案制作", price: "¥600", unit: "", desc: "极致人声表现方案。含深度氛围设计与 2 小时精细音编（修音/对齐）。", tags: ["深度定制"] },
-							{ title: "标准贴唱混音", price: "¥450", unit: "", desc: "含 1 小时基础音编。创意制作仅限单次方案，不支持持续改稿。", tags: ["商业推荐"], featured: true },
-							{ title: "基础混音", price: "¥300", unit: "", desc: "侧重音色优化与基础平衡。适合追求原始听感的独立作品。", tags: ["基础平衡"] }
+							{ title: "人声音编", price: "¥150", unit: "/hr", desc: "精细修音、人声清晰度优化、切片对齐。可单独预约，或作为混音前置叠加。", tags: ["1H 起约"] }
 						]
 					},
 					{
-						name: "Multitrack Mix", desc: "分轨混音 · Stems include mastering",
+						name: "贴唱混音 Vocal Mix", desc: "基础档限 1 位主唱 · 标准/全案含 2 位主唱以内 · 超出每人 +¥200 · 实际报价视轨数与复杂度调整 · 个人/独立发行报价，商业项目另议",
+						items: [
+							{ title: "基础混音", price: "¥300", unit: "", desc: "专注音色优化与基础平衡。适用于干声完整、无需人声制作的项目。", tags: ["1 位主唱", "干声免修"] },
+							{ title: "标准制作", price: "¥450", unit: "", desc: "客户提供创意方向与参考，工程师负责执行与精细打磨。适用于方向明确、素材完整的发行项目。",
+							  includes: [{ label: "基础混音", value: "¥300" }, { label: "1H 音编" }, { label: "执行向人声制作" }],
+							  tags: ["执行向人声制作", "商业推荐"], featured: true },
+							{ title: "全案制作", price: "¥600", originalPrice: "¥900", unit: "", desc: "工程师全权主导人声创意设计——空间构建、情绪引导与层次规划统一执行。适用于追求极致人声表现的专业项目。",
+							  includes: [{ label: "人声制作", value: "¥300" }, { label: "混音", value: "¥300" }, { label: "2H 精细音编", value: "¥300" }],
+							  valueTotal: "合计 ¥900", saving: "- ¥300",
+							  tags: ["创意向人声制作", "含 2H 音编"] }
+						]
+					},
+					{
+						name: "人声制作 Vocal Production", desc: "可搭配任意混音档位，或作为独立创意服务",
+						items: [
+							{ title: "人声制作", price: "¥300", unit: "", desc: "专注极致氛围营造。含特殊效果处理、空间层次构建与情绪引导。素材须免修，否则另计音编费用。", tags: ["创意核心", "氛围设计"], featured: true }
+						]
+					},
+					{
+						name: "分轨混音 Multitrack Mix", desc: "含母带处理",
 						items: [
 							{ title: "简易分轨", price: "¥1,000", unit: "", desc: "Stems Mix 或极简配器项目。适合原声乐器较少的作品。", tags: ["8 轨以内"] },
 							{ title: "标准分轨", price: "¥1,500+", unit: "", desc: "Urban Music / 流行说唱常规规格。包含完整的动态与空间处理。", tags: ["商业规格"] },
@@ -241,22 +351,28 @@ var I18N = {
 				]
 			},
 			{
-				id: "addons", step: "Step 03", title: "附加服务",
-				items: [
-					{ title: "音频编辑 Editing", price: "¥150", unit: "/hr", desc: "精细修音、人声清晰度优化、音频对齐等基础处理。", tags: ["1H 起约"] },
-					{ title: "人声制作 Production", price: "¥300", unit: "", desc: "追求极致氛围。含特殊效果处理、空间构建。素材需免修或另计音编。", tags: ["氛围设计"] }
-				]
-			},
-			{
-				id: "mastering", step: "Step 04", title: "母带 Mastering",
+				id: "mastering", step: "Step 03", title: "母带 Mastering",
 				items: [{ title: "单曲母带处理", price: "¥200", unit: "", desc: "适用于已完成混音的歌曲。响度、动态与频谱最终优化。", tags: ["商业标准"] }]
 			},
 			{
-				id: "production", step: "Team Support", title: "创作支持", type: "partner",
+				id: "creation", step: "创作支持", title: "词曲 & 编曲",
 				items: [
-					{ title: "定制编曲 Custom", price: "¥3,000+", unit: "", desc: "根据歌手音色量身打造，100% 独家授权。", tags: ["独家授权"] },
-					{ title: "词曲全包创作", price: "¥5,000+", unit: "", desc: "专业词曲作者助力，提供商业级旋律与文案方案。", tags: ["全案策划"] }
+					{ title: "定制编曲 Arrangement", price: "¥3,000+", unit: "", desc: "根据歌手音色量身打造，100% 独家授权。适合已有词曲、需要专业配器的项目。", tags: ["独家授权"] },
+					{ title: "词曲全包创作", price: "¥5,000+", unit: "", desc: "专业词曲作者助力，从概念到完整词曲方案，提供商业级旋律与文案。", tags: ["全案策划"] }
 				]
+			},
+			{
+				id: "projectlead", step: "深度合作", title: "项目负责人 Project Lead", type: "projectlead",
+				depositLabel: "项目预付",
+				deposit: "¥5,000+",
+				highlights: [
+					{ label: "适用场景", value: "EP / 专辑全案" },
+					{ label: "合作模式", value: "创作全程主导" },
+					{ label: "档期状态", value: "稀缺，需提前洽谈" }
+				],
+				desc: "从前期规划、人声录制、创意设计到混音终混，全程深度参与每个创作决策。报价及合作周期视项目规模与需求私信洽谈。",
+				tags: ["EP / 专辑", "创作主导", "私信洽谈"],
+				cta: "→ 档期有限，请私信洽谈"
 			}
 		],
 		// ── FAQ（中文）────────────────────────────────────────────────────────────
@@ -321,7 +437,7 @@ var I18N = {
 		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
 		ctaLabel: "Get in touch: CookDao",
 		ctaCopied: "WeChat ID Copied ✓",
-		partnerIntro: "Beyond post-production, we also offer full creative services from concept to arrangement.",
+		partnerIntro: "Beyond post-production: full creative services from concept to arrangement, and deep project lead for albums and EPs.",
 		services: [
 			{
 				id: "recording", step: "Step 01", title: "Recording",
@@ -331,17 +447,34 @@ var I18N = {
 				id: "mixing", step: "Step 02", title: "Mixing",
 				subsections: [
 					{
-						name: "Vocal Mix", desc: "Vocal mixing services",
+						name: "Audio Editing", desc: "Pitch correction and alignment — pre-mix prep",
 						items: [
-							{ title: "Premium Full Mix", price: "$90", unit: "", desc: "Maximum vocal expression. Includes deep ambience design and 2 hrs of precision editing (pitch / alignment).", tags: ["Deep Custom"] },
-							{ title: "Full Vocal Mix", price: "$70", unit: "", desc: "Our top recommendation. Includes 1 hr of basic editing. Creative decisions are made once — revisions are not ongoing.", tags: ["Best Value"], featured: true },
-							{ title: "Standard Mix", price: "$50", unit: "", desc: "Focused on tonal shaping and basic balance. Ideal for independent tracks with a raw, natural feel.", tags: ["Essential"] }
+							{ title: "Vocal Editing", price: "$30", unit: "/hr", desc: "Pitch correction, clarity enhancement, and audio alignment. Book standalone or stacked before mixing.", tags: ["1H Min."] }
 						]
 					},
 					{
-						name: "Multitrack Mix", desc: "Stems mix · Includes mastering",
+						name: "Vocal Mix", desc: "Basic: 1 vocalist · Standard / Full Package: up to 2 vocalists · Each additional +$30 · Final price subject to track count and complexity · Non-commercial / indie pricing — commercial projects quoted separately",
 						items: [
-							{ title: "Simple Multitrack", price: "$140", unit: "", desc: "Stems Mix or minimal arrangement projects. Best suited for acoustic works with fewer instruments.", tags: ["8 Tracks Max"] },
+							{ title: "Basic Mix", price: "$45", unit: "", desc: "Tonal shaping and fundamental balance. For projects with pitch-clean vocals requiring no vocal production.", tags: ["1 Vocalist", "Clean Vocals"] },
+							{ title: "Standard Production", price: "$70", unit: "", desc: "Client provides creative direction and references; engineer executes and refines. For releases with a defined sonic vision.",
+							  includes: [{ label: "Basic Mix", value: "$45" }, { label: "1H Editing" }, { label: "Client-led Vocal Production" }],
+							  tags: ["Client-led Vocal Production", "Best Value"], featured: true },
+							{ title: "Full Package", price: "$90", originalPrice: "$145", unit: "", desc: "Engineer leads all vocal creative decisions — spatial design, emotional direction, and layering handled end-to-end. For projects demanding maximum vocal impact.",
+							  includes: [{ label: "Vocal Production", value: "$50" }, { label: "Mix", value: "$45" }, { label: "2H Editing", value: "$50" }],
+							  valueTotal: "Total $145", saving: "Save $55",
+							  tags: ["Creative Vocal Production", "2H Editing"] }
+						]
+					},
+					{
+						name: "Vocal Production", desc: "Add to any mix tier · or book as standalone creative service",
+						items: [
+							{ title: "Vocal Production", price: "$50", unit: "", desc: "Atmosphere-first vocal design. Special FX processing, spatial layering, and emotional direction. Pitch-clean source material required.", tags: ["Creative Core", "Atmosphere"], featured: true }
+						]
+					},
+					{
+						name: "Multitrack Mix", desc: "Includes mastering",
+						items: [
+							{ title: "Simple Multitrack", price: "$140", unit: "", desc: "Stems Mix or minimal arrangement projects. Best for acoustic works with fewer instruments.", tags: ["8 Tracks Max"] },
 							{ title: "Standard Multitrack", price: "$210+", unit: "", desc: "Urban / Pop-Rap production spec. Full dynamic and spatial processing included.", tags: ["Commercial"] },
 							{ title: "Complex Multitrack", price: "$420+", unit: "", desc: "60–100+ track projects. Cinematic sound design and epic dynamic treatment.", tags: ["Large Scale"] }
 						]
@@ -349,22 +482,28 @@ var I18N = {
 				]
 			},
 			{
-				id: "addons", step: "Step 03", title: "Add-ons",
-				items: [
-					{ title: "Audio Editing", price: "$30", unit: "/hr", desc: "Pitch correction, vocal clarity enhancement, audio alignment and other foundational work.", tags: ["1H Min."] },
-					{ title: "Vocal Production", price: "$50", unit: "", desc: "Designed for maximum atmosphere. Includes FX processing and spatial construction. Pitch-clean vocals required, or editing billed separately.", tags: ["Atmosphere"] }
-				]
-			},
-			{
-				id: "mastering", step: "Step 04", title: "Mastering",
+				id: "mastering", step: "Step 03", title: "Mastering",
 				items: [{ title: "Single Mastering", price: "$30", unit: "", desc: "For fully mixed tracks. Loudness, dynamics, and spectral optimization to commercial standards.", tags: ["Commercial"] }]
 			},
 			{
-				id: "production", step: "Team Support", title: "Creative Services", type: "partner",
+				id: "creation", step: "Creative Support", title: "Songwriting & Arrangement",
 				items: [
-					{ title: "Custom Arrangement", price: "$420+", unit: "", desc: "Tailored to the artist's voice and style. 100% exclusive licensing included.", tags: ["Exclusive"] },
-					{ title: "Full Songwriting", price: "$700+", unit: "", desc: "Professional lyricists and composers. Commercial-grade melody and lyric packages.", tags: ["Full Package"] }
+					{ title: "Custom Arrangement", price: "$420+", unit: "", desc: "Tailored to the artist's voice and style. 100% exclusive licensing. Best for projects with existing lyrics that need professional production.", tags: ["Exclusive"] },
+					{ title: "Full Songwriting", price: "$700+", unit: "", desc: "Professional lyricists and composers. Commercial-grade melody and lyric packages from concept to delivery.", tags: ["Full Package"] }
 				]
+			},
+			{
+				id: "projectlead", step: "Deep Collab", title: "Project Lead", type: "projectlead",
+				depositLabel: "Project Deposit",
+				deposit: "$700+",
+				highlights: [
+					{ label: "Scope", value: "EP / Full Album" },
+					{ label: "Role", value: "Full Creative Lead" },
+					{ label: "Availability", value: "Limited — inquire first" }
+				],
+				desc: "From pre-production planning and vocal recording through creative design and final mix — deep involvement at every stage. Pricing and timeline discussed privately based on project scope.",
+				tags: ["EP / Album", "Creative Lead", "By Inquiry"],
+				cta: "→ Limited slots — DM to discuss"
 			}
 		],
 		faqTitle: "FAQ",
@@ -423,7 +562,7 @@ var I18N = {
 		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
 		ctaLabel: "문의하기: CookDao",
 		ctaCopied: "WeChat ID 복사됨 ✓",
-		partnerIntro: "후반 작업 외에도 기획부터 편곡까지 전체 창작 서비스를 제공합니다.",
+		partnerIntro: "후반 작업 외에도 기획부터 편곡까지 전체 창작 서비스와 앨범 / EP 전담 프로젝트 리드 서비스를 제공합니다.",
 		services: [
 			{
 				id: "recording", step: "Step 01", title: "레코딩 Recording",
@@ -433,15 +572,32 @@ var I18N = {
 				id: "mixing", step: "Step 02", title: "믹싱 Mixing",
 				subsections: [
 					{
-						name: "Vocal Mix", desc: "보컬 믹싱",
+						name: "오디오 편집 Audio Editing", desc: "피치 보정과 얼라인먼트 — 믹싱 전 준비",
 						items: [
-							{ title: "프리미엄 전체 믹스", price: "₩120,000", unit: "", desc: "최상급 보컬 표현 패키지. 심층 앰비언스 디자인과 2시간 정밀 편집(피치/얼라인먼트) 포함.", tags: ["딥 커스텀"] },
-							{ title: "풀 보컬 믹스", price: "₩90,000", unit: "", desc: "가장 추천하는 플랜. 1시간 기본 편집 포함. 크리에이티브 결정은 1회에 한하며, 지속적인 수정은 지원하지 않습니다.", tags: ["추천"], featured: true },
-							{ title: "베이직 믹스", price: "₩60,000", unit: "", desc: "음색 최적화와 기본 밸런스에 집중. 자연스러운 원음 느낌을 원하는 인디 작품에 적합.", tags: ["기본형"] }
+							{ title: "보컬 편집", price: "₩30,000", unit: "/hr", desc: "피치 보정, 보컬 선명도 향상, 컷 얼라인먼트. 단독 예약 또는 믹싱 전 추가 서비스로 활용 가능.", tags: ["최소 1H"] }
 						]
 					},
 					{
-						name: "Multitrack Mix", desc: "멀티트랙 믹싱 · 마스터링 포함",
+						name: "보컬 믹스 Vocal Mix", desc: "베이직: 보컬 1인 기준 · 스탠다드/풀 패키지: 2인 이내 · 추가 보컬 1인당 +₩40,000 · 트랙 수 및 복잡도에 따라 최종 요금 조정 · 개인/독립 발매 기준, 커머셜 별도 문의",
+						items: [
+							{ title: "베이직 믹스", price: "₩60,000", unit: "", desc: "음색 최적화와 기본 밸런스에 집중. 피치 교정이 필요 없는 드라이 보컬 필요 — 편집 불포함.", tags: ["보컬 1인", "드라이 보컬"] },
+							{ title: "스탠다드 프로덕션", price: "₩90,000", unit: "", desc: "클라이언트가 크리에이티브 방향과 레퍼런스를 제공하며, 엔지니어가 실행 및 정밀 마무리를 담당합니다. 방향이 명확한 발매 프로젝트에 적합.",
+							  includes: [{ label: "베이직 믹스", value: "₩60,000" }, { label: "1H 편집" }, { label: "클라이언트 방향 보컬 프로덕션" }],
+							  tags: ["클라이언트 방향 보컬 프로덕션", "추천"], featured: true },
+							{ title: "풀 패키지", price: "₩120,000", originalPrice: "₩180,000", unit: "", desc: "엔지니어가 보컬 크리에이티브 전 과정을 주도합니다 — 공간 설계, 감정 디렉팅, 레이어 구성 일괄 실행. 극한의 보컬 퍼포먼스를 목표로 하는 전문 프로젝트에 적합.",
+							  includes: [{ label: "보컬 프로덕션", value: "₩60,000" }, { label: "믹싱", value: "₩60,000" }, { label: "2H 정밀 편집", value: "₩60,000" }],
+							  valueTotal: "합계 ₩180,000", saving: "₩60,000 절약",
+							  tags: ["창의적 보컬 프로덕션", "2H 편집"] }
+						]
+					},
+					{
+						name: "보컬 프로덕션 Vocal Production", desc: "모든 믹스 플랜에 추가 가능 · 또는 단독 크리에이티브 서비스",
+						items: [
+							{ title: "보컬 프로덕션", price: "₩60,000", unit: "", desc: "앰비언스 중심의 보컬 디자인. 특수 이펙트 처리, 공간 레이어링, 감정 디렉팅. 피치 교정이 필요 없는 소재 필요.", tags: ["창작 핵심", "앰비언스"], featured: true }
+						]
+					},
+					{
+						name: "멀티트랙 믹스 Multitrack Mix", desc: "마스터링 포함",
 						items: [
 							{ title: "심플 멀티트랙", price: "₩200,000", unit: "", desc: "Stems Mix 또는 소규모 편성 프로젝트. 어쿠스틱 악기가 적은 작품에 적합.", tags: ["8트랙 이하"] },
 							{ title: "스탠다드 멀티트랙", price: "₩300,000+", unit: "", desc: "Urban / 팝 랩 상업 규격. 완전한 다이나믹 및 공간 처리 포함.", tags: ["상업 규격"] },
@@ -451,22 +607,28 @@ var I18N = {
 				]
 			},
 			{
-				id: "addons", step: "Step 03", title: "추가 서비스",
-				items: [
-					{ title: "오디오 편집 Editing", price: "₩30,000", unit: "/hr", desc: "피치 보정, 보컬 선명도 향상, 오디오 얼라인먼트 등 기본 편집 작업.", tags: ["최소 1H"] },
-					{ title: "보컬 프로덕션", price: "₩60,000", unit: "", desc: "최상의 앰비언스를 위한 특수 이펙트 처리 및 공간 구성. 피치 교정이 필요 없는 소재 필요, 또는 편집 비용 별도.", tags: ["앰비언스"] }
-				]
-			},
-			{
-				id: "mastering", step: "Step 04", title: "마스터링 Mastering",
+				id: "mastering", step: "Step 03", title: "마스터링 Mastering",
 				items: [{ title: "싱글 마스터링", price: "₩40,000", unit: "", desc: "믹싱이 완료된 트랙에 적용. 라우드니스, 다이나믹, 스펙트럼 최종 최적화.", tags: ["상업 기준"] }]
 			},
 			{
-				id: "production", step: "Team Support", title: "크리에이티브 서비스", type: "partner",
+				id: "creation", step: "크리에이티브 지원", title: "작사·작곡 & 편곡",
 				items: [
-					{ title: "커스텀 편곡", price: "₩600,000+", unit: "", desc: "아티스트의 음색과 스타일에 맞춘 맞춤 제작. 100% 독점 라이선스 포함.", tags: ["독점 라이선스"] },
-					{ title: "풀 작사·작곡", price: "₩1,000,000+", unit: "", desc: "전문 작사·작곡가 참여. 상업적 수준의 멜로디 및 가사 제공.", tags: ["풀 패키지"] }
+					{ title: "커스텀 편곡", price: "₩600,000+", unit: "", desc: "아티스트의 음색과 스타일에 맞춘 맞춤 제작. 100% 독점 라이선스 포함. 가사·멜로디가 있는 프로젝트에 적합.", tags: ["독점 라이선스"] },
+					{ title: "풀 작사·작곡", price: "₩1,000,000+", unit: "", desc: "전문 작사·작곡가 참여. 기획부터 완성까지 상업적 수준의 멜로디와 가사 제공.", tags: ["풀 패키지"] }
 				]
+			},
+			{
+				id: "projectlead", step: "깊은 협업", title: "프로젝트 리드 Project Lead", type: "projectlead",
+				depositLabel: "프로젝트 선납",
+				deposit: "₩1,000,000+",
+				highlights: [
+					{ label: "적용 범위", value: "EP / 정규 앨범" },
+					{ label: "역할", value: "전체 크리에이티브 주도" },
+					{ label: "가용 슬롯", value: "한정 — 사전 문의 필수" }
+				],
+				desc: "사전 기획, 보컬 레코딩, 크리에이티브 디자인부터 최종 믹스까지 모든 단계에 깊이 관여합니다. 요금 및 일정은 프로젝트 규모에 따라 비공개로 협의합니다.",
+				tags: ["EP / 앨범", "크리에이티브 주도", "문의 필수"],
+				cta: "→ 슬롯 한정 — DM으로 문의해 주세요"
 			}
 		],
 		faqTitle: "FAQ",
@@ -530,16 +692,95 @@ function renderCard(item) {
 	}
 	var unit = item.unit ? "<span class=\"card-price-unit\">" + item.unit + "</span>" : "";
 	var tagsHtml = tags ? "<div class=\"card-tags\">" + tags + "</div>" : "";
+	var origHtml = item.originalPrice ? "<span class=\"card-price-orig\">" + item.originalPrice + "</span>" : "";
+	var inlineSaving = (item.saving && item.originalPrice) ? "<span class=\"tag gold\">" + item.saving + "</span>" : "";
+	var includesHtml = "";
+	if (item.includes && item.includes.length) {
+		var chips = "";
+		for (var k = 0; k < item.includes.length; k++) {
+			if (k > 0) chips += "<span class=\"ci-sep\">+</span>";
+			var inc = item.includes[k];
+			chips += "<span class=\"ci-chip\">" + inc.label + (inc.value ? " <strong>" + inc.value + "</strong>" : "") + "</span>";
+		}
+		var totalRow = "";
+		if (item.valueTotal) {
+			totalRow = "<div class=\"ci-total-row\">"
+				+ "<span class=\"ci-orig\">" + item.valueTotal + "</span>"
+				+ "<span class=\"ci-arrow\">→</span>"
+				+ "<span class=\"ci-saving\">" + item.saving + "</span>"
+				+ "</div>";
+		}
+		includesHtml = "<div class=\"card-includes\"><div class=\"ci-chips\">" + chips + "</div>" + totalRow + "</div>";
+	}
 	return "<div class=\"price-card" + fc + "\">"
-		+ "<div class=\"card-price\"><span class=\"card-price-num\">" + item.price + "</span>" + unit + "</div>"
+		+ "<div class=\"card-price card-price-row\"><span class=\"card-price-num\">" + item.price + "</span>" + unit + origHtml + inlineSaving + "</div>"
 		+ "<div class=\"card-title\">" + item.title + "</div>"
 		+ "<div class=\"card-desc\">" + item.desc + "</div>"
+		+ includesHtml
 		+ tagsHtml
 		+ "</div>";
 }
 
+function renderProjectLead(svc) {
+	var tags = svc.tags.map(function(t) { return '<span class="tag">' + t + '</span>'; }).join('');
+	var highlightsHtml = '';
+	if (svc.highlights) {
+		for (var h = 0; h < svc.highlights.length; h++) {
+			highlightsHtml += '<div class="pl-highlight-item">'
+				+ '<div class="pl-highlight-label">' + svc.highlights[h].label + '</div>'
+				+ '<div class="pl-highlight-value">' + svc.highlights[h].value + '</div>'
+				+ '</div>';
+		}
+	}
+	return '<div class="service-section">'
+		+ '<div class="section-head">'
+		+ '<div class="step-tag silver">' + svc.step + '</div>'
+		+ '<h2>' + svc.title + '</h2>'
+		+ '</div>'
+		+ '<div class="projectlead-card">'
+		+ (highlightsHtml ? '<div class="pl-highlights">' + highlightsHtml + '</div>' : '')
+		+ '<div class="pl-price-block">'
+		+ '<div class="pl-deposit">'
+		+ '<span class="pl-deposit-label">' + svc.depositLabel + '</span>'
+		+ '<span class="pl-deposit-num">' + svc.deposit + '</span>'
+		+ '</div>'
+		+ '</div>'
+		+ '<div class="pl-desc">' + svc.desc + '</div>'
+		+ '<div class="card-tags">' + tags + '</div>'
+		+ '<div class="pl-cta" style="margin-top:16px">' + svc.cta + '</div>'
+		+ '</div>'
+		+ '</div>'
+		+ '<div class="section-divider"></div>';
+}
+
+function renderBundle(svc) {
+	var items = svc.bundleItems.map(function(item, i) {
+		return (i > 0 ? '<span class="bundle-plus">+</span>' : '') + '<span class="bundle-item">' + item + '</span>';
+	}).join('');
+	return '<div class="service-section">'
+		+ '<div class="section-head">'
+		+ '<div class="step-tag gold">' + svc.step + '</div>'
+		+ '<h2>' + svc.title + '</h2>'
+		+ '</div>'
+		+ '<div class="bundle-card">'
+		+ '<div class="bundle-price-row">'
+		+ '<span class="bundle-original">' + svc.originalPrice + '</span>'
+		+ '<span class="bundle-arrow">→</span>'
+		+ '<span class="bundle-price">' + svc.price + '</span>'
+		+ '<span class="tag gold">' + svc.savings + '</span>'
+		+ '</div>'
+		+ '<div class="bundle-items">' + items + '</div>'
+		+ '<div class="bundle-desc">' + svc.desc + '</div>'
+		+ '<div class="bundle-tip">' + svc.tip + '</div>'
+		+ '</div>'
+		+ '</div>'
+		+ '<div class="section-divider"></div>';
+}
+
 function renderService(svc, t) {
 	var i, html, sub, cards;
+	if (svc.type === "bundle") return renderBundle(svc);
+	if (svc.type === "projectlead") return renderProjectLead(svc);
 	if (svc.type === "partner") {
 		cards = "";
 		for (i = 0; i < svc.items.length; i++) { cards += renderCard(svc.items[i]); }
@@ -556,15 +797,16 @@ function renderService(svc, t) {
 			sub = svc.subsections[i];
 			cards = "";
 			for (var j = 0; j < sub.items.length; j++) { cards += renderCard(sub.items[j]); }
+			var gridCls = sub.items.length === 1 ? "card-grid solo" : "card-grid";
 			inner += "<div class=\"subsection\">"
 				+ "<div class=\"sub-head\"><h3>" + sub.name + "</h3><span class=\"sub-desc\">" + sub.desc + "</span></div>"
-				+ "<div class=\"card-grid\">" + cards + "</div>"
+				+ "<div class=\"" + gridCls + "\">" + cards + "</div>"
 				+ "</div>";
 		}
 	} else {
 		cards = "";
 		for (i = 0; i < svc.items.length; i++) { cards += renderCard(svc.items[i]); }
-		inner = "<div class=\"card-grid\">" + cards + "</div>";
+		inner = "<div class=\"card-grid" + (svc.items.length === 1 ? " solo" : "") + "\">" + cards + "</div>";
 	}
 	return "<div class=\"service-section\">"
 		+ "<div class=\"section-head\">"
