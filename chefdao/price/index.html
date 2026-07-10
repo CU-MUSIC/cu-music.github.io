@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -109,12 +110,33 @@
 		/* ── Quote Builder ─────────────────────────────────── */
 		.quote-builder { background: var(--surface); border: 0.5px solid rgba(255,255,255,0.12); border-radius: var(--r); padding: 28px; position: relative; overflow: hidden; }
 		.quote-builder > * { position: relative; }
-		.qb-mode { display: flex; gap: 4px; background: rgba(0,0,0,0.4); border: 0.5px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 26px; }
+		.qb-mode { display: flex; gap: 4px; background: rgba(0,0,0,0.4); border: 0.5px solid var(--border); border-radius: 12px; padding: 4px; }
 		.qb-mode-btn { flex: 1; background: none; border: 0.5px solid transparent; border-radius: 9px; padding: 11px 10px; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: background 0.25s, color 0.25s, border-color 0.25s; }
 		.qb-mode-btn.active { background: var(--surface-hover); color: var(--text-primary); border-color: var(--border-hover); }
 		.qb-row { margin-bottom: 24px; }
 		.qb-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; }
-		.qb-base-line { display: flex; justify-content: space-between; align-items: baseline; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 24px; }
+		.qb-base-line { display: flex; justify-content: space-between; align-items: baseline; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; font-size: 12.5px; color: var(--text-secondary); margin-top: 12px; }
+
+		/* ── Progressive reveal (逐步揭示) ─────────────────── */
+		/* 每一步只在上一步作答后才挂载；.qb-in 由 JS 在下一帧加上，
+		   已经存在过的步骤（qbMounted）直接给 .qb-in，避免重渲染时整页重播动画。*/
+		.qb-step { opacity: 0; transform: translateY(14px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
+		.qb-step.qb-in { opacity: 1; transform: none; }
+		.qb-step-idx { display: inline-block; min-width: 18px; color: var(--text-dim); margin-right: 9px; font-variant-numeric: tabular-nums; }
+		.qb-step.active .qb-step-idx { color: var(--green-soft); }
+		.qb-hint { font-size: 12px; color: var(--text-secondary); line-height: 1.65; margin-top: 12px; padding-left: 12px; border-left: 1px solid var(--green-line); }
+		.qb-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+		.qb-chip { background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 20px; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: border-color 0.25s, color 0.25s, background 0.25s; }
+		.qb-chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
+		.qb-chip.active { border-color: rgba(255,255,255,0.45); color: var(--text-primary); background: rgba(255,255,255,0.05); }
+		.qb-reset { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: var(--text-dim); font-family: var(--font); font-size: 11.5px; padding: 8px; cursor: pointer; transition: color 0.2s; }
+		.qb-reset:hover { color: var(--text-secondary); }
+		/* 推荐档：只在该步待作答时呼吸微光，选完就安静下来 */
+		.qb-step.active .qb-rec { border-color: var(--green-line); background: rgba(96,176,134,0.06); animation: qbGlow 2.8s var(--ease) infinite; }
+		@keyframes qbGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(143,195,169,0); } 50% { box-shadow: 0 0 0 4px rgba(143,195,169,0.09); } }
+		.qb-badge { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 100px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.5; white-space: nowrap; color: var(--green-soft); border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.08); vertical-align: middle; transition: opacity 0.3s; }
+		.qb-step:not(.active) .qb-badge { opacity: 0.4; }
+		@media (prefers-reduced-motion: reduce) { .qb-step { opacity: 1; transform: none; transition: none; } .qb-step.active .qb-rec { animation: none; } }
 		.qb-base-line strong { font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
 		.qb-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 		.qb-seg-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 13px; cursor: pointer; transition: border-color 0.25s, background 0.25s; font-family: var(--font); text-align: left; min-height: 60px; }
@@ -284,8 +306,9 @@
 			.quote-builder { padding: 18px 14px; }
 			.qb-row { margin-bottom: 18px; }
 			.qb-sched { padding-bottom: 12px; margin-bottom: 16px; }
-			.qb-mode { margin-bottom: 18px; }
-			.qb-base-line { padding: 10px 13px; font-size: 12px; margin-bottom: 18px; }
+			.qb-base-line { padding: 10px 13px; font-size: 12px; }
+			.qb-chip { padding: 11px 16px; font-size: 12.5px; }
+			.qb-hint { font-size: 11.5px; }
 			.qb-base-line strong { font-size: 15px; }
 			.qb-seg { gap: 6px; }
 			.qb-seg.two { grid-template-columns: 1fr; }
@@ -404,7 +427,17 @@ var I18N = {
 		ctaCopied: "微信号已复制 ✓",
 		quote: {
 			title: "报价计算器",
+			modeLabel: "混音类型",
 			modeVocal: "贴唱混音", modeStems: "分轨混音",
+			// 每一步的引导语：只在该步「待作答」时出现，选完即隐去，让提示文本分批登场
+			hints: {
+				mode: "先告诉我素材形态——只有干声加一条伴奏，还是一整套分轨工程？",
+				stems: "工程越大，要处理的轨道数与空间关系越多。",
+				prod: "这一步决定我参与创作的深度：只做混音，还是一起把人声做出角色感。拿不准就选中间档。",
+				count: "每多一位主唱，就多一层平衡与空间关系要安排。",
+				edit: "节奏与音准修到什么程度，可以为每位主唱单独决定。",
+				lane: "标准通道排在正常队列里；加急意味着为你插队。"
+			},
 			cur: "¥",
 			baseLabel: "基础混音 · 1 位主唱（含简易母带）", base: 200,
 			stemsLabel: "工程规模（含母带 · 1 位主唱起）",
@@ -421,6 +454,7 @@ var I18N = {
 			],
 			tierNames: ["基础混音", "标准制作", "全案制作"], eqPrefix: "相当于",
 			countLabel: "主唱人数", perHead: 100, perHeadLabel: "每多 1 位 +¥100（混音）", countMax: 8,
+			countUnit: " 位", countMore: "4 位以上",
 			countMoreNote: "更大规模的 cypher，请私信另议",
 			editLabel: "音频编辑 · 每位主唱单独选", vocalistLabel: "主唱",
 			edits: [
@@ -445,7 +479,9 @@ var I18N = {
 			depositNote: "半半模式：定金开工，成品交付时补齐尾款。",
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
 			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音标准价终身 8 折 · 不含录音与加急费", memberLine: "刀门会员 · 8 折",
-			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓"
+			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
+			reset: "↺ 重新配置",
+			recMost: "最多人选", recPick: "推荐"
 		},
 		services: [
 			{
@@ -581,7 +617,16 @@ var I18N = {
 		ctaCopied: "WeChat ID Copied ✓",
 		quote: {
 			title: "Quote Builder",
+			modeLabel: "Mix type",
 			modeVocal: "Vocal Mix", modeStems: "Multitrack Mix",
+			hints: {
+				mode: "First, what are you sending — a vocal over one beat, or a full multitrack session?",
+				stems: "The bigger the session, the more tracks and spatial relationships to resolve.",
+				prod: "This sets how deep I go creatively: a pure mix, or shaping the vocal's character with you. Not sure? Take the middle tier.",
+				count: "Every extra vocalist adds another layer of balance and space to arrange.",
+				edit: "How far timing and pitch get corrected — decided separately for each vocalist.",
+				lane: "Standard sits in the normal queue. Rush means moving you to the front."
+			},
 			cur: "$",
 			baseLabel: "Basic Mix · 1 vocalist (light mastering incl.)", base: 30,
 			stemsLabel: "Project scale (mastering incl. · from 1 vocalist)",
@@ -598,6 +643,7 @@ var I18N = {
 			],
 			tierNames: ["Basic Mix", "Standard", "Full Package"], eqPrefix: "Equivalent to",
 			countLabel: "Vocalists", perHead: 15, perHeadLabel: "+$15 each (mix)", countMax: 8,
+			countUnit: "", countMore: "4 or more",
 			countMoreNote: "Larger cyphers — DM to discuss",
 			editLabel: "Audio Editing · per vocalist", vocalistLabel: "Vocalist",
 			edits: [
@@ -622,7 +668,9 @@ var I18N = {
 			depositNote: "50 / 50: pay the deposit to start, the balance on delivery.",
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
 			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off standard mixing price, for life · recording & rush fee excluded", memberLine: "Daomen member · 20% off",
-			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓"
+			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
+			reset: "↺ Start over",
+			recMost: "Most picked", recPick: "Recommended"
 		},
 		services: [
 			{
@@ -758,7 +806,16 @@ var I18N = {
 		ctaCopied: "WeChat ID 복사됨 ✓",
 		quote: {
 			title: "견적 계산기",
+			modeLabel: "믹스 유형",
 			modeVocal: "보컬 믹스", modeStems: "멀티트랙 믹스",
+			hints: {
+				mode: "먼저 소재 형태를 알려주세요 — 보컬과 비트 한 장인가요, 아니면 멀티트랙 세션 전체인가요?",
+				stems: "프로젝트가 클수록 다뤄야 할 트랙 수와 공간 관계가 많아집니다.",
+				prod: "제가 창작에 얼마나 깊이 관여할지 정합니다: 순수 믹스인지, 보컬의 캐릭터까지 함께 만들지. 고민되면 가운데를 고르세요.",
+				count: "보컬이 한 명 늘 때마다 조율해야 할 밸런스와 공간의 층이 하나씩 늘어납니다.",
+				edit: "타이밍과 피치를 어디까지 다듬을지, 보컬마다 따로 정합니다.",
+				lane: "표준은 정상 대기열에 들어갑니다. 긴급은 순서를 앞당기는 것입니다."
+			},
 			cur: "₩",
 			baseLabel: "베이직 믹스 · 보컬 1인 (간편 마스터링 포함)", base: 40000,
 			stemsLabel: "프로젝트 규모 (마스터링 포함 · 보컬 1인 기준)",
@@ -775,6 +832,7 @@ var I18N = {
 			],
 			tierNames: ["베이직 믹스", "스탠다드", "풀 패키지"], eqPrefix: "동일 구성:",
 			countLabel: "보컬 인원", perHead: 20000, perHeadLabel: "1인당 +₩20,000 (믹스)", countMax: 8,
+			countUnit: "인", countMore: "4인 이상",
 			countMoreNote: "대규모 사이퍼는 DM으로 문의",
 			editLabel: "오디오 편집 · 보컬별 선택", vocalistLabel: "보컬",
 			edits: [
@@ -799,7 +857,9 @@ var I18N = {
 			depositNote: "반반 방식: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
 			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱 표준가 평생 20% 할인 · 레코딩·긴급 요금 제외", memberLine: "刀门 회원 · 20% 할인",
-			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓"
+			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
+			reset: "↺ 다시 설정",
+			recMost: "가장 많이 선택", recPick: "추천"
 		},
 		services: [
 			{
@@ -922,7 +982,13 @@ var I18N = {
 // mode: 'vocal' | 'stems'; prod: prods index; edits: per-vocalist edit index array
 // edits 索引：0 = 免修，1 = 仅修节奏，2 = 节奏+修音
 // 纯混音（prod=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
-var qbState = { mode: "vocal", prod: 1, count: 1, edits: [2], stems: 1, member: false, lane: 0, aaOpen: false, fineOpen: false };
+// null = 尚未作答。逐步揭示：一步作答后下一步才挂载，引导文案随之分批出现。
+var qbState = { mode: null, stems: null, prod: null, count: null, edits: [], member: false, lane: null, moreCount: false, aaOpen: false, fineOpen: false };
+// 已经出现过的步骤名 → 重渲染时直接可见，只有全新的步骤才播放淡入
+var qbMounted = {};
+// 每一步的推荐档位：该步待作答时呼吸微光 + 挂标签，给犹豫的人一个落点
+var QB_REC = { mode: "vocal", stems: 1, prod: 1, lane: 0 };
+function qbBadge(text) { return '<span class="qb-badge">' + text + '</span>'; }
 
 function qbFmt(q, n) {
 	var s = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -931,16 +997,54 @@ function qbFmt(q, n) {
 function qbSet(key, val) { qbState[key] = val; renderQuoteBuilder(); }
 function qbScrollTo(id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
 function qbSetEdit(i, val) { qbState.edits[i] = val; renderQuoteBuilder(); }
-function qbStep(delta) {
+// 改人数时保留已选的音编档位，新增的主唱留空（null）等待作答
+function qbResizeEdits(n) {
+	var next = [];
+	for (var i = 0; i < n; i++) next.push(i < qbState.edits.length ? qbState.edits[i] : null);
+	qbState.edits = next;
+	qbState.count = n;
+}
+function qbSetCount(n) {
 	var q = I18N[currentLang].quote;
-	var n = qbState.count + delta;
 	if (n < 1) n = 1;
 	if (n > q.countMax) n = q.countMax;
-	while (qbState.edits.length < n) qbState.edits.push(qbState.edits[qbState.edits.length - 1]);
-	qbState.edits.length = n;
-	qbState.count = n;
+	qbResizeEdits(n);
 	renderQuoteBuilder();
 }
+function qbCountMore() { qbState.moreCount = true; qbSetCount(Math.max(4, qbState.count || 4)); }
+function qbStep(delta) { qbSetCount((qbState.count || 1) + delta); }
+function qbReset() {
+	qbState.mode = null; qbState.stems = null; qbState.prod = null;
+	qbState.count = null; qbState.edits = []; qbState.lane = null;
+	qbState.moreCount = false; qbState.member = false;
+	qbMounted = {};
+	renderQuoteBuilder();
+	qbScrollTo("svc-mixing");
+}
+
+// ── Step sequence ───────────────────────────────────────────
+// 分轨模式多一步「工程规模」。一个步骤作答完毕，下一步才渲染出来。
+function qbSteps() { return qbState.mode === "stems" ? ["mode", "stems", "prod", "count", "edit", "lane"] : ["mode", "prod", "count", "edit", "lane"]; }
+function qbAnswered(k) {
+	if (k === "mode") return qbState.mode !== null;
+	if (k === "stems") return qbState.stems !== null;
+	if (k === "prod") return qbState.prod !== null;
+	if (k === "count") return qbState.count !== null;
+	if (k === "lane") return qbState.lane !== null;
+	if (k === "edit") {
+		if (qbState.count === null) return false;
+		for (var i = 0; i < qbState.count; i++) if (qbState.edits[i] === null || qbState.edits[i] === undefined) return false;
+		return true;
+	}
+	return false;
+}
+// 可见的步骤数 = 已作答的连续前缀 + 当前这一步
+function qbVisible() {
+	var s = qbSteps();
+	for (var i = 0; i < s.length; i++) if (!qbAnswered(s[i])) return i + 1;
+	return s.length;
+}
+function qbComplete() { var s = qbSteps(); for (var i = 0; i < s.length; i++) if (!qbAnswered(s[i])) return false; return true; }
 function qbCompute(q) {
 	var stems = qbState.mode === "stems";
 	var baseItem = stems ? q.stems[qbState.stems] : null;
@@ -996,146 +1100,214 @@ function qbEnforceFloor(q) {
 	if (qbGross(q) >= q.minOrder) return;
 	qbState.edits[0] = 1; // 主唱 1 → 仅修节奏
 }
+// 一个步骤的外壳：编号 + 标题 + 内容；未作答时挂 .active 并显示引导语
+function qbRow(key, idx, label, body, note, hint) {
+	var num = (idx < 10 ? "0" : "") + idx;
+	var active = !qbAnswered(key);
+	return '<div class="qb-row qb-step' + (active ? " active" : "") + '" data-qstep="' + key + '">'
+		+ '<div class="qb-label"><span class="qb-step-idx">' + num + '</span>' + label + '</div>'
+		+ body
+		+ (active ? '<div class="qb-hint">' + hint + '</div>' : (note ? '<div class="qb-tier-desc">' + note + '</div>' : ''))
+		+ '</div>';
+}
 function renderQuoteBuilder() {
 	var mount = document.getElementById("qb-mount");
 	if (!mount) return;
 	var q = I18N[currentLang].quote;
-	if (qbState.prod >= q.prods.length) qbState.prod = q.prods.length - 1;
-	if (qbState.count > q.countMax) { qbState.count = q.countMax; qbState.edits.length = q.countMax; }
-	for (var f = 0; f < qbState.edits.length; f++) { if (qbState.edits[f] >= q.edits.length) qbState.edits[f] = q.edits.length - 1; }
-	if (qbState.stems >= q.stems.length) qbState.stems = q.stems.length - 1;
-	qbEnforceFloor(q);
-	var stems = qbState.mode === "stems";
-	var c = qbCompute(q);
+	// 切语言后各档位数量若变少，把越界的索引收回来
+	if (qbState.prod !== null && qbState.prod >= q.prods.length) qbState.prod = q.prods.length - 1;
+	if (qbState.count !== null && qbState.count > q.countMax) qbResizeEdits(q.countMax);
+	for (var f = 0; f < qbState.edits.length; f++) { if (qbState.edits[f] !== null && qbState.edits[f] >= q.edits.length) qbState.edits[f] = q.edits.length - 1; }
+	if (qbState.stems !== null && qbState.stems >= q.stems.length) qbState.stems = q.stems.length - 1;
 
-	var modeHtml = '<div class="qb-mode">'
-		+ '<button class="qb-mode-btn' + (!stems ? " active" : "") + '" onclick="qbSet(\'mode\',\'vocal\')">' + q.modeVocal + '</button>'
+	var stems = qbState.mode === "stems";
+	var steps = qbSteps(), shown = qbVisible(), done = qbComplete();
+	var idx = {}; for (var si = 0; si < steps.length; si++) idx[steps[si]] = si + 1;
+	if (done) qbEnforceFloor(q);
+	var c = done ? qbCompute(q) : null;
+	var html = "";
+
+	// 01 · 混音类型
+	var modeBody = '<div class="qb-mode">'
+		+ '<button class="qb-mode-btn qb-rec' + (qbState.mode === "vocal" ? " active" : "") + '" onclick="qbSet(\'mode\',\'vocal\')">' + q.modeVocal + qbBadge(q.recMost) + '</button>'
 		+ '<button class="qb-mode-btn' + (stems ? " active" : "") + '" onclick="qbSet(\'mode\',\'stems\')">' + q.modeStems + '</button>'
 		+ '</div>';
+	// 贴唱的基础价是固定的，选完模式立刻把它亮出来；分轨的价格由下一步的规格决定
+	if (qbState.mode === "vocal") modeBody += '<div class="qb-base-line"><span>' + q.baseLabel + '</span><strong>' + qbFmt(q, q.base) + '</strong></div>';
+	html += qbRow("mode", idx.mode, q.modeLabel, modeBody, "", q.hints.mode);
 
-	// base row: fixed line (vocal) or scale selector (stems)
-	var baseHtml;
-	if (stems) {
+	// 02 · 工程规模（仅分轨）
+	if (stems && shown >= idx.stems) {
 		var stemBtns = "";
 		for (var s = 0; s < q.stems.length; s++) {
 			var sp = qbFmt(q, q.stems[s].price) + (q.stems[s].from ? "+" : "");
-			stemBtns += '<button class="qb-seg-btn' + (s === qbState.stems ? " active" : "") + '" onclick="qbSet(\'stems\',' + s + ')">'
-				+ '<span class="qb-seg-name">' + q.stems[s].name + '</span>'
+			stemBtns += '<button class="qb-seg-btn' + (s === QB_REC.stems ? " qb-rec" : "") + (s === qbState.stems ? " active" : "") + '" onclick="qbSet(\'stems\',' + s + ')">'
+				+ '<span class="qb-seg-name">' + q.stems[s].name + (s === QB_REC.stems ? qbBadge(q.recPick) : "") + '</span>'
 				+ '<span class="qb-seg-price">' + sp + '</span></button>';
 		}
-		baseHtml = '<div class="qb-row"><div class="qb-label">' + q.stemsLabel + '</div>'
-			+ '<div class="qb-seg">' + stemBtns + '</div>'
-			+ '<div class="qb-tier-desc">' + c.baseItem.desc + '</div></div>';
-	} else {
-		baseHtml = '<div class="qb-base-line"><span>' + q.baseLabel + '</span><strong>' + qbFmt(q, q.base) + '</strong></div>';
+		html += qbRow("stems", idx.stems, q.stemsLabel, '<div class="qb-seg">' + stemBtns + '</div>',
+			qbState.stems !== null ? q.stems[qbState.stems].desc : "", q.hints.stems);
 	}
 
-	var prodBtns = "";
-	for (var i = 0; i < q.prods.length; i++) {
-		var pp = q.prods[i].price ? "+" + qbFmt(q, q.prods[i].price) : "—";
-		prodBtns += '<button class="qb-seg-btn' + (i === qbState.prod ? " active" : "") + '" onclick="qbSet(\'prod\',' + i + ')">'
-			+ '<span class="qb-seg-name">' + q.prods[i].name + '</span>'
-			+ '<span class="qb-seg-price">' + pp + '</span></button>';
-	}
-	var vocRows = "", floorBinding = false;
-	for (var v = 0; v < c.count; v++) {
-		var curPrice = q.edits[qbState.edits[v]].price;
-		var chips = "";
-		for (var e2 = 0; e2 < q.edits.length; e2++) {
-			var label = q.edits[e2].name + (q.edits[e2].price ? " +" + qbFmt(q, q.edits[e2].price) : "");
-			// 切到该档若让总价跌破最低消费，则置灰禁用
-			var off = (c.gross - curPrice + q.edits[e2].price) < q.minOrder;
-			if (off) floorBinding = true;
-			chips += '<button class="qb-mini-btn' + (qbState.edits[v] === e2 ? " active" : "") + (off ? " disabled" : "") + '"'
-				+ (off ? ' disabled title="' + q.floorNote + '"' : ' onclick="qbSetEdit(' + v + ',' + e2 + ')"') + '>' + label + '</button>';
+	// 03 · 人声制作
+	if (shown >= idx.prod) {
+		var prodBtns = "";
+		for (var i = 0; i < q.prods.length; i++) {
+			var pp = q.prods[i].price ? "+" + qbFmt(q, q.prods[i].price) : "—";
+			prodBtns += '<button class="qb-seg-btn' + (i === QB_REC.prod ? " qb-rec" : "") + (i === qbState.prod ? " active" : "") + '" onclick="qbSet(\'prod\',' + i + ')">'
+				+ '<span class="qb-seg-name">' + q.prods[i].name + (i === QB_REC.prod ? qbBadge(q.recPick) : "") + '</span>'
+				+ '<span class="qb-seg-price">' + pp + '</span></button>';
 		}
-		vocRows += '<div class="qb-voc-row"><span class="qb-voc-name">' + q.vocalistLabel + ' ' + (v + 1) + '</span><div class="qb-mini-seg">' + chips + '</div></div>';
+		html += qbRow("prod", idx.prod, q.prodLabel, '<div class="qb-seg">' + prodBtns + '</div>',
+			qbState.prod !== null ? q.prods[qbState.prod].desc : "", q.hints.prod);
 	}
-	var floorHtml = floorBinding ? '<div class="qb-tier-desc">' + q.floorNote + '</div>' : '';
 
-	var baseName = stems ? c.baseItem.name : q.tierNames[0];
-	var lines = '<div class="qb-bd-line"><span>' + baseName + '</span><span class="qb-bd-val">' + qbFmt(q, c.base) + (c.from ? "+" : "") + '</span></div>';
-	if (c.prod.price > 0) {
-		lines += '<div class="qb-bd-line"><span>' + q.prodLabel + ' · ' + c.prod.name + '</span><span class="qb-bd-val">+' + qbFmt(q, c.prod.price) + '</span></div>';
-	}
-	if (c.count > 1) {
-		lines += '<div class="qb-bd-line"><span>' + q.bdExtra + ' × ' + (c.count - 1) + '</span><span class="qb-bd-val">+' + qbFmt(q, c.mixExtra) + '</span></div>';
-	}
-	for (var e3 = 0; e3 < q.edits.length; e3++) {
-		if (c.editCounts[e3] > 0 && q.edits[e3].price > 0) {
-			lines += '<div class="qb-bd-line"><span>' + q.edits[e3].name + ' × ' + c.editCounts[e3] + '</span><span class="qb-bd-val">+' + qbFmt(q, q.edits[e3].price * c.editCounts[e3]) + '</span></div>';
+	// 04 · 主唱人数：1–3 直接点选，4 位以上切换成步进器
+	if (shown >= idx.count) {
+		var countBody;
+		if (qbState.moreCount || (qbState.count || 0) > 3) {
+			countBody = '<div class="qb-stepper"><button class="qb-step-btn" onclick="qbStep(-1)" aria-label="-">−</button>'
+				+ '<span class="qb-count">' + (qbState.count || 1) + '</span>'
+				+ '<button class="qb-step-btn" onclick="qbStep(1)" aria-label="+">+</button>'
+				+ '<span class="qb-perhead">' + q.perHeadLabel + '</span></div>';
+		} else {
+			var countChips = "";
+			for (var n = 1; n <= 3; n++) {
+				countChips += '<button class="qb-chip' + (qbState.count === n ? " active" : "") + '" onclick="qbSetCount(' + n + ')">' + n + q.countUnit + '</button>';
+			}
+			countChips += '<button class="qb-chip" onclick="qbCountMore()">' + q.countMore + '</button>';
+			countBody = '<div class="qb-chips">' + countChips + '</div><div class="qb-perhead" style="margin-top:10px">' + q.perHeadLabel + '</div>';
 		}
+		if (qbState.count >= q.countMax) countBody += '<div class="qb-more-note">' + q.countMoreNote + '</div>';
+		html += qbRow("count", idx.count, q.countLabel, countBody, "", q.hints.count);
 	}
-	if (c.rush > 0) {
-		lines += '<div class="qb-bd-line rush"><span>' + q.laneFeeLabel + '</span><span class="qb-bd-val">+' + qbFmt(q, c.rush) + '</span></div>';
-	}
-	if (c.discount > 0) {
-		lines += '<div class="qb-bd-line discount"><span>' + q.memberLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.discount) + '</span></div>';
-	}
-	var eq = stems ? "" : '<div class="qb-eq">' + q.eqPrefix + ' <strong>' + q.tierNames[qbState.prod] + '</strong></div>';
-	var moreNote = c.count >= q.countMax ? '<div class="qb-more-note">' + q.countMoreNote + '</div>' : '';
-	var fromTag = c.from ? '<span class="qb-from">' + q.fromSuffix + '</span>' : '';
-	var noteText = (stems ? q.stemsNote : q.note);
-	if (c.fast && c.discount > 0) noteText += ' ' + q.memberFastNote;
-	noteText += ' ' + q.addonNote;
-	// AA 账单：多人时才有意义，折叠收起，避免手机信息过载
-	var aaHtml = "";
-	if (c.count > 1) {
-		var shares = qbShares(q, c), aaRows = "";
-		for (var a = 0; a < c.count; a++) {
-			aaRows += '<div class="qb-aa-row"><span>' + q.vocalistLabel + ' ' + (a + 1)
-				+ '<span class="qb-aa-tag">' + q.edits[qbState.edits[a]].name + '</span></span>'
-				+ '<span class="qb-aa-val">' + qbFmt(q, shares[a]) + (c.from ? "+" : "") + '</span></div>';
+
+	// 05 · 音频编辑：每位主唱各选一档
+	if (shown >= idx.edit) {
+		var vocRows = "", floorBinding = false;
+		var fixed = (stems ? q.stems[qbState.stems].price : q.base) + q.prods[qbState.prod].price + q.perHead * (qbState.count - 1);
+		for (var v = 0; v < qbState.count; v++) {
+			// 只有当其余主唱都已定档，才知道这一档会不会把总价压到最低消费以下
+			var others = 0, othersSet = true;
+			for (var o = 0; o < qbState.count; o++) {
+				if (o === v) continue;
+				if (qbState.edits[o] === null || qbState.edits[o] === undefined) { othersSet = false; break; }
+				others += q.edits[qbState.edits[o]].price;
+			}
+			var chips = "";
+			for (var e2 = 0; e2 < q.edits.length; e2++) {
+				var label = q.edits[e2].name + (q.edits[e2].price ? " +" + qbFmt(q, q.edits[e2].price) : "");
+				var off = othersSet && (fixed + others + q.edits[e2].price) < q.minOrder;
+				if (off) floorBinding = true;
+				chips += '<button class="qb-mini-btn' + (qbState.edits[v] === e2 ? " active" : "") + (off ? " disabled" : "") + '"'
+					+ (off ? ' disabled title="' + q.floorNote + '"' : ' onclick="qbSetEdit(' + v + ',' + e2 + ')"') + '>' + label + '</button>';
+			}
+			vocRows += '<div class="qb-voc-row"><span class="qb-voc-name">' + q.vocalistLabel + ' ' + (v + 1) + '</span><div class="qb-mini-seg">' + chips + '</div></div>';
 		}
-		aaHtml = '<details class="qb-fold"' + (qbState.aaOpen ? " open" : "") + ' ontoggle="qbState.aaOpen=this.open">'
-			+ '<summary>' + q.aaTitle + '</summary>'
-			+ '<div class="qb-fold-body">' + aaRows + '<div class="qb-fold-note">' + q.aaNote + '</div></div></details>';
+		var editBody = '<div class="qb-voc-list">' + vocRows + '</div>'
+			+ (floorBinding ? '<div class="qb-tier-desc" style="margin-top:10px">' + q.floorNote + '</div>' : '');
+		html += qbRow("edit", idx.edit, q.editLabel, editBody, "", q.hints.edit);
 	}
-	var fineHtml = '<details class="qb-fold"' + (qbState.fineOpen ? " open" : "") + ' ontoggle="qbState.fineOpen=this.open">'
-		+ '<summary>' + q.fineTitle + '</summary>'
-		+ '<div class="qb-fold-body"><div class="qb-fold-note">' + noteText + '</div></div></details>';
+
 	// 交付日期：标准 stdMin–stdMax 工作日（跳周日）+积压；加急 rushMin–rushMax 自然日（含周日）
 	var stdRange = qbFmtRange(qbAddWorkdays(SCHEDULE.stdMin + SCHEDULE.backlogDays), qbAddWorkdays(SCHEDULE.stdMax + SCHEDULE.backlogDays), currentLang);
 	var rushRange = qbFmtRange(qbAddDays(SCHEDULE.rushMin), qbAddDays(SCHEDULE.rushMax), currentLang);
-	var laneSubs = [ q.laneStdSub.replace("{r}", stdRange), q.laneRushSub.replace("{r}", rushRange) ];
-	var laneBtns = "";
-	for (var L = 0; L < q.lanes.length; L++) {
-		laneBtns += '<button class="qb-seg-btn' + (L === qbState.lane ? " active" : "") + '" onclick="qbSet(\'lane\',' + L + ')">'
-			+ '<span class="qb-seg-name">' + q.lanes[L].name + '</span>'
-			+ '<span class="qb-seg-price">' + laneSubs[L] + '</span></button>';
+
+	// 06 · 交付通道
+	if (shown >= idx.lane) {
+		var laneSubs = [ q.laneStdSub.replace("{r}", stdRange), q.laneRushSub.replace("{r}", rushRange) ];
+		var laneBtns = "";
+		for (var L = 0; L < q.lanes.length; L++) {
+			laneBtns += '<button class="qb-seg-btn' + (L === QB_REC.lane ? " qb-rec" : "") + (L === qbState.lane ? " active" : "") + '" onclick="qbSet(\'lane\',' + L + ')">'
+				+ '<span class="qb-seg-name">' + q.lanes[L].name + (L === QB_REC.lane ? qbBadge(q.recMost) : "") + '</span>'
+				+ '<span class="qb-seg-price">' + laneSubs[L] + '</span></button>';
+		}
+		html += qbRow("lane", idx.lane, q.laneLabel, '<div class="qb-seg two">' + laneBtns + '</div>', q.laneNote, q.hints.lane);
 	}
-	var laneHtml = '<div class="qb-row"><div class="qb-label">' + q.laneLabel + '</div><div class="qb-seg two">' + laneBtns + '</div><div class="qb-tier-desc">' + q.laneNote + '</div></div>';
+
+	// 全部作答完毕，报价单才登场
+	if (done) {
+		var baseName = stems ? c.baseItem.name : q.tierNames[0];
+		var lines = '<div class="qb-bd-line"><span>' + baseName + '</span><span class="qb-bd-val">' + qbFmt(q, c.base) + (c.from ? "+" : "") + '</span></div>';
+		if (c.prod.price > 0) {
+			lines += '<div class="qb-bd-line"><span>' + q.prodLabel + ' · ' + c.prod.name + '</span><span class="qb-bd-val">+' + qbFmt(q, c.prod.price) + '</span></div>';
+		}
+		if (c.count > 1) {
+			lines += '<div class="qb-bd-line"><span>' + q.bdExtra + ' × ' + (c.count - 1) + '</span><span class="qb-bd-val">+' + qbFmt(q, c.mixExtra) + '</span></div>';
+		}
+		for (var e3 = 0; e3 < q.edits.length; e3++) {
+			if (c.editCounts[e3] > 0 && q.edits[e3].price > 0) {
+				lines += '<div class="qb-bd-line"><span>' + q.edits[e3].name + ' × ' + c.editCounts[e3] + '</span><span class="qb-bd-val">+' + qbFmt(q, q.edits[e3].price * c.editCounts[e3]) + '</span></div>';
+			}
+		}
+		if (c.rush > 0) {
+			lines += '<div class="qb-bd-line rush"><span>' + q.laneFeeLabel + '</span><span class="qb-bd-val">+' + qbFmt(q, c.rush) + '</span></div>';
+		}
+		if (c.discount > 0) {
+			lines += '<div class="qb-bd-line discount"><span>' + q.memberLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.discount) + '</span></div>';
+		}
+		var eq = stems ? "" : '<div class="qb-eq">' + q.eqPrefix + ' <strong>' + q.tierNames[qbState.prod] + '</strong></div>';
+		var fromTag = c.from ? '<span class="qb-from">' + q.fromSuffix + '</span>' : '';
+		var noteText = (stems ? q.stemsNote : q.note);
+		if (c.fast && c.discount > 0) noteText += ' ' + q.memberFastNote;
+		noteText += ' ' + q.addonNote;
+		// AA 账单：多人时才有意义，折叠收起，避免手机信息过载
+		var aaHtml = "";
+		if (c.count > 1) {
+			var shares = qbShares(q, c), aaRows = "";
+			for (var a = 0; a < c.count; a++) {
+				aaRows += '<div class="qb-aa-row"><span>' + q.vocalistLabel + ' ' + (a + 1)
+					+ '<span class="qb-aa-tag">' + q.edits[qbState.edits[a]].name + '</span></span>'
+					+ '<span class="qb-aa-val">' + qbFmt(q, shares[a]) + (c.from ? "+" : "") + '</span></div>';
+			}
+			aaHtml = '<details class="qb-fold"' + (qbState.aaOpen ? " open" : "") + ' ontoggle="qbState.aaOpen=this.open">'
+				+ '<summary>' + q.aaTitle + '</summary>'
+				+ '<div class="qb-fold-body">' + aaRows + '<div class="qb-fold-note">' + q.aaNote + '</div></div></details>';
+		}
+		var fineHtml = '<details class="qb-fold"' + (qbState.fineOpen ? " open" : "") + ' ontoggle="qbState.fineOpen=this.open">'
+			+ '<summary>' + q.fineTitle + '</summary>'
+			+ '<div class="qb-fold-body"><div class="qb-fold-note">' + noteText + '</div></div></details>';
+		var splitHtml = '<div class="qb-split">'
+			+ '<div class="qb-split-row deposit"><span>' + q.depositLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit) + (c.from ? "+" : "") + '</span></div>'
+			+ '<div class="qb-split-row"><span>' + q.balanceLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + (c.from ? "+" : "") + '</span></div>'
+			+ '<div class="qb-split-note">' + q.depositNote + '</div>'
+			+ '</div>';
+		var memberHtml = '<button class="qb-member' + (qbState.member ? " on" : "") + '" onclick="qbSet(\'member\',' + (!qbState.member) + ')" aria-pressed="' + qbState.member + '">'
+			+ '<span><span class="qb-member-label">' + q.memberTitle
+			+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="event.stopPropagation();qbScrollTo(\'svc-daomen\')">?</span></span>'
+			+ '<span class="qb-member-sub">' + q.memberSub + '</span></span>'
+			+ '<span class="qb-switch"></span></button>';
+
+		html += '<div class="qb-step" data-qstep="summary">' + memberHtml
+			+ '<div class="qb-summary">' + eq + lines
+			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
+			+ splitHtml + aaHtml + fineHtml + '</div>'
+			+ '<button class="qb-cta" onclick="qbCopy()">' + q.cta + '</button>'
+			+ '<button class="qb-reset" onclick="qbReset()">' + q.reset + '</button>'
+			+ '</div>';
+	}
+
 	var tt = I18N[currentLang];
 	var schedHtml = '<div class="qb-sched"><span class="qb-sched-dot"></span><span class="qb-sched-live">' + tt.schedLive + '</span>'
 		+ '<span class="qb-sched-item">' + tt.schedStd.replace("{r}", stdRange) + '</span>'
 		+ '<span class="qb-sched-sep">·</span>'
 		+ '<span class="qb-sched-item">' + tt.schedRush.replace("{r}", rushRange) + '</span></div>';
-	var splitHtml = '<div class="qb-split">'
-		+ '<div class="qb-split-row deposit"><span>' + q.depositLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit) + (c.from ? "+" : "") + '</span></div>'
-		+ '<div class="qb-split-row"><span>' + q.balanceLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + (c.from ? "+" : "") + '</span></div>'
-		+ '<div class="qb-split-note">' + q.depositNote + '</div>'
-		+ '</div>';
-	var memberHtml = '<button class="qb-member' + (qbState.member ? " on" : "") + '" onclick="qbSet(\'member\',' + (!qbState.member) + ')" aria-pressed="' + qbState.member + '">'
-		+ '<span><span class="qb-member-label">' + q.memberTitle
-		+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="event.stopPropagation();qbScrollTo(\'svc-daomen\')">?</span></span>'
-		+ '<span class="qb-member-sub">' + q.memberSub + '</span></span>'
-		+ '<span class="qb-switch"></span></button>';
 
-	mount.innerHTML = '<div class="quote-builder">' + schedHtml + modeHtml + baseHtml
-		+ '<div class="qb-row"><div class="qb-label">' + q.prodLabel + '</div><div class="qb-seg">' + prodBtns + '</div><div class="qb-tier-desc">' + c.prod.desc + '</div></div>'
-		+ '<div class="qb-row"><div class="qb-label">' + q.countLabel + '</div>'
-			+ '<div class="qb-stepper"><button class="qb-step-btn" onclick="qbStep(-1)" aria-label="-">−</button>'
-			+ '<span class="qb-count">' + c.count + '</span>'
-			+ '<button class="qb-step-btn" onclick="qbStep(1)" aria-label="+">+</button>'
-			+ '<span class="qb-perhead">' + q.perHeadLabel + '</span></div>' + moreNote + '</div>'
-		+ '<div class="qb-row"><div class="qb-label">' + q.editLabel + '</div><div class="qb-voc-list">' + vocRows + '</div>' + floorHtml + '</div>'
-		+ laneHtml
-		+ memberHtml
-		+ '<div class="qb-summary">' + eq + lines
-			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
-			+ splitHtml + aaHtml + fineHtml + '</div>'
-		+ '<button class="qb-cta" onclick="qbCopy()">' + q.cta + '</button>'
-		+ '</div>';
+	mount.innerHTML = '<div class="quote-builder">' + schedHtml + html + '</div>';
+
+	// 首次出现的步骤淡入；已出现过的（含每次重渲染）立刻可见，避免整块重播动画
+	var nodes = mount.querySelectorAll("[data-qstep]"), present = {};
+	for (var m = 0; m < nodes.length; m++) {
+		var key = nodes[m].getAttribute("data-qstep");
+		present[key] = true;
+		if (qbMounted[key]) nodes[m].classList.add("qb-in");
+		else { qbMounted[key] = true; qbFadeIn(nodes[m]); }
+	}
+	// 被收回的步骤（改了前面的选择）忘掉它，下次再露面时重新淡入
+	for (var k in qbMounted) { if (!present[k]) delete qbMounted[k]; }
+}
+function qbFadeIn(el) {
+	requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add("qb-in"); }); });
 }
 function qbCopy() {
 	var q = I18N[currentLang].quote;
