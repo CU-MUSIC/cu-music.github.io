@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -236,8 +237,9 @@ body {
 .about-hero-photo {
   position:relative; overflow:hidden; background:#0a0a0a;
 }
+/* 竖构图人像：人脸约在画面 38% 高度处，裁切锚点定在 30% 以保证任何比例下都露脸 */
 .about-hero-photo img {
-  width:100%; height:100%; object-fit:cover; object-position:center top;
+  width:100%; height:100%; object-fit:cover; object-position:center 30%;
   display:block; image-orientation:from-image;
 }
 .about-hero-text {
@@ -340,7 +342,8 @@ body {
 
   #float-contact { left:50%; right:auto; transform:translateX(-50%); bottom:28px; }
   .about-hero { grid-template-columns:1fr; min-height:auto; }
-  .about-hero-photo { aspect-ratio:4/3; }
+  /* 源图是 2808×4992 竖构图，别再压成 4/3 横幅（会把脸裁掉，只剩顶部墙面） */
+  .about-hero-photo { aspect-ratio:3/4; max-height:70vh; }
   .about-hero-text { padding:40px 24px; }
   .about-street { aspect-ratio:16/9; margin:40px 0; }
   .about-bottom { padding:0 24px; }
@@ -356,6 +359,21 @@ body {
   .about-certs { gap:10px; }
   #about-section { padding:80px 20px 80px; }
   .about-photos { grid-template-columns:repeat(2,1fr); }
+}
+
+/* 小屏 topbar：4 个导航项 + 40px gap + 3px 字距会横向溢出被裁掉，这里收紧 */
+@media (max-width:600px) {
+  #content-nav {
+    gap:16px; flex-wrap:nowrap;
+    padding:16px max(12px, env(safe-area-inset-left)) 16px max(12px, env(safe-area-inset-right));
+  }
+  .nav-link { font-size:10px; letter-spacing:1.4px; padding:6px 0; white-space:nowrap; }
+  .nav-spotify { gap:4px; }
+  .nav-spotify svg { width:11px; height:11px; }
+}
+@media (max-width:360px) {
+  #content-nav { gap:11px; }
+  .nav-link { font-size:9px; letter-spacing:1px; }
 }
 </style>
 </head>
