@@ -246,9 +246,27 @@ body {
   padding:80px 60px; display:flex; flex-direction:column; justify-content:center;
 }
 
-.about-bio h2 { font-size:clamp(40px,5vw,64px); font-weight:700; margin:0 0 28px; letter-spacing:-0.02em; }
-.about-bio p { font-size:15px; line-height:1.75; color:rgba(255,255,255,0.65); margin:0 0 14px; }
-.about-bio .bio-lang { font-size:13px; color:rgba(255,255,255,0.35); margin-top:2px; }
+/* Section eyebrow label (简介 / 成绩 / 荣誉) — 给 about 加逻辑分段 */
+.about-eyebrow {
+  display:flex; align-items:center; gap:12px;
+  font-family:var(--font-pro); font-size:11px; letter-spacing:0.25em;
+  text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:22px;
+}
+.about-eyebrow::before { content:""; width:22px; height:1px; background:rgba(255,255,255,0.25); }
+
+.about-bio h2 { font-size:clamp(40px,5vw,60px); font-weight:700; margin:0 0 6px; letter-spacing:-0.02em; }
+/* 中文主导：角色行 → 中文简介(主) → 英文(次) → 韩文(辅) → 标签 */
+.bio-role { font-size:15px; font-weight:600; color:rgba(255,255,255,0.92); margin:0 0 26px; }
+.bio-role span { color:rgba(255,255,255,0.4); font-weight:400; font-size:13px; margin-left:10px; letter-spacing:0.02em; }
+.bio-primary { font-size:15.5px; line-height:1.9; color:rgba(255,255,255,0.78); margin:0 0 18px; }
+.bio-secondary { font-size:13.5px; line-height:1.8; color:rgba(255,255,255,0.5); margin:0 0 14px; }
+.bio-tertiary { font-size:12.5px; line-height:1.75; color:rgba(255,255,255,0.32); margin:0; }
+.bio-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:28px; }
+.bio-tags span {
+  font-family:var(--font-pro); font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+  color:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.14);
+  border-radius:100px; padding:6px 14px;
+}
 
 /* Street photo full-bleed band */
 .about-street {
@@ -261,24 +279,24 @@ body {
 
 /* Certs + awards container */
 .about-bottom { max-width:900px; margin:0 auto; padding:0 40px; }
+.about-block + .about-block { margin-top:72px; padding-top:72px; border-top:1px solid rgba(255,255,255,0.07); }
 
 .about-certs {
-  display:flex; flex-wrap:wrap; gap:16px; margin:40px 0;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
 }
 .cert-item {
-  flex:1; min-width:160px; background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px 24px;
-  display:flex; align-items:center; gap:16px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:26px 24px;
+  display:flex; flex-direction:column; gap:8px;
 }
-.cert-num { font-size:28px; font-weight:700; white-space:nowrap; }
-.cert-label { font-size:13px; color:rgba(255,255,255,0.6); line-height:1.5; }
-.cert-label small { display:block; font-size:11px; color:rgba(255,255,255,0.35); margin-top:4px; }
+.cert-num { font-size:clamp(30px,4vw,38px); font-weight:700; letter-spacing:-0.02em; line-height:1; }
+.cert-label { font-size:13px; font-weight:600; color:rgba(255,255,255,0.78); line-height:1.4; }
+.cert-label small { display:block; font-size:11px; font-weight:400; color:rgba(255,255,255,0.4); margin-top:5px; letter-spacing:0.01em; }
 
 /* ================= Awards ================= */
-.about-awards-list { margin-top:48px; }
 .about-awards-heading {
-  font-family:var(--font-pro); font-size:11px; letter-spacing:0.25em;
-  text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:20px;
+  font-size:17px; font-weight:700; letter-spacing:0.01em;
+  color:rgba(255,255,255,0.92); margin-bottom:22px;
 }
 .nomination-cards { display:flex; flex-direction:column; gap:0; margin-bottom:16px; }
 .nom-card {
@@ -356,7 +374,11 @@ body {
   .nom-artist { white-space:normal; color:rgba(255,255,255,0.35); margin-left:0; }
   .chart-rank { font-size:1.4rem; min-width:32px; }
   .chart-title { font-size:13px; }
-  .about-certs { gap:10px; }
+  .about-certs { grid-template-columns:1fr; gap:10px; }
+  .cert-item { flex-direction:row; align-items:baseline; gap:14px; padding:18px 20px; }
+  .cert-num { font-size:30px; min-width:78px; }
+  .about-block + .about-block { margin-top:52px; padding-top:52px; }
+  .bio-primary { font-size:15px; }
   #about-section { padding:80px 20px 80px; }
   .about-photos { grid-template-columns:repeat(2,1fr); }
 }
@@ -424,11 +446,13 @@ body {
     </div>
     <div class="about-hero-text">
       <div class="about-bio">
+        <div class="about-eyebrow">简介 · Profile</div>
         <h2>ChefDao</h2>
-        <p>Audio Engineer &amp; Producer based in Seoul, KR. Founder of C/U Music Studio alongside producer &amp; songwriter Uin.</p>
-        <p>100+ songs across 10+ albums since 2022, spanning Hip-Hop, R&amp;B, Pop and beyond.</p>
-        <p class="bio-lang">音频工程师 &amp; 制作人，现居韩国首尔。与制作人兼词曲作者 Uin 共同创立 C/U Music Studio。自 2022 年起横跨 Hip-Hop、R&amp;B、流行等多种曲风，已参与制作逾百首作品。</p>
-        <p class="bio-lang">서울에서 활동 중인 오디오 엔지니어 &amp; 프로듀서. 프로듀서 겸 싱어송라이터 Uin과 함께 C/U Music Studio를 공동 설립했습니다. 2022년부터 Hip-Hop, R&amp;B, Pop 등 다양한 장르를 넘나들며 100곡 이상을 작업했습니다.</p>
+        <div class="bio-role">音频工程师 &amp; 制作人 <span>Audio Engineer &amp; Producer</span></div>
+        <p class="bio-primary">现居韩国首尔。与制作人、词曲作者 Uin 共同创立 C/U Music Studio。自 2022 年起横跨 Hip-Hop、R&amp;B、流行等多种曲风，已参与制作逾百首作品。</p>
+        <p class="bio-secondary">Based in Seoul, KR. Co-founder of C/U Music Studio with producer &amp; songwriter Uin. 100+ songs across 10+ albums since 2022 — Hip-Hop, R&amp;B, Pop and beyond.</p>
+        <p class="bio-tertiary">서울 기반 오디오 엔지니어 &amp; 프로듀서. Uin과 함께 C/U Music Studio 공동 설립. 2022년부터 100곡 이상 작업.</p>
+        <div class="bio-tags"><span>Seoul</span><span>C/U Music Studio</span><span>Since 2022</span></div>
       </div>
     </div>
   </div>
@@ -438,21 +462,25 @@ body {
   </div>
 
   <div class="about-bottom">
-    <div class="about-certs">
-      <div class="cert-item">
-        <span class="cert-num">10×</span>
-        <span class="cert-label">Diamond Single<small>网易云 钻石单曲 · 10M+ streams</small></span>
-      </div>
-      <div class="cert-item">
-        <span class="cert-num">3×</span>
-        <span class="cert-label">Platinum Single<small>网易云 铂金单曲 · 5M+ streams</small></span>
-      </div>
-      <div class="cert-item">
-        <span class="cert-num">100M+</span>
-        <span class="cert-label">Total Streams<small>across Chinese platforms</small></span>
+    <div class="about-block">
+      <div class="about-eyebrow">成绩 · Streaming</div>
+      <div class="about-certs">
+        <div class="cert-item">
+          <span class="cert-num">10×</span>
+          <span class="cert-label">钻石单曲<small>网易云 Diamond · 单曲播放 1000万+</small></span>
+        </div>
+        <div class="cert-item">
+          <span class="cert-num">3×</span>
+          <span class="cert-label">铂金单曲<small>网易云 Platinum · 单曲播放 500万+</small></span>
+        </div>
+        <div class="cert-item">
+          <span class="cert-num">1亿+</span>
+          <span class="cert-label">总播放量<small>各大中文音乐平台累计</small></span>
+        </div>
       </div>
     </div>
-    <div class="about-awards-list">
+    <div class="about-block about-awards-list">
+      <div class="about-eyebrow">荣誉 · Recognition</div>
       <p class="about-awards-heading">2025 CHMA 中文说唱音乐奖</p>
       <div class="nomination-cards">
         <div class="nom-card">
