@@ -138,6 +138,8 @@
 		.qb-mini-btn { background: none; border: 0.5px solid var(--border); border-radius: 100px; padding: 6px 12px; font-family: var(--font); font-size: 11.5px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; white-space: nowrap; }
 		.qb-mini-btn:hover { border-color: var(--border-hover); }
 		.qb-mini-btn.active { border-color: rgba(255,255,255,0.45); color: var(--text-primary); background: rgba(255,255,255,0.05); }
+		.qb-mini-btn.disabled { opacity: 0.3; cursor: not-allowed; }
+		.qb-mini-btn.disabled:hover { border-color: var(--border); }
 		/* summary panel */
 		.qb-summary { background: var(--green-deep); border: 0.5px solid var(--green-line); border-radius: 12px; padding: 20px; margin-top: 4px; }
 		.qb-bd-line { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); padding: 5px 0; }
@@ -170,6 +172,21 @@
 		.qb-split-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); }
 		.qb-split-row .qb-split-val { font-variant-numeric: tabular-nums; white-space: nowrap; }
 		.qb-split-row.deposit .qb-split-val, .qb-split-row.deposit span { color: #fff; font-weight: 600; }
+		.qb-split-note { font-size: 11px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
+
+		/* ── Collapsible folds (AA 账单 / 费用说明) ─────────── */
+		.qb-fold { margin-top: 12px; border-top: 0.5px solid var(--border); }
+		.qb-fold summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; font-weight: 600; color: var(--text-secondary); padding: 11px 0 9px; transition: color 0.2s; }
+		.qb-fold summary::-webkit-details-marker { display: none; }
+		.qb-fold summary::after { content: "+"; font-size: 15px; font-weight: 300; color: var(--text-dim); line-height: 1; transition: transform 0.3s var(--ease); }
+		.qb-fold[open] summary::after { transform: rotate(45deg); }
+		.qb-fold summary:hover { color: var(--text-primary); }
+		.qb-fold-body { padding-bottom: 4px; }
+		.qb-aa-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); padding: 7px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); }
+		.qb-aa-row:last-of-type { border-bottom: none; }
+		.qb-aa-val { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.qb-aa-tag { font-size: 10.5px; color: var(--text-dim); margin-left: 6px; }
+		.qb-fold-note { font-size: 11px; color: var(--text-dim); line-height: 1.7; margin-top: 9px; }
 
 		/* ── Group headers ─────────────────────────────────── */
 		.group-head { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); border-top: 0.5px solid var(--border); padding-top: 32px; margin-bottom: 36px; }
@@ -265,13 +282,24 @@
 			.price-card { padding: 18px 16px; }
 			.card-price-num { font-size: 24px; }
 			.quote-builder { padding: 18px 14px; }
+			.qb-row { margin-bottom: 18px; }
+			.qb-sched { padding-bottom: 12px; margin-bottom: 16px; }
+			.qb-mode { margin-bottom: 18px; }
+			.qb-base-line { padding: 10px 13px; font-size: 12px; margin-bottom: 18px; }
+			.qb-base-line strong { font-size: 15px; }
 			.qb-seg { gap: 6px; }
+			.qb-seg.two { grid-template-columns: 1fr; }
+			.qb-seg.two .qb-seg-btn { flex-direction: row; align-items: baseline; justify-content: space-between; min-height: 0; padding: 12px 13px; }
 			.qb-seg-btn { padding: 10px; min-height: 56px; }
 			.qb-seg-name { font-size: 12px; }
 			.qb-seg-price { font-size: 11px; }
+			.qb-tier-desc { font-size: 11px; margin-top: 8px; }
 			.qb-voc-row { padding: 8px 10px; }
 			.qb-mini-btn { padding: 6px 10px; font-size: 11px; }
+			.qb-summary { padding: 16px 14px; }
+			.qb-bd-line { font-size: 12px; padding: 4px 0; }
 			.qb-total { font-size: 26px; }
+			.qb-member { padding: 11px 13px; }
 			.pl-highlights { grid-template-columns: 1fr 1fr; }
 			.projectlead-card { padding: 20px 16px; }
 			.faq-q-text { font-size: 14px; }
@@ -378,7 +406,7 @@ var I18N = {
 			title: "报价计算器",
 			modeVocal: "贴唱混音", modeStems: "分轨混音",
 			cur: "¥",
-			baseLabel: "基础混音 · 1 位主唱（含简易母带）", base: 199,
+			baseLabel: "基础混音 · 1 位主唱（含简易母带）", base: 200,
 			stemsLabel: "工程规模（含母带 · 1 位主唱起）",
 			stems: [
 				{ name: "简易分轨", price: 1200, from: false, desc: "Stems Mix 或极简配器项目，8 轨以内。" },
@@ -400,12 +428,16 @@ var I18N = {
 				{ name: "仅修节奏", price: 100 },
 				{ name: "节奏 + 修音", price: 200 }
 			],
+			aaStep: 1, minOrder: 300,
+			floorNote: "混音最低消费 ¥300（基础混音 ¥200 + 至少 ¥100 音频编辑）。会让总价跌破下限的选项已置灰。",
+			aaTitle: "AA 账单 · 按人分摊", fineTitle: "费用说明",
+			aaNote: "共同部分（混音 + 多主唱 + 人声制作）按人头平摊，音频编辑各付各的；加急费与会员折扣按各自占比分摊。相同服务金额完全一致，取整差额由工作室承担。",
 			bdExtra: "多主唱混音",
 			totalLabel: "预估报价", fromSuffix: "起",
 			note: "所见即所得，无隐藏费用。极复杂人声（大量跑调、破音）需要超出常规的工作量时，我们会先与你确认再继续，不会先做后收。",
 			stemsNote: "人声相关加价与贴唱一致——人声制作与音编的工作量不随伴奏轨数变化。标注「起」的规格，最终报价按工程复杂度与你确认后才开始。",
 			addonNote: "和声 / Double 密集堆叠（5 轨以上）按规模另计：5–8 轨 +¥200 · 9–12 轨 +¥400 · 12 轨以上 +¥600。",
-			laneLabel: "④ 交付通道", laneFeeRate: 0.5, laneFeeLabel: "加急费 +50%",
+			laneLabel: "交付通道", laneFeeRate: 0.5, laneFeeLabel: "加急费 +50%",
 			lanes: [ { name: "标准交付" }, { name: "加急" } ],
 			laneStdSub: "10–12 工作日 · {r}", laneRushSub: "3–5 天 · {r}",
 			laneNote: "标准 10–12 工作日（周日休息）；加急 3–5 天（含周日加班）。日期按当前排期自动更新。",
@@ -573,12 +605,16 @@ var I18N = {
 				{ name: "Timing only", price: 15 },
 				{ name: "Timing + Pitch", price: 30 }
 			],
+			aaStep: 1, minOrder: 45,
+			floorNote: "Minimum mixing order $45 (Basic Mix $30 + at least $15 of editing). Options that would drop the total below it are greyed out.",
+			aaTitle: "Split the bill · per vocalist", fineTitle: "Pricing notes",
+			aaNote: "Shared costs (mix + extra vocalists + vocal production) are divided equally; each vocalist pays for their own editing. Rush fee and member discount are allocated proportionally. Identical services always cost the same — any rounding difference is absorbed by the studio.",
 			bdExtra: "Extra vocalists",
 			totalLabel: "Estimated Quote", fromSuffix: "from",
 			note: "What you see is what you pay. If extremely complex vocals need work beyond the normal scope, we confirm with you first — never bill after the fact.",
 			stemsNote: "Vocal add-ons are identical to Vocal Mix — production and editing effort doesn't change with instrumental track count. For tiers marked \"from\", the final quote is confirmed with you before work begins.",
 			addonNote: "Dense harmony / doubles (5+ tracks) billed by scale: 5–8 tracks +$30 · 9–12 +$60 · 12+ +$90.",
-			laneLabel: "④ Delivery", laneFeeRate: 0.5, laneFeeLabel: "Rush fee +50%",
+			laneLabel: "Delivery", laneFeeRate: 0.5, laneFeeLabel: "Rush fee +50%",
 			lanes: [ { name: "Standard" }, { name: "Rush" } ],
 			laneStdSub: "10–12 working days · {r}", laneRushSub: "3–5 days · {r}",
 			laneNote: "Standard 10–12 working days (closed Sun); rush 3–5 days (incl. weekends). Dates update with the current schedule.",
@@ -746,12 +782,16 @@ var I18N = {
 				{ name: "타이밍만", price: 20000 },
 				{ name: "타이밍 + 피치", price: 40000 }
 			],
+			aaStep: 100, minOrder: 60000,
+			floorNote: "믹싱 최소 주문 ₩60,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩20,000). 하한 미만이 되는 옵션은 비활성화됩니다.",
+			aaTitle: "N빵 정산 · 보컬별", fineTitle: "요금 안내",
+			aaNote: "공통 비용(믹스 + 추가 보컬 + 보컬 프로덕션)은 인원수로 균등 분담하고, 오디오 편집은 각자 부담합니다. 긴급 요금과 회원 할인은 비율대로 배분됩니다. 동일한 서비스는 항상 동일한 금액이며, 반올림 차액은 스튜디오가 부담합니다.",
 			bdExtra: "추가 보컬",
 			totalLabel: "예상 견적", fromSuffix: "부터",
 			note: "보이는 그대로 지불합니다. 매우 복잡한 보컬로 일반 범위를 넘는 작업이 필요하면 먼저 확인 후 진행합니다 — 사후 청구는 없습니다.",
 			stemsNote: "보컬 관련 추가 요금은 보컬 믹스와 동일합니다 — 프로덕션과 편집 작업량은 악기 트랙 수와 무관합니다. \"부터\"로 표시된 규격은 작업 시작 전 최종 견적을 확인해 드립니다.",
 			addonNote: "화음 / 더블 밀집 스택(5트랙 이상)은 규모별 별도: 5–8트랙 +₩40,000 · 9–12 +₩80,000 · 12+ +₩120,000.",
-			laneLabel: "④ 납품 방식", laneFeeRate: 0.5, laneFeeLabel: "긴급 요금 +50%",
+			laneLabel: "납품 방식", laneFeeRate: 0.5, laneFeeLabel: "긴급 요금 +50%",
 			lanes: [ { name: "표준 납품" }, { name: "긴급" } ],
 			laneStdSub: "10–12 영업일 · {r}", laneRushSub: "3–5일 · {r}",
 			laneNote: "표준 10–12 영업일(일요일 휴무); 긴급 3–5일(주말 포함). 날짜는 현재 일정에 따라 자동 갱신.",
@@ -880,7 +920,9 @@ var I18N = {
 
 // ── Quote Builder state & logic ─────────────────────────────
 // mode: 'vocal' | 'stems'; prod: prods index; edits: per-vocalist edit index array
-var qbState = { mode: "vocal", prod: 1, count: 1, edits: [2], stems: 1, member: false, lane: 0 };
+// edits 索引：0 = 免修，1 = 仅修节奏，2 = 节奏+修音
+// 纯混音（prod=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
+var qbState = { mode: "vocal", prod: 1, count: 1, edits: [2], stems: 1, member: false, lane: 0, aaOpen: false, fineOpen: false };
 
 function qbFmt(q, n) {
 	var s = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -928,6 +970,32 @@ function qbCompute(q) {
 		gross: gross, discount: discount, fast: fast, rush: rush,
 		total: total, deposit: deposit, balance: balance };
 }
+// AA 账单：共同部分（基础/分轨价 + 多主唱混音 + 人声制作）按人头平摊，
+// 音编各付各的；加急费与会员折扣按各人小计占比分摊。
+// 每人独立向下取整（不把余额甩给最后一位）→ 相同服务金额必然一致；
+// 分摊合计 ≤ 总价，取整差额由工作室承担，绝不多收。
+function qbShares(q, c) {
+	var shared = c.base + c.mixExtra + c.prod.price;
+	var n = c.count, step = q.aaStep || 1, shares = [];
+	for (var i = 0; i < n; i++) {
+		var own = shared / n + q.edits[qbState.edits[i]].price;
+		shares.push(Math.floor(own / c.gross * c.total / step) * step);
+	}
+	return shares;
+}
+// 混音小计（未含加急/会员折扣）
+function qbGross(q) {
+	var base = (qbState.mode === "stems") ? q.stems[qbState.stems].price : q.base;
+	var g = base + q.prods[qbState.prod].price + q.perHead * (qbState.count - 1);
+	for (var i = 0; i < qbState.count; i++) g += q.edits[qbState.edits[i]].price;
+	return g;
+}
+// 最低消费：总价 ≥ minOrder（¥300）即可，不强制"必须有人修节奏"。
+// 只有跌破下限时，才把主唱 1 抬到「仅修节奏」补足。
+function qbEnforceFloor(q) {
+	if (qbGross(q) >= q.minOrder) return;
+	qbState.edits[0] = 1; // 主唱 1 → 仅修节奏
+}
 function renderQuoteBuilder() {
 	var mount = document.getElementById("qb-mount");
 	if (!mount) return;
@@ -936,6 +1004,7 @@ function renderQuoteBuilder() {
 	if (qbState.count > q.countMax) { qbState.count = q.countMax; qbState.edits.length = q.countMax; }
 	for (var f = 0; f < qbState.edits.length; f++) { if (qbState.edits[f] >= q.edits.length) qbState.edits[f] = q.edits.length - 1; }
 	if (qbState.stems >= q.stems.length) qbState.stems = q.stems.length - 1;
+	qbEnforceFloor(q);
 	var stems = qbState.mode === "stems";
 	var c = qbCompute(q);
 
@@ -968,15 +1037,21 @@ function renderQuoteBuilder() {
 			+ '<span class="qb-seg-name">' + q.prods[i].name + '</span>'
 			+ '<span class="qb-seg-price">' + pp + '</span></button>';
 	}
-	var vocRows = "";
+	var vocRows = "", floorBinding = false;
 	for (var v = 0; v < c.count; v++) {
+		var curPrice = q.edits[qbState.edits[v]].price;
 		var chips = "";
 		for (var e2 = 0; e2 < q.edits.length; e2++) {
 			var label = q.edits[e2].name + (q.edits[e2].price ? " +" + qbFmt(q, q.edits[e2].price) : "");
-			chips += '<button class="qb-mini-btn' + (qbState.edits[v] === e2 ? " active" : "") + '" onclick="qbSetEdit(' + v + ',' + e2 + ')">' + label + '</button>';
+			// 切到该档若让总价跌破最低消费，则置灰禁用
+			var off = (c.gross - curPrice + q.edits[e2].price) < q.minOrder;
+			if (off) floorBinding = true;
+			chips += '<button class="qb-mini-btn' + (qbState.edits[v] === e2 ? " active" : "") + (off ? " disabled" : "") + '"'
+				+ (off ? ' disabled title="' + q.floorNote + '"' : ' onclick="qbSetEdit(' + v + ',' + e2 + ')"') + '>' + label + '</button>';
 		}
 		vocRows += '<div class="qb-voc-row"><span class="qb-voc-name">' + q.vocalistLabel + ' ' + (v + 1) + '</span><div class="qb-mini-seg">' + chips + '</div></div>';
 	}
+	var floorHtml = floorBinding ? '<div class="qb-tier-desc">' + q.floorNote + '</div>' : '';
 
 	var baseName = stems ? c.baseItem.name : q.tierNames[0];
 	var lines = '<div class="qb-bd-line"><span>' + baseName + '</span><span class="qb-bd-val">' + qbFmt(q, c.base) + (c.from ? "+" : "") + '</span></div>';
@@ -986,8 +1061,8 @@ function renderQuoteBuilder() {
 	if (c.count > 1) {
 		lines += '<div class="qb-bd-line"><span>' + q.bdExtra + ' × ' + (c.count - 1) + '</span><span class="qb-bd-val">+' + qbFmt(q, c.mixExtra) + '</span></div>';
 	}
-	for (var e3 = 1; e3 < q.edits.length; e3++) {
-		if (c.editCounts[e3] > 0) {
+	for (var e3 = 0; e3 < q.edits.length; e3++) {
+		if (c.editCounts[e3] > 0 && q.edits[e3].price > 0) {
 			lines += '<div class="qb-bd-line"><span>' + q.edits[e3].name + ' × ' + c.editCounts[e3] + '</span><span class="qb-bd-val">+' + qbFmt(q, q.edits[e3].price * c.editCounts[e3]) + '</span></div>';
 		}
 	}
@@ -1000,8 +1075,25 @@ function renderQuoteBuilder() {
 	var eq = stems ? "" : '<div class="qb-eq">' + q.eqPrefix + ' <strong>' + q.tierNames[qbState.prod] + '</strong></div>';
 	var moreNote = c.count >= q.countMax ? '<div class="qb-more-note">' + q.countMoreNote + '</div>' : '';
 	var fromTag = c.from ? '<span class="qb-from">' + q.fromSuffix + '</span>' : '';
-	var noteText = (stems ? q.stemsNote : q.note) + ' ' + q.depositNote;
+	var noteText = (stems ? q.stemsNote : q.note);
 	if (c.fast && c.discount > 0) noteText += ' ' + q.memberFastNote;
+	noteText += ' ' + q.addonNote;
+	// AA 账单：多人时才有意义，折叠收起，避免手机信息过载
+	var aaHtml = "";
+	if (c.count > 1) {
+		var shares = qbShares(q, c), aaRows = "";
+		for (var a = 0; a < c.count; a++) {
+			aaRows += '<div class="qb-aa-row"><span>' + q.vocalistLabel + ' ' + (a + 1)
+				+ '<span class="qb-aa-tag">' + q.edits[qbState.edits[a]].name + '</span></span>'
+				+ '<span class="qb-aa-val">' + qbFmt(q, shares[a]) + (c.from ? "+" : "") + '</span></div>';
+		}
+		aaHtml = '<details class="qb-fold"' + (qbState.aaOpen ? " open" : "") + ' ontoggle="qbState.aaOpen=this.open">'
+			+ '<summary>' + q.aaTitle + '</summary>'
+			+ '<div class="qb-fold-body">' + aaRows + '<div class="qb-fold-note">' + q.aaNote + '</div></div></details>';
+	}
+	var fineHtml = '<details class="qb-fold"' + (qbState.fineOpen ? " open" : "") + ' ontoggle="qbState.fineOpen=this.open">'
+		+ '<summary>' + q.fineTitle + '</summary>'
+		+ '<div class="qb-fold-body"><div class="qb-fold-note">' + noteText + '</div></div></details>';
 	// 交付日期：标准 stdMin–stdMax 工作日（跳周日）+积压；加急 rushMin–rushMax 自然日（含周日）
 	var stdRange = qbFmtRange(qbAddWorkdays(SCHEDULE.stdMin + SCHEDULE.backlogDays), qbAddWorkdays(SCHEDULE.stdMax + SCHEDULE.backlogDays), currentLang);
 	var rushRange = qbFmtRange(qbAddDays(SCHEDULE.rushMin), qbAddDays(SCHEDULE.rushMax), currentLang);
@@ -1021,6 +1113,7 @@ function renderQuoteBuilder() {
 	var splitHtml = '<div class="qb-split">'
 		+ '<div class="qb-split-row deposit"><span>' + q.depositLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit) + (c.from ? "+" : "") + '</span></div>'
 		+ '<div class="qb-split-row"><span>' + q.balanceLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + (c.from ? "+" : "") + '</span></div>'
+		+ '<div class="qb-split-note">' + q.depositNote + '</div>'
 		+ '</div>';
 	var memberHtml = '<button class="qb-member' + (qbState.member ? " on" : "") + '" onclick="qbSet(\'member\',' + (!qbState.member) + ')" aria-pressed="' + qbState.member + '">'
 		+ '<span><span class="qb-member-label">' + q.memberTitle
@@ -1035,15 +1128,13 @@ function renderQuoteBuilder() {
 			+ '<span class="qb-count">' + c.count + '</span>'
 			+ '<button class="qb-step-btn" onclick="qbStep(1)" aria-label="+">+</button>'
 			+ '<span class="qb-perhead">' + q.perHeadLabel + '</span></div>' + moreNote + '</div>'
-		+ '<div class="qb-row"><div class="qb-label">' + q.editLabel + '</div><div class="qb-voc-list">' + vocRows + '</div></div>'
+		+ '<div class="qb-row"><div class="qb-label">' + q.editLabel + '</div><div class="qb-voc-list">' + vocRows + '</div>' + floorHtml + '</div>'
 		+ laneHtml
 		+ memberHtml
 		+ '<div class="qb-summary">' + eq + lines
 			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
-			+ splitHtml
-			+ '<div class="qb-note">' + noteText + '</div></div>'
+			+ splitHtml + aaHtml + fineHtml + '</div>'
 		+ '<button class="qb-cta" onclick="qbCopy()">' + q.cta + '</button>'
-		+ '<div class="qb-addon-note">' + q.addonNote + '</div>'
 		+ '</div>';
 }
 function qbCopy() {
@@ -1055,14 +1146,21 @@ function qbCopy() {
 		+ "· " + (stems ? q.modeStems : q.modeVocal) + " · " + baseName + " " + qbFmt(q, c.base) + (c.from ? "+" : "") + "\n";
 	if (c.prod.price > 0) txt += "· " + q.prodLabel + " · " + c.prod.name + " +" + qbFmt(q, c.prod.price) + "\n";
 	txt += "· " + q.vocalistLabel + " × " + c.count + (c.count > 1 ? " (+" + qbFmt(q, c.mixExtra) + ")" : "") + "\n";
-	for (var e = 1; e < q.edits.length; e++) {
-		if (c.editCounts[e] > 0) txt += "· " + q.edits[e].name + " × " + c.editCounts[e] + " (+" + qbFmt(q, q.edits[e].price * c.editCounts[e]) + ")\n";
+	for (var e = 0; e < q.edits.length; e++) {
+		if (c.editCounts[e] > 0 && q.edits[e].price > 0) txt += "· " + q.edits[e].name + " × " + c.editCounts[e] + " (+" + qbFmt(q, q.edits[e].price * c.editCounts[e]) + ")\n";
 	}
 	if (c.rush > 0) txt += "· " + q.laneFeeLabel + " (+" + qbFmt(q, c.rush) + ")\n";
 	if (c.discount > 0) txt += "· " + q.memberLine + " (−" + qbFmt(q, c.discount) + ")\n";
 	txt += q.totalLabel + ": " + qbFmt(q, c.total) + (c.from ? "+" : "") + "\n"
-		+ q.depositLabel + ": " + qbFmt(q, c.deposit) + (c.from ? "+" : "") + " · " + q.balanceLabel + ": " + qbFmt(q, c.balance) + (c.from ? "+" : "") + "\n"
-		+ "WeChat: " + CONTACT.wechat;
+		+ q.depositLabel + ": " + qbFmt(q, c.deposit) + (c.from ? "+" : "") + " · " + q.balanceLabel + ": " + qbFmt(q, c.balance) + (c.from ? "+" : "") + "\n";
+	if (c.count > 1) {
+		var shares = qbShares(q, c);
+		txt += "\n" + q.aaTitle + "\n";
+		for (var a = 0; a < c.count; a++) {
+			txt += "· " + q.vocalistLabel + " " + (a + 1) + " (" + q.edits[qbState.edits[a]].name + "): " + qbFmt(q, shares[a]) + (c.from ? "+" : "") + "\n";
+		}
+	}
+	txt += "WeChat: " + CONTACT.wechat;
 	var btn = document.querySelector(".qb-cta");
 	var done = function() {
 		if (btn) { btn.textContent = q.copied; setTimeout(function() { btn.textContent = q.cta; }, 2000); }
