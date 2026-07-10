@@ -1063,7 +1063,7 @@ function qbReset() {
 
 // ── Step sequence ───────────────────────────────────────────
 // 分轨模式多一步「工程规模」。一个步骤作答完毕，下一步才渲染出来。
-function qbSteps() { return qbState.mode === "stems" ? ["mode", "stems", "prod", "harmony", "count", "edit", "lane"] : ["mode", "prod", "harmony", "count", "edit", "lane"]; }
+function qbSteps() { return qbState.mode === "stems" ? ["mode", "stems", "prod", "count", "edit", "harmony", "lane"] : ["mode", "prod", "count", "edit", "harmony", "lane"]; }
 function qbAnswered(k) {
 	if (k === "mode") return qbState.mode !== null;
 	if (k === "stems") return qbState.stems !== null;
@@ -1204,19 +1204,6 @@ function renderQuoteBuilder() {
 			qbState.prod !== null ? q.prods[qbState.prod].desc : "", q.hints.prod);
 	}
 
-	// 04 · 和声 / 叠唱密度：按感觉分档，不数轨道，让和声多的人自己认领更高档
-	if (shown >= idx.harmony) {
-		var harmBtns = "";
-		for (var hh = 0; hh < q.harmonies.length; hh++) {
-			var hp = q.harmonies[hh].price ? "+" + qbFmt(q, q.harmonies[hh].price) : "—";
-			harmBtns += '<button class="qb-seg-btn' + (hh === QB_REC.harmony ? " qb-rec" : "") + (hh === qbState.harmony ? " active" : "") + '" onclick="qbSet(\'harmony\',' + hh + ')">'
-				+ '<span class="qb-seg-name">' + q.harmonies[hh].name + (hh === QB_REC.harmony ? qbBadge(q.recPick) : "") + '</span>'
-				+ '<span class="qb-seg-price">' + hp + '</span></button>';
-		}
-		html += qbRow("harmony", idx.harmony, q.harmonyLabel, '<div class="qb-seg four">' + harmBtns + '</div>',
-			qbState.harmony !== null ? q.harmonies[qbState.harmony].desc : "", q.hints.harmony);
-	}
-
 	// 主唱人数：1–3 直接点选，4 位以上切换成步进器（编号随模式自动排）
 	if (shown >= idx.count) {
 		var countBody;
@@ -1237,10 +1224,12 @@ function renderQuoteBuilder() {
 		html += qbRow("count", idx.count, q.countLabel, countBody, "", q.hints.count);
 	}
 
-	// 06 · 音频编辑：每位主唱各选一档
+	// 音频编辑：每位主唱各选一档（编号随模式自动排）
 	if (shown >= idx.edit) {
 		var vocRows = "", floorBinding = false;
-		var fixed = (stems ? q.stems[qbState.stems].price : q.base) + q.prods[qbState.prod].price + q.harmonies[qbState.harmony].price + q.perHead * (qbState.count - 1);
+		// 和声排在音编之后，此时可能还没选；只加钱不减钱，按 0 算即为最低总价，正是下限判断该用的值
+		var harmPrice = qbState.harmony !== null ? q.harmonies[qbState.harmony].price : 0;
+		var fixed = (stems ? q.stems[qbState.stems].price : q.base) + q.prods[qbState.prod].price + harmPrice + q.perHead * (qbState.count - 1);
 		for (var v = 0; v < qbState.count; v++) {
 			// 只有当其余主唱都已定档，才知道这一档会不会把总价压到最低消费以下
 			var others = 0, othersSet = true;
@@ -1262,6 +1251,19 @@ function renderQuoteBuilder() {
 		var editBody = '<div class="qb-voc-list">' + vocRows + '</div>'
 			+ (floorBinding ? '<div class="qb-tier-desc" style="margin-top:10px">' + q.floorNote + '</div>' : '');
 		html += qbRow("edit", idx.edit, q.editLabel, editBody, "", q.hints.edit);
+	}
+
+	// 和声 / 叠唱密度：靠后选（人数、音编之后，交付之前）。按感觉分档，不数轨道，让和声多的人自己认领更高档
+	if (shown >= idx.harmony) {
+		var harmBtns = "";
+		for (var hh = 0; hh < q.harmonies.length; hh++) {
+			var hp = q.harmonies[hh].price ? "+" + qbFmt(q, q.harmonies[hh].price) : "—";
+			harmBtns += '<button class="qb-seg-btn' + (hh === QB_REC.harmony ? " qb-rec" : "") + (hh === qbState.harmony ? " active" : "") + '" onclick="qbSet(\'harmony\',' + hh + ')">'
+				+ '<span class="qb-seg-name">' + q.harmonies[hh].name + (hh === QB_REC.harmony ? qbBadge(q.recPick) : "") + '</span>'
+				+ '<span class="qb-seg-price">' + hp + '</span></button>';
+		}
+		html += qbRow("harmony", idx.harmony, q.harmonyLabel, '<div class="qb-seg four">' + harmBtns + '</div>',
+			qbState.harmony !== null ? q.harmonies[qbState.harmony].desc : "", q.hints.harmony);
 	}
 
 	// 交付日期：标准 stdMin–stdMax 工作日（跳周日）+积压；加急 rushMin–rushMax 自然日（含周日）
