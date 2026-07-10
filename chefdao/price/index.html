@@ -5,6 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 	<title>Rates | ChefDao</title>
 	<style>
+		/* ── Dark canvas · 黑白极简 + 墨绿只做面（呼应 ChefDao 绿标）── */
 		:root {
 			--bg: #080808;
 			--surface: #111111;
@@ -12,8 +13,9 @@
 			--text-primary: #f0f0f0;
 			--text-secondary: #888;
 			--text-dim: #555;
-			--gold: #c9a227;
-			--gold-bg: rgba(201, 162, 39, 0.07);
+			--green-deep: #0d1f16;
+			--green-line: rgba(96, 176, 134, 0.25);
+			--green-soft: #8fc3a9;
 			--border: rgba(255, 255, 255, 0.08);
 			--border-hover: rgba(255, 255, 255, 0.2);
 			--font: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
@@ -23,7 +25,37 @@
 		* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 		html { scroll-behavior: smooth; }
 		body { background: var(--bg); color: var(--text-primary); font-family: var(--font); -webkit-font-smoothing: antialiased; line-height: 1.6; }
-		.container { max-width: 960px; margin: 0 auto; padding: 72px 24px; padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+		.container { max-width: 960px; margin: 0 auto; padding: 72px 24px; padding-bottom: calc(130px + env(safe-area-inset-bottom)); }
+
+		/* reveal animation */
+		.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
+		.reveal.in { opacity: 1; transform: none; }
+		@media (prefers-reduced-motion: reduce) {
+			html { scroll-behavior: auto; }
+			.reveal { opacity: 1; transform: none; transition: none; }
+			#entry-gate { transition: none !important; }
+		}
+
+		/* ── Entry gate (开屏选择) ─────────────────────────── */
+		#entry-gate { position: fixed; inset: 0; z-index: 200; background: rgba(8,8,8,0.94); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 1; transition: opacity 0.55s var(--ease); }
+		#entry-gate.leaving { opacity: 0; pointer-events: none; }
+		.gate-inner { max-width: 720px; width: 100%; }
+		.gate-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 16px; }
+		.gate-title { font-size: clamp(30px, 7vw, 52px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.12; margin-bottom: 12px; }
+		.gate-sub { color: var(--text-secondary); font-size: 14px; max-width: 420px; line-height: 1.7; margin-bottom: 36px; }
+		.gate-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+		.gate-card { display: flex; flex-direction: column; gap: 8px; text-align: left; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 24px 22px; cursor: pointer; font-family: var(--font); transition: transform 0.4s var(--ease), border-color 0.3s, background 0.3s; min-height: 120px; opacity: 0; transform: translateY(18px); animation: gateIn 0.7s var(--ease) forwards; }
+		.gate-card:nth-child(2) { animation-delay: 0.08s; }
+		.gate-card:nth-child(3) { animation-delay: 0.16s; }
+		@keyframes gateIn { to { opacity: 1; transform: none; } }
+		.gate-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.3); background: var(--surface-hover); }
+		.gate-card:active { transform: translateY(-1px); }
+		.gate-card-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
+		.gate-card-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; flex-grow: 1; }
+		.gate-arrow { font-size: 14px; color: var(--text-secondary); transition: transform 0.3s var(--ease); }
+		.gate-card:hover .gate-arrow { transform: translateX(4px); }
+
+		/* ── Top bar ───────────────────────────────────────── */
 		.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 48px; gap: 12px; }
 		.back-nav { display: inline-flex; align-items: center; color: var(--text-secondary); text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; transition: color 0.2s; min-height: 44px; flex-shrink: 0; }
 		.back-nav:hover { color: var(--text-primary); }
@@ -31,28 +63,41 @@
 		.lang-btn { background: none; border: none; color: var(--text-secondary); font-family: var(--font); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; padding: 6px 12px; border-radius: 100px; cursor: pointer; transition: background 0.2s, color 0.2s; min-height: 32px; white-space: nowrap; }
 		.lang-btn:hover { color: var(--text-primary); }
 		.lang-btn.active { background: var(--surface-hover); color: var(--text-primary); border: 0.5px solid var(--border-hover); }
+
+		/* ── Hero ──────────────────────────────────────────── */
 		.hero { margin-bottom: 80px; }
+		.hero-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 14px; }
 		.hero h1 { font-size: clamp(36px, 9vw, 72px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 16px; }
 		.hero-sub { color: var(--text-secondary); font-size: 15px; max-width: 480px; line-height: 1.7; }
-		.service-section { margin-bottom: 64px; }
+
+		/* ── Schedule line (排期，计算器顶部，克制细线) ─────── */
+		.qb-sched { display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; padding: 0 2px 16px; margin-bottom: 22px; border-bottom: 0.5px solid var(--border); }
+		.qb-sched-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-soft); flex-shrink: 0; animation: qpulse 2.6s var(--ease) infinite; }
+		@keyframes qpulse { 0% { box-shadow: 0 0 0 0 rgba(143,195,169,0.45); } 70% { box-shadow: 0 0 0 5px rgba(143,195,169,0); } 100% { box-shadow: 0 0 0 0 rgba(143,195,169,0); } }
+		.qb-sched-live { font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green-soft); margin-right: 4px; }
+		.qb-sched-item { font-size: 12px; color: var(--text-dim); }
+		.qb-sched-item strong { color: var(--text-primary); font-weight: 600; }
+		.qb-sched-sep { color: var(--text-dim); opacity: 0.45; font-size: 11px; }
+		@media (prefers-reduced-motion: reduce) { .qb-sched-dot { animation: none; } }
+		@media (max-width: 640px) { .qb-sched-item { font-size: 11.5px; } .qb-sched-sep { display: none; } }
+
+		/* ── Help "?" (跳转到刀门) ─────────────────────────── */
+		.qb-help { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 0.5px solid var(--border-hover); color: var(--text-secondary); font-size: 10px; font-weight: 700; line-height: 1; margin-left: 6px; cursor: pointer; transition: border-color 0.2s, color 0.2s; vertical-align: middle; }
+		.qb-help:hover { border-color: var(--green-soft); color: var(--green-soft); }
+
+		/* ── Sections ──────────────────────────────────────── */
+		.service-section { margin-bottom: 72px; scroll-margin-top: 32px; }
 		.section-head { margin-bottom: 28px; }
-		.step-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; gap: 6px; }
+		.step-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; gap: 6px; }
 		.step-tag::before { content: ""; display: block; width: 18px; height: 1px; background: currentColor; opacity: 0.6; }
-		.step-tag.gold { color: var(--gold); }
-		.step-tag.silver { color: #aaa; }
-		.step-tag.gold::before, .step-tag.silver::before { display: none; }
 		.section-head h2 { font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: -0.02em; }
-		.subsection { margin-bottom: 36px; }
-		.subsection:last-child { margin-bottom: 0; }
-		.sub-head { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 0.5px solid var(--border); }
-		.sub-head h3 { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
-		.sub-desc { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+		.sub-desc { display: block; font-size: 12px; color: var(--text-dim); margin-top: 8px; max-width: 560px; line-height: 1.65; }
+
+		/* ── Cards ─────────────────────────────────────────── */
 		.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: stretch; }
 		.card-grid.solo { max-width: 380px; }
-		.price-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.3s var(--ease), background 0.3s var(--ease), transform 0.3s var(--ease); cursor: default; position: relative; overflow: hidden; }
+		.price-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.3s var(--ease), background 0.3s var(--ease), transform 0.3s var(--ease); }
 		.price-card:hover { border-color: var(--border-hover); background: var(--surface-hover); transform: translateY(-3px); }
-		.price-card.featured { border-color: rgba(201, 162, 39, 0.3); }
-		.price-card.featured::before { content: ""; position: absolute; inset: 0; background: var(--gold-bg); border-radius: inherit; pointer-events: none; }
 		.card-price { display: flex; align-items: baseline; gap: 2px; line-height: 1; }
 		.card-price-num { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
 		.card-price-unit { font-size: 13px; color: var(--text-secondary); margin-left: 1px; }
@@ -60,213 +105,198 @@
 		.card-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.65; flex-grow: 1; }
 		.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 		.tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border: 0.5px solid var(--border); color: var(--text-secondary); }
-		.tag.gold { border-color: rgba(201, 162, 39, 0.5); color: var(--gold); }
-		.partner-box { margin-top: 96px; padding: 56px 40px; background: #0d0d0d; border: 0.5px solid var(--border); border-radius: 20px; text-align: center; }
-		.partner-box .step-tag { margin-bottom: 14px; }
-		.partner-box h2 { font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
-		.partner-intro { font-size: 14px; color: var(--text-secondary); max-width: 380px; margin: 0 auto 40px; line-height: 1.7; }
-		.partner-box .card-grid { text-align: left; }
-		.section-divider { height: 0.5px; background: var(--border); margin: 64px 0; }
-		footer { text-align: center; color: var(--text-dim); font-size: 11px; letter-spacing: 0.06em; padding-bottom: env(safe-area-inset-bottom); }
-		.floating-cta { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap; }
-		.floating-btn { display: flex; align-items: center; gap: 10px; background: rgba(17,17,17,0.85); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 0.5px solid var(--border-hover); color: var(--text-primary); padding: 14px 28px; border-radius: 100px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s; min-height: 52px; }
-		.floating-btn:hover { background: #fff; color: #000; border-color: #fff; }
-		.floating-btn:active { transform: scale(0.97); }
-		.btn-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
-		.floating-btn:hover .btn-dot { background: #000; }
-		#services-container { transition: opacity 0.18s ease; }
-		#services-container.fading { opacity: 0; }
-		@media (max-width: 600px) {
-			.container { padding: 40px 16px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
-			.hero { margin-bottom: 48px; }
-			.hero-sub { font-size: 13px; }
-			.card-grid { grid-template-columns: 1fr; }
-			.card-grid.solo { max-width: 100%; }
-			.price-card { padding: 18px 16px; }
-			.card-price-num { font-size: 24px; }
-			.card-price-orig { font-size: 16px; }
-			.card-price-row { gap: 6px; }
-			.sub-head { padding-bottom: 10px; margin-bottom: 12px; }
-			.sub-head h3 { font-size: 11px; }
-			.sub-desc { font-size: 10px; }
-			.section-head h2 { font-size: 20px; }
-			.section-head { margin-bottom: 20px; }
-			.subsection { margin-bottom: 28px; }
-			.partner-box { padding: 36px 20px; }
-			.service-section { margin-bottom: 48px; }
-			.section-divider { margin: 48px 0; }
-			.lang-btn { padding: 6px 10px; font-size: 10px; }
-			.pl-highlights { grid-template-columns: 1fr 1fr; gap: 8px; }
-			.pl-highlight-item { padding: 10px 12px; }
-			.pl-deposit-num { font-size: 26px; }
-			.pl-desc { font-size: 12px; }
-			.pl-cta { font-size: 11px; padding: 8px 14px; }
-			.ci-chip { font-size: 10px; padding: 2px 7px; }
-			.projectlead-card { padding: 18px 16px; }
-			.step-tag { font-size: 9px; }
-			.step-tag::before { width: 14px; }
-		}
-		@media (min-width: 601px) and (max-width: 800px) {
-			.card-grid { grid-template-columns: repeat(2, 1fr); }
-			.card-grid.solo { max-width: 380px; }
-		}
 
-		/* ── Bundle Card ──────────────────────────────────── */
-		.bundle-card {
-			background: var(--surface); border: 0.5px solid rgba(201,162,39,0.35);
-			border-radius: var(--r); padding: 28px 32px; position: relative; overflow: hidden;
-		}
-		.bundle-card::before {
-			content: ""; position: absolute; inset: 0;
-			background: var(--gold-bg); pointer-events: none;
-		}
-		.bundle-price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-		.bundle-original { font-size: 18px; color: var(--text-dim); text-decoration: line-through; font-weight: 500; }
-		.bundle-arrow { font-size: 13px; color: var(--text-dim); }
-		.bundle-price { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; }
-		.bundle-items { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-		.bundle-item {
-			font-size: 12px; color: var(--text-secondary); padding: 4px 12px;
-			border: 0.5px solid var(--border); border-radius: 100px;
-		}
-		.bundle-plus { color: var(--text-dim); font-size: 13px; }
-		.bundle-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 14px; }
-		.bundle-tip {
-			font-size: 12px; color: var(--gold); padding: 10px 14px; line-height: 1.7;
-			background: rgba(201,162,39,0.06); border: 0.5px solid rgba(201,162,39,0.2); border-radius: 8px;
-		}
-		@media (max-width:600px) { .bundle-card { padding: 20px; } }
+		/* ── Quote Builder ─────────────────────────────────── */
+		.quote-builder { background: var(--surface); border: 0.5px solid rgba(255,255,255,0.12); border-radius: var(--r); padding: 28px; position: relative; overflow: hidden; }
+		.quote-builder > * { position: relative; }
+		.qb-mode { display: flex; gap: 4px; background: rgba(0,0,0,0.4); border: 0.5px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 26px; }
+		.qb-mode-btn { flex: 1; background: none; border: 0.5px solid transparent; border-radius: 9px; padding: 11px 10px; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: background 0.25s, color 0.25s, border-color 0.25s; }
+		.qb-mode-btn.active { background: var(--surface-hover); color: var(--text-primary); border-color: var(--border-hover); }
+		.qb-row { margin-bottom: 24px; }
+		.qb-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; }
+		.qb-base-line { display: flex; justify-content: space-between; align-items: baseline; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 24px; }
+		.qb-base-line strong { font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
+		.qb-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+		.qb-seg-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 13px; cursor: pointer; transition: border-color 0.25s, background 0.25s; font-family: var(--font); text-align: left; min-height: 60px; }
+		.qb-seg-btn:hover { border-color: var(--border-hover); }
+		.qb-seg-btn.active { border-color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.04); }
+		.qb-seg-name { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+		.qb-seg-price { font-size: 12px; color: var(--text-secondary); }
+		.qb-seg-btn.active .qb-seg-price { color: var(--green-soft); font-weight: 600; }
+		.qb-tier-desc { font-size: 11.5px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
+		.qb-stepper { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+		.qb-step-btn { width: 40px; height: 40px; border-radius: 50%; border: 0.5px solid var(--border-hover); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 19px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, background 0.2s, transform 0.12s; flex-shrink: 0; }
+		.qb-step-btn:hover { border-color: #fff; }
+		.qb-step-btn:active { transform: scale(0.94); }
+		.qb-count { font-size: 22px; font-weight: 700; min-width: 30px; text-align: center; }
+		.qb-perhead { font-size: 11px; color: var(--text-dim); }
+		.qb-more-note { font-size: 11.5px; color: var(--text-secondary); margin-top: 10px; }
+		.qb-voc-list { display: flex; flex-direction: column; gap: 8px; }
+		.qb-voc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 15px; flex-wrap: wrap; }
+		.qb-voc-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; }
+		.qb-mini-seg { display: flex; gap: 4px; flex-wrap: wrap; }
+		.qb-mini-btn { background: none; border: 0.5px solid var(--border); border-radius: 100px; padding: 6px 12px; font-family: var(--font); font-size: 11.5px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; white-space: nowrap; }
+		.qb-mini-btn:hover { border-color: var(--border-hover); }
+		.qb-mini-btn.active { border-color: rgba(255,255,255,0.45); color: var(--text-primary); background: rgba(255,255,255,0.05); }
+		/* summary panel */
+		.qb-summary { background: var(--green-deep); border: 0.5px solid var(--green-line); border-radius: 12px; padding: 20px; margin-top: 4px; }
+		.qb-bd-line { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); padding: 5px 0; }
+		.qb-bd-line .qb-bd-val { color: var(--text-primary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+		.qb-eq { font-size: 11.5px; color: var(--text-dim); margin-bottom: 8px; }
+		.qb-eq strong { color: var(--text-secondary); font-weight: 600; }
+		.qb-total-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 13px; border-top: 0.5px solid var(--border); }
+		.qb-total-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); }
+		.qb-total { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; color: #fff; }
+		.qb-total .qb-from { font-size: 12px; font-weight: 500; color: var(--text-dim); margin-left: 4px; }
+		.qb-note { font-size: 11px; color: var(--text-dim); margin-top: 11px; line-height: 1.7; }
+		.qb-cta { display: block; width: 100%; margin-top: 16px; background: #f0f0f0; color: #0a0a0a; border: none; border-radius: 10px; padding: 15px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; font-family: var(--font); transition: background 0.2s, transform 0.15s; }
+		.qb-cta:hover { background: #fff; }
+		.qb-cta:active { transform: scale(0.985); }
+		.qb-addon-note { font-size: 11px; color: var(--text-dim); margin-top: 14px; line-height: 1.7; }
+		/* member toggle */
+		.qb-member { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; cursor: pointer; margin-bottom: 16px; font-family: var(--font); text-align: left; transition: border-color 0.2s, background 0.2s; }
+		.qb-member:hover { border-color: var(--border-hover); }
+		.qb-member.on { border-color: var(--green-line); background: rgba(96,176,134,0.05); }
+		.qb-member-label { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+		.qb-member-sub { display: block; font-size: 11px; color: var(--text-dim); font-weight: 400; margin-top: 2px; }
+		.qb-switch { width: 36px; height: 22px; border-radius: 100px; background: rgba(255,255,255,0.12); position: relative; flex-shrink: 0; transition: background 0.25s; }
+		.qb-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #f0f0f0; transition: transform 0.25s var(--ease); }
+		.qb-member.on .qb-switch { background: var(--green-soft); }
+		.qb-member.on .qb-switch::after { transform: translateX(14px); background: #0d1f16; }
+		.qb-bd-line.discount span, .qb-bd-line.discount .qb-bd-val { color: var(--green-soft); }
+		.qb-bd-line.rush .qb-bd-val { color: #f0f0f0; }
+		.qb-seg.two { grid-template-columns: repeat(2, 1fr); }
+		.qb-split { margin-top: 13px; padding-top: 13px; border-top: 0.5px dashed var(--green-line); display: flex; flex-direction: column; gap: 7px; }
+		.qb-split-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); }
+		.qb-split-row .qb-split-val { font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.qb-split-row.deposit .qb-split-val, .qb-split-row.deposit span { color: #fff; font-weight: 600; }
 
-		/* ── Card orig price (strikethrough) ─────────────── */
-		.card-price-orig { font-size: 20px; color: rgba(255,255,255,0.38); text-decoration: line-through; font-weight: 500; align-self: flex-end; margin-bottom: 4px; }
-		.card-price-row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 8px; }
+		/* ── Group headers ─────────────────────────────────── */
+		.group-head { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); border-top: 0.5px solid var(--border); padding-top: 32px; margin-bottom: 36px; }
 
-		/* ── Card includes breakdown ──────────────────────── */
-		.card-includes {
-			margin-top: 12px; padding: 10px 12px;
-			background: rgba(255,255,255,0.04); border-radius: 8px;
-		}
-		.ci-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
-		.ci-chip { font-size: 11px; color: var(--text-secondary); padding: 3px 9px; border: 0.5px solid var(--border); border-radius: 100px; white-space: nowrap; }
-		.ci-chip strong { color: var(--text-primary); font-weight: 600; }
-		.ci-sep { font-size: 11px; color: var(--text-dim); }
-		.ci-total-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-		.ci-orig { font-size: 11px; color: var(--text-dim); text-decoration: line-through; }
-		.ci-arrow { font-size: 11px; color: var(--text-dim); }
-		.ci-saving { font-size: 11px; color: var(--gold); font-weight: 600; padding: 2px 8px; background: rgba(201,162,39,0.1); border-radius: 100px; }
+		/* ── Recording locations ───────────────────────────── */
+		.loc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: stretch; }
+		.loc-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 24px; display: flex; flex-direction: column; gap: 14px; transition: border-color 0.3s var(--ease), background 0.3s var(--ease), transform 0.3s var(--ease); }
+		.loc-card:hover { border-color: var(--border-hover); background: var(--surface-hover); transform: translateY(-3px); }
+		.loc-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+		.loc-city { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+		.loc-engineer { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--green-soft); padding: 3px 9px; border: 0.5px solid var(--green-line); border-radius: 100px; }
+		.loc-rates { display: flex; flex-direction: column; gap: 7px; }
+		.loc-rate { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+		.loc-rate:last-child { border-bottom: none; }
+		.loc-rate-label { font-size: 12.5px; color: var(--text-secondary); }
+		.loc-rate-price { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+		.loc-meta { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+		.loc-meta strong { color: var(--text-secondary); font-weight: 600; }
+		.loc-map { color: var(--green-soft); text-decoration: none; border-bottom: 0.5px solid var(--green-line); padding-bottom: 1px; }
+		.loc-map:hover { color: #fff; }
+		.loc-gear { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+		.loc-gear .tag { text-transform: none; letter-spacing: 0; }
+		@media (max-width: 640px) { .loc-grid { grid-template-columns: 1fr; } .loc-card { padding: 20px 18px; } }
 
-		/* ── Project Lead card ─────────────────────────────── */
-		.step-tag.silver { color: #aaa; }
-		.projectlead-card {
-			background: var(--surface); border: 0.5px solid rgba(255,255,255,0.15);
-			border-radius: var(--r); padding: 28px 32px;
-		}
+		/* ── Membership (刀门) ─────────────────────────────── */
+		.member-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 28px; }
+		.member-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.85; margin-bottom: 8px; max-width: 560px; }
+		.member-intro strong { color: var(--text-primary); }
+		.mj-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-top: 24px; }
+		.mj-row { display: flex; gap: 20px; align-items: baseline; padding: 18px 0; border-bottom: 0.5px solid var(--border); }
+		.mj-num { font-size: 26px; font-weight: 700; color: var(--text-dim); letter-spacing: -0.02em; flex-shrink: 0; }
+		.mj-main { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+		.mj-sub { display: block; font-size: 12px; color: var(--text-secondary); margin-top: 2px; font-weight: 400; }
+		.perk-list { margin-top: 26px; display: flex; flex-direction: column; gap: 16px; }
+		.perk { border-left: 2px solid var(--green-soft); padding-left: 14px; }
+		.perk-title { font-size: 13.5px; font-weight: 700; margin-bottom: 3px; }
+		.perk-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+
+		/* ── Project Lead ──────────────────────────────────── */
+		.projectlead-card { background: var(--surface); border: 0.5px solid rgba(255,255,255,0.15); border-radius: var(--r); padding: 28px 32px; }
 		.pl-highlights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
 		.pl-highlight-item { padding: 12px 14px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; }
 		.pl-highlight-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
 		.pl-highlight-value { font-size: 12px; color: var(--text-primary); font-weight: 500; line-height: 1.4; }
-		.pl-price-block { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-		.pl-deposit { display: flex; flex-direction: column; gap: 3px; }
-		.pl-deposit-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
-		.pl-deposit-num { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; }
-		.pl-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 14px; }
+		.pl-deposit-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; display: block; margin-bottom: 3px; }
+		.pl-deposit-num { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; color: #fff; display: block; margin-bottom: 14px; }
+		.pl-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 14px; max-width: 560px; }
+		.pl-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
 		.pl-cta { display: inline-block; font-size: 12px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.06em; padding: 9px 18px; border: 0.5px solid rgba(255,255,255,0.25); border-radius: 100px; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
 		.pl-cta:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.05); }
-		@media (max-width:600px) {
-			.projectlead-card { padding: 20px; }
-			.pl-highlights { grid-template-columns: 1fr 1fr; }
-		}
 
 		/* ── FAQ ───────────────────────────────────────────── */
-		.faq-section {
-			margin-top: 80px;
-			padding-top: 72px;
-			border-top: 0.5px solid var(--border);
-		}
-		.faq-head { margin-bottom: 40px; }
-		.faq-item {
-			border-bottom: 0.5px solid var(--border);
-		}
-		.faq-question {
-			display: flex;
-			align-items: flex-start;
-			justify-content: space-between;
-			gap: 20px;
-			padding: 22px 0;
-			cursor: pointer;
-			user-select: none;
-			-webkit-user-select: none;
-			min-height: 64px;
-			transition: opacity 0.2s;
-		}
+		.faq-section { margin-top: 8px; padding-top: 64px; border-top: 0.5px solid var(--border); }
+		.faq-head { margin-bottom: 36px; }
+		.faq-item { border-bottom: 0.5px solid var(--border); }
+		.faq-question { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 22px 0; cursor: pointer; user-select: none; -webkit-user-select: none; min-height: 64px; transition: opacity 0.2s; }
 		.faq-question:hover { opacity: 0.75; }
 		.faq-q-inner { display: flex; gap: 18px; align-items: baseline; flex: 1; min-width: 0; }
-		.faq-num {
-			font-size: 10px;
-			font-weight: 700;
-			letter-spacing: 0.1em;
-			color: var(--gold);
-			flex-shrink: 0;
-			min-width: 20px;
-			padding-top: 1px;
-		}
-		.faq-q-text {
-			font-size: 15px;
-			font-weight: 600;
-			letter-spacing: -0.01em;
-			color: var(--text-primary);
-			line-height: 1.55;
-		}
-		.faq-toggle {
-			font-size: 20px;
-			font-weight: 300;
-			color: var(--text-dim);
-			flex-shrink: 0;
-			line-height: 1;
-			transition: transform 0.35s var(--ease), color 0.2s;
-			margin-top: 1px;
-		}
-		.faq-item.open .faq-toggle {
-			transform: rotate(45deg);
-			color: var(--text-secondary);
-		}
-		.faq-answer {
-			max-height: 0;
-			overflow: hidden;
-			transition: max-height 0.45s var(--ease);
-		}
-		.faq-answer-inner {
-			padding: 0 0 28px 38px;
-			color: var(--text-secondary);
-			font-size: 14px;
-			line-height: 1.85;
-		}
+		.faq-num { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--text-secondary); flex-shrink: 0; min-width: 20px; padding-top: 1px; }
+		.faq-q-text { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); line-height: 1.55; }
+		.faq-toggle { font-size: 20px; font-weight: 300; color: var(--text-dim); flex-shrink: 0; line-height: 1; transition: transform 0.35s var(--ease), color 0.2s; margin-top: 1px; }
+		.faq-item.open .faq-toggle { transform: rotate(45deg); color: var(--text-secondary); }
+		.faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.45s var(--ease); }
+		.faq-answer-inner { padding: 0 0 28px 38px; color: var(--text-secondary); font-size: 14px; line-height: 1.85; }
 		.faq-answer-inner p { margin-bottom: 10px; }
 		.faq-answer-inner p:last-child { margin-bottom: 0; }
-		.faq-answer-inner ul {
-			list-style: none;
-			padding: 0;
-			margin: 10px 0 0;
-			display: flex;
-			flex-direction: column;
-			gap: 5px;
-		}
-		.faq-answer-inner li::before {
-			content: "·";
-			color: var(--gold);
-			margin-right: 10px;
-			font-weight: 700;
-		}
-		@media (max-width: 600px) {
-			.faq-section { margin-top: 56px; padding-top: 56px; }
+		.faq-answer-inner ul { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 5px; }
+		.faq-answer-inner li::before { content: "·"; color: var(--text-secondary); margin-right: 10px; font-weight: 700; }
+
+		/* ── Footer & floating CTA ─────────────────────────── */
+		footer { text-align: center; color: var(--text-dim); font-size: 11px; letter-spacing: 0.06em; margin-top: 80px; padding-bottom: env(safe-area-inset-bottom); }
+		.floating-cta { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap; }
+		.floating-btn { display: flex; align-items: center; gap: 10px; background: rgba(17,17,17,0.85); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 0.5px solid var(--border-hover); color: var(--text-primary); padding: 14px 28px; border-radius: 100px; font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s; min-height: 52px; }
+		.floating-btn:hover { background: #fff; border-color: #fff; color: #000; }
+		.floating-btn:active { transform: scale(0.97); }
+		.btn-dot { width: 6px; height: 6px; background: var(--green-soft); border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
+		.floating-btn:hover .btn-dot { background: #000; }
+		#services-container { transition: opacity 0.18s ease; }
+		#services-container.fading { opacity: 0; }
+
+		/* ── Responsive ────────────────────────────────────── */
+		@media (max-width: 640px) {
+			.container { padding: 40px 16px; padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+			.hero { margin-bottom: 48px; }
+			.hero-sub { font-size: 13px; }
+			.gate-grid { grid-template-columns: 1fr; }
+			.gate-card { min-height: 0; padding: 18px 20px; flex-direction: row; align-items: center; gap: 12px; }
+			.gate-card-title { font-size: 15px; flex-shrink: 0; }
+			.gate-card-desc { font-size: 11.5px; }
+			.service-section { margin-bottom: 52px; }
+			.card-grid { grid-template-columns: 1fr; }
+			.card-grid.solo { max-width: 100%; }
+			.price-card { padding: 18px 16px; }
+			.card-price-num { font-size: 24px; }
+			.quote-builder { padding: 18px 14px; }
+			.qb-seg { gap: 6px; }
+			.qb-seg-btn { padding: 10px; min-height: 56px; }
+			.qb-seg-name { font-size: 12px; }
+			.qb-seg-price { font-size: 11px; }
+			.qb-voc-row { padding: 8px 10px; }
+			.qb-mini-btn { padding: 6px 10px; font-size: 11px; }
+			.qb-total { font-size: 26px; }
+			.pl-highlights { grid-template-columns: 1fr 1fr; }
+			.projectlead-card { padding: 20px 16px; }
 			.faq-q-text { font-size: 14px; }
 			.faq-answer-inner { padding-left: 28px; font-size: 13px; }
 			.faq-question { padding: 20px 0; min-height: 56px; }
-			.faq-num { font-size: 9px; }
+			.section-head h2 { font-size: 20px; }
+			.step-tag { font-size: 9px; }
+			.step-tag::before { width: 14px; }
+		}
+		@media (min-width: 641px) and (max-width: 800px) {
+			.card-grid { grid-template-columns: repeat(2, 1fr); }
+			.card-grid.solo { max-width: 380px; }
 		}
 	</style>
 </head>
 <body>
+
+<div id="entry-gate">
+	<div class="gate-inner">
+		<div class="gate-kicker" id="gate-kicker"></div>
+		<h1 class="gate-title" id="gate-title"></h1>
+		<p class="gate-sub" id="gate-sub"></p>
+		<div class="gate-grid" id="gate-grid"></div>
+	</div>
+</div>
 
 <div class="container">
 	<div class="top-bar">
@@ -278,6 +308,7 @@
 		</div>
 	</div>
 	<div class="hero">
+		<div class="hero-kicker" id="hero-kicker"></div>
 		<h1 id="hero-title"></h1>
 		<p class="hero-sub" id="hero-sub"></p>
 	</div>
@@ -294,77 +325,138 @@
 </div>
 
 <script>
+// 报价计算器价格改各语言的 quote 对象（base / prods / perHead / edits / stems）。
+// 分轨与贴唱共用人声维度加价（人声制作/多主唱/音编），只有基础价不同。
+// 内部工资·成本·毛利结构见 _internal-pricing.md
+// （该文件已在 .gitignore 中忽略，不会发布——此页为公开页面，请勿把内部经济数据写进这里）
 var CONTACT = { wechat: "Cookdao" };
+// ── 排期设置 ─────────────────────────────────────────────
+// 标准：stdMin–stdMax 工作日（周日休息，跳过）；加急：rushMin–rushMax 自然日（含周日，加班）
+// 交付日期全自动现算，平时零维护；真排爆了才把 backlogDays 调大几天，标准区间自动整体顺延
+var SCHEDULE = { stdMin: 10, stdMax: 12, rushMin: 3, rushMax: 5, backlogDays: 0 };
+function qbAddWorkdays(n) {
+	var d = new Date(), added = 0;
+	while (added < n) {
+		d.setDate(d.getDate() + 1);
+		if (d.getDay() !== 0) added++; // 0 = 周日，休息不计
+	}
+	return d;
+}
+function qbAddDays(n) { // 自然日，含周日
+	var d = new Date();
+	d.setDate(d.getDate() + n);
+	return d;
+}
+function qbFmtRange(d1, d2, lang) {
+	var m1 = d1.getMonth(), m2 = d2.getMonth(), a = d1.getDate(), b = d2.getDate();
+	var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+	if (lang === "en") return m1 === m2 ? MON[m1] + " " + a + "–" + b : MON[m1] + " " + a + " – " + MON[m2] + " " + b;
+	if (lang === "ko") return m1 === m2 ? (m1 + 1) + "월 " + a + "–" + b + "일" : (m1 + 1) + "월 " + a + "일 – " + (m2 + 1) + "월 " + b + "일";
+	return m1 === m2 ? (m1 + 1) + "月" + a + "–" + b + "日" : (m1 + 1) + "月" + a + "日–" + (m2 + 1) + "月" + b + "日";
+}
 var currentLang = "zh";
 
 var I18N = {
 	zh: {
 		lang: "zh-CN",
 		back: "← Back to Works",
+		heroKicker: "ChefDao Studio",
 		heroTitle: "Service<br>Rates.",
-		heroSub: "ChefDao Studio 音频工程服务报价。<br>所有档位均含简易母带处理。",
+		heroSub: "所有报价所见即所得，没有隐藏费用。所有档位均含简易母带处理。",
+		gateTitle: "今天，想做点什么？",
+		gateSub: "选一个开始，或者先随便看看。",
+		schedLive: "实时排期", schedStd: "标准 <strong>{r}</strong> 交付", schedRush: "加急 <strong>{r}</strong> 交付",
+		entry: [
+			{ t: "预约录音", d: "棚内人声录制，含监制指导", go: "recording" },
+			{ t: "混音报价", d: "贴唱 / 分轨，实时生成报价单", go: "mixing" },
+			{ t: "先随便看看", d: "浏览全部服务与常见问题", go: "browse" }
+		],
 		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
 		ctaLabel: "联系我们: CookDao",
 		ctaCopied: "微信号已复制 ✓",
-		partnerIntro: "除后期工程外，我们也提供从灵感策划到完整配器的全案创作，以及专辑 / EP 深度项目负责人服务。",
+		quote: {
+			title: "报价计算器",
+			modeVocal: "贴唱混音", modeStems: "分轨混音",
+			cur: "¥",
+			baseLabel: "基础混音 · 1 位主唱（含简易母带）", base: 199,
+			stemsLabel: "工程规模（含母带 · 1 位主唱起）",
+			stems: [
+				{ name: "简易分轨", price: 1200, from: false, desc: "Stems Mix 或极简配器项目，8 轨以内。" },
+				{ name: "标准分轨", price: 1800, from: true, desc: "Urban / 流行说唱常规商业规格，完整动态与空间处理。" },
+				{ name: "复杂分轨", price: 3000, from: true, desc: "60–100+ 轨大型工程，电影感音效设计。最终报价按工程确认。" }
+			],
+			prodLabel: "人声制作",
+			prods: [
+				{ name: "不需要", price: 0, desc: "纯混音——音色优化与基础平衡，适合方向明确、素材干净的项目。" },
+				{ name: "执行向", price: 150, desc: "你给创意方向与参考，工程师负责执行与精细打磨。" },
+				{ name: "创意向", price: 300, desc: "工程师主导人声创意——空间构建、情绪引导与层次规划统一执行。" }
+			],
+			tierNames: ["基础混音", "标准制作", "全案制作"], eqPrefix: "相当于",
+			countLabel: "主唱人数", perHead: 100, perHeadLabel: "每多 1 位 +¥100（混音）", countMax: 8,
+			countMoreNote: "更大规模的 cypher，请私信另议",
+			editLabel: "音频编辑 · 每位主唱单独选", vocalistLabel: "主唱",
+			edits: [
+				{ name: "免修", price: 0 },
+				{ name: "仅修节奏", price: 100 },
+				{ name: "节奏 + 修音", price: 200 }
+			],
+			bdExtra: "多主唱混音",
+			totalLabel: "预估报价", fromSuffix: "起",
+			note: "所见即所得，无隐藏费用。极复杂人声（大量跑调、破音）需要超出常规的工作量时，我们会先与你确认再继续，不会先做后收。",
+			stemsNote: "人声相关加价与贴唱一致——人声制作与音编的工作量不随伴奏轨数变化。标注「起」的规格，最终报价按工程复杂度与你确认后才开始。",
+			addonNote: "和声 / Double 密集堆叠（5 轨以上）按规模另计：5–8 轨 +¥200 · 9–12 轨 +¥400 · 12 轨以上 +¥600。",
+			laneLabel: "④ 交付通道", laneFeeRate: 0.5, laneFeeLabel: "加急费 +50%",
+			lanes: [ { name: "标准交付" }, { name: "加急" } ],
+			laneStdSub: "10–12 工作日 · {r}", laneRushSub: "3–5 天 · {r}",
+			laneNote: "标准 10–12 工作日（周日休息）；加急 3–5 天（含周日加班）。日期按当前排期自动更新。",
+			depositLabel: "定金（开工）", balanceLabel: "尾款（交付）",
+			depositNote: "半半模式：定金开工，成品交付时补齐尾款。",
+			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
+			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音标准价终身 8 折 · 不含录音与加急费", memberLine: "刀门会员 · 8 折",
+			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓"
+		},
 		services: [
 			{
-				id: "recording", step: "Step 01", title: "录音 Recording",
-				items: [{ title: "专业人声录制", price: "¥300", unit: "/hr", desc: "提供人声监制指导。2小时起预约，请提前确认档期。", tags: ["2H 起约"] }]
+				id: "recording", type: "recording", step: "Step 01", title: "录音 Recording", groupHead: "核心流程 Core",
+				locations: [
+					{
+						city: "上海 Shanghai", engineer: "录音师 Tior",
+						rates: [
+							{ label: "棚内录制", price: "¥300/hr" },
+							{ label: "刀大厨线上监制（含录音）", price: "¥450/hr" }
+						],
+						venue: "Bimental Studio 录音棚", address: "虹漕路 443 号虹漕园 61 号楼 4 楼", mapUrl: "https://surl.amap.com/pptXUKJfY5",
+						gear: ["U87", "HA73", "1176", "Genelec 8030"]
+					},
+					{
+						city: "首尔 Seoul", engineer: "录音师 ChefDao",
+						rates: [
+							{ label: "含场地设备", price: "¥300/hr" },
+							{ label: "客户自备场地设备", price: "¥200/hr" }
+						],
+						venue: "弘益大学 대학로 / 世宗大学 一带", address: "", mapUrl: ""
+					}
+				],
+				note: "均 2 小时起约，请提前确认档期。录音不参与刀门会员折扣。"
 			},
 			{
-				id: "mixing", step: "Step 02", title: "混音 Mixing",
-				subsections: [
-					{
-						name: "音频编辑 Audio Editing", desc: "修音与切片对齐，混音前置基础",
-						items: [
-							{ title: "人声音编", price: "¥150", unit: "/hr", desc: "精细修音、人声清晰度优化、切片对齐。可单独预约，或作为混音前置叠加。", tags: ["1H 起约"] }
-						]
-					},
-					{
-						name: "贴唱混音 Vocal Mix", desc: "基础档限 1 位主唱 · 标准/全案含 2 位主唱以内 · 超出每人 +¥200 · 实际报价视轨数与复杂度调整 · 个人/独立发行报价，商业项目另议",
-						items: [
-							{ title: "基础混音", price: "¥300", unit: "", desc: "专注音色优化与基础平衡。适用于干声完整、无需人声制作的项目。", tags: ["1 位主唱", "干声免修"] },
-							{ title: "标准制作", price: "¥450", unit: "", desc: "客户提供创意方向与参考，工程师负责执行与精细打磨。适用于方向明确、素材完整的发行项目。",
-							  includes: [{ label: "基础混音", value: "¥300" }, { label: "1H 音编" }, { label: "执行向人声制作" }],
-							  tags: ["执行向人声制作", "商业推荐"], featured: true },
-							{ title: "全案制作", price: "¥600", originalPrice: "¥900", unit: "", desc: "工程师全权主导人声创意设计——空间构建、情绪引导与层次规划统一执行。适用于追求极致人声表现的专业项目。",
-							  includes: [{ label: "人声制作", value: "¥300" }, { label: "混音", value: "¥300" }, { label: "2H 精细音编", value: "¥300" }],
-							  valueTotal: "合计 ¥900", saving: "- ¥300",
-							  tags: ["创意向人声制作", "含 2H 音编"] }
-						]
-					},
-					{
-						name: "人声制作 Vocal Production", desc: "可搭配任意混音档位，或作为独立创意服务",
-						items: [
-							{ title: "人声制作", price: "¥300", unit: "", desc: "专注极致氛围营造。含特殊效果处理、空间层次构建与情绪引导。素材须免修，否则另计音编费用。", tags: ["创意核心", "氛围设计"], featured: true }
-						]
-					},
-					{
-						name: "分轨混音 Multitrack Mix", desc: "含母带处理",
-						items: [
-							{ title: "简易分轨", price: "¥1,000", unit: "", desc: "Stems Mix 或极简配器项目。适合原声乐器较少的作品。", tags: ["8 轨以内"] },
-							{ title: "标准分轨", price: "¥1,500+", unit: "", desc: "Urban Music / 流行说唱常规规格。包含完整的动态与空间处理。", tags: ["商业规格"] },
-							{ title: "复杂分轨", price: "¥3,000+", unit: "", desc: "60–100 轨以上复杂工程。电影感音效设计与史诗级动态处理。", tags: ["大型工程"] }
-						]
-					}
-				]
+				id: "mixing", step: "Step 02", title: "混音 Mixing", builder: true,
+				sub: "选规格、定人数、按人头选修音——报价单实时生成。个人 / 独立发行报价，商业项目另议。"
 			},
 			{
 				id: "mastering", step: "Step 03", title: "母带 Mastering",
 				items: [{ title: "单曲母带处理", price: "¥200", unit: "", desc: "适用于已完成混音的歌曲。响度、动态与频谱最终优化。", tags: ["商业标准"] }]
 			},
 			{
-				id: "creation", step: "创作支持", title: "词曲 & 编曲",
+				id: "creation", step: "创作支持", title: "词曲 & 编曲", groupHead: "延伸服务 Extended",
 				items: [
-					{ title: "定制编曲 Arrangement", price: "¥3,000+", unit: "", desc: "根据歌手音色量身打造，100% 独家授权。适合已有词曲、需要专业配器的项目。", tags: ["独家授权"] },
-					{ title: "词曲全包创作", price: "¥5,000+", unit: "", desc: "专业词曲作者助力，从概念到完整词曲方案，提供商业级旋律与文案。", tags: ["全案策划"] }
+					{ title: "定制编曲 Arrangement", price: "¥3,000", unit: "+", desc: "根据歌手音色量身打造，100% 独家授权。适合已有词曲、需要专业配器的项目。", tags: ["独家授权"] },
+					{ title: "词曲全包创作", price: "¥5,000", unit: "+", desc: "专业词曲作者助力，从概念到完整词曲方案，提供商业级旋律与文案。", tags: ["全案策划"] }
 				]
 			},
 			{
 				id: "projectlead", step: "深度合作", title: "项目负责人 Project Lead", type: "projectlead",
-				depositLabel: "项目预付",
-				deposit: "¥5,000+",
+				depositLabel: "项目预付", deposit: "¥5,000+",
 				highlights: [
 					{ label: "适用场景", value: "EP / 专辑全案" },
 					{ label: "合作模式", value: "创作全程主导" },
@@ -373,14 +465,23 @@ var I18N = {
 				desc: "从前期规划、人声录制、创意设计到混音终混，全程深度参与每个创作决策。报价及合作周期视项目规模与需求私信洽谈。",
 				tags: ["EP / 专辑", "创作主导", "私信洽谈"],
 				cta: "→ 档期有限，请私信洽谈"
+			},
+			{
+				id: "daomen", type: "membership", step: "C / U Music", title: "刀门 Daomen", groupHead: "会员 Membership",
+				intro: "它<strong>不是一个粉丝群</strong>，而是认真做音乐的人彼此成就的地方。加入刀门，你的问题会被认真对待——录音、混音、母带、职业方向，长期而稳定的陪伴与指导。",
+				joinLabel: "加入方式 · 任选其一",
+				joins: [
+					{ num: "01", main: "¥99 / 人", sub: "加入刀门" },
+					{ num: "02", main: "消费累计满 ¥5,000", sub: "自动升级为永久会员" }
+				],
+				perksLabel: "会员权益",
+				perks: [
+					{ t: "混音终身 8 折", d: "混音标准交付价终身 8 折（不含录音；加急附加费不在折扣范围）。在上方报价计算器打开「刀门会员价」即可预览。" },
+					{ t: "持续输出", d: "前沿录音混音技术、工程思路、实战经验，定期更新。" },
+					{ t: "每周作品点评", d: "每周一次，不间断。练习作品、demo、已发布单曲、商业项目均可交流。" }
+				]
 			}
 		],
-		// ── FAQ（中文）────────────────────────────────────────────────────────────
-		// 修改方式：直接编辑下面每条 { q, a, list } 即可
-		// · q      问题文字
-		// · a      回答正文（可选）
-		// · list   要点列表（可选，数组形式）
-		// 新增问题：复制一个 { q, a, list } 块粘贴到 faqItems 末尾即可
 		faqTitle: "FAQ",
 		faqStep: "常见问题",
 		faqItems: [
@@ -432,70 +533,103 @@ var I18N = {
 	en: {
 		lang: "en",
 		back: "← Back to Works",
+		heroKicker: "ChefDao Studio",
 		heroTitle: "Service<br>Rates.",
-		heroSub: "ChefDao Studio audio engineering rates.<br>All tiers include light mastering.",
+		heroSub: "Every price is what you see — no hidden fees. All tiers include light mastering.",
+		gateTitle: "What are we making today?",
+		gateSub: "Pick a path to begin, or just look around.",
+		schedLive: "Live schedule", schedStd: "Standard <strong>{r}</strong>", schedRush: "Rush <strong>{r}</strong>",
+		entry: [
+			{ t: "Book recording", d: "In-studio vocal session with direction", go: "recording" },
+			{ t: "Get a mix quote", d: "Vocal or multitrack — live quote builder", go: "mixing" },
+			{ t: "Just browsing", d: "See all services and FAQ", go: "browse" }
+		],
 		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
 		ctaLabel: "Get in touch: CookDao",
 		ctaCopied: "WeChat ID Copied ✓",
-		partnerIntro: "Beyond post-production: full creative services from concept to arrangement, and deep project lead for albums and EPs.",
+		quote: {
+			title: "Quote Builder",
+			modeVocal: "Vocal Mix", modeStems: "Multitrack Mix",
+			cur: "$",
+			baseLabel: "Basic Mix · 1 vocalist (light mastering incl.)", base: 30,
+			stemsLabel: "Project scale (mastering incl. · from 1 vocalist)",
+			stems: [
+				{ name: "Simple Multitrack", price: 180, from: false, desc: "Stems mix or minimal arrangement, up to 8 tracks." },
+				{ name: "Standard Multitrack", price: 270, from: true, desc: "Urban / pop-rap commercial spec, full dynamic and spatial work." },
+				{ name: "Complex Multitrack", price: 450, from: true, desc: "60–100+ track projects with cinematic sound design. Final quote confirmed per project." }
+			],
+			prodLabel: "Vocal Production",
+			prods: [
+				{ name: "Not needed", price: 0, desc: "Pure mix — tonal shaping and balance for projects with a clear direction." },
+				{ name: "Execution", price: 20, desc: "You bring the creative direction; the engineer executes and refines." },
+				{ name: "Creative", price: 45, desc: "Engineer-led vocal creative — spatial design, emotional direction, layering." }
+			],
+			tierNames: ["Basic Mix", "Standard", "Full Package"], eqPrefix: "Equivalent to",
+			countLabel: "Vocalists", perHead: 15, perHeadLabel: "+$15 each (mix)", countMax: 8,
+			countMoreNote: "Larger cyphers — DM to discuss",
+			editLabel: "Audio Editing · per vocalist", vocalistLabel: "Vocalist",
+			edits: [
+				{ name: "None", price: 0 },
+				{ name: "Timing only", price: 15 },
+				{ name: "Timing + Pitch", price: 30 }
+			],
+			bdExtra: "Extra vocalists",
+			totalLabel: "Estimated Quote", fromSuffix: "from",
+			note: "What you see is what you pay. If extremely complex vocals need work beyond the normal scope, we confirm with you first — never bill after the fact.",
+			stemsNote: "Vocal add-ons are identical to Vocal Mix — production and editing effort doesn't change with instrumental track count. For tiers marked \"from\", the final quote is confirmed with you before work begins.",
+			addonNote: "Dense harmony / doubles (5+ tracks) billed by scale: 5–8 tracks +$30 · 9–12 +$60 · 12+ +$90.",
+			laneLabel: "④ Delivery", laneFeeRate: 0.5, laneFeeLabel: "Rush fee +50%",
+			lanes: [ { name: "Standard" }, { name: "Rush" } ],
+			laneStdSub: "10–12 working days · {r}", laneRushSub: "3–5 days · {r}",
+			laneNote: "Standard 10–12 working days (closed Sun); rush 3–5 days (incl. weekends). Dates update with the current schedule.",
+			depositLabel: "Deposit (to start)", balanceLabel: "Balance (on delivery)",
+			depositNote: "50 / 50: pay the deposit to start, the balance on delivery.",
+			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
+			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off standard mixing price, for life · recording & rush fee excluded", memberLine: "Daomen member · 20% off",
+			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓"
+		},
 		services: [
 			{
-				id: "recording", step: "Step 01", title: "Recording",
-				items: [{ title: "Vocal Recording Session", price: "$50", unit: "/hr", desc: "Professional vocal direction included. Min. 2-hour booking — please confirm availability in advance.", tags: ["2H Min."] }]
+				id: "recording", type: "recording", step: "Step 01", title: "Recording", groupHead: "Core Process",
+				locations: [
+					{
+						city: "Shanghai", engineer: "Engineer: Tior",
+						rates: [
+							{ label: "Studio session", price: "$50/hr" },
+							{ label: "ChefDao remote direction (recording incl.)", price: "$75/hr" }
+						],
+						venue: "Bimental Studio", address: "4F, Bldg 61, Hongcao Garden, 443 Hongcao Rd", mapUrl: "https://surl.amap.com/pptXUKJfY5",
+						gear: ["U87", "HA73", "1176", "Genelec 8030"]
+					},
+					{
+						city: "Seoul", engineer: "Engineer: ChefDao",
+						rates: [
+							{ label: "Venue & gear included", price: "$50/hr" },
+							{ label: "Client provides venue & gear", price: "$35/hr" }
+						],
+						venue: "Hongik Univ. (Daehak-ro) / Sejong Univ. area", address: "", mapUrl: ""
+					}
+				],
+				note: "2-hour minimum, please confirm availability in advance. Recording is excluded from the Daomen discount."
 			},
 			{
-				id: "mixing", step: "Step 02", title: "Mixing",
-				subsections: [
-					{
-						name: "Audio Editing", desc: "Pitch correction and alignment — pre-mix prep",
-						items: [
-							{ title: "Vocal Editing", price: "$30", unit: "/hr", desc: "Pitch correction, clarity enhancement, and audio alignment. Book standalone or stacked before mixing.", tags: ["1H Min."] }
-						]
-					},
-					{
-						name: "Vocal Mix", desc: "Basic: 1 vocalist · Standard / Full Package: up to 2 vocalists · Each additional +$30 · Final price subject to track count and complexity · Non-commercial / indie pricing — commercial projects quoted separately",
-						items: [
-							{ title: "Basic Mix", price: "$45", unit: "", desc: "Tonal shaping and fundamental balance. For projects with pitch-clean vocals requiring no vocal production.", tags: ["1 Vocalist", "Clean Vocals"] },
-							{ title: "Standard Production", price: "$70", unit: "", desc: "Client provides creative direction and references; engineer executes and refines. For releases with a defined sonic vision.",
-							  includes: [{ label: "Basic Mix", value: "$45" }, { label: "1H Editing" }, { label: "Client-led Vocal Production" }],
-							  tags: ["Client-led Vocal Production", "Best Value"], featured: true },
-							{ title: "Full Package", price: "$90", originalPrice: "$145", unit: "", desc: "Engineer leads all vocal creative decisions — spatial design, emotional direction, and layering handled end-to-end. For projects demanding maximum vocal impact.",
-							  includes: [{ label: "Vocal Production", value: "$50" }, { label: "Mix", value: "$45" }, { label: "2H Editing", value: "$50" }],
-							  valueTotal: "Total $145", saving: "Save $55",
-							  tags: ["Creative Vocal Production", "2H Editing"] }
-						]
-					},
-					{
-						name: "Vocal Production", desc: "Add to any mix tier · or book as standalone creative service",
-						items: [
-							{ title: "Vocal Production", price: "$50", unit: "", desc: "Atmosphere-first vocal design. Special FX processing, spatial layering, and emotional direction. Pitch-clean source material required.", tags: ["Creative Core", "Atmosphere"], featured: true }
-						]
-					},
-					{
-						name: "Multitrack Mix", desc: "Includes mastering",
-						items: [
-							{ title: "Simple Multitrack", price: "$140", unit: "", desc: "Stems Mix or minimal arrangement projects. Best for acoustic works with fewer instruments.", tags: ["8 Tracks Max"] },
-							{ title: "Standard Multitrack", price: "$210+", unit: "", desc: "Urban / Pop-Rap production spec. Full dynamic and spatial processing included.", tags: ["Commercial"] },
-							{ title: "Complex Multitrack", price: "$420+", unit: "", desc: "60–100+ track projects. Cinematic sound design and epic dynamic treatment.", tags: ["Large Scale"] }
-						]
-					}
-				]
+				id: "mixing", step: "Step 02", title: "Mixing", builder: true,
+				sub: "Pick a spec, set your vocalists, choose editing per head — your quote updates live. Indie pricing; commercial projects quoted separately."
 			},
 			{
 				id: "mastering", step: "Step 03", title: "Mastering",
 				items: [{ title: "Single Mastering", price: "$30", unit: "", desc: "For fully mixed tracks. Loudness, dynamics, and spectral optimization to commercial standards.", tags: ["Commercial"] }]
 			},
 			{
-				id: "creation", step: "Creative Support", title: "Songwriting & Arrangement",
+				id: "creation", step: "Creative Support", title: "Songwriting & Arrangement", groupHead: "Extended Services",
 				items: [
-					{ title: "Custom Arrangement", price: "$420+", unit: "", desc: "Tailored to the artist's voice and style. 100% exclusive licensing. Best for projects with existing lyrics that need professional production.", tags: ["Exclusive"] },
-					{ title: "Full Songwriting", price: "$700+", unit: "", desc: "Professional lyricists and composers. Commercial-grade melody and lyric packages from concept to delivery.", tags: ["Full Package"] }
+					{ title: "Custom Arrangement", price: "$420", unit: "+", desc: "Tailored to the artist's voice and style. 100% exclusive licensing. Best for projects with existing lyrics that need professional production.", tags: ["Exclusive"] },
+					{ title: "Full Songwriting", price: "$700", unit: "+", desc: "Professional lyricists and composers. Commercial-grade melody and lyric packages from concept to delivery.", tags: ["Full Package"] }
 				]
 			},
 			{
 				id: "projectlead", step: "Deep Collab", title: "Project Lead", type: "projectlead",
-				depositLabel: "Project Deposit",
-				deposit: "$700+",
+				depositLabel: "Project Deposit", deposit: "$700+",
 				highlights: [
 					{ label: "Scope", value: "EP / Full Album" },
 					{ label: "Role", value: "Full Creative Lead" },
@@ -504,6 +638,21 @@ var I18N = {
 				desc: "From pre-production planning and vocal recording through creative design and final mix — deep involvement at every stage. Pricing and timeline discussed privately based on project scope.",
 				tags: ["EP / Album", "Creative Lead", "By Inquiry"],
 				cta: "→ Limited slots — DM to discuss"
+			},
+			{
+				id: "daomen", type: "membership", step: "C / U Music", title: "Daomen Membership", groupHead: "Membership",
+				intro: "It's <strong>not a fan club</strong> — it's where people serious about music help each other level up. Join Daomen and your questions get real answers: recording, mixing, mastering, career direction, with long-term, steady guidance.",
+				joinLabel: "How to join · either one",
+				joins: [
+					{ num: "01", main: "$15 / person", sub: "Join Daomen" },
+					{ num: "02", main: "Spend $700 total", sub: "Auto-upgrade to lifetime member" }
+				],
+				perksLabel: "Member benefits",
+				perks: [
+					{ t: "20% off mixing, for life", d: "20% off the standard mixing price for as long as you're a member (recording excluded; rush fee not discounted). Toggle \"Daomen member price\" in the quote builder above to preview." },
+					{ t: "Ongoing insights", d: "Recording and mixing techniques, engineering approaches, and hands-on experience, updated regularly." },
+					{ t: "Weekly feedback", d: "Once a week, every week. Practice tracks, demos, released singles, and commercial projects all welcome." }
+				]
 			}
 		],
 		faqTitle: "FAQ",
@@ -557,70 +706,103 @@ var I18N = {
 	ko: {
 		lang: "ko",
 		back: "← 작품으로 돌아가기",
+		heroKicker: "ChefDao Studio",
 		heroTitle: "Service<br>Rates.",
-		heroSub: "ChefDao Studio 오디오 엔지니어링 요금표.<br>모든 항목에 간편 마스터링이 포함됩니다.",
+		heroSub: "모든 가격은 보이는 그대로 — 숨은 비용이 없습니다. 모든 항목에 간편 마스터링이 포함됩니다.",
+		gateTitle: "오늘은 무엇을 만들까요?",
+		gateSub: "하나를 골라 시작하거나, 먼저 둘러보세요.",
+		schedLive: "실시간 일정", schedStd: "표준 <strong>{r}</strong>", schedRush: "긴급 <strong>{r}</strong>",
+		entry: [
+			{ t: "레코딩 예약", d: "보컬 디렉팅 포함 스튜디오 녹음", go: "recording" },
+			{ t: "믹싱 견적", d: "보컬 / 멀티트랙 — 실시간 견적", go: "mixing" },
+			{ t: "둘러보기", d: "전체 서비스와 FAQ 보기", go: "browse" }
+		],
 		footer: "© 2026 CHEFDAO AUDIO · PRECISE & PROFESSIONAL",
 		ctaLabel: "문의하기: CookDao",
 		ctaCopied: "WeChat ID 복사됨 ✓",
-		partnerIntro: "후반 작업 외에도 기획부터 편곡까지 전체 창작 서비스와 앨범 / EP 전담 프로젝트 리드 서비스를 제공합니다.",
+		quote: {
+			title: "견적 계산기",
+			modeVocal: "보컬 믹스", modeStems: "멀티트랙 믹스",
+			cur: "₩",
+			baseLabel: "베이직 믹스 · 보컬 1인 (간편 마스터링 포함)", base: 40000,
+			stemsLabel: "프로젝트 규모 (마스터링 포함 · 보컬 1인 기준)",
+			stems: [
+				{ name: "심플 멀티트랙", price: 240000, from: false, desc: "Stems 믹스 또는 소규모 편성, 8트랙 이하." },
+				{ name: "스탠다드 멀티트랙", price: 360000, from: true, desc: "Urban / 팝 랩 상업 규격, 완전한 다이나믹·공간 처리." },
+				{ name: "컴플렉스 멀티트랙", price: 600000, from: true, desc: "60–100+ 트랙 대형 프로젝트, 영화적 사운드 디자인. 최종 견적은 프로젝트별 확인." }
+			],
+			prodLabel: "보컬 프로덕션",
+			prods: [
+				{ name: "필요 없음", price: 0, desc: "퓨어 믹스 — 방향이 명확한 프로젝트를 위한 음색과 밸런스." },
+				{ name: "실행형", price: 30000, desc: "방향은 당신이, 실행과 정밀 마무리는 엔지니어가." },
+				{ name: "크리에이티브", price: 60000, desc: "엔지니어 주도 — 공간 설계, 감정 디렉팅, 레이어링." }
+			],
+			tierNames: ["베이직 믹스", "스탠다드", "풀 패키지"], eqPrefix: "동일 구성:",
+			countLabel: "보컬 인원", perHead: 20000, perHeadLabel: "1인당 +₩20,000 (믹스)", countMax: 8,
+			countMoreNote: "대규모 사이퍼는 DM으로 문의",
+			editLabel: "오디오 편집 · 보컬별 선택", vocalistLabel: "보컬",
+			edits: [
+				{ name: "없음", price: 0 },
+				{ name: "타이밍만", price: 20000 },
+				{ name: "타이밍 + 피치", price: 40000 }
+			],
+			bdExtra: "추가 보컬",
+			totalLabel: "예상 견적", fromSuffix: "부터",
+			note: "보이는 그대로 지불합니다. 매우 복잡한 보컬로 일반 범위를 넘는 작업이 필요하면 먼저 확인 후 진행합니다 — 사후 청구는 없습니다.",
+			stemsNote: "보컬 관련 추가 요금은 보컬 믹스와 동일합니다 — 프로덕션과 편집 작업량은 악기 트랙 수와 무관합니다. \"부터\"로 표시된 규격은 작업 시작 전 최종 견적을 확인해 드립니다.",
+			addonNote: "화음 / 더블 밀집 스택(5트랙 이상)은 규모별 별도: 5–8트랙 +₩40,000 · 9–12 +₩80,000 · 12+ +₩120,000.",
+			laneLabel: "④ 납품 방식", laneFeeRate: 0.5, laneFeeLabel: "긴급 요금 +50%",
+			lanes: [ { name: "표준 납품" }, { name: "긴급" } ],
+			laneStdSub: "10–12 영업일 · {r}", laneRushSub: "3–5일 · {r}",
+			laneNote: "표준 10–12 영업일(일요일 휴무); 긴급 3–5일(주말 포함). 날짜는 현재 일정에 따라 자동 갱신.",
+			depositLabel: "계약금 (착수)", balanceLabel: "잔금 (납품 시)",
+			depositNote: "반반 방식: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
+			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
+			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱 표준가 평생 20% 할인 · 레코딩·긴급 요금 제외", memberLine: "刀门 회원 · 20% 할인",
+			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓"
+		},
 		services: [
 			{
-				id: "recording", step: "Step 01", title: "레코딩 Recording",
-				items: [{ title: "전문 보컬 레코딩", price: "₩60,000", unit: "/hr", desc: "보컬 디렉팅 포함. 최소 2시간 예약 — 사전에 스케줄을 확인해 주세요.", tags: ["최소 2H"] }]
+				id: "recording", type: "recording", step: "Step 01", title: "레코딩 Recording", groupHead: "핵심 프로세스 Core",
+				locations: [
+					{
+						city: "상하이 Shanghai", engineer: "엔지니어: Tior",
+						rates: [
+							{ label: "스튜디오 녹음", price: "₩60,000/hr" },
+							{ label: "ChefDao 온라인 디렉팅 (녹음 포함)", price: "₩90,000/hr" }
+						],
+						venue: "Bimental Studio", address: "훙차오로 443, 훙차오위안 61동 4층", mapUrl: "https://surl.amap.com/pptXUKJfY5",
+						gear: ["U87", "HA73", "1176", "Genelec 8030"]
+					},
+					{
+						city: "서울 Seoul", engineer: "엔지니어: ChefDao",
+						rates: [
+							{ label: "장소·장비 포함", price: "₩60,000/hr" },
+							{ label: "고객 장소·장비 제공 시", price: "₩40,000/hr" }
+						],
+						venue: "홍익대 대학로 / 세종대 인근", address: "", mapUrl: ""
+					}
+				],
+				note: "최소 2시간 예약, 사전에 스케줄을 확인해 주세요. 레코딩은 刀门 회원 할인 대상이 아닙니다."
 			},
 			{
-				id: "mixing", step: "Step 02", title: "믹싱 Mixing",
-				subsections: [
-					{
-						name: "오디오 편집 Audio Editing", desc: "피치 보정과 얼라인먼트 — 믹싱 전 준비",
-						items: [
-							{ title: "보컬 편집", price: "₩30,000", unit: "/hr", desc: "피치 보정, 보컬 선명도 향상, 컷 얼라인먼트. 단독 예약 또는 믹싱 전 추가 서비스로 활용 가능.", tags: ["최소 1H"] }
-						]
-					},
-					{
-						name: "보컬 믹스 Vocal Mix", desc: "베이직: 보컬 1인 기준 · 스탠다드/풀 패키지: 2인 이내 · 추가 보컬 1인당 +₩40,000 · 트랙 수 및 복잡도에 따라 최종 요금 조정 · 개인/독립 발매 기준, 커머셜 별도 문의",
-						items: [
-							{ title: "베이직 믹스", price: "₩60,000", unit: "", desc: "음색 최적화와 기본 밸런스에 집중. 피치 교정이 필요 없는 드라이 보컬 필요 — 편집 불포함.", tags: ["보컬 1인", "드라이 보컬"] },
-							{ title: "스탠다드 프로덕션", price: "₩90,000", unit: "", desc: "클라이언트가 크리에이티브 방향과 레퍼런스를 제공하며, 엔지니어가 실행 및 정밀 마무리를 담당합니다. 방향이 명확한 발매 프로젝트에 적합.",
-							  includes: [{ label: "베이직 믹스", value: "₩60,000" }, { label: "1H 편집" }, { label: "클라이언트 방향 보컬 프로덕션" }],
-							  tags: ["클라이언트 방향 보컬 프로덕션", "추천"], featured: true },
-							{ title: "풀 패키지", price: "₩120,000", originalPrice: "₩180,000", unit: "", desc: "엔지니어가 보컬 크리에이티브 전 과정을 주도합니다 — 공간 설계, 감정 디렉팅, 레이어 구성 일괄 실행. 극한의 보컬 퍼포먼스를 목표로 하는 전문 프로젝트에 적합.",
-							  includes: [{ label: "보컬 프로덕션", value: "₩60,000" }, { label: "믹싱", value: "₩60,000" }, { label: "2H 정밀 편집", value: "₩60,000" }],
-							  valueTotal: "합계 ₩180,000", saving: "₩60,000 절약",
-							  tags: ["창의적 보컬 프로덕션", "2H 편집"] }
-						]
-					},
-					{
-						name: "보컬 프로덕션 Vocal Production", desc: "모든 믹스 플랜에 추가 가능 · 또는 단독 크리에이티브 서비스",
-						items: [
-							{ title: "보컬 프로덕션", price: "₩60,000", unit: "", desc: "앰비언스 중심의 보컬 디자인. 특수 이펙트 처리, 공간 레이어링, 감정 디렉팅. 피치 교정이 필요 없는 소재 필요.", tags: ["창작 핵심", "앰비언스"], featured: true }
-						]
-					},
-					{
-						name: "멀티트랙 믹스 Multitrack Mix", desc: "마스터링 포함",
-						items: [
-							{ title: "심플 멀티트랙", price: "₩200,000", unit: "", desc: "Stems Mix 또는 소규모 편성 프로젝트. 어쿠스틱 악기가 적은 작품에 적합.", tags: ["8트랙 이하"] },
-							{ title: "스탠다드 멀티트랙", price: "₩300,000+", unit: "", desc: "Urban / 팝 랩 상업 규격. 완전한 다이나믹 및 공간 처리 포함.", tags: ["상업 규격"] },
-							{ title: "컴플렉스 멀티트랙", price: "₩600,000+", unit: "", desc: "60–100트랙 이상의 대형 프로젝트. 영화적 사운드 디자인과 에픽 다이나믹 처리.", tags: ["대형 프로젝트"] }
-						]
-					}
-				]
+				id: "mixing", step: "Step 02", title: "믹싱 Mixing", builder: true,
+				sub: "규격 선택 → 인원 설정 → 보컬별 편집 선택. 견적이 실시간으로 갱신됩니다. 개인 / 독립 발매 기준, 커머셜 별도 문의."
 			},
 			{
 				id: "mastering", step: "Step 03", title: "마스터링 Mastering",
 				items: [{ title: "싱글 마스터링", price: "₩40,000", unit: "", desc: "믹싱이 완료된 트랙에 적용. 라우드니스, 다이나믹, 스펙트럼 최종 최적화.", tags: ["상업 기준"] }]
 			},
 			{
-				id: "creation", step: "크리에이티브 지원", title: "작사·작곡 & 편곡",
+				id: "creation", step: "크리에이티브 지원", title: "작사·작곡 & 편곡", groupHead: "확장 서비스 Extended",
 				items: [
-					{ title: "커스텀 편곡", price: "₩600,000+", unit: "", desc: "아티스트의 음색과 스타일에 맞춘 맞춤 제작. 100% 독점 라이선스 포함. 가사·멜로디가 있는 프로젝트에 적합.", tags: ["독점 라이선스"] },
-					{ title: "풀 작사·작곡", price: "₩1,000,000+", unit: "", desc: "전문 작사·작곡가 참여. 기획부터 완성까지 상업적 수준의 멜로디와 가사 제공.", tags: ["풀 패키지"] }
+					{ title: "커스텀 편곡", price: "₩600,000", unit: "+", desc: "아티스트의 음색과 스타일에 맞춘 맞춤 제작. 100% 독점 라이선스 포함. 가사·멜로디가 있는 프로젝트에 적합.", tags: ["독점 라이선스"] },
+					{ title: "풀 작사·작곡", price: "₩1,000,000", unit: "+", desc: "전문 작사·작곡가 참여. 기획부터 완성까지 상업적 수준의 멜로디와 가사 제공.", tags: ["풀 패키지"] }
 				]
 			},
 			{
 				id: "projectlead", step: "깊은 협업", title: "프로젝트 리드 Project Lead", type: "projectlead",
-				depositLabel: "프로젝트 선납",
-				deposit: "₩1,000,000+",
+				depositLabel: "프로젝트 선납", deposit: "₩1,000,000+",
 				highlights: [
 					{ label: "적용 범위", value: "EP / 정규 앨범" },
 					{ label: "역할", value: "전체 크리에이티브 주도" },
@@ -629,6 +811,21 @@ var I18N = {
 				desc: "사전 기획, 보컬 레코딩, 크리에이티브 디자인부터 최종 믹스까지 모든 단계에 깊이 관여합니다. 요금 및 일정은 프로젝트 규모에 따라 비공개로 협의합니다.",
 				tags: ["EP / 앨범", "크리에이티브 주도", "문의 필수"],
 				cta: "→ 슬롯 한정 — DM으로 문의해 주세요"
+			},
+			{
+				id: "daomen", type: "membership", step: "C / U Music", title: "刀门 Daomen 멤버십", groupHead: "멤버십 Membership",
+				intro: "<strong>팬클럽이 아닙니다</strong> — 진지하게 음악을 만드는 사람들이 서로 성장하는 곳입니다. 刀门에 가입하면 레코딩, 믹싱, 마스터링, 커리어 방향까지 장기적이고 안정적인 가이드를 받을 수 있습니다.",
+				joinLabel: "가입 방법 · 택 1",
+				joins: [
+					{ num: "01", main: "₩20,000 / 1인", sub: "刀门 가입" },
+					{ num: "02", main: "누적 결제 ₩1,000,000", sub: "평생 회원 자동 승급" }
+				],
+				perksLabel: "회원 혜택",
+				perks: [
+					{ t: "믹싱 평생 20% 할인", d: "믹싱 표준 납품가에 평생 20% 할인 (레코딩 제외; 긴급 요금은 할인 미적용). 위 견적 계산기에서 「刀门 회원가」를 켜면 미리 볼 수 있습니다." },
+					{ t: "지속적인 인사이트", d: "최신 레코딩·믹싱 테크닉, 엔지니어링 사고방식, 실전 경험을 정기 업데이트." },
+					{ t: "주간 작품 피드백", d: "매주 1회, 빠짐없이. 연습 작품, 데모, 발매 싱글, 커머셜 프로젝트 모두 환영." }
+				]
 			}
 		],
 		faqTitle: "FAQ",
@@ -681,49 +878,217 @@ var I18N = {
 	}
 };
 
-function renderCard(item) {
-	var fc = item.featured ? " featured" : "";
-	var goldClass = item.featured ? " gold" : "";
-	var tags = "";
-	if (item.tags && item.tags.length) {
-		for (var i = 0; i < item.tags.length; i++) {
-			tags += "<span class=\"tag" + goldClass + "\">" + item.tags[i] + "</span>";
-		}
+// ── Quote Builder state & logic ─────────────────────────────
+// mode: 'vocal' | 'stems'; prod: prods index; edits: per-vocalist edit index array
+var qbState = { mode: "vocal", prod: 1, count: 1, edits: [2], stems: 1, member: false, lane: 0 };
+
+function qbFmt(q, n) {
+	var s = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	return q.cur + s;
+}
+function qbSet(key, val) { qbState[key] = val; renderQuoteBuilder(); }
+function qbScrollTo(id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+function qbSetEdit(i, val) { qbState.edits[i] = val; renderQuoteBuilder(); }
+function qbStep(delta) {
+	var q = I18N[currentLang].quote;
+	var n = qbState.count + delta;
+	if (n < 1) n = 1;
+	if (n > q.countMax) n = q.countMax;
+	while (qbState.edits.length < n) qbState.edits.push(qbState.edits[qbState.edits.length - 1]);
+	qbState.edits.length = n;
+	qbState.count = n;
+	renderQuoteBuilder();
+}
+function qbCompute(q) {
+	var stems = qbState.mode === "stems";
+	var baseItem = stems ? q.stems[qbState.stems] : null;
+	var base = stems ? baseItem.price : q.base;
+	var prod = q.prods[qbState.prod];
+	var count = qbState.count;
+	var mixExtra = q.perHead * (count - 1);
+	var editTotal = 0, editCounts = [];
+	for (var e = 0; e < q.edits.length; e++) editCounts.push(0);
+	for (var i = 0; i < count; i++) {
+		var idx = qbState.edits[i] || 0;
+		editCounts[idx]++;
+		editTotal += q.edits[idx].price;
 	}
-	var unit = item.unit ? "<span class=\"card-price-unit\">" + item.unit + "</span>" : "";
-	var tagsHtml = tags ? "<div class=\"card-tags\">" + tags + "</div>" : "";
-	var origHtml = item.originalPrice ? "<span class=\"card-price-orig\">" + item.originalPrice + "</span>" : "";
-	var inlineSaving = (item.saving && item.originalPrice) ? "<span class=\"tag gold\">" + item.saving + "</span>" : "";
-	var includesHtml = "";
-	if (item.includes && item.includes.length) {
+	var gross = base + prod.price + mixExtra + editTotal;
+	// 刀门会员：混音服务终身 8 折——只作用在【标准交付价】上，不含加急费
+	var discount = qbState.member ? Math.round(gross * 0.2) : 0;
+	// 快速通道：加急费 = 标准价 ×50%（不打折）；速度是可选付费项，不是默认承诺
+	var fast = qbState.lane === 1;
+	var rush = fast ? Math.round(gross * q.laneFeeRate) : 0;
+	var total = gross - discount + rush;
+	// 半半模式：定金 50% 向上取整（略大的那一半先收），尾款为剩余，两者精确相加
+	var deposit = Math.ceil(total / 2);
+	var balance = total - deposit;
+	return { base: base, baseItem: baseItem, from: stems && baseItem.from, prod: prod, count: count,
+		mixExtra: mixExtra, editTotal: editTotal, editCounts: editCounts,
+		gross: gross, discount: discount, fast: fast, rush: rush,
+		total: total, deposit: deposit, balance: balance };
+}
+function renderQuoteBuilder() {
+	var mount = document.getElementById("qb-mount");
+	if (!mount) return;
+	var q = I18N[currentLang].quote;
+	if (qbState.prod >= q.prods.length) qbState.prod = q.prods.length - 1;
+	if (qbState.count > q.countMax) { qbState.count = q.countMax; qbState.edits.length = q.countMax; }
+	for (var f = 0; f < qbState.edits.length; f++) { if (qbState.edits[f] >= q.edits.length) qbState.edits[f] = q.edits.length - 1; }
+	if (qbState.stems >= q.stems.length) qbState.stems = q.stems.length - 1;
+	var stems = qbState.mode === "stems";
+	var c = qbCompute(q);
+
+	var modeHtml = '<div class="qb-mode">'
+		+ '<button class="qb-mode-btn' + (!stems ? " active" : "") + '" onclick="qbSet(\'mode\',\'vocal\')">' + q.modeVocal + '</button>'
+		+ '<button class="qb-mode-btn' + (stems ? " active" : "") + '" onclick="qbSet(\'mode\',\'stems\')">' + q.modeStems + '</button>'
+		+ '</div>';
+
+	// base row: fixed line (vocal) or scale selector (stems)
+	var baseHtml;
+	if (stems) {
+		var stemBtns = "";
+		for (var s = 0; s < q.stems.length; s++) {
+			var sp = qbFmt(q, q.stems[s].price) + (q.stems[s].from ? "+" : "");
+			stemBtns += '<button class="qb-seg-btn' + (s === qbState.stems ? " active" : "") + '" onclick="qbSet(\'stems\',' + s + ')">'
+				+ '<span class="qb-seg-name">' + q.stems[s].name + '</span>'
+				+ '<span class="qb-seg-price">' + sp + '</span></button>';
+		}
+		baseHtml = '<div class="qb-row"><div class="qb-label">' + q.stemsLabel + '</div>'
+			+ '<div class="qb-seg">' + stemBtns + '</div>'
+			+ '<div class="qb-tier-desc">' + c.baseItem.desc + '</div></div>';
+	} else {
+		baseHtml = '<div class="qb-base-line"><span>' + q.baseLabel + '</span><strong>' + qbFmt(q, q.base) + '</strong></div>';
+	}
+
+	var prodBtns = "";
+	for (var i = 0; i < q.prods.length; i++) {
+		var pp = q.prods[i].price ? "+" + qbFmt(q, q.prods[i].price) : "—";
+		prodBtns += '<button class="qb-seg-btn' + (i === qbState.prod ? " active" : "") + '" onclick="qbSet(\'prod\',' + i + ')">'
+			+ '<span class="qb-seg-name">' + q.prods[i].name + '</span>'
+			+ '<span class="qb-seg-price">' + pp + '</span></button>';
+	}
+	var vocRows = "";
+	for (var v = 0; v < c.count; v++) {
 		var chips = "";
-		for (var k = 0; k < item.includes.length; k++) {
-			if (k > 0) chips += "<span class=\"ci-sep\">+</span>";
-			var inc = item.includes[k];
-			chips += "<span class=\"ci-chip\">" + inc.label + (inc.value ? " <strong>" + inc.value + "</strong>" : "") + "</span>";
+		for (var e2 = 0; e2 < q.edits.length; e2++) {
+			var label = q.edits[e2].name + (q.edits[e2].price ? " +" + qbFmt(q, q.edits[e2].price) : "");
+			chips += '<button class="qb-mini-btn' + (qbState.edits[v] === e2 ? " active" : "") + '" onclick="qbSetEdit(' + v + ',' + e2 + ')">' + label + '</button>';
 		}
-		var totalRow = "";
-		if (item.valueTotal) {
-			totalRow = "<div class=\"ci-total-row\">"
-				+ "<span class=\"ci-orig\">" + item.valueTotal + "</span>"
-				+ "<span class=\"ci-arrow\">→</span>"
-				+ "<span class=\"ci-saving\">" + item.saving + "</span>"
-				+ "</div>";
-		}
-		includesHtml = "<div class=\"card-includes\"><div class=\"ci-chips\">" + chips + "</div>" + totalRow + "</div>";
+		vocRows += '<div class="qb-voc-row"><span class="qb-voc-name">' + q.vocalistLabel + ' ' + (v + 1) + '</span><div class="qb-mini-seg">' + chips + '</div></div>';
 	}
-	return "<div class=\"price-card" + fc + "\">"
-		+ "<div class=\"card-price card-price-row\"><span class=\"card-price-num\">" + item.price + "</span>" + unit + origHtml + inlineSaving + "</div>"
-		+ "<div class=\"card-title\">" + item.title + "</div>"
-		+ "<div class=\"card-desc\">" + item.desc + "</div>"
-		+ includesHtml
-		+ tagsHtml
-		+ "</div>";
+
+	var baseName = stems ? c.baseItem.name : q.tierNames[0];
+	var lines = '<div class="qb-bd-line"><span>' + baseName + '</span><span class="qb-bd-val">' + qbFmt(q, c.base) + (c.from ? "+" : "") + '</span></div>';
+	if (c.prod.price > 0) {
+		lines += '<div class="qb-bd-line"><span>' + q.prodLabel + ' · ' + c.prod.name + '</span><span class="qb-bd-val">+' + qbFmt(q, c.prod.price) + '</span></div>';
+	}
+	if (c.count > 1) {
+		lines += '<div class="qb-bd-line"><span>' + q.bdExtra + ' × ' + (c.count - 1) + '</span><span class="qb-bd-val">+' + qbFmt(q, c.mixExtra) + '</span></div>';
+	}
+	for (var e3 = 1; e3 < q.edits.length; e3++) {
+		if (c.editCounts[e3] > 0) {
+			lines += '<div class="qb-bd-line"><span>' + q.edits[e3].name + ' × ' + c.editCounts[e3] + '</span><span class="qb-bd-val">+' + qbFmt(q, q.edits[e3].price * c.editCounts[e3]) + '</span></div>';
+		}
+	}
+	if (c.rush > 0) {
+		lines += '<div class="qb-bd-line rush"><span>' + q.laneFeeLabel + '</span><span class="qb-bd-val">+' + qbFmt(q, c.rush) + '</span></div>';
+	}
+	if (c.discount > 0) {
+		lines += '<div class="qb-bd-line discount"><span>' + q.memberLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.discount) + '</span></div>';
+	}
+	var eq = stems ? "" : '<div class="qb-eq">' + q.eqPrefix + ' <strong>' + q.tierNames[qbState.prod] + '</strong></div>';
+	var moreNote = c.count >= q.countMax ? '<div class="qb-more-note">' + q.countMoreNote + '</div>' : '';
+	var fromTag = c.from ? '<span class="qb-from">' + q.fromSuffix + '</span>' : '';
+	var noteText = (stems ? q.stemsNote : q.note) + ' ' + q.depositNote;
+	if (c.fast && c.discount > 0) noteText += ' ' + q.memberFastNote;
+	// 交付日期：标准 stdMin–stdMax 工作日（跳周日）+积压；加急 rushMin–rushMax 自然日（含周日）
+	var stdRange = qbFmtRange(qbAddWorkdays(SCHEDULE.stdMin + SCHEDULE.backlogDays), qbAddWorkdays(SCHEDULE.stdMax + SCHEDULE.backlogDays), currentLang);
+	var rushRange = qbFmtRange(qbAddDays(SCHEDULE.rushMin), qbAddDays(SCHEDULE.rushMax), currentLang);
+	var laneSubs = [ q.laneStdSub.replace("{r}", stdRange), q.laneRushSub.replace("{r}", rushRange) ];
+	var laneBtns = "";
+	for (var L = 0; L < q.lanes.length; L++) {
+		laneBtns += '<button class="qb-seg-btn' + (L === qbState.lane ? " active" : "") + '" onclick="qbSet(\'lane\',' + L + ')">'
+			+ '<span class="qb-seg-name">' + q.lanes[L].name + '</span>'
+			+ '<span class="qb-seg-price">' + laneSubs[L] + '</span></button>';
+	}
+	var laneHtml = '<div class="qb-row"><div class="qb-label">' + q.laneLabel + '</div><div class="qb-seg two">' + laneBtns + '</div><div class="qb-tier-desc">' + q.laneNote + '</div></div>';
+	var tt = I18N[currentLang];
+	var schedHtml = '<div class="qb-sched"><span class="qb-sched-dot"></span><span class="qb-sched-live">' + tt.schedLive + '</span>'
+		+ '<span class="qb-sched-item">' + tt.schedStd.replace("{r}", stdRange) + '</span>'
+		+ '<span class="qb-sched-sep">·</span>'
+		+ '<span class="qb-sched-item">' + tt.schedRush.replace("{r}", rushRange) + '</span></div>';
+	var splitHtml = '<div class="qb-split">'
+		+ '<div class="qb-split-row deposit"><span>' + q.depositLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit) + (c.from ? "+" : "") + '</span></div>'
+		+ '<div class="qb-split-row"><span>' + q.balanceLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + (c.from ? "+" : "") + '</span></div>'
+		+ '</div>';
+	var memberHtml = '<button class="qb-member' + (qbState.member ? " on" : "") + '" onclick="qbSet(\'member\',' + (!qbState.member) + ')" aria-pressed="' + qbState.member + '">'
+		+ '<span><span class="qb-member-label">' + q.memberTitle
+		+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="event.stopPropagation();qbScrollTo(\'svc-daomen\')">?</span></span>'
+		+ '<span class="qb-member-sub">' + q.memberSub + '</span></span>'
+		+ '<span class="qb-switch"></span></button>';
+
+	mount.innerHTML = '<div class="quote-builder">' + schedHtml + modeHtml + baseHtml
+		+ '<div class="qb-row"><div class="qb-label">' + q.prodLabel + '</div><div class="qb-seg">' + prodBtns + '</div><div class="qb-tier-desc">' + c.prod.desc + '</div></div>'
+		+ '<div class="qb-row"><div class="qb-label">' + q.countLabel + '</div>'
+			+ '<div class="qb-stepper"><button class="qb-step-btn" onclick="qbStep(-1)" aria-label="-">−</button>'
+			+ '<span class="qb-count">' + c.count + '</span>'
+			+ '<button class="qb-step-btn" onclick="qbStep(1)" aria-label="+">+</button>'
+			+ '<span class="qb-perhead">' + q.perHeadLabel + '</span></div>' + moreNote + '</div>'
+		+ '<div class="qb-row"><div class="qb-label">' + q.editLabel + '</div><div class="qb-voc-list">' + vocRows + '</div></div>'
+		+ laneHtml
+		+ memberHtml
+		+ '<div class="qb-summary">' + eq + lines
+			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
+			+ splitHtml
+			+ '<div class="qb-note">' + noteText + '</div></div>'
+		+ '<button class="qb-cta" onclick="qbCopy()">' + q.cta + '</button>'
+		+ '<div class="qb-addon-note">' + q.addonNote + '</div>'
+		+ '</div>';
+}
+function qbCopy() {
+	var q = I18N[currentLang].quote;
+	var c = qbCompute(q);
+	var stems = qbState.mode === "stems";
+	var baseName = stems ? c.baseItem.name : q.tierNames[0];
+	var txt = "ChefDao — " + q.title + "\n"
+		+ "· " + (stems ? q.modeStems : q.modeVocal) + " · " + baseName + " " + qbFmt(q, c.base) + (c.from ? "+" : "") + "\n";
+	if (c.prod.price > 0) txt += "· " + q.prodLabel + " · " + c.prod.name + " +" + qbFmt(q, c.prod.price) + "\n";
+	txt += "· " + q.vocalistLabel + " × " + c.count + (c.count > 1 ? " (+" + qbFmt(q, c.mixExtra) + ")" : "") + "\n";
+	for (var e = 1; e < q.edits.length; e++) {
+		if (c.editCounts[e] > 0) txt += "· " + q.edits[e].name + " × " + c.editCounts[e] + " (+" + qbFmt(q, q.edits[e].price * c.editCounts[e]) + ")\n";
+	}
+	if (c.rush > 0) txt += "· " + q.laneFeeLabel + " (+" + qbFmt(q, c.rush) + ")\n";
+	if (c.discount > 0) txt += "· " + q.memberLine + " (−" + qbFmt(q, c.discount) + ")\n";
+	txt += q.totalLabel + ": " + qbFmt(q, c.total) + (c.from ? "+" : "") + "\n"
+		+ q.depositLabel + ": " + qbFmt(q, c.deposit) + (c.from ? "+" : "") + " · " + q.balanceLabel + ": " + qbFmt(q, c.balance) + (c.from ? "+" : "") + "\n"
+		+ "WeChat: " + CONTACT.wechat;
+	var btn = document.querySelector(".qb-cta");
+	var done = function() {
+		if (btn) { btn.textContent = q.copied; setTimeout(function() { btn.textContent = q.cta; }, 2000); }
+		window.location.href = "weixin://";
+	};
+	navigator.clipboard.writeText(txt).then(done).catch(done);
 }
 
+// ── Section rendering ───────────────────────────────────────
+function renderCard(item) {
+	var tags = "";
+	if (item.tags && item.tags.length) {
+		for (var i = 0; i < item.tags.length; i++) tags += '<span class="tag">' + item.tags[i] + '</span>';
+	}
+	var unit = item.unit ? '<span class="card-price-unit">' + item.unit + '</span>' : "";
+	return '<div class="price-card">'
+		+ '<div class="card-price"><span class="card-price-num">' + item.price + '</span>' + unit + '</div>'
+		+ '<div class="card-title">' + item.title + '</div>'
+		+ '<div class="card-desc">' + item.desc + '</div>'
+		+ (tags ? '<div class="card-tags">' + tags + '</div>' : "")
+		+ '</div>';
+}
 function renderProjectLead(svc) {
-	var tags = svc.tags.map(function(t) { return '<span class="tag">' + t + '</span>'; }).join('');
-	var highlightsHtml = '';
+	var tags = "";
+	for (var t = 0; t < svc.tags.length; t++) tags += '<span class="tag">' + svc.tags[t] + '</span>';
+	var highlightsHtml = "";
 	if (svc.highlights) {
 		for (var h = 0; h < svc.highlights.length; h++) {
 			highlightsHtml += '<div class="pl-highlight-item">'
@@ -732,90 +1097,79 @@ function renderProjectLead(svc) {
 				+ '</div>';
 		}
 	}
-	return '<div class="service-section">'
-		+ '<div class="section-head">'
-		+ '<div class="step-tag silver">' + svc.step + '</div>'
-		+ '<h2>' + svc.title + '</h2>'
-		+ '</div>'
+	return '<div class="service-section reveal" id="svc-' + svc.id + '">'
+		+ '<div class="section-head"><div class="step-tag">' + svc.step + '</div><h2>' + svc.title + '</h2></div>'
 		+ '<div class="projectlead-card">'
-		+ (highlightsHtml ? '<div class="pl-highlights">' + highlightsHtml + '</div>' : '')
-		+ '<div class="pl-price-block">'
-		+ '<div class="pl-deposit">'
+		+ (highlightsHtml ? '<div class="pl-highlights">' + highlightsHtml + '</div>' : "")
 		+ '<span class="pl-deposit-label">' + svc.depositLabel + '</span>'
 		+ '<span class="pl-deposit-num">' + svc.deposit + '</span>'
-		+ '</div>'
-		+ '</div>'
 		+ '<div class="pl-desc">' + svc.desc + '</div>'
-		+ '<div class="card-tags">' + tags + '</div>'
-		+ '<div class="pl-cta" style="margin-top:16px">' + svc.cta + '</div>'
-		+ '</div>'
-		+ '</div>'
-		+ '<div class="section-divider"></div>';
+		+ '<div class="pl-tags card-tags">' + tags + '</div>'
+		+ '<div class="pl-cta">' + svc.cta + '</div>'
+		+ '</div></div>';
 }
-
-function renderBundle(svc) {
-	var items = svc.bundleItems.map(function(item, i) {
-		return (i > 0 ? '<span class="bundle-plus">+</span>' : '') + '<span class="bundle-item">' + item + '</span>';
-	}).join('');
-	return '<div class="service-section">'
-		+ '<div class="section-head">'
-		+ '<div class="step-tag gold">' + svc.step + '</div>'
-		+ '<h2>' + svc.title + '</h2>'
-		+ '</div>'
-		+ '<div class="bundle-card">'
-		+ '<div class="bundle-price-row">'
-		+ '<span class="bundle-original">' + svc.originalPrice + '</span>'
-		+ '<span class="bundle-arrow">→</span>'
-		+ '<span class="bundle-price">' + svc.price + '</span>'
-		+ '<span class="tag gold">' + svc.savings + '</span>'
-		+ '</div>'
-		+ '<div class="bundle-items">' + items + '</div>'
-		+ '<div class="bundle-desc">' + svc.desc + '</div>'
-		+ '<div class="bundle-tip">' + svc.tip + '</div>'
-		+ '</div>'
-		+ '</div>'
-		+ '<div class="section-divider"></div>';
-}
-
-function renderService(svc, t) {
-	var i, html, sub, cards;
-	if (svc.type === "bundle") return renderBundle(svc);
-	if (svc.type === "projectlead") return renderProjectLead(svc);
-	if (svc.type === "partner") {
-		cards = "";
-		for (i = 0; i < svc.items.length; i++) { cards += renderCard(svc.items[i]); }
-		return "<div class=\"partner-box\">"
-			+ "<div class=\"step-tag gold\">" + svc.step + "</div>"
-			+ "<h2>" + svc.title + "</h2>"
-			+ "<p class=\"partner-intro\">" + t.partnerIntro + "</p>"
-			+ "<div class=\"card-grid\">" + cards + "</div>"
-			+ "</div>";
+function renderMembership(svc) {
+	var joins = "";
+	for (var j = 0; j < svc.joins.length; j++) {
+		joins += '<div class="mj-row"><span class="mj-num">' + svc.joins[j].num + '</span>'
+			+ '<span><span class="mj-main">' + svc.joins[j].main + '</span><span class="mj-sub">' + svc.joins[j].sub + '</span></span></div>';
 	}
-	var inner = "";
-	if (svc.subsections) {
-		for (i = 0; i < svc.subsections.length; i++) {
-			sub = svc.subsections[i];
-			cards = "";
-			for (var j = 0; j < sub.items.length; j++) { cards += renderCard(sub.items[j]); }
-			var gridCls = sub.items.length === 1 ? "card-grid solo" : "card-grid";
-			inner += "<div class=\"subsection\">"
-				+ "<div class=\"sub-head\"><h3>" + sub.name + "</h3><span class=\"sub-desc\">" + sub.desc + "</span></div>"
-				+ "<div class=\"" + gridCls + "\">" + cards + "</div>"
-				+ "</div>";
+	var perks = "";
+	for (var p = 0; p < svc.perks.length; p++) {
+		perks += '<div class="perk"><div class="perk-title">' + svc.perks[p].t + '</div><div class="perk-desc">' + svc.perks[p].d + '</div></div>';
+	}
+	return '<div class="member-card">'
+		+ '<div class="member-intro">' + svc.intro + '</div>'
+		+ '<div class="mj-label">' + svc.joinLabel + '</div>' + joins
+		+ '<div class="mj-label" style="margin-top:26px">' + svc.perksLabel + '</div>'
+		+ '<div class="perk-list">' + perks + '</div>'
+		+ '</div>';
+}
+function renderRecording(svc) {
+	var cards = "";
+	for (var i = 0; i < svc.locations.length; i++) {
+		var loc = svc.locations[i];
+		var rates = "";
+		for (var r = 0; r < loc.rates.length; r++) {
+			rates += '<div class="loc-rate"><span class="loc-rate-label">' + loc.rates[r].label + '</span><span class="loc-rate-price">' + loc.rates[r].price + '</span></div>';
 		}
-	} else {
-		cards = "";
-		for (i = 0; i < svc.items.length; i++) { cards += renderCard(svc.items[i]); }
-		inner = "<div class=\"card-grid" + (svc.items.length === 1 ? " solo" : "") + "\">" + cards + "</div>";
+		var venue = "";
+		if (loc.venue) {
+			venue = '<div class="loc-meta"><strong>' + loc.venue + '</strong>'
+				+ (loc.address ? '<br>' + (loc.mapUrl ? '<a class="loc-map" href="' + loc.mapUrl + '" target="_blank" rel="noopener">' + loc.address + '</a>' : loc.address) : "")
+				+ '</div>';
+		}
+		var gear = "";
+		if (loc.gear && loc.gear.length) {
+			for (var g = 0; g < loc.gear.length; g++) gear += '<span class="tag">' + loc.gear[g] + '</span>';
+			gear = '<div class="loc-gear">' + gear + '</div>';
+		}
+		cards += '<div class="loc-card">'
+			+ '<div class="loc-head"><span class="loc-city">' + loc.city + '</span><span class="loc-engineer">' + loc.engineer + '</span></div>'
+			+ '<div class="loc-rates">' + rates + '</div>'
+			+ venue + gear + '</div>';
 	}
-	return "<div class=\"service-section\">"
-		+ "<div class=\"section-head\">"
-		+ "<div class=\"step-tag\">" + svc.step + "</div>"
-		+ "<h2>" + svc.title + "</h2>"
-		+ "</div>" + inner + "</div>"
-		+ "<div class=\"section-divider\"></div>";
+	return '<div class="loc-grid">' + cards + '</div>' + (svc.note ? '<div class="qb-addon-note">' + svc.note + '</div>' : "");
 }
-
+function renderService(svc) {
+	var groupHead = svc.groupHead ? '<div class="group-head reveal">' + svc.groupHead + '</div>' : "";
+	if (svc.type === "projectlead") return groupHead + renderProjectLead(svc);
+	var head = '<div class="section-head"><div class="step-tag">' + svc.step + '</div><h2>' + svc.title + '</h2>'
+		+ (svc.sub ? '<span class="sub-desc">' + svc.sub + '</span>' : "") + '</div>';
+	var body;
+	if (svc.type === "recording") {
+		body = renderRecording(svc);
+	} else if (svc.type === "membership") {
+		body = renderMembership(svc);
+	} else if (svc.builder) {
+		body = '<div id="qb-mount"></div>';
+	} else {
+		var cards = "";
+		for (var i = 0; i < svc.items.length; i++) cards += renderCard(svc.items[i]);
+		body = '<div class="card-grid' + (svc.items.length === 1 ? " solo" : "") + '">' + cards + '</div>';
+	}
+	return groupHead + '<div class="service-section reveal" id="svc-' + svc.id + '">' + head + body + '</div>';
+}
 function renderFAQ(t) {
 	if (!t.faqItems || !t.faqItems.length) return "";
 	var items = "";
@@ -826,39 +1180,25 @@ function renderFAQ(t) {
 		if (item.a) bodyHtml += "<p>" + item.a + "</p>";
 		if (item.list && item.list.length) {
 			bodyHtml += "<ul>";
-			for (var j = 0; j < item.list.length; j++) {
-				bodyHtml += "<li>" + item.list[j] + "</li>";
-			}
+			for (var j = 0; j < item.list.length; j++) bodyHtml += "<li>" + item.list[j] + "</li>";
 			bodyHtml += "</ul>";
 		}
-		items += "<div class=\"faq-item\" id=\"faq-item-" + i + "\">"
-			+ "<div class=\"faq-question\" onclick=\"toggleFaq(" + i + ")\" role=\"button\" tabindex=\"0\" aria-expanded=\"false\">"
-			+ "<div class=\"faq-q-inner\">"
-			+ "<span class=\"faq-num\">" + num + "</span>"
-			+ "<span class=\"faq-q-text\">" + item.q + "</span>"
-			+ "</div>"
-			+ "<span class=\"faq-toggle\">+</span>"
-			+ "</div>"
-			+ "<div class=\"faq-answer\" id=\"faq-answer-" + i + "\">"
-			+ "<div class=\"faq-answer-inner\">" + bodyHtml + "</div>"
-			+ "</div>"
-			+ "</div>";
+		items += '<div class="faq-item" id="faq-item-' + i + '">'
+			+ '<div class="faq-question" onclick="toggleFaq(' + i + ')" role="button" tabindex="0" aria-expanded="false">'
+			+ '<div class="faq-q-inner"><span class="faq-num">' + num + '</span><span class="faq-q-text">' + item.q + '</span></div>'
+			+ '<span class="faq-toggle">+</span></div>'
+			+ '<div class="faq-answer" id="faq-answer-' + i + '"><div class="faq-answer-inner">' + bodyHtml + '</div></div>'
+			+ '</div>';
 	}
-	return "<div class=\"faq-section\">"
-		+ "<div class=\"faq-head section-head\">"
-		+ "<div class=\"step-tag\">" + t.faqStep + "</div>"
-		+ "<h2>" + t.faqTitle + "</h2>"
-		+ "</div>"
-		+ items
-		+ "</div>";
+	return '<div class="faq-section reveal">'
+		+ '<div class="faq-head section-head"><div class="step-tag">' + t.faqStep + '</div><h2>' + t.faqTitle + '</h2></div>'
+		+ items + '</div>';
 }
-
 function toggleFaq(index) {
 	var item = document.getElementById("faq-item-" + index);
 	var answer = document.getElementById("faq-answer-" + index);
 	var inner = answer.querySelector(".faq-answer-inner");
 	var isOpen = item.classList.contains("open");
-	// Close all
 	var allItems = document.querySelectorAll(".faq-item");
 	var allAnswers = document.querySelectorAll(".faq-answer");
 	for (var i = 0; i < allItems.length; i++) {
@@ -867,7 +1207,6 @@ function toggleFaq(index) {
 		var btn = allItems[i].querySelector(".faq-question");
 		if (btn) btn.setAttribute("aria-expanded", "false");
 	}
-	// Open clicked if it was closed
 	if (!isOpen) {
 		item.classList.add("open");
 		answer.style.maxHeight = inner.scrollHeight + "px";
@@ -875,30 +1214,75 @@ function toggleFaq(index) {
 	}
 }
 
+// ── Entry gate ──────────────────────────────────────────────
+function entryGo(target) {
+	var gate = document.getElementById("entry-gate");
+	gate.classList.add("leaving");
+	setTimeout(function() { gate.style.display = "none"; }, 560);
+	if (target === "browse") return;
+	setTimeout(function() {
+		var el = document.getElementById("svc-" + target);
+		if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+	}, 250);
+}
+function renderGate(t) {
+	document.getElementById("gate-kicker").textContent = t.heroKicker;
+	document.getElementById("gate-title").innerHTML = t.gateTitle;
+	document.getElementById("gate-sub").textContent = t.gateSub;
+	var html = "";
+	for (var i = 0; i < t.entry.length; i++) {
+		html += '<button class="gate-card" onclick="entryGo(\'' + t.entry[i].go + '\')">'
+			+ '<span class="gate-card-title">' + t.entry[i].t + '</span>'
+			+ '<span class="gate-card-desc">' + t.entry[i].d + '</span>'
+			+ '<span class="gate-arrow">→</span>'
+			+ '</button>';
+	}
+	document.getElementById("gate-grid").innerHTML = html;
+}
+
+// ── Reveal-on-scroll ────────────────────────────────────────
+function setupReveal() {
+	var els = document.querySelectorAll(".reveal");
+	if (!("IntersectionObserver" in window)) {
+		for (var i = 0; i < els.length; i++) els[i].classList.add("in");
+		return;
+	}
+	var io = new IntersectionObserver(function(entries) {
+		for (var j = 0; j < entries.length; j++) {
+			if (entries[j].isIntersecting) {
+				entries[j].target.classList.add("in");
+				io.unobserve(entries[j].target);
+			}
+		}
+	}, { threshold: 0.08 });
+	for (var k = 0; k < els.length; k++) io.observe(els[k]);
+}
+
+// ── Top-level render ────────────────────────────────────────
 function render(lang) {
 	var t = I18N[lang];
 	var i, html = "";
 	document.documentElement.lang = t.lang;
+	document.getElementById("hero-kicker").textContent = t.heroKicker;
 	document.getElementById("hero-title").innerHTML = t.heroTitle;
 	document.getElementById("hero-sub").innerHTML = t.heroSub;
 	document.getElementById("footer-text").textContent = t.footer;
 	document.getElementById("cta-label").textContent = t.ctaLabel;
 	document.getElementById("back-link").textContent = t.back;
-	for (i = 0; i < t.services.length; i++) { html += renderService(t.services[i], t); }
+	renderGate(t);
+	for (i = 0; i < t.services.length; i++) html += renderService(t.services[i]);
 	document.getElementById("services-container").innerHTML = html;
 	document.getElementById("faq-container").innerHTML = renderFAQ(t);
+	renderQuoteBuilder();
+	setupReveal();
 }
-
 function switchLang(lang) {
 	if (lang === currentLang) return;
 	currentLang = lang;
 	var btns = document.querySelectorAll(".lang-btn");
 	for (var i = 0; i < btns.length; i++) {
-		if (btns[i].getAttribute("data-lang") === lang) {
-			btns[i].classList.add("active");
-		} else {
-			btns[i].classList.remove("active");
-		}
+		if (btns[i].getAttribute("data-lang") === lang) btns[i].classList.add("active");
+		else btns[i].classList.remove("active");
 	}
 	var container = document.getElementById("services-container");
 	container.classList.add("fading");
@@ -907,21 +1291,19 @@ function switchLang(lang) {
 		container.classList.remove("fading");
 	}, 160);
 }
-
 function copyContact() {
 	var t = I18N[currentLang];
 	var label = document.getElementById("cta-label");
 	navigator.clipboard.writeText(CONTACT.wechat).then(function() {
 		label.textContent = t.ctaCopied;
-		window.location.href = "weixin://"; 
+		window.location.href = "weixin://";
 		setTimeout(function() { label.textContent = t.ctaLabel; }, 2200);
 	}).catch(function() {
 		label.textContent = CONTACT.wechat;
-		window.location.href = "weixin://"; 
+		window.location.href = "weixin://";
 		setTimeout(function() { label.textContent = t.ctaLabel; }, 2200);
 	});
 }
-
 document.addEventListener("DOMContentLoaded", function() { render("zh"); });
 </script>
 </body>
