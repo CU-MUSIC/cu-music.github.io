@@ -187,6 +187,11 @@
 		.qb-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #f0f0f0; transition: transform 0.25s var(--ease); }
 		.qb-member.on .qb-switch { background: var(--green-soft); }
 		.qb-member.on .qb-switch::after { transform: translateX(14px); background: #0d1f16; }
+		.qb-producer.on { border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.05); }
+		.qb-producer.on .qb-switch { background: #f0f0f0; }
+		.qb-producer.on .qb-switch::after { transform: translateX(14px); background: #0a0a0a; }
+		.qb-plus { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: var(--text-primary); border: 0.5px solid var(--border-hover); vertical-align: middle; }
+		.qb-producer.on .qb-plus { border-color: rgba(255,255,255,0.5); }
 		.qb-bd-line.discount span, .qb-bd-line.discount .qb-bd-val { color: var(--green-soft); }
 		.qb-bd-line.rush .qb-bd-val { color: #f0f0f0; }
 		.qb-seg.two { grid-template-columns: repeat(2, 1fr); }
@@ -501,6 +506,8 @@ var I18N = {
 			depositNote: "半半模式：定金开工，成品交付时补齐尾款。",
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
 			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音标准价终身 8 折 · 不含录音与加急费", memberLine: "刀门会员 · 8 折",
+			producerTitle: "让我担任制作人", producerSub: "我主导这首歌的创意与完成度 · 署名 Produced by ChefDao", producerLine: "制作人费",
+			producerNote: "在混音/制作小计基础上按项目加收，作品署名「Produced by ChefDao」。商业项目可另谈 producer points（版税分成）。",
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
@@ -618,6 +625,72 @@ var I18N = {
 				q: "怎么开始合作？",
 				a: "直接发给我：",
 				list: ["Demo", "干声", "Reference", "你的预算", "截止时间"]
+			},
+			{
+				q: "怎么把干声和素材发给我？",
+				a: "发我这些就行——素材越规整，我越能把时间花在创作上：",
+				list: [
+					"干声：不加任何效果的原始录音（混响、autotune 都别印上去），WAV 48kHz/24bit 最佳",
+					"伴奏：成品 instrumental，注明 BPM 与调性（不确定也没关系）",
+					"参考曲：1 首，告诉我你想要的方向",
+					"多条 take 想让我挑选拼合（comp）可以，这是额外服务，会另计"
+				]
+			},
+			{
+				q: "做完交付什么文件？交付后还能改吗？",
+				a: "默认交付两个版本，格式 WAV / MP3 / M4A（48kHz / 24bit）：",
+				list: [
+					"完整母带版 ×1、简易现场版 ×1",
+					"工程文件不含在默认交付里，仅用于维护售后，保留 30 天（到期前 3 天提醒，之后自动删除，请提前备份）",
+					"额外导出（分轨 stems / 伴奏 / Acapella / TV Mix / 其他格式）：150 元/小时按需处理",
+					"交付后微调：7 日内 100 元/次，7 日后 200 元/次；结构性修改（重编曲、换段落、大量编辑）150 元/小时"
+				]
+			},
+			{
+				q: "干声录得不好，能救吗？",
+				a: "大部分能救，这正是我的强项。底噪、齿音、轻微跑调、房间声都能处理。但有下限：严重破音、爆麦、完全跑飞的部分，救不回原本不存在的东西——这种我会先告诉你、建议补录一两句，而不是硬修出廉价感。记住：素材越好，上限越高。救回来的是「能听」，好素材才能到「惊艳」。"
+			},
+			{
+				q: "需要我提供参考曲（reference）吗？",
+				a: "强烈建议。一首 reference 抵一千字——它告诉我你要的空间、人声位置、情绪和整体质感。可以发 1–3 首，并说清你具体喜欢它哪里：是人声、氛围，还是律动。"
+			},
+			{
+				q: "怎么付款？定金和尾款怎么算？",
+				a: "半半模式：定金开工，成品交付时补齐尾款。定金确认后我才排期开工，尾款结清后交付无水印成品。走微信。"
+			},
+			{
+				q: "做整张专辑会比单曲便宜吗？",
+				a: "通常不会，反而单首投入更高。很多人以为专辑该打折，但深度参与型的专辑混音，除了每首本身，还要额外扛整张的统一性——音色风格、空间、动态关系、曲目衔接、整体叙事与审美方向。按时薪算，专辑往往比单曲更低，因为要投入大量沟通、校准和反复调整。所以专辑不是「数量多就打折」，而是更高强度、更长期的投入。",
+				list: [
+					"专辑走「基础项目费用 + 额外调整费用」：基础费用用于方向建立、风格统一与项目管理，超出常规的深度调整按额外费用结算",
+					"不想走专辑模式，也可以按单曲形式推进——做专辑内容，但「一首完成、一首交付」",
+					"没有定金的专辑项目不再接收",
+					"金额较大时统一走刀门会员 8 折，不叠加其他折扣"
+				]
+			},
+			{
+				q: "混到一半我想改方向，会加钱吗？",
+				a: "正常范围的修改不加钱，我在意作品成不成立，不卡修改次数。但大幅改编排、换人声、或推翻方向重做，相当于一首新歌的工作量，会按新工时另计——我会先跟你确认再动手，不会先做后收。另外：如果第一版交付时双方就觉得不对，往往说明我们没在一个频道上，请立刻告诉我你的真实感受。真的不对，我们可以下次再合作，不硬着头皮做下去——对彼此都更好。"
+			},
+			{
+				q: "混得不满意，能退款吗？",
+				a: "我不提供免费完整试混——混音本身就是高强度的创作判断。如果你不确定合不合适，可以先付 30% 定金试混一小段，方向不对及时止损。正式开工后，定金用于已投入的创作时间，不退；但只要在正常范围内，我会一直修到你满意为止。"
+			},
+			{
+				q: "能保证质量、保证上热门吗？",
+				a: "质量我保证——按我的审美和标准交付，修到作品立得住。但没有人能保证「上热门」：那取决于歌曲本身、发行、运营和运气，不是混音能决定的。谁跟你保证爆款，谁就在骗你。我能保证的，是作品在听感上站得住。"
+			},
+			{
+				q: "我不在上海 / 首尔，能远程合作吗？",
+				a: "可以，大部分项目都是远程。把干声、伴奏、参考发我，全程微信沟通，交付成品。需要监制录音的，我也能线上实时指导你录——不在同一个城市完全不影响。"
+			},
+			{
+				q: "「担任制作人」和普通混音有什么区别？",
+				a: "普通混音：你给我成型的编排和人声，我把它混到最好。担任制作人（Produced by ChefDao）：我从创意层面主导整首歌——人声怎么设计、和声怎么铺、氛围往哪走、哪里该改，深度参与并署名。前者是「把你的想法实现好」，后者是「我和你一起决定这首歌该是什么样」。报价器里可勾选，按混音小计加收。"
+			},
+			{
+				q: "我不懂混音术语，能顺畅沟通吗？",
+				a: "完全没问题，甚至更好。你不用会任何术语——用「想要更空、更暖、更狠、更干净」这种感觉描述，或者直接发参考曲，我来翻译成技术动作。我的工作，就是把你说不清的那种感觉做出来。"
 			}
 		]
 	},
@@ -698,6 +771,8 @@ var I18N = {
 			depositNote: "50 / 50: pay the deposit to start, the balance on delivery.",
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
 			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off standard mixing price, for life · recording & rush fee excluded", memberLine: "Daomen member · 20% off",
+			producerTitle: "Add me as Producer", producerSub: "I lead this record's creative & finish · credit \"Produced by ChefDao\"", producerLine: "Producer fee",
+			producerNote: "Charged as a percentage on top of the mix/production subtotal, with a \"Produced by ChefDao\" credit. Producer points (royalty share) available for commercial projects.",
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
@@ -815,6 +890,72 @@ var I18N = {
 				q: "How do I get started?",
 				a: "Just send me:",
 				list: ["Demo", "Dry vocals", "Reference tracks", "Your budget", "Deadline"]
+			},
+			{
+				q: "How should I send you the vocals and files?",
+				a: "Just send these — the cleaner the source, the more time I can spend on the creative work:",
+				list: [
+					"Dry vocals: raw recording with no effects (no reverb or autotune printed in), WAV 48kHz/24bit ideal",
+					"Instrumental: the finished beat, with BPM and key noted (no worries if you're unsure)",
+					"Reference: 1 track that shows me the direction you want",
+					"Multiple takes for me to comp? Sure — that's an add-on and billed separately"
+				]
+			},
+			{
+				q: "What files do I get on delivery? Can I still make changes after?",
+				a: "You get two versions by default, in WAV / MP3 / M4A (48kHz / 24bit):",
+				list: [
+					"Full mastered version ×1, simple reference version ×1",
+					"Project/session files aren't part of the default delivery — kept 30 days for maintenance only (reminder 3 days before, auto-deleted after, so back up in time)",
+					"Extra exports (stems / instrumental / acapella / TV mix / other formats): billed at an hourly rate on request",
+					"Post-delivery tweaks: minor edits ¥100 within 7 days, ¥200 after; structural changes (re-arrangement, section swaps, heavy editing) billed hourly"
+				]
+			},
+			{
+				q: "My vocals weren't recorded well — can you save them?",
+				a: "Most of the time, yes — this is one of my strengths. Noise, sibilance, mild pitch issues, room tone can all be handled. But there's a floor: severe clipping, mic overload, or completely off sections can't recover what was never there. I'll tell you upfront and suggest re-recording a line or two, rather than forcing a cheap-sounding fix. Remember: the better the source, the higher the ceiling. I can make it listenable — great source is what makes it stunning."
+			},
+			{
+				q: "Do you need me to send a reference track?",
+				a: "Highly recommended. One reference is worth a thousand words — it tells me the space, vocal placement, emotion, and overall texture you're after. Send 1–3 and be specific about what you like in them: the vocals, the atmosphere, or the groove."
+			},
+			{
+				q: "How does payment work? Deposit and balance?",
+				a: "50/50: pay the deposit to start, the balance on delivery. I schedule and start once the deposit is confirmed, and deliver the watermark-free final once the balance is settled. Via WeChat."
+			},
+			{
+				q: "Is a full album cheaper than singles?",
+				a: "Usually not — the per-song investment is often higher. People assume albums should be discounted, but deep-involvement album mixing means carrying the whole record's consistency on top of each track: tonal style, space, dynamic relationships, transitions between songs, and the overall narrative and aesthetic. By the hour, albums often pay less than singles because of all the extra communication, calibration, and back-and-forth. An album isn't \"more songs, so a discount\" — it's higher intensity over a longer commitment.",
+				list: [
+					"Albums run on a \"base project fee + additional adjustment fee\" model: the base covers direction-setting, style unification, and project management; deep changes beyond normal scope are billed as extras",
+					"Prefer not to run it as an album project? We can go single by single — album content, but \"one finished, one delivered\"",
+					"Album projects without a deposit are no longer accepted",
+					"For larger totals, the Daomen 20% member rate applies — no other discounts stack"
+				]
+			},
+			{
+				q: "If I want to change direction mid-mix, does it cost more?",
+				a: "Normal-range revisions don't cost extra — I care whether the track lands, not about capping revisions. But major re-arrangement, swapping the vocal, or scrapping and redoing the direction is essentially a new song's worth of work, billed as new hours — I'll confirm with you before touching it, never bill after the fact. Also: if the first version already feels off to both of us, it usually means we're not on the same wavelength. Tell me honestly right away. If it's really not clicking, we can work together next time instead of forcing it through — better for both of us."
+			},
+			{
+				q: "What if I'm not happy with the mix — can I get a refund?",
+				a: "I don't offer a free full trial mix — mixing is high-intensity creative judgment in itself. If you're unsure we're a fit, you can pay a 30% deposit for a short trial mix and cut your losses early if the direction's wrong. Once work officially starts, the deposit covers the creative time already invested and isn't refundable — but within a normal range, I'll keep revising until you're happy."
+			},
+			{
+				q: "Can you guarantee quality, or a hit?",
+				a: "Quality, yes — I deliver to my own aesthetic and standard, and revise until the track stands on its own. But nobody can guarantee a \"hit\": that depends on the song itself, the release, promotion, and luck — not the mix. Anyone promising you a viral hit is lying. What I can guarantee is that the record holds up sonically."
+			},
+			{
+				q: "I'm not in Shanghai / Seoul — can we work remotely?",
+				a: "Yes — most projects are remote. Send me the vocals, instrumental, and references, we communicate throughout on WeChat, and I deliver the final. For directed recording sessions, I can guide you live online too — being in a different city makes no difference."
+			},
+			{
+				q: "What's the difference between \"Producer\" and a regular mix?",
+				a: "Regular mix: you give me a finished arrangement and vocals, and I mix it to its best. As Producer (Produced by ChefDao): I lead the whole record creatively — how the vocals are designed, how the harmonies are layered, where the atmosphere goes, what should change — I'm deeply involved and credited. The former is \"realizing your idea well\"; the latter is \"deciding together what this song should be.\" Toggle it in the quote builder — charged on top of the mix subtotal."
+			},
+			{
+				q: "I don't know mixing terms — can we still communicate?",
+				a: "Totally fine — even better. You don't need any jargon. Describe it by feel — \"more spacious, warmer, harder, cleaner\" — or just send a reference, and I'll translate it into technical moves. My whole job is making the feeling you can't quite put into words."
 			}
 		]
 	},
@@ -895,6 +1036,8 @@ var I18N = {
 			depositNote: "반반 방식: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
 			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱 표준가 평생 20% 할인 · 레코딩·긴급 요금 제외", memberLine: "刀门 회원 · 20% 할인",
+			producerTitle: "프로듀서로 참여", producerSub: "이 곡의 크리에이티브와 완성도를 주도 · 크레딧 \"Produced by ChefDao\"", producerLine: "프로듀서 비용",
+			producerNote: "믹스/프로덕션 소계에 프로젝트별 퍼센트로 추가되며, \"Produced by ChefDao\" 크레딧이 붙습니다. 상업 프로젝트는 producer points(버전세 분배) 별도 협의.",
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
@@ -1012,6 +1155,72 @@ var I18N = {
 				q: "어떻게 시작하면 되나요?",
 				a: "아래 내용을 바로 보내주세요:",
 				list: ["데모", "드라이 보컬", "레퍼런스 트랙", "예산", "마감일"]
+			},
+			{
+				q: "보컬과 소재는 어떻게 보내면 되나요?",
+				a: "아래만 보내주시면 됩니다 — 소재가 정돈될수록 저는 크리에이티브에 더 집중할 수 있습니다:",
+				list: [
+					"드라이 보컬: 아무 효과도 걸지 않은 원본 녹음(리버브·오토튠 인쇄 금지), WAV 48kHz/24bit 권장",
+					"반주: 완성된 인스트루멘털, BPM과 키 표기(모르셔도 괜찮습니다)",
+					"레퍼런스: 원하는 방향을 보여주는 1곡",
+					"여러 테이크를 제가 골라 편집(comp)하는 것도 가능 — 추가 서비스로 별도 청구됩니다"
+				]
+			},
+			{
+				q: "납품 시 어떤 파일을 받나요? 이후 수정도 가능한가요?",
+				a: "기본적으로 두 가지 버전을 WAV / MP3 / M4A(48kHz / 24bit)로 드립니다:",
+				list: [
+					"풀 마스터링 버전 ×1, 심플 레퍼런스 버전 ×1",
+					"프로젝트/세션 파일은 기본 납품에 포함되지 않으며, 유지·사후관리용으로 30일 보관(만료 3일 전 알림, 이후 자동 삭제되니 미리 백업)",
+					"추가 익스포트(스템 / 반주 / 아카펠라 / TV 믹스 / 기타 포맷): 요청 시 시간당 요금",
+					"납품 후 수정: 7일 이내 미세 조정 ¥100/회, 이후 ¥200/회; 구조적 변경(재편곡, 구간 교체, 대량 편집)은 시간당 청구"
+				]
+			},
+			{
+				q: "보컬 녹음이 별로인데, 살릴 수 있나요?",
+				a: "대부분 살릴 수 있고, 이건 제 강점 중 하나입니다. 노이즈, 치찰음, 약간의 음정 이탈, 룸톤은 모두 처리 가능합니다. 다만 한계는 있습니다: 심한 클리핑, 마이크 오버로드, 완전히 어긋난 부분은 원래 없던 걸 되살릴 수 없습니다. 그런 경우 먼저 알려드리고 한두 소절 재녹음을 권합니다 — 억지로 싸구려 느낌을 내지 않습니다. 기억하세요: 소재가 좋을수록 상한이 높습니다. 살려낸 건 '들을 만한' 수준이고, 좋은 소재라야 '놀라운' 수준에 닿습니다."
+			},
+			{
+				q: "레퍼런스 트랙을 제공해야 하나요?",
+				a: "강력히 권장합니다. 레퍼런스 한 곡이 천 마디 설명보다 낫습니다 — 원하는 공간감, 보컬 위치, 감정, 전체 질감을 알려줍니다. 1–3곡을 보내시고, 그 곡의 어떤 점이 좋은지(보컬인지, 분위기인지, 그루브인지) 구체적으로 알려주세요."
+			},
+			{
+				q: "결제는 어떻게 하나요? 계약금과 잔금은?",
+				a: "반반 방식: 계약금으로 착수하고 완성본 납품 시 잔금을 결제합니다. 계약금 확인 후 일정을 잡고 착수하며, 잔금 완납 후 워터마크 없는 완성본을 드립니다. 위챗으로 진행합니다."
+			},
+			{
+				q: "앨범 전체가 싱글보다 저렴한가요?",
+				a: "보통은 아닙니다 — 오히려 곡당 투입이 더 큽니다. 앨범은 할인되어야 한다고 생각하기 쉽지만, 깊이 관여하는 앨범 믹싱은 각 곡 외에 앨범 전체의 일관성까지 짊어져야 합니다 — 음색 스타일, 공간, 다이나믹 관계, 곡 간 연결, 전체 서사와 미학 방향까지. 시급으로 따지면 앨범이 싱글보다 낮은 경우가 많습니다. 추가적인 소통, 캘리브레이션, 반복 조정이 크기 때문입니다. 앨범은 '곡이 많으니 할인'이 아니라, 더 높은 강도의 장기 프로젝트입니다.",
+				list: [
+					"앨범은 '기본 프로젝트 비용 + 추가 조정 비용' 방식: 기본 비용은 방향 설정·스타일 통일·프로젝트 관리에 쓰이고, 일반 범위를 넘는 심층 조정은 추가 비용으로 정산됩니다",
+					"앨범 방식이 싫으시면 싱글 방식으로도 가능 — 앨범 콘텐츠를 '한 곡 완성, 한 곡 납품'으로 진행",
+					"계약금 없는 앨범 프로젝트는 더 이상 받지 않습니다",
+					"금액이 큰 경우 刀门 회원 20% 할인만 적용되며, 다른 할인은 중복되지 않습니다"
+				]
+			},
+			{
+				q: "믹싱 중간에 방향을 바꾸면 추가 요금이 붙나요?",
+				a: "일반 범위의 수정은 추가 요금이 없습니다 — 저는 수정 횟수보다 작품이 성립하는지를 중요하게 봅니다. 다만 대폭적인 재편곡, 보컬 교체, 방향을 뒤엎는 재작업은 사실상 새 곡 분량이라 새 작업 시간으로 청구됩니다 — 손대기 전에 먼저 확인하며, 사후 청구는 없습니다. 그리고: 첫 버전 납품 시 양쪽 다 뭔가 어긋난다고 느낀다면, 대개 서로 주파수가 맞지 않는다는 뜻입니다. 솔직한 느낌을 즉시 말씀해 주세요. 정말 맞지 않으면 억지로 밀어붙이지 말고 다음에 다시 협업하는 게 서로에게 낫습니다."
+			},
+			{
+				q: "믹스가 마음에 안 들면 환불되나요?",
+				a: "무료 풀 트라이얼 믹스는 제공하지 않습니다 — 믹싱 자체가 고강도의 창작적 판단이기 때문입니다. 확신이 서지 않으면 30% 계약금으로 짧은 구간을 트라이얼 믹스해 방향이 틀렸을 때 일찍 손절할 수 있습니다. 정식 착수 후 계약금은 이미 투입된 창작 시간에 대한 것이라 환불되지 않지만, 일반 범위 내라면 만족하실 때까지 계속 수정합니다."
+			},
+			{
+				q: "퀄리티나 흥행을 보장하나요?",
+				a: "퀄리티는 보장합니다 — 제 미학과 기준으로 작품이 스스로 설 때까지 다듬어 드립니다. 하지만 '흥행'은 누구도 보장할 수 없습니다: 그건 곡 자체, 발매, 프로모션, 운에 달렸지 믹스가 결정하지 않습니다. 대박을 보장한다는 사람은 거짓말하는 겁니다. 제가 보장하는 건 작품이 사운드적으로 설득력 있게 선다는 것입니다."
+			},
+			{
+				q: "상하이 / 서울에 없는데, 원격 협업이 되나요?",
+				a: "됩니다 — 대부분의 프로젝트가 원격입니다. 보컬·반주·레퍼런스를 보내주시면 위챗으로 계속 소통하며 완성본을 납품합니다. 디렉팅 녹음이 필요하면 온라인으로 실시간 가이드도 가능합니다 — 다른 도시라도 전혀 문제없습니다."
+			},
+			{
+				q: "'프로듀서 참여'와 일반 믹싱의 차이는?",
+				a: "일반 믹싱: 완성된 편곡과 보컬을 주시면 최상으로 믹스합니다. 프로듀서 참여(Produced by ChefDao): 곡 전체를 크리에이티브 차원에서 주도합니다 — 보컬 설계, 화음 구성, 분위기 방향, 무엇을 바꿀지까지 깊이 관여하고 크레딧에 이름이 올라갑니다. 전자는 '당신의 아이디어를 잘 구현하는 것', 후자는 '이 곡이 어떤 모습이어야 할지 함께 결정하는 것'입니다. 견적 계산기에서 선택할 수 있고, 믹스 소계에 추가로 청구됩니다."
+			},
+			{
+				q: "믹싱 용어를 몰라도 소통할 수 있나요?",
+				a: "전혀 문제없고, 오히려 더 좋습니다. 용어는 하나도 몰라도 됩니다 — '더 공간감 있게, 더 따뜻하게, 더 강하게, 더 깨끗하게' 같은 느낌으로 설명하거나 레퍼런스를 보내주시면 제가 기술적 동작으로 번역합니다. 말로 다 못 하는 그 느낌을 만들어내는 게 제 일입니다."
 			}
 		]
 	}
@@ -1022,7 +1231,9 @@ var I18N = {
 // edits 索引：0 = 免修，1 = 仅修节奏，2 = 节奏+修音
 // 纯混音（prod=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
 // null = 尚未作答。逐步揭示：一步作答后下一步才挂载，引导文案随之分批出现。
-var qbState = { mode: null, stems: null, prod: null, harmony: null, count: null, edits: [], member: false, lane: null, moreCount: false, aaOpen: false, fineOpen: false };
+var qbState = { mode: null, stems: null, prod: null, harmony: null, count: null, edits: [], member: false, producer: false, lane: null, moreCount: false, aaOpen: false, fineOpen: false };
+// 制作人附加服务：按混音/制作小计加收的百分比（改这一个数就调价）
+var PRODUCER_RATE = 0.5;
 // 已经出现过的步骤名 → 重渲染时直接可见，只有全新的步骤才播放淡入
 var qbMounted = {};
 // 每一步的推荐档位：该步待作答时呼吸微光 + 挂标签，给犹豫的人一个落点
@@ -1055,7 +1266,7 @@ function qbStep(delta) { qbSetCount((qbState.count || 1) + delta); }
 function qbReset() {
 	qbState.mode = null; qbState.stems = null; qbState.prod = null; qbState.harmony = null;
 	qbState.count = null; qbState.edits = []; qbState.lane = null;
-	qbState.moreCount = false; qbState.member = false;
+	qbState.moreCount = false; qbState.member = false; qbState.producer = false;
 	qbMounted = {};
 	renderQuoteBuilder();
 	qbScrollTo("svc-mixing");
@@ -1106,13 +1317,15 @@ function qbCompute(q) {
 	// 快速通道：加急费 = 标准价 ×50%（不打折）；速度是可选付费项，不是默认承诺
 	var fast = qbState.lane === 1;
 	var rush = fast ? Math.round(gross * q.laneFeeRate) : 0;
-	var total = gross - discount + rush;
+	// 制作人费：混音/制作小计 ×PRODUCER_RATE，独立于会员折扣与加急，全案创意主导另计
+	var producer = qbState.producer ? Math.round(gross * PRODUCER_RATE) : 0;
+	var total = gross - discount + rush + producer;
 	// 半半模式：定金 50% 向上取整（略大的那一半先收），尾款为剩余，两者精确相加
 	var deposit = Math.ceil(total / 2);
 	var balance = total - deposit;
 	return { base: base, baseItem: baseItem, from: stems && baseItem.from, prod: prod, harmony: harmony, count: count,
 		mixExtra: mixExtra, editTotal: editTotal, editCounts: editCounts,
-		gross: gross, discount: discount, fast: fast, rush: rush,
+		gross: gross, discount: discount, fast: fast, rush: rush, producer: producer,
 		total: total, deposit: deposit, balance: balance };
 }
 // AA 账单：共同部分（基础/分轨价 + 多主唱混音 + 人声制作 + 和声）按人头平摊，
@@ -1308,6 +1521,9 @@ function renderQuoteBuilder() {
 		if (c.discount > 0) {
 			lines += '<div class="qb-bd-line discount"><span>' + q.memberLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.discount) + '</span></div>';
 		}
+		if (c.producer > 0) {
+			lines += '<div class="qb-bd-line"><span>' + q.producerLine + ' +' + Math.round(PRODUCER_RATE * 100) + '%</span><span class="qb-bd-val">+' + qbFmt(q, c.producer) + '</span></div>';
+		}
 		var eq = stems ? "" : '<div class="qb-eq">' + q.eqPrefix + ' <strong>' + q.tierNames[qbState.prod] + '</strong></div>';
 		var fromTag = c.from ? '<span class="qb-from">' + q.fromSuffix + '</span>' : '';
 		var noteText = (stems ? q.stemsNote : q.note);
@@ -1338,8 +1554,14 @@ function renderQuoteBuilder() {
 			+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="event.stopPropagation();qbScrollTo(\'svc-daomen\')">?</span></span>'
 			+ '<span class="qb-member-sub">' + q.memberSub + '</span></span>'
 			+ '<span class="qb-switch"></span></button>';
+		// 附加服务：担任制作人（按小计 +X%），打开后附一句 producer points 说明
+		var producerHtml = '<button class="qb-member qb-producer' + (qbState.producer ? " on" : "") + '" onclick="qbSet(\'producer\',' + (!qbState.producer) + ')" aria-pressed="' + qbState.producer + '">'
+			+ '<span><span class="qb-member-label">' + q.producerTitle + ' <span class="qb-plus">+' + Math.round(PRODUCER_RATE * 100) + '%</span></span>'
+			+ '<span class="qb-member-sub">' + q.producerSub + '</span></span>'
+			+ '<span class="qb-switch"></span></button>'
+			+ (qbState.producer ? '<div class="qb-tier-desc" style="margin-top:-6px;margin-bottom:16px">' + q.producerNote + '</div>' : '');
 
-		html += '<div class="qb-step" data-qstep="summary">' + memberHtml
+		html += '<div class="qb-step" data-qstep="summary">' + memberHtml + producerHtml
 			+ '<div class="qb-summary">' + eq + lines
 			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
 			+ splitHtml + aaHtml + fineHtml + '</div>'
@@ -1395,6 +1617,7 @@ function qbCopy() {
 	}
 	if (c.rush > 0) L.push("＋" + q.laneFeeLabel + SP + "+" + qbFmt(q, c.rush));
 	if (c.discount > 0) L.push("－" + q.memberLine + SP + "−" + qbFmt(q, c.discount));
+	if (c.producer > 0) L.push("＋" + q.producerLine + SP + "+" + Math.round(PRODUCER_RATE * 100) + "%" + SP + "+" + qbFmt(q, c.producer));
 	L.push(HR);
 	L.push(q.totalLabel + SP + qbFmt(q, c.total) + sfx);
 	L.push(q.depositLabel + SP + qbFmt(q, c.deposit) + sfx + SP + "·" + SP + q.balanceLabel + SP + qbFmt(q, c.balance) + sfx);
