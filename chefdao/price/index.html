@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1445,6 +1444,26 @@ function renderQuoteBuilder() {
 			qbState.stems !== null ? q.stems[qbState.stems].desc : "", q.hints.stems);
 	}
 
+	// 主唱人数：1–3 直接点选，4 位以上切换成步进器（编号随模式自动排）
+	if (shown >= idx.count) {
+		var countBody;
+		if (qbState.moreCount || (qbState.count || 0) > 3) {
+			countBody = '<div class="qb-stepper"><button class="qb-step-btn" onclick="qbStep(-1)" aria-label="-">−</button>'
+				+ '<span class="qb-count">' + (qbState.count || 1) + '</span>'
+				+ '<button class="qb-step-btn" onclick="qbStep(1)" aria-label="+">+</button>'
+				+ '<span class="qb-perhead">' + q.perHeadLabel + '</span></div>';
+		} else {
+			var countChips = "";
+			for (var n = 1; n <= 3; n++) {
+				countChips += '<button class="qb-chip' + (qbState.count === n ? " active" : "") + '" onclick="qbSetCount(' + n + ')">' + n + q.countUnit + '</button>';
+			}
+			countChips += '<button class="qb-chip" onclick="qbCountMore()">' + q.countMore + '</button>';
+			countBody = '<div class="qb-chips">' + countChips + '</div><div class="qb-perhead" style="margin-top:10px">' + q.perHeadLabel + '</div>';
+		}
+		if (qbState.count >= q.countMax) countBody += '<div class="qb-more-note">' + q.countMoreNote + '</div>';
+		html += qbRow("count", idx.count, q.countLabel, countBody, "", q.hints.count);
+	}
+
 	// 人声制作：每位主唱各选一档（人数之后，和音编同样的逐位卡片）
 	if (shown >= idx.prod) {
 		var prodRows = "";
@@ -1467,26 +1486,6 @@ function renderQuoteBuilder() {
 		var prodBody = '<div class="qb-voc-list">' + prodRows + '</div>'
 			+ '<div class="qb-tier-desc" style="margin-top:10px">' + q.prodNote + '</div>';
 		html += qbRow("prod", idx.prod, q.prodLabel, prodBody, "", q.hints.prod);
-	}
-
-	// 主唱人数：1–3 直接点选，4 位以上切换成步进器（编号随模式自动排）
-	if (shown >= idx.count) {
-		var countBody;
-		if (qbState.moreCount || (qbState.count || 0) > 3) {
-			countBody = '<div class="qb-stepper"><button class="qb-step-btn" onclick="qbStep(-1)" aria-label="-">−</button>'
-				+ '<span class="qb-count">' + (qbState.count || 1) + '</span>'
-				+ '<button class="qb-step-btn" onclick="qbStep(1)" aria-label="+">+</button>'
-				+ '<span class="qb-perhead">' + q.perHeadLabel + '</span></div>';
-		} else {
-			var countChips = "";
-			for (var n = 1; n <= 3; n++) {
-				countChips += '<button class="qb-chip' + (qbState.count === n ? " active" : "") + '" onclick="qbSetCount(' + n + ')">' + n + q.countUnit + '</button>';
-			}
-			countChips += '<button class="qb-chip" onclick="qbCountMore()">' + q.countMore + '</button>';
-			countBody = '<div class="qb-chips">' + countChips + '</div><div class="qb-perhead" style="margin-top:10px">' + q.perHeadLabel + '</div>';
-		}
-		if (qbState.count >= q.countMax) countBody += '<div class="qb-more-note">' + q.countMoreNote + '</div>';
-		html += qbRow("count", idx.count, q.countLabel, countBody, "", q.hints.count);
 	}
 
 	// 音频编辑：每位主唱各选一档（编号随模式自动排）
