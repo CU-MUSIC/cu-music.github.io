@@ -197,9 +197,15 @@
 		.qb-bd-line.discount span, .qb-bd-line.discount .qb-bd-val { color: var(--green-soft); }
 		.qb-bd-line.rush .qb-bd-val { color: #f0f0f0; }
 			.qb-date { margin-top: 12px; }
-			.qb-date-input { width: 100%; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border-hover); border-radius: 10px; color: var(--text-primary); padding: 13px 15px; font-size: 15px; font-family: var(--font); cursor: pointer; }
-			.qb-date-input::-webkit-calendar-picker-indicator { filter: invert(0.85); opacity: 0.55; cursor: pointer; }
-			.qb-date-input:focus { outline: none; border-color: rgba(255,255,255,0.4); }
+			.qb-date-field { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border-hover); border-radius: 10px; padding: 15px; cursor: pointer; transition: border-color 0.2s, background 0.2s; min-height: 54px; }
+			.qb-date-field:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); }
+			.qb-date-field.set { border-color: rgba(255,255,255,0.4); }
+			.qb-date-ic { flex-shrink: 0; color: var(--text-secondary); display: flex; }
+			.qb-date-field.set .qb-date-ic { color: var(--text-primary); }
+			.qb-date-face { flex: 1; font-size: 15px; color: var(--text-secondary); font-weight: 500; }
+			.qb-date-field.set .qb-date-face { color: var(--text-primary); font-weight: 600; }
+			.qb-date-cta { flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-primary); background: rgba(255,255,255,0.09); border-radius: 100px; padding: 5px 12px; letter-spacing: 0.02em; white-space: nowrap; }
+			.qb-date-native { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; cursor: pointer; font-size: 16px; -webkit-appearance: none; appearance: none; background: transparent; }
 			.qb-date-info { font-size: 12px; color: var(--text-secondary); margin-top: 10px; line-height: 1.6; }
 			.qb-date-info.fee { color: #e8c98a; font-weight: 600; }
 			.qb-date-info.ok { color: var(--green-soft); font-weight: 600; }
@@ -541,6 +547,7 @@ var I18N = {
 			laneDatePrompt: "选择你的期望交付日期，自动算出加急费。",
 			laneDaysLeft: "距今 {d} 天", laneNoRush: "落在标准区间 · 无需加急费",
 			laneMinNote: "3 天内的交付请直接私信我，确认可行性与费用。",
+			laneDatePick: "选择你的期望交付日期", laneDateCta: "选择", laneDateChange: "更改",
 			depositLabel: "定金（开工）", balanceLabel: "尾款（交付）",
 			depositNote: "半半模式：定金开工，成品交付时补齐尾款。",
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
@@ -817,6 +824,7 @@ var I18N = {
 			laneDatePrompt: "Choose your target delivery date — the rush fee is calculated automatically.",
 			laneDaysLeft: "{d} days out", laneNoRush: "Within the standard window · no rush fee",
 			laneMinNote: "For delivery under 3 days, message me directly to confirm feasibility and fee.",
+			laneDatePick: "Pick your delivery date", laneDateCta: "Select", laneDateChange: "Change",
 			depositLabel: "Deposit (to start)", balanceLabel: "Balance (on delivery)",
 			depositNote: "50 / 50: pay the deposit to start, the balance on delivery.",
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
@@ -1093,6 +1101,7 @@ var I18N = {
 			laneDatePrompt: "희망 납품일을 선택하면 긴급 요금이 자동 계산됩니다.",
 			laneDaysLeft: "{d}일 후", laneNoRush: "표준 범위 내 · 긴급 요금 없음",
 			laneMinNote: "3일 이내 납품은 직접 문의하여 가능 여부와 비용을 확인해 주세요.",
+			laneDatePick: "희망 납품일 선택", laneDateCta: "선택", laneDateChange: "변경",
 			depositLabel: "계약금 (착수)", balanceLabel: "잔금 (납품 시)",
 			depositNote: "반반 방식: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
@@ -1629,7 +1638,16 @@ function renderQuoteBuilder() {
 				else if (rr === 0) { info = q.laneNoRush; cls += " ok"; }
 				else { info = q.laneDaysLeft.replace("{d}", effDays) + " · " + q.rushName + " +" + Math.round(rr * 100) + "%"; cls += " fee"; }
 			}
-			laneBody += '<div class="qb-date"><input type="date" class="qb-date-input" min="' + minISO + '" value="' + (qbState.targetDate || "") + '" onchange="qbSetDate(this.value)"><div class="' + cls + '">' + info + '</div></div>';
+			var face = qbState.targetDate ? qbFmtDate(qbState.targetDate, currentLang) : q.laneDatePick;
+				var setCls = qbState.targetDate ? " set" : "";
+				var cta = qbState.targetDate ? q.laneDateChange : q.laneDateCta;
+				var dIcon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2.5" x2="8" y2="6"></line><line x1="16" y1="2.5" x2="16" y2="6"></line></svg>';
+				laneBody += '<div class="qb-date"><label class="qb-date-field' + setCls + '">'
+					+ '<span class="qb-date-ic">' + dIcon + '</span>'
+					+ '<span class="qb-date-face">' + face + '</span>'
+					+ '<span class="qb-date-cta">' + cta + ' \u203a</span>'
+					+ '<input type="date" class="qb-date-native" min="' + minISO + '" value="' + (qbState.targetDate || "") + '" onclick="try{this.showPicker()}catch(e){}" onchange="qbSetDate(this.value)">'
+					+ '</label><div class="' + cls + '">' + info + '</div></div>';
 		}
 		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, q.laneNote, q.hints.lane);
 	}
