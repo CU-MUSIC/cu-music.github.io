@@ -146,6 +146,27 @@
 		.qb-seg-price { font-size: 12px; color: var(--text-secondary); }
 		.qb-seg-btn.active .qb-seg-price { color: var(--green-soft); font-weight: 600; }
 		.qb-tier-desc { font-size: 12px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
+			.qb-cover-note { font-size: 12px; color: var(--green-soft); line-height: 1.65; margin-top: 12px; padding: 10px 12px; border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.06); border-radius: 9px; }
+			/* 建议卡：不拦人，只讲清没有 VP 会失去什么；流行歌可以理直气壮忽略 */
+			.qb-advice { margin-top: 12px; padding: 13px 14px; border: 0.5px solid rgba(232,201,138,0.28); background: rgba(232,201,138,0.055); border-radius: 10px; }
+			.qb-advice-t { font-size: 12.5px; font-weight: 700; color: #e8c98a; line-height: 1.55; }
+			.qb-advice-b { font-size: 12px; color: var(--text-secondary); line-height: 1.7; margin-top: 7px; }
+			.qb-advice-ok { font-size: 11.5px; color: var(--text-dim); line-height: 1.65; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(232,201,138,0.16); }
+			.qb-advice-btn { margin-top: 11px; background: rgba(232,201,138,0.12); border: 0.5px solid rgba(232,201,138,0.36); color: #e8c98a; font-family: var(--font); font-size: 12px; font-weight: 600; padding: 9px 15px; border-radius: 100px; cursor: pointer; transition: background 0.2s; }
+			.qb-advice-btn:hover { background: rgba(232,201,138,0.2); }
+			/* 解释默认收起：一行结论常驻，细节按需展开 */
+			.qb-lead { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-top: 11px; }
+			.qb-why { margin-top: 7px; }
+			.qb-why > summary { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-dim); cursor: pointer; list-style: none; padding: 4px 0; min-height: 28px; }
+			.qb-why > summary::-webkit-details-marker { display: none; }
+			.qb-why > summary::after { content: "+"; font-size: 12px; font-weight: 700; opacity: 0.6; }
+			.qb-why[open] > summary::after { content: "\2212"; }
+			.qb-why > summary:hover { color: var(--text-secondary); }
+			.qb-why-body { font-size: 12px; color: var(--text-dim); line-height: 1.75; margin-top: 6px; padding-left: 11px; border-left: 1px solid var(--border); }
+			.qb-cover-line { font-size: 12px; font-weight: 600; color: var(--green-soft); line-height: 1.55; margin-top: 11px; padding: 9px 12px; border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.06); border-radius: 9px; }
+			.qb-advice .qb-why > summary { color: rgba(232,201,138,0.75); }
+			.qb-advice .qb-why > summary:hover { color: #e8c98a; }
+			.qb-advice .qb-why-body { color: var(--text-secondary); border-left-color: rgba(232,201,138,0.25); }
 		.qb-stepper { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 		.qb-step-btn { width: 40px; height: 40px; border-radius: 50%; border: 0.5px solid var(--border-hover); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 19px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, background 0.2s, transform 0.12s; flex-shrink: 0; }
 		.qb-step-btn:hover { border-color: #fff; }
@@ -294,6 +315,8 @@
 		.faq-section { margin-top: 8px; padding-top: 64px; border-top: 0.5px solid var(--border); }
 		.faq-head { margin-bottom: 36px; }
 		.faq-item { border-bottom: 0.5px solid var(--border); }
+		.faq-group { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-soft); margin: 30px 0 6px; padding-top: 4px; }
+		.faq-group:first-of-type { margin-top: 8px; }
 		.faq-question { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 22px 0; cursor: pointer; user-select: none; -webkit-user-select: none; min-height: 64px; transition: opacity 0.2s; }
 		.faq-question:hover { opacity: 0.75; }
 		.faq-q-inner { display: flex; gap: 18px; align-items: baseline; flex: 1; min-width: 0; }
@@ -540,6 +563,16 @@ var I18N = {
 			],
 			aaStep: 1, minOrder: 300,
 			floorNote: "混音最低消费 ¥300（基础混音 ¥200 + 至少 ¥100 音频编辑）。会让总价跌破下限的选项已置灰。",
+			coverNote: "每位主唱至少选一项人声处理（音频编辑 或 人声制作）。纯混音只处理音色、动态与空间——人声本身的音准、节奏与层次不会有任何改善。最低选「修音 or 修节奏」+¥100 即可。",
+			vpAdviceTitle: "没有人声制作，作品会「干净」，但立不住。",
+			vpAdviceBody: "基础混音只处理音色、动态与空间。人声的层次、氛围、ad-libs 与段落设计都不在里面——而这些才是让一首歌有记忆点的部分。嘻哈 / R&B 尤其吃这一环：叠唱、和声铺排、效果器设计、情绪起伏，全是人声制作在做。",
+			vpAdviceOk: "如果你的歌偏流行、人声编排本来就完整，只做音频编辑通常就够——这条可以直接忽略。",
+			vpAdviceCta1: "加上「执行向」+{p}", vpAdviceCtaN: "全部加上「执行向」+{p} / 人",
+			whyLabel: "为什么这么分？", whyVP: "人声制作具体做什么？",
+			prodLead: "只给需要制作的主唱选，伴唱 / 和声可留「不需要」。",
+			editLead: "拿不准就按你平时录音的稳定度选。",
+			coverShort: "每位主唱至少选一项：音频编辑 或 人声制作。",
+			vpAdviceShort: "偏流行、编排已完整？只做音频编辑就够，忽略这条即可。",
 			aaTitle: "AA 账单 · 按人分摊", fineTitle: "费用说明",
 			aaNote: "共同部分（混音 + 多主唱 + 和声）按人头平摊，人声制作与音频编辑各付各的；加急费与会员折扣按各自占比分摊。相同服务金额完全一致，取整差额由工作室承担。",
 			bdExtra: "多主唱混音", harmonyBd: "和声密度",
@@ -643,6 +676,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "常见问题",
+		faqGroups: ["我能做什么", "怎么开始 · 怎么发素材", "价格 · 付款 · 退款", "时间 · 交付 · 修改", "质量 · 素材"],
 		faqItems: [
 			{
 				q: "什么风格都可以接吗？",
@@ -821,6 +855,16 @@ var I18N = {
 			],
 			aaStep: 1, minOrder: 45,
 			floorNote: "Minimum mixing order $45 (Basic Mix $30 + at least $15 of editing). Options that would drop the total below it are greyed out.",
+			coverNote: "Every vocalist needs at least one form of vocal work (Audio Editing or Vocal Production). A mix alone only shapes tone, dynamics and space — the vocal itself, its pitch, timing and layering, is left untouched. \"Pitch or Timing\" at +$15 is enough to qualify.",
+			vpAdviceTitle: "Without vocal production the record will sound clean — but it won't land.",
+			vpAdviceBody: "A mix only shapes tone, dynamics and space. Vocal layering, atmosphere, ad-libs and section design sit outside it — and those are what make a song memorable. Hip-hop and R&B live on exactly that: stacks, harmony beds, FX design and emotional arc are all vocal production work.",
+			vpAdviceOk: "If your song leans pop and the vocal arrangement is already complete, audio editing alone is usually enough — feel free to ignore this.",
+			vpAdviceCta1: "Add \"Execution\" +{p}", vpAdviceCtaN: "Add \"Execution\" for all +{p} each",
+			whyLabel: "Why these tiers?", whyVP: "What does vocal production do?",
+			prodLead: "Only pick a tier for vocalists who need production — backing vocals can stay \"Not needed\".",
+			editLead: "Not sure? Go by how consistent your takes usually are.",
+			coverShort: "Every vocalist needs at least one: Audio Editing or Vocal Production.",
+			vpAdviceShort: "Pop song, arrangement already done? Editing alone is enough — ignore this.",
 			aaTitle: "Split the bill · per vocalist", fineTitle: "Pricing notes",
 			aaNote: "Shared costs (mix + extra vocalists + harmony) are divided equally; each vocalist pays for their own vocal production and editing. Rush fee and member discount are allocated proportionally. Identical services always cost the same — any rounding difference is absorbed by the studio.",
 			bdExtra: "Extra vocalists", harmonyBd: "Harmony density",
@@ -924,6 +968,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "Questions",
+		faqGroups: ["What I do", "Getting started & sending files", "Price, payment & refunds", "Timing, delivery & revisions", "Quality & source material"],
 		faqItems: [
 			{
 				q: "Do you work with any genre?",
@@ -1102,6 +1147,16 @@ var I18N = {
 			],
 			aaStep: 100, minOrder: 60000,
 			floorNote: "믹싱 최소 주문 ₩60,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩20,000). 하한 미만이 되는 옵션은 비활성화됩니다.",
+			coverNote: "보컬 1인당 최소 한 가지 보컬 작업(오디오 편집 또는 보컬 프로덕션)이 필요합니다. 믹스만으로는 음색·다이나믹·공간만 다루며 보컬 자체의 음정·타이밍·레이어는 전혀 개선되지 않습니다. 「피치 or 타이밍」+₩20,000 이면 충족됩니다.",
+			vpAdviceTitle: "보컬 프로덕션이 없으면 곡은 '깔끔'해질 뿐, 설득력을 갖지 못합니다.",
+			vpAdviceBody: "믹스는 음색·다이나믹·공간만 다룹니다. 보컬 레이어, 분위기, 애드리브, 구성 설계는 그 바깥에 있고 — 곡을 기억에 남게 만드는 건 바로 그 부분입니다. 힙합·R&B는 특히 여기서 살아납니다: 스택, 화음 배치, FX 설계, 감정의 기복 모두 보컬 프로덕션의 영역입니다.",
+			vpAdviceOk: "곡이 팝 성향이고 보컬 편곡이 이미 완성되어 있다면 오디오 편집만으로 충분합니다 — 이 안내는 무시하셔도 됩니다.",
+			vpAdviceCta1: "「실행형」 추가 +{p}", vpAdviceCtaN: "전원 「실행형」 추가 +{p} / 인",
+			whyLabel: "왜 이렇게 나뉘나요?", whyVP: "보컬 프로덕션은 무엇을 하나요?",
+			prodLead: "프로덕션이 필요한 보컬만 선택하세요 — 백보컬은 「필요 없음」으로 두어도 됩니다.",
+			editLead: "고민되면 평소 녹음 안정도로 고르세요.",
+			coverShort: "보컬 1인당 최소 한 가지: 오디오 편집 또는 보컬 프로덕션.",
+			vpAdviceShort: "팝 성향이고 편곡이 완성됐다면 편집만으로 충분합니다 — 무시하세요.",
 			aaTitle: "N빵 정산 · 보컬별", fineTitle: "요금 안내",
 			aaNote: "공통 비용(믹스 + 추가 보컬 + 화음)은 인원수로 균등 분담하고, 보컬 프로덕션과 오디오 편집은 각자 부담합니다. 긴급 요금과 회원 할인은 비율대로 배분됩니다. 동일한 서비스는 항상 동일한 금액이며, 반올림 차액은 스튜디오가 부담합니다.",
 			bdExtra: "추가 보컬", harmonyBd: "화음 밀도",
@@ -1205,6 +1260,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "자주 묻는 질문",
+		faqGroups: ["무엇을 하나요", "시작하기 · 파일 보내기", "가격 · 결제 · 환불", "일정 · 납품 · 수정", "퀄리티 · 소스"],
 		faqItems: [
 			{
 				q: "어떤 장르든 작업 가능한가요?",
@@ -1321,7 +1377,7 @@ var I18N = {
 
 // ── Quote Builder state & logic ─────────────────────────────
 // mode: 'vocal' | 'stems'; prods: per-vocalist vocal-production index array; edits: per-vocalist edit index array
-// prods 索引：0 = 不需要，1 = 执行向，2 = 创意向（每位主唱各选一档）
+// prods 索引：0 = 不需要，1 = 执行向（默认，见 QB_PROD_DEFAULT），2 = 创意向（每位主唱各选一档）
 // edits 索引：0 = 免修，1 = 修音 or 修节奏（二选一，只做一项），2 = 节奏+修音，3 = 节奏+精修（每位主唱各选一档）
 // 纯混音（全员 prods=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
 // null = 尚未作答。逐步揭示：一步作答后下一步才挂载，引导文案随之分批出现。
@@ -1345,7 +1401,13 @@ var qbMounted = {};
 // 每一步的推荐档位：该步待作答时呼吸微光 + 挂标签，给犹豫的人一个落点
 // 人声制作/音编都按主唱逐位选，不挂推荐徽标，交给下方说明引导
 var QB_REC = { mode: "vocal", stems: 1, harmony: 0, lane: 0 };
+// 人声制作默认「执行向」：推荐档就是默认档，客户主动点「不需要」才会看到那张建议卡
+var QB_PROD_DEFAULT = 1;
 function qbBadge(text) { return '<span class="qb-badge">' + text + '</span>'; }
+// 一行结论常驻，长解释收进折叠——屏幕上永远是「选项」多过「说明」
+function qbWhy(label, body) {
+	return '<details class="qb-why"><summary>' + label + '</summary><div class="qb-why-body">' + body + '</div></details>';
+}
 
 function qbFmt(q, n) {
 	var s = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -1355,7 +1417,11 @@ function qbScrollTo(id) { var el = document.getElementById(id); if (el) el.scrol
 // ── 作答后自动前进 ────────────────────────────────────────
 // 点完一步，就把「下一处还要选的地方」送到眼前；顶部留出余量，
 // 让上一步的选择结果仍在视野里（看得见自己刚选了什么，才敢往下走）。
-var QB_SCROLL_OFFSET = 96;
+// 落点放在视口约 30% 高度处——目标在上半区，上一步的选择还在眼里，不贴着顶边
+function qbScrollOffset() {
+	var h = window.innerHeight || 800;
+	return Math.max(120, Math.min(Math.round(h * 0.3), 300));
+}
 function qbReduceMotion() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
 // 下一处待作答的步骤 key；全部答完返回 null（= 报价单）
 function qbNextUnanswered() {
@@ -1366,7 +1432,7 @@ function qbNextUnanswered() {
 function qbScrollStep(key) {
 	var el = document.querySelector('[data-qstep="' + (key || "summary") + '"]');
 	if (!el) return;
-	var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - QB_SCROLL_OFFSET;
+	var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - qbScrollOffset();
 	window.scrollTo({ top: y < 0 ? 0 : y, behavior: qbReduceMotion() ? "auto" : "smooth" });
 }
 // 包住所有作答动作：只有当「下一处待选」真的变了才滚动——
@@ -1376,7 +1442,12 @@ function qbAdvance(mutate) {
 	mutate();
 	renderQuoteBuilder();
 	var after = qbNextUnanswered();
-	if (before !== after) requestAnimationFrame(function () { qbScrollStep(after); });
+	if (before === after) return;
+	// 落到「刚答完那一步的下一步」，而不是「下一处未作答」——
+	// 否则带默认值的步骤（人声制作）会被直接跳过，客户根本看不到
+	var seq = qbSteps(), bi = before ? seq.indexOf(before) : -1;
+	var target = (bi >= 0 && bi + 1 < seq.length) ? seq[bi + 1] : after;
+	requestAnimationFrame(function () { qbScrollStep(target); });
 }
 function qbSet(key, val) { qbAdvance(function () { qbState[key] = val; }); }
 function qbSetDate(v) { qbAdvance(function () { qbState.targetDate = v || null; }); }
@@ -1399,7 +1470,7 @@ function qbResizeEdits(n) {
 	var nextE = [], nextP = [], nextM = [];
 	for (var i = 0; i < n; i++) {
 		nextE.push(i < qbState.edits.length ? qbState.edits[i] : null);
-		nextP.push(i < qbState.prods.length ? qbState.prods[i] : null);
+		nextP.push(i < qbState.prods.length ? qbState.prods[i] : QB_PROD_DEFAULT);
 		nextM.push(i < qbState.mem.length ? qbState.mem[i] : 0);
 	}
 	qbState.edits = nextE;
@@ -1544,6 +1615,21 @@ function qbGross(q) {
 	for (var i = 0; i < qbState.count; i++) g += q.prods[qbState.prods[i]].price + q.edits[qbState.edits[i]].price;
 	return g;
 }
+// ── 人声处理下限（2026-07-27）─────────────────────────────
+// 贴唱模式下每位主唱必须至少有一项人声处理（人声制作 或 音频编辑）。
+// 理由：纯混音只动音色/动态/空间，人声本身零改善——多人单会摊薄到人均 ¥120，
+// 且成品体现不出人声工作的价值。分轨模式不强制（基础价已 ¥1,200 起，
+// 且客户常自带已编辑好的人声分轨）。
+function qbCoverRuleOn() { return qbState.mode === "vocal"; }
+function qbCovered(i) { return (qbState.prods[i] || 0) > 0 || (qbState.edits[i] || 0) > 0; }
+// 兜底：真出现「两边都没选」的组合，把该主唱的音编抬到最低档
+function qbEnforceCover() {
+	if (!qbCoverRuleOn()) return;
+	for (var i = 0; i < qbState.count; i++) {
+		if (qbState.prods[i] === null || qbState.edits[i] === null) continue;
+		if (!qbCovered(i)) qbState.edits[i] = 1;
+	}
+}
 // 最低消费：判断的是【标准价】(gross) ≥ minOrder（¥300），不强制"必须有人修节奏"。
 // 刀门会员在此之上再享 8 折，故会员最低实付 = ¥240（有意为之：会员时薪本就该低一档）。
 // 只有跌破下限时，才把主唱 1 抬到「修音 or 修节奏」补足。
@@ -1575,7 +1661,7 @@ function renderQuoteBuilder() {
 	var stems = qbState.mode === "stems";
 	var steps = qbSteps(), shown = qbVisible(), done = qbComplete();
 	var idx = {}; for (var si = 0; si < steps.length; si++) idx[steps[si]] = si + 1;
-	if (done) qbEnforceFloor(q);
+	if (done) { qbEnforceCover(); qbEnforceFloor(q); }
 	var c = done ? qbCompute(q) : null;
 	var html = "";
 
@@ -1623,12 +1709,18 @@ function renderQuoteBuilder() {
 
 	// 人声制作：每位主唱各选一档（人数之后，和音编同样的逐位卡片）
 	if (shown >= idx.prod) {
-		var prodRows = "";
+		var prodRows = "", coverBinding = false;
 		// 人多时给一排「全部设为」快捷键，全员同档时高亮对应档
 		if (qbState.count > 1) {
 			var pSame = qbAllSame(qbState.prods, qbState.count), pAllBtns = "";
 			for (var pab = 0; pab < q.prods.length; pab++) {
-				pAllBtns += '<button class="qb-mini-btn' + (pab === pSame ? " active" : "") + '" onclick="qbSetAllProd(' + pab + ')">' + q.prods[pab].name + '</button>';
+				// 「全部设为 不需要」：只要有人已选免修，整排就会违规，直接禁用
+				var pAllOff = false;
+				if (qbCoverRuleOn() && pab === 0) {
+					for (var pc = 0; pc < qbState.count; pc++) if (qbState.edits[pc] === 0) { pAllOff = true; break; }
+				}
+				pAllBtns += '<button class="qb-mini-btn' + (pab === pSame ? " active" : "") + (pAllOff ? " disabled" : "") + '"'
+					+ (pAllOff ? ' disabled title="' + q.coverNote + '"' : ' onclick="qbSetAllProd(' + pab + ')"') + '>' + q.prods[pab].name + '</button>';
 			}
 			prodRows += '<div class="qb-voc-row qb-all-row"><span class="qb-voc-name">' + q.allLabel + '</span><div class="qb-mini-seg">' + pAllBtns + '</div></div>';
 		}
@@ -1636,18 +1728,37 @@ function renderQuoteBuilder() {
 			var pchips = "";
 			for (var pe = 0; pe < q.prods.length; pe++) {
 				var plabel = q.prods[pe].name + (q.prods[pe].price ? " +" + qbFmt(q, q.prods[pe].price) : "");
-				pchips += '<button class="qb-mini-btn' + (qbState.prods[pv] === pe ? " active" : "") + '" onclick="qbSetProd(' + pv + ',' + pe + ')">' + plabel + '</button>';
+				// 该主唱已选「免修」时，人声制作就不能再退回「不需要」——否则这个人声全程无处理
+				var pOff = qbCoverRuleOn() && pe === 0 && qbState.edits[pv] === 0;
+				if (pOff) coverBinding = true;
+				pchips += '<button class="qb-mini-btn' + (qbState.prods[pv] === pe ? " active" : "") + (pOff ? " disabled" : "") + '"'
+					+ (pOff ? ' disabled title="' + q.coverNote + '"' : ' onclick="qbSetProd(' + pv + ',' + pe + ')"') + '>' + plabel + '</button>';
 			}
 			prodRows += '<div class="qb-voc-row"><span class="qb-voc-name">' + q.vocalistLabel + ' ' + (pv + 1) + '</span><div class="qb-mini-seg">' + pchips + '</div></div>';
 		}
+		// 全员都没买人声制作 → 给一张建议卡（只提示，不拦；流行歌可忽略）
+		var noVP = qbCoverRuleOn();
+		if (noVP) { for (var nv = 0; nv < qbState.count; nv++) if ((qbState.prods[nv] || 0) > 0) { noVP = false; break; } }
+		var adviceHtml = "";
+		if (noVP) {
+			var vpPrice = qbFmt(q, q.prods[1].price);
+			var cta = (qbState.count > 1 ? q.vpAdviceCtaN : q.vpAdviceCta1).replace("{p}", vpPrice);
+			adviceHtml = '<div class="qb-advice">'
+				+ '<div class="qb-advice-t">' + q.vpAdviceTitle + '</div>'
+				+ '<button class="qb-advice-btn" onclick="qbSetAllProd(1)">' + cta + '</button>'
+				+ qbWhy(q.whyVP, q.vpAdviceBody)
+			+ '</div>';
+		}
 		var prodBody = '<div class="qb-voc-list">' + prodRows + '</div>'
-			+ '<div class="qb-tier-desc" style="margin-top:10px">' + q.prodNote + '</div>';
+			+ (coverBinding ? '<div class="qb-cover-line">' + q.coverShort + '</div>' : "")
+			+ qbWhy(q.whyLabel, q.prodNote)
+			+ adviceHtml;
 		html += qbRow("prod", idx.prod, q.prodLabel, prodBody, "", q.hints.prod);
 	}
 
 	// 音频编辑：每位主唱各选一档（编号随模式自动排）
 	if (shown >= idx.edit) {
-		var vocRows = "", floorBinding = false;
+		var vocRows = "", floorBinding = false, coverBind2 = false;
 		// 和声排在音编之后，此时可能还没选；只加钱不减钱，按 0 算即为最低总价，正是下限判断该用的值
 		var harmPrice = qbState.harmony !== null ? q.harmonies[qbState.harmony].price : 0;
 		// 人声制作此步已作答（排在音编之前），逐位累加
@@ -1659,7 +1770,13 @@ function renderQuoteBuilder() {
 			var eSame = qbAllSame(qbState.edits, qbState.count), eAllBtns = "";
 			for (var eab = 0; eab < q.edits.length; eab++) {
 				var eal = q.edits[eab].name + (q.edits[eab].price ? " +" + qbFmt(q, q.edits[eab].price) : "");
-				eAllBtns += '<button class="qb-mini-btn' + (eab === eSame ? " active" : "") + '" onclick="qbSetAllEdit(' + eab + ')">' + eal + '</button>';
+				// 「全部设为 免修」：只要有人没买人声制作，整排就会违规，直接禁用
+				var eAllOff = false;
+				if (qbCoverRuleOn() && eab === 0) {
+					for (var ec = 0; ec < qbState.count; ec++) if ((qbState.prods[ec] || 0) === 0) { eAllOff = true; break; }
+				}
+				eAllBtns += '<button class="qb-mini-btn' + (eab === eSame ? " active" : "") + (eAllOff ? " disabled" : "") + '"'
+					+ (eAllOff ? ' disabled title="' + q.coverNote + '"' : ' onclick="qbSetAllEdit(' + eab + ')"') + '>' + eal + '</button>';
 			}
 			vocRows += '<div class="qb-voc-row qb-all-row"><span class="qb-voc-name">' + q.allLabel + '</span><div class="qb-mini-seg">' + eAllBtns + '</div></div>';
 		}
@@ -1676,14 +1793,17 @@ function renderQuoteBuilder() {
 				var label = q.edits[e2].name + (q.edits[e2].price ? " +" + qbFmt(q, q.edits[e2].price) : "");
 				var off = othersSet && (fixed + others + q.edits[e2].price) < q.minOrder;
 				if (off) floorBinding = true;
+				// 这位主唱没买人声制作 → 音编不能选「免修」，否则这个人声全程无处理
+				if (qbCoverRuleOn() && e2 === 0 && (qbState.prods[v] || 0) === 0) { off = true; coverBind2 = true; }
 				chips += '<button class="qb-mini-btn' + (qbState.edits[v] === e2 ? " active" : "") + (off ? " disabled" : "") + '"'
 					+ (off ? ' disabled title="' + q.floorNote + '"' : ' onclick="qbSetEdit(' + v + ',' + e2 + ')"') + '>' + label + '</button>';
 			}
 			vocRows += '<div class="qb-voc-row"><span class="qb-voc-name">' + q.vocalistLabel + ' ' + (v + 1) + '</span><div class="qb-mini-seg">' + chips + '</div></div>';
 		}
+		var editWhy = q.editNote + (coverBind2 ? '<br><br>' + q.coverNote : '') + (floorBinding ? '<br><br>' + q.floorNote : '');
 		var editBody = '<div class="qb-voc-list">' + vocRows + '</div>'
-			+ '<div class="qb-tier-desc" style="margin-top:10px">' + q.editNote + '</div>'
-			+ (floorBinding ? '<div class="qb-tier-desc" style="margin-top:6px">' + q.floorNote + '</div>' : '');
+			+ (coverBind2 ? '<div class="qb-cover-line">' + q.coverShort + '</div>' : '')
+			+ qbWhy(q.whyLabel, editWhy);
 		html += qbRow("edit", idx.edit, q.editLabel, editBody, "", q.hints.edit);
 	}
 
@@ -1736,7 +1856,8 @@ function renderQuoteBuilder() {
 					+ '<input type="date" class="qb-date-native" min="' + minISO + '" value="' + (qbState.targetDate || "") + '" onclick="try{this.showPicker()}catch(e){}" onchange="qbSetDate(this.value)">'
 					+ '</label><div class="' + cls + '">' + info + '</div></div>';
 		}
-		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, q.laneNote, q.hints.lane);
+		laneBody += qbWhy(q.whyLabel, q.laneNote);
+		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, "", q.hints.lane);
 	}
 
 	// 全部作答完毕，报价单才登场
@@ -1842,7 +1963,7 @@ function renderQuoteBuilder() {
 			+ '<span><span class="qb-member-label">' + q.producerTitle + ' <span class="qb-plus">+' + Math.round(PRODUCER_RATE * 100) + '%</span></span>'
 			+ '<span class="qb-member-sub">' + q.producerSub + '</span></span>'
 			+ '<span class="qb-switch"></span></button>'
-			+ (qbState.producer ? '<div class="qb-tier-desc" style="margin-top:-6px;margin-bottom:16px">' + q.producerNote + '</div>' : '');
+			+ (qbState.producer ? '<div style="margin-top:-8px;margin-bottom:16px">' + qbWhy(q.whyLabel, q.producerNote) + '</div>' : '');
 
 		html += '<div class="qb-step" data-qstep="summary">' + memberHtml + producerHtml
 			+ '<div class="qb-summary">' + eq + lines
@@ -2035,12 +2156,35 @@ function renderService(svc) {
 	}
 	return groupHead + '<div class="service-section reveal" id="svc-' + svc.id + '">' + head + body + '</div>';
 }
+// FAQ 分组：21 条一字排开没人扫得完，切成 5 组、每组 ≤5 条。
+// 索引是 0 基，三语言条目顺序一致，所以一份映射通用。
+var FAQ_GROUPS = [
+	[0, 1, 2, 19],
+	[8, 9, 12, 18, 20],
+	[3, 13, 14, 15, 16],
+	[4, 5, 10],
+	[6, 7, 11, 17]
+];
 function renderFAQ(t) {
 	if (!t.faqItems || !t.faqItems.length) return "";
-	var items = "";
-	for (var i = 0; i < t.faqItems.length; i++) {
-		var item = t.faqItems[i];
-		var num = (i + 1 < 10 ? "0" : "") + (i + 1);
+	var items = "", shown = 0;
+	for (var gi = 0; gi < FAQ_GROUPS.length; gi++) {
+		var label = (t.faqGroups && t.faqGroups[gi]) || "";
+		if (label) items += '<div class="faq-group">' + label + '</div>';
+		for (var gj = 0; gj < FAQ_GROUPS[gi].length; gj++) {
+			var i = FAQ_GROUPS[gi][gj];
+			if (!t.faqItems[i]) continue;
+			items += qbFaqItem(t.faqItems[i], i, ++shown);
+		}
+	}
+	return '<div class="faq-section reveal">'
+		+ '<div class="faq-head section-head"><div class="step-tag">' + t.faqStep + '</div><h2>' + t.faqTitle + '</h2></div>'
+		+ items + '</div>';
+}
+// id / toggleFaq 用原始索引（保持锚点稳定），显示编号用展示顺序
+function qbFaqItem(item, i, seq) {
+	{
+		var num = (seq < 10 ? "0" : "") + seq;
 		var bodyHtml = "";
 		if (item.a) bodyHtml += "<p>" + item.a + "</p>";
 		if (item.list && item.list.length) {
@@ -2048,16 +2192,13 @@ function renderFAQ(t) {
 			for (var j = 0; j < item.list.length; j++) bodyHtml += "<li>" + item.list[j] + "</li>";
 			bodyHtml += "</ul>";
 		}
-		items += '<div class="faq-item" id="faq-item-' + i + '">'
+		return '<div class="faq-item" id="faq-item-' + i + '">'
 			+ '<div class="faq-question" onclick="toggleFaq(' + i + ')" role="button" tabindex="0" aria-expanded="false">'
 			+ '<div class="faq-q-inner"><span class="faq-num">' + num + '</span><span class="faq-q-text">' + item.q + '</span></div>'
 			+ '<span class="faq-toggle">+</span></div>'
 			+ '<div class="faq-answer" id="faq-answer-' + i + '"><div class="faq-answer-inner">' + bodyHtml + '</div></div>'
 			+ '</div>';
 	}
-	return '<div class="faq-section reveal">'
-		+ '<div class="faq-head section-head"><div class="step-tag">' + t.faqStep + '</div><h2>' + t.faqTitle + '</h2></div>'
-		+ items + '</div>';
 }
 function toggleFaq(index) {
 	var item = document.getElementById("faq-item-" + index);
