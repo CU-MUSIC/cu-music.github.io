@@ -12,8 +12,8 @@
 			--surface: #111111;
 			--surface-hover: #161616;
 			--text-primary: #f0f0f0;
-			--text-secondary: #888;
-			--text-dim: #555;
+			--text-secondary: #9a9a9a;
+			--text-dim: #7d7d7d;
 			--green-deep: #0d1f16;
 			--green-line: rgba(96, 176, 134, 0.25);
 			--green-soft: #8fc3a9;
@@ -89,10 +89,10 @@
 		/* ── Sections ──────────────────────────────────────── */
 		.service-section { margin-bottom: 72px; scroll-margin-top: 32px; }
 		.section-head { margin-bottom: 28px; }
-		.step-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; gap: 6px; }
+		.step-tag { display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; gap: 6px; }
 		.step-tag::before { content: ""; display: block; width: 18px; height: 1px; background: currentColor; opacity: 0.6; }
 		.section-head h2 { font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: -0.02em; }
-		.sub-desc { display: block; font-size: 12px; color: var(--text-dim); margin-top: 8px; max-width: 560px; line-height: 1.65; }
+		.sub-desc { display: block; font-size: 12.5px; color: var(--text-dim); margin-top: 8px; max-width: 560px; line-height: 1.65; }
 
 		/* ── Cards ─────────────────────────────────────────── */
 		.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: stretch; }
@@ -114,7 +114,7 @@
 		.qb-mode-btn { flex: 1; background: none; border: 0.5px solid transparent; border-radius: 9px; padding: 11px 10px; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: background 0.25s, color 0.25s, border-color 0.25s; }
 		.qb-mode-btn.active { background: var(--surface-hover); color: var(--text-primary); border-color: var(--border-hover); }
 		.qb-row { margin-bottom: 24px; }
-		.qb-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; }
+		.qb-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; }
 		.qb-base-line { display: flex; justify-content: space-between; align-items: baseline; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; font-size: 12.5px; color: var(--text-secondary); margin-top: 12px; }
 
 		/* ── Progressive reveal (逐步揭示) ─────────────────── */
@@ -145,13 +145,13 @@
 		.qb-seg-name { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
 		.qb-seg-price { font-size: 12px; color: var(--text-secondary); }
 		.qb-seg-btn.active .qb-seg-price { color: var(--green-soft); font-weight: 600; }
-		.qb-tier-desc { font-size: 11.5px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
+		.qb-tier-desc { font-size: 12px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
 		.qb-stepper { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 		.qb-step-btn { width: 40px; height: 40px; border-radius: 50%; border: 0.5px solid var(--border-hover); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 19px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, background 0.2s, transform 0.12s; flex-shrink: 0; }
 		.qb-step-btn:hover { border-color: #fff; }
 		.qb-step-btn:active { transform: scale(0.94); }
 		.qb-count { font-size: 22px; font-weight: 700; min-width: 30px; text-align: center; }
-		.qb-perhead { font-size: 11px; color: var(--text-dim); }
+		.qb-perhead { font-size: 11.5px; color: var(--text-dim); }
 		.qb-more-note { font-size: 11.5px; color: var(--text-secondary); margin-top: 10px; }
 		.qb-voc-list { display: flex; flex-direction: column; gap: 8px; }
 		.qb-voc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 15px; flex-wrap: wrap; }
@@ -168,23 +168,23 @@
 		.qb-summary { background: var(--green-deep); border: 0.5px solid var(--green-line); border-radius: 12px; padding: 20px; margin-top: 4px; }
 		.qb-bd-line { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); padding: 5px 0; }
 		.qb-bd-line .qb-bd-val { color: var(--text-primary); white-space: nowrap; font-variant-numeric: tabular-nums; }
-		.qb-eq { font-size: 11.5px; color: var(--text-dim); margin-bottom: 8px; }
+		.qb-eq { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
 		.qb-eq strong { color: var(--text-secondary); font-weight: 600; }
 		.qb-total-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 13px; border-top: 0.5px solid var(--border); }
 		.qb-total-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); }
 		.qb-total { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; color: #fff; }
 		.qb-total .qb-from { font-size: 12px; font-weight: 500; color: var(--text-dim); margin-left: 4px; }
-		.qb-note { font-size: 11px; color: var(--text-dim); margin-top: 11px; line-height: 1.7; }
+		.qb-note { font-size: 11.5px; color: var(--text-dim); margin-top: 11px; line-height: 1.7; }
 		.qb-cta { display: block; width: 100%; margin-top: 16px; background: #f0f0f0; color: #0a0a0a; border: none; border-radius: 10px; padding: 15px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; font-family: var(--font); transition: background 0.2s, transform 0.15s; }
 		.qb-cta:hover { background: #fff; }
 		.qb-cta:active { transform: scale(0.985); }
-		.qb-addon-note { font-size: 11px; color: var(--text-dim); margin-top: 14px; line-height: 1.7; }
+		.qb-addon-note { font-size: 11.5px; color: var(--text-dim); margin-top: 14px; line-height: 1.7; }
 		/* member toggle */
 		.qb-member { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; cursor: pointer; margin-bottom: 16px; font-family: var(--font); text-align: left; transition: border-color 0.2s, background 0.2s; }
 		.qb-member:hover { border-color: var(--border-hover); }
 		.qb-member.on { border-color: var(--green-line); background: rgba(96,176,134,0.05); }
 		.qb-member-label { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
-		.qb-member-sub { display: block; font-size: 11px; color: var(--text-dim); font-weight: 400; margin-top: 2px; }
+		.qb-member-sub { display: block; font-size: 11.5px; color: var(--text-dim); font-weight: 400; margin-top: 2px; }
 		.qb-switch { width: 36px; height: 22px; border-radius: 100px; background: rgba(255,255,255,0.12); position: relative; flex-shrink: 0; transition: background 0.25s; }
 		.qb-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #f0f0f0; transition: transform 0.25s var(--ease); }
 		.qb-member.on .qb-switch { background: var(--green-soft); }
@@ -224,7 +224,7 @@
 		.qb-split-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); }
 		.qb-split-row .qb-split-val { font-variant-numeric: tabular-nums; white-space: nowrap; }
 		.qb-split-row.deposit .qb-split-val, .qb-split-row.deposit span { color: #fff; font-weight: 600; }
-		.qb-split-note { font-size: 11px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
+		.qb-split-note { font-size: 11.5px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
 
 		/* ── Collapsible folds (AA 账单 / 费用说明) ─────────── */
 		.qb-fold { margin-top: 12px; border-top: 0.5px solid var(--border); }
@@ -237,8 +237,8 @@
 		.qb-aa-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); padding: 7px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); }
 		.qb-aa-row:last-of-type { border-bottom: none; }
 		.qb-aa-val { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-		.qb-aa-tag { font-size: 10.5px; color: var(--text-dim); margin-left: 6px; }
-		.qb-fold-note { font-size: 11px; color: var(--text-dim); line-height: 1.7; margin-top: 9px; }
+		.qb-aa-tag { font-size: 11px; color: var(--text-dim); margin-left: 6px; }
+		.qb-fold-note { font-size: 11.5px; color: var(--text-dim); line-height: 1.7; margin-top: 9px; }
 
 		/* ── Group headers ─────────────────────────────────── */
 		.group-head { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); border-top: 0.5px solid var(--border); padding-top: 32px; margin-bottom: 36px; }
@@ -353,7 +353,7 @@
 			.qb-tier-desc { font-size: 12.5px; margin-top: 9px; }
 			.qb-voc-row { padding: 9px 11px; }
 			.qb-voc-name { font-size: 13px; }
-			.qb-mini-btn { padding: 8px 12px; font-size: 12.5px; }
+			.qb-mini-btn { padding: 10px 13px; font-size: 12.5px; }
 			.qb-perhead { font-size: 12px; }
 			.qb-summary { padding: 16px 14px; }
 			.qb-bd-line { font-size: 13px; padding: 5px 0; }
@@ -1351,16 +1351,43 @@ function qbFmt(q, n) {
 	var s = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	return q.cur + s;
 }
-function qbSet(key, val) { qbState[key] = val; renderQuoteBuilder(); }
-function qbSetDate(v) { qbState.targetDate = v || null; renderQuoteBuilder(); }
 function qbScrollTo(id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
-function qbSetEdit(i, val) { qbState.edits[i] = val; renderQuoteBuilder(); }
-function qbSetProd(i, val) { qbState.prods[i] = val; renderQuoteBuilder(); }
+// ── 作答后自动前进 ────────────────────────────────────────
+// 点完一步，就把「下一处还要选的地方」送到眼前；顶部留出余量，
+// 让上一步的选择结果仍在视野里（看得见自己刚选了什么，才敢往下走）。
+var QB_SCROLL_OFFSET = 96;
+function qbReduceMotion() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+// 下一处待作答的步骤 key；全部答完返回 null（= 报价单）
+function qbNextUnanswered() {
+	var s = qbSteps();
+	for (var i = 0; i < s.length; i++) if (!qbAnswered(s[i])) return s[i];
+	return null;
+}
+function qbScrollStep(key) {
+	var el = document.querySelector('[data-qstep="' + (key || "summary") + '"]');
+	if (!el) return;
+	var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - QB_SCROLL_OFFSET;
+	window.scrollTo({ top: y < 0 ? 0 : y, behavior: qbReduceMotion() ? "auto" : "smooth" });
+}
+// 包住所有作答动作：只有当「下一处待选」真的变了才滚动——
+// 回头改早先的选项（下一处没变）不会把人甩走，逐位选人声/音编也只在整步答完时才走。
+function qbAdvance(mutate) {
+	var before = qbNextUnanswered();
+	mutate();
+	renderQuoteBuilder();
+	var after = qbNextUnanswered();
+	if (before !== after) requestAnimationFrame(function () { qbScrollStep(after); });
+}
+function qbSet(key, val) { qbAdvance(function () { qbState[key] = val; }); }
+function qbSetDate(v) { qbAdvance(function () { qbState.targetDate = v || null; }); }
+function qbSetEdit(i, val) { qbAdvance(function () { qbState.edits[i] = val; }); }
+function qbSetProd(i, val) { qbAdvance(function () { qbState.prods[i] = val; }); }
+// 会员/入会在报价单里操作，此时已全部答完（before=after=null），不会触发滚动
 function qbSetMem(i, val) { qbState.mem[i] = val; renderQuoteBuilder(); }
 function qbSetAllMem(val) { for (var i = 0; i < qbState.count; i++) qbState.mem[i] = val; renderQuoteBuilder(); }
 // 一键把所有主唱设成同一档，人多时省得逐位点
-function qbSetAllProd(val) { for (var i = 0; i < qbState.count; i++) qbState.prods[i] = val; renderQuoteBuilder(); }
-function qbSetAllEdit(val) { for (var i = 0; i < qbState.count; i++) qbState.edits[i] = val; renderQuoteBuilder(); }
+function qbSetAllProd(val) { qbAdvance(function () { for (var i = 0; i < qbState.count; i++) qbState.prods[i] = val; }); }
+function qbSetAllEdit(val) { qbAdvance(function () { for (var i = 0; i < qbState.count; i++) qbState.edits[i] = val; }); }
 // 判断某维度是否全员同档：返回该档索引，否则 -1（用于快捷按钮高亮）
 function qbAllSame(arr, n) {
 	if (n < 1 || arr[0] === null || arr[0] === undefined) return -1;
@@ -1384,10 +1411,16 @@ function qbSetCount(n) {
 	var q = I18N[currentLang].quote;
 	if (n < 1) n = 1;
 	if (n > q.countMax) n = q.countMax;
+	qbAdvance(function () { qbResizeEdits(n); });
+}
+// 「4 位以上」只是把人数控件换成步进器，人还要在原地继续加减——不前进
+function qbCountMore() {
+	var q = I18N[currentLang].quote, n = Math.max(4, qbState.count || 4);
+	if (n > q.countMax) n = q.countMax;
+	qbState.moreCount = true;
 	qbResizeEdits(n);
 	renderQuoteBuilder();
 }
-function qbCountMore() { qbState.moreCount = true; qbSetCount(Math.max(4, qbState.count || 4)); }
 function qbStep(delta) { qbSetCount((qbState.count || 1) + delta); }
 function qbReset() {
 	qbState.mode = null; qbState.stems = null; qbState.prods = []; qbState.harmony = null;
