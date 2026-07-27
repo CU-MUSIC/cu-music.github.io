@@ -211,6 +211,13 @@
 			.qb-date-info.ok { color: var(--green-soft); font-weight: 600; }
 			.qb-date-info.warn { color: #d99; font-weight: 600; }
 			.qb-bd-line.deliver .qb-bd-val { color: var(--text-primary); }
+			.qb-memblock { background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px 15px; margin-bottom: 16px; transition: border-color 0.2s, background 0.2s; }
+			.qb-memblock.on { border-color: var(--green-line); background: rgba(96,176,134,0.05); }
+			.qb-memblock .qb-voc-row { background: rgba(255,255,255,0.02); }
+			.qb-payback { display: block; width: 100%; margin-top: 10px; background: rgba(96,176,134,0.10); border: 0.5px solid var(--green-line); border-radius: 9px; padding: 11px 13px; color: var(--green-soft); font-size: 12px; font-weight: 600; font-family: var(--font); text-align: left; cursor: pointer; line-height: 1.55; transition: background 0.2s; }
+			.qb-payback:hover { background: rgba(96,176,134,0.18); }
+			.qb-payback.dim { color: var(--text-secondary); background: rgba(255,255,255,0.03); border-color: var(--border); }
+			.qb-payback.dim:hover { background: rgba(255,255,255,0.06); }
 		.qb-seg.two { grid-template-columns: repeat(2, 1fr); }
 		.qb-seg.four { grid-template-columns: repeat(2, 1fr); }
 		.qb-split { margin-top: 13px; padding-top: 13px; border-top: 0.5px dashed var(--green-line); display: flex; flex-direction: column; gap: 7px; }
@@ -524,10 +531,10 @@ var I18N = {
 			countUnit: " 位", countMore: "4 位以上",
 			countMoreNote: "更大规模的 cypher，请私信另议",
 			editLabel: "音频编辑 · 每位主唱单独选", vocalistLabel: "主唱",
-			editNote: "修音＝把音准修到自然、在调上（适合唱得稳的）；精修＝跑调多、破音、气声不稳时的大量精细修整。拿不准就按你平时录音的稳定度选。",
+			editNote: "「修音 or 修节奏」＝二选一，只处理其中一项——节奏本来就稳、只想修音准的选这档，反之亦然。修音＝把音准修到自然、在调上（适合唱得稳的）；精修＝跑调多、破音、气声不稳时的大量精细修整。拿不准就按你平时录音的稳定度选。",
 			edits: [
 				{ name: "免修", price: 0 },
-				{ name: "仅修节奏", price: 100 },
+				{ name: "修音 or 修节奏", price: 100 },
 				{ name: "节奏 + 修音", price: 200 },
 				{ name: "节奏 + 精修", price: 300 }
 			],
@@ -551,9 +558,13 @@ var I18N = {
 			depositLabel: "定金（开工）", balanceLabel: "尾款（交付）",
 			depositNote: "半半模式：定金开工，成品交付时补齐尾款。",
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
-			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音标准价终身 8 折 · 不含录音与加急费", memberLine: "刀门会员 · 8 折",
+			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音与制作人费终身 8 折 · 不含录音与加急费", memberLine: "刀门会员 · 8 折",
+			memberFee: 99, memberBlockSub: "按主唱逐位计算——只有会员的那一份享 8 折，非会员不受影响。",
+			mState0: "非会员", mState1: "已是会员", mState2: "本单加入", joinLine: "加入刀门",
+			pbYes: "加入刀门 {fee} → 本单立省 {save}，当场回本还净赚 {net}，权益终身有效。点此加入 ›",
+			pbNo: "加入刀门 {fee} → 本单省 {save}，还差 {net} 回本；但权益终身有效，下一单继续省。点此加入 ›",
 			producerTitle: "让我担任制作人", producerSub: "我主导这首歌的创意与完成度 · 署名 Produced by ChefDao", producerLine: "制作人费",
-			producerNote: "在混音/制作小计基础上按项目加收，作品署名「Produced by ChefDao」。商业项目可另谈 producer points（版税分成）。",
+			producerNote: "在混音/制作小计基础上按项目加收，作品署名「Produced by ChefDao」。制作人费同样享刀门会员 8 折，加急时一并计入加急基数。商业项目可另谈 producer points（版税分成）。",
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
@@ -624,7 +635,7 @@ var I18N = {
 				],
 				perksLabel: "会员权益",
 				perks: [
-					{ t: "混音终身 8 折", d: "混音标准交付价终身 8 折（不含录音；加急附加费不在折扣范围）。在上方报价计算器打开「刀门会员价」即可预览。" },
+					{ t: "混音终身 8 折", d: "混音标准交付价与制作人费终身 8 折（不含录音；加急附加费不在折扣范围）。在上方报价计算器把自己标成会员即可预览。" },
 					{ t: "持续输出", d: "前沿录音混音技术、工程思路、实战经验，定期更新。" },
 					{ t: "每周作品点评", d: "每周一次，不间断。练习作品、demo、已发布单曲、商业项目均可交流。" }
 				]
@@ -801,10 +812,10 @@ var I18N = {
 			countUnit: "", countMore: "4 or more",
 			countMoreNote: "Larger cyphers — DM to discuss",
 			editLabel: "Audio Editing · per vocalist", vocalistLabel: "Vocalist",
-			editNote: "Pitch = tuned natural and in-key (for steady takes). Deep tune = heavy fine correction for pitchy, cracking, or unstable takes. Not sure? Pick by how consistent your takes usually are.",
+			editNote: "\"Pitch or Timing\" = pick one of the two — if your timing is already solid and you only need tuning, this is your tier (or the other way round). Pitch = tuned natural and in-key (for steady takes). Deep tune = heavy fine correction for pitchy, cracking, or unstable takes. Not sure? Pick by how consistent your takes usually are.",
 			edits: [
 				{ name: "None", price: 0 },
-				{ name: "Timing only", price: 15 },
+				{ name: "Pitch or Timing", price: 15 },
 				{ name: "Timing + Pitch", price: 30 },
 				{ name: "Timing + Deep tune", price: 45 }
 			],
@@ -828,9 +839,13 @@ var I18N = {
 			depositLabel: "Deposit (to start)", balanceLabel: "Balance (on delivery)",
 			depositNote: "50 / 50: pay the deposit to start, the balance on delivery.",
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
-			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off standard mixing price, for life · recording & rush fee excluded", memberLine: "Daomen member · 20% off",
+			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off mixing & producer fee, for life · recording & rush fee excluded", memberLine: "Daomen member · 20% off",
+			memberFee: 15, memberBlockSub: "Applied per vocalist — only a member's own share gets 20% off.",
+			mState0: "Not a member", mState1: "Member", mState2: "Join now", joinLine: "Join Daomen",
+			pbYes: "Join for {fee} → save {save} on this order. Pays for itself today, {net} ahead, and membership is for life. Tap to join ›",
+			pbNo: "Join for {fee} → saves {save} here, {net} short of breaking even — but membership is for life and keeps paying off. Tap to join ›",
 			producerTitle: "Add me as Producer", producerSub: "I lead this record's creative & finish · credit \"Produced by ChefDao\"", producerLine: "Producer fee",
-			producerNote: "Charged as a percentage on top of the mix/production subtotal, with a \"Produced by ChefDao\" credit. Producer points (royalty share) available for commercial projects.",
+			producerNote: "Charged as a percentage on top of the mix/production subtotal, with a \"Produced by ChefDao\" credit. The producer fee is also covered by the Daomen 20% discount, and counts toward the rush-fee base. Producer points (royalty share) available for commercial projects.",
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
@@ -901,7 +916,7 @@ var I18N = {
 				],
 				perksLabel: "Member benefits",
 				perks: [
-					{ t: "20% off mixing, for life", d: "20% off the standard mixing price for as long as you're a member (recording excluded; rush fee not discounted). Toggle \"Daomen member price\" in the quote builder above to preview." },
+					{ t: "20% off mixing, for life", d: "20% off the standard mixing price and the producer fee for as long as you're a member (recording excluded; rush fee not discounted). Mark yourself as a member in the quote builder above to preview." },
 					{ t: "Ongoing insights", d: "Recording and mixing techniques, engineering approaches, and hands-on experience, updated regularly." },
 					{ t: "Weekly feedback", d: "Once a week, every week. Practice tracks, demos, released singles, and commercial projects all welcome." }
 				]
@@ -1078,10 +1093,10 @@ var I18N = {
 			countUnit: "인", countMore: "4인 이상",
 			countMoreNote: "대규모 사이퍼는 DM으로 문의",
 			editLabel: "오디오 편집 · 보컬별 선택", vocalistLabel: "보컬",
-			editNote: "피치 = 음정을 자연스럽고 정확하게 (안정적인 테이크용). 정밀 피치 = 음이탈·삑사리·불안정한 테이크의 대량 정밀 보정. 고민되면 평소 녹음 안정도로 고르세요.",
+			editNote: "「피치 or 타이밍」= 둘 중 하나만 처리 — 타이밍은 이미 안정적이고 음정만 필요하면 이 등급(반대도 가능). 피치 = 음정을 자연스럽고 정확하게 (안정적인 테이크용). 정밀 피치 = 음이탈·삑사리·불안정한 테이크의 대량 정밀 보정. 고민되면 평소 녹음 안정도로 고르세요.",
 			edits: [
 				{ name: "없음", price: 0 },
-				{ name: "타이밍만", price: 20000 },
+				{ name: "피치 or 타이밍", price: 20000 },
 				{ name: "타이밍 + 피치", price: 40000 },
 				{ name: "타이밍 + 정밀 피치", price: 60000 }
 			],
@@ -1105,9 +1120,13 @@ var I18N = {
 			depositLabel: "계약금 (착수)", balanceLabel: "잔금 (납품 시)",
 			depositNote: "반반 방식: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
-			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱 표준가 평생 20% 할인 · 레코딩·긴급 요금 제외", memberLine: "刀门 회원 · 20% 할인",
+			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱·프로듀서 비용 평생 20% 할인 · 레코딩·긴급 요금 제외", memberLine: "刀门 회원 · 20% 할인",
+			memberFee: 20000, memberBlockSub: "보컬별로 적용 — 회원 본인 몫에만 20% 할인이 들어갑니다.",
+			mState0: "비회원", mState1: "회원", mState2: "지금 가입", joinLine: "刀门 가입",
+			pbYes: "{fee} 가입 → 이번 주문에서 {save} 절약. 바로 본전에 {net} 이득, 혜택은 평생. 탭하여 가입 ›",
+			pbNo: "{fee} 가입 → 이번에 {save} 절약, 본전까지 {net} 부족하지만 혜택은 평생 유효합니다. 탭하여 가입 ›",
 			producerTitle: "프로듀서로 참여", producerSub: "이 곡의 크리에이티브와 완성도를 주도 · 크레딧 \"Produced by ChefDao\"", producerLine: "프로듀서 비용",
-			producerNote: "믹스/프로덕션 소계에 프로젝트별 퍼센트로 추가되며, \"Produced by ChefDao\" 크레딧이 붙습니다. 상업 프로젝트는 producer points(버전세 분배) 별도 협의.",
+			producerNote: "믹스/프로덕션 소계에 프로젝트별 퍼센트로 추가되며, \"Produced by ChefDao\" 크레딧이 붙습니다. 프로듀서 비용도 刀门 회원 20% 할인 대상이며, 긴급 요금 산정 기준에 포함됩니다. 상업 프로젝트는 producer points(버전세 분배) 별도 협의.",
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
@@ -1303,12 +1322,24 @@ var I18N = {
 // ── Quote Builder state & logic ─────────────────────────────
 // mode: 'vocal' | 'stems'; prods: per-vocalist vocal-production index array; edits: per-vocalist edit index array
 // prods 索引：0 = 不需要，1 = 执行向，2 = 创意向（每位主唱各选一档）
-// edits 索引：0 = 免修，1 = 仅修节奏，2 = 节奏+修音，3 = 节奏+精修（每位主唱各选一档）
+// edits 索引：0 = 免修，1 = 修音 or 修节奏（二选一，只做一项），2 = 节奏+修音，3 = 节奏+精修（每位主唱各选一档）
 // 纯混音（全员 prods=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
 // null = 尚未作答。逐步揭示：一步作答后下一步才挂载，引导文案随之分批出现。
-var qbState = { mode: null, stems: null, prods: [], harmony: null, count: null, edits: [], member: false, producer: false, lane: null, targetDate: null, moreCount: false, aaOpen: false, fineOpen: false };
+var qbState = { mode: null, stems: null, prods: [], harmony: null, count: null, edits: [], mem: [], producer: false, lane: null, targetDate: null, moreCount: false, aaOpen: false, fineOpen: false };
 // 制作人附加服务：按混音/制作小计加收的百分比（改这一个数就调价）
 var PRODUCER_RATE = 0.5;
+// 刀门会员折扣率（8 折 = 省 20%），按主唱逐位计算：只有会员/本单加入的那份享折扣
+var MEMBER_OFF = 0.2;
+// 每位主唱的混音毛价份额：共同部分（基础/分轨 + 多主唱混音 + 和声）平摊，人声制作与音编各归各
+function qbGrossShares(q, count, base, mixExtra, harmPrice) {
+	var shared = base + mixExtra + harmPrice, arr = [];
+	for (var i = 0; i < count; i++) {
+		arr.push(shared / count + q.prods[qbState.prods[i] || 0].price + q.edits[qbState.edits[i] || 0].price);
+	}
+	return arr;
+}
+// 会员状态：0 = 非会员，1 = 已是会员，2 = 本单加入（+会员费，同样享折扣）
+function qbMemState(i) { return qbState.mem[i] || 0; }
 // 已经出现过的步骤名 → 重渲染时直接可见，只有全新的步骤才播放淡入
 var qbMounted = {};
 // 每一步的推荐档位：该步待作答时呼吸微光 + 挂标签，给犹豫的人一个落点
@@ -1325,6 +1356,8 @@ function qbSetDate(v) { qbState.targetDate = v || null; renderQuoteBuilder(); }
 function qbScrollTo(id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
 function qbSetEdit(i, val) { qbState.edits[i] = val; renderQuoteBuilder(); }
 function qbSetProd(i, val) { qbState.prods[i] = val; renderQuoteBuilder(); }
+function qbSetMem(i, val) { qbState.mem[i] = val; renderQuoteBuilder(); }
+function qbSetAllMem(val) { for (var i = 0; i < qbState.count; i++) qbState.mem[i] = val; renderQuoteBuilder(); }
 // 一键把所有主唱设成同一档，人多时省得逐位点
 function qbSetAllProd(val) { for (var i = 0; i < qbState.count; i++) qbState.prods[i] = val; renderQuoteBuilder(); }
 function qbSetAllEdit(val) { for (var i = 0; i < qbState.count; i++) qbState.edits[i] = val; renderQuoteBuilder(); }
@@ -1336,13 +1369,15 @@ function qbAllSame(arr, n) {
 }
 // 改人数时保留已选的人声制作/音编档位，新增的主唱留空（null）等待作答
 function qbResizeEdits(n) {
-	var nextE = [], nextP = [];
+	var nextE = [], nextP = [], nextM = [];
 	for (var i = 0; i < n; i++) {
 		nextE.push(i < qbState.edits.length ? qbState.edits[i] : null);
 		nextP.push(i < qbState.prods.length ? qbState.prods[i] : null);
+		nextM.push(i < qbState.mem.length ? qbState.mem[i] : 0);
 	}
 	qbState.edits = nextE;
 	qbState.prods = nextP;
+	qbState.mem = nextM;
 	qbState.count = n;
 }
 function qbSetCount(n) {
@@ -1357,7 +1392,7 @@ function qbStep(delta) { qbSetCount((qbState.count || 1) + delta); }
 function qbReset() {
 	qbState.mode = null; qbState.stems = null; qbState.prods = []; qbState.harmony = null;
 	qbState.count = null; qbState.edits = []; qbState.lane = null; qbState.targetDate = null;
-	qbState.moreCount = false; qbState.member = false; qbState.producer = false;
+	qbState.moreCount = false; qbState.mem = []; qbState.producer = false;
 	qbMounted = {};
 	renderQuoteBuilder();
 	qbScrollTo("svc-mixing");
@@ -1420,22 +1455,38 @@ function qbCompute(q) {
 		editTotal += q.edits[idx].price;
 	}
 	var gross = base + prodTotal + harmony.price + mixExtra + editTotal;
-	// 刀门会员：混音服务终身 8 折——只作用在【标准交付价】上，不含加急费
-	var discount = qbState.member ? Math.round(gross * 0.2) : 0;
-	// 快速通道：加急费 = 标准价 ×50%（不打折）；速度是可选付费项，不是默认承诺
+	// 制作人费：混音/制作小计 ×PRODUCER_RATE，先入账——它和混音一样是创作工作，
+	// 所以既参与会员折扣，也计入加急基数（赶工压缩的是全部创作时间，不只是混音）
+	var producer = qbState.producer ? Math.round(gross * PRODUCER_RATE) : 0;
+	// 折扣与加急的共同基数：混音 + 制作人费
+	var workBase = gross + producer;
+	// 刀门会员：逐位判定，只有会员（或本单加入）的那份享 8 折——多人合作里非会员不蹭折扣
+	var gShares = qbGrossShares(q, count, base, mixExtra, harmony.price);
+	var discount = 0, memCount = 0, joinCount = 0, memDisc = [];
+	for (var mi = 0; mi < count; mi++) {
+		var mst = qbMemState(mi);
+		if (mst === 2) joinCount++;
+		// 各人折扣 = 自己那份工作基数（含按份额分摊的制作人费）×20%，逐人取整后累加
+		var di = mst > 0 ? Math.round((gross ? gShares[mi] / gross : 0) * workBase * MEMBER_OFF) : 0;
+		memDisc.push(di);
+		if (mst > 0) { memCount++; discount += di; }
+	}
+	// 本单加入刀门：会员费按人计入总价（一次性，权益终身）
+	var joinFee = joinCount * q.memberFee;
+	// 快速通道：加急费 = 工作基数 ×档位费率（本身不打折）；速度是可选付费项，不是默认承诺
 	var fast = qbState.lane === 1 && !!qbState.targetDate;
 	var rushRate = fast ? (qbRushRate(qbDaysUntil(qbState.targetDate) - qbCutoff()) || 0) : 0;
-	var rush = Math.round(gross * rushRate);
-	// 制作人费：混音/制作小计 ×PRODUCER_RATE，独立于会员折扣与加急，全案创意主导另计
-	var producer = qbState.producer ? Math.round(gross * PRODUCER_RATE) : 0;
-	var total = gross - discount + rush + producer;
+	var rush = Math.round(workBase * rushRate);
+	var total = workBase + rush - discount + joinFee;
 	// 半半模式：定金 50% 向上取整（略大的那一半先收），尾款为剩余，两者精确相加
 	var deposit = Math.ceil(total / 2);
 	var balance = total - deposit;
 	return { base: base, baseItem: baseItem, from: stems && baseItem.from, harmony: harmony, count: count,
 		mixExtra: mixExtra, prodTotal: prodTotal, prodCounts: prodCounts, maxProd: maxProd,
 		editTotal: editTotal, editCounts: editCounts,
-		gross: gross, discount: discount, fast: fast, rush: rush, rushRate: rushRate, producer: producer,
+		gross: gross, gShares: gShares, workBase: workBase, discount: discount, memDisc: memDisc,
+		memCount: memCount, joinCount: joinCount, joinFee: joinFee,
+		fast: fast, rush: rush, rushRate: rushRate, producer: producer,
 		total: total, deposit: deposit, balance: balance };
 }
 // AA 账单：共同部分（基础/分轨价 + 多主唱混音 + 和声）按人头平摊，
@@ -1443,11 +1494,13 @@ function qbCompute(q) {
 // 每人独立向下取整（不把余额甩给最后一位）→ 相同服务金额必然一致；
 // 分摊合计 ≤ 总价，取整差额由工作室承担，绝不多收。
 function qbShares(q, c) {
-	var shared = c.base + c.mixExtra + c.harmony.price;
 	var n = c.count, step = q.aaStep || 1, shares = [];
+	// 应计部分（混音 + 制作人费 + 加急）按毛价份额分摊，再减自己的会员折扣、加自己的入会费
+	var chargeable = c.gross + c.producer + c.rush;
 	for (var i = 0; i < n; i++) {
-		var own = shared / n + q.prods[qbState.prods[i]].price + q.edits[qbState.edits[i]].price;
-		shares.push(Math.floor(own / c.gross * c.total / step) * step);
+		var jf = qbMemState(i) === 2 ? q.memberFee : 0;
+		var own = (c.gross ? c.gShares[i] / c.gross * chargeable : 0) - c.memDisc[i] + jf;
+		shares.push(Math.floor(own / step) * step);
 	}
 	return shares;
 }
@@ -1458,11 +1511,12 @@ function qbGross(q) {
 	for (var i = 0; i < qbState.count; i++) g += q.prods[qbState.prods[i]].price + q.edits[qbState.edits[i]].price;
 	return g;
 }
-// 最低消费：总价 ≥ minOrder（¥300）即可，不强制"必须有人修节奏"。
-// 只有跌破下限时，才把主唱 1 抬到「仅修节奏」补足。
+// 最低消费：判断的是【标准价】(gross) ≥ minOrder（¥300），不强制"必须有人修节奏"。
+// 刀门会员在此之上再享 8 折，故会员最低实付 = ¥240（有意为之：会员时薪本就该低一档）。
+// 只有跌破下限时，才把主唱 1 抬到「修音 or 修节奏」补足。
 function qbEnforceFloor(q) {
 	if (qbGross(q) >= q.minOrder) return;
-	qbState.edits[0] = 1; // 主唱 1 → 仅修节奏
+	qbState.edits[0] = 1; // 主唱 1 → 修音 or 修节奏
 }
 // 一个步骤的外壳：编号 + 标题 + 内容；未作答时挂 .active 并显示引导语
 function qbRow(key, idx, label, body, note, hint) {
@@ -1675,7 +1729,10 @@ function renderQuoteBuilder() {
 			lines += '<div class="qb-bd-line rush"><span>' + q.rushName + ' +' + Math.round(c.rushRate * 100) + '%</span><span class="qb-bd-val">+' + qbFmt(q, c.rush) + '</span></div>';
 		}
 		if (c.discount > 0) {
-			lines += '<div class="qb-bd-line discount"><span>' + q.memberLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.discount) + '</span></div>';
+			lines += '<div class="qb-bd-line discount"><span>' + q.memberLine + (c.memCount > 1 ? ' × ' + c.memCount : "") + '</span><span class="qb-bd-val">−' + qbFmt(q, c.discount) + '</span></div>';
+		}
+		if (c.joinFee > 0) {
+			lines += '<div class="qb-bd-line"><span>' + q.joinLine + (c.joinCount > 1 ? ' × ' + c.joinCount : "") + '</span><span class="qb-bd-val">+' + qbFmt(q, c.joinFee) + '</span></div>';
 		}
 		if (c.producer > 0) {
 			lines += '<div class="qb-bd-line"><span>' + q.producerLine + ' +' + Math.round(PRODUCER_RATE * 100) + '%</span><span class="qb-bd-val">+' + qbFmt(q, c.producer) + '</span></div>';
@@ -1691,6 +1748,7 @@ function renderQuoteBuilder() {
 			for (var a = 0; a < c.count; a++) {
 				var aTag = q.edits[qbState.edits[a]].name;
 				if (qbState.prods[a] > 0) aTag = q.prods[qbState.prods[a]].name + ' · ' + aTag;
+				if (qbMemState(a) > 0) aTag += ' · ' + (qbMemState(a) === 2 ? q.mState2 : q.mState1);
 				aaRows += '<div class="qb-aa-row"><span>' + q.vocalistLabel + ' ' + (a + 1)
 					+ '<span class="qb-aa-tag">' + aTag + '</span></span>'
 					+ '<span class="qb-aa-val">' + qbFmt(q, shares[a]) + (c.from ? "+" : "") + '</span></div>';
@@ -1708,11 +1766,44 @@ function renderQuoteBuilder() {
 			+ '<div class="qb-split-row"><span>' + q.balanceLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + (c.from ? "+" : "") + '</span></div>'
 			+ '<div class="qb-split-note">' + q.depositNote + '</div>'
 			+ '</div>';
-		var memberHtml = '<button class="qb-member' + (qbState.member ? " on" : "") + '" onclick="qbSet(\'member\',' + (!qbState.member) + ')" aria-pressed="' + qbState.member + '">'
-			+ '<span><span class="qb-member-label">' + q.memberTitle
-			+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="event.stopPropagation();qbScrollTo(\'svc-daomen\')">?</span></span>'
-			+ '<span class="qb-member-sub">' + q.memberSub + '</span></span>'
-			+ '<span class="qb-switch"></span></button>';
+		// 刀门会员：逐位选（非会员 / 已是会员 / 本单加入），只有会员那份享 8 折
+		var memStates = [q.mState0, q.mState1, q.mState2 + " +" + qbFmt(q, q.memberFee)];
+		var memRows = "";
+		if (c.count > 1) {
+			var mSame = qbAllSame(qbState.mem, c.count), mAllBtns = "";
+			for (var mab = 0; mab < 3; mab++) {
+				mAllBtns += '<button class="qb-mini-btn' + (mab === mSame ? " active" : "") + '" onclick="qbSetAllMem(' + mab + ')">' + memStates[mab] + '</button>';
+			}
+			memRows += '<div class="qb-voc-row qb-all-row"><span class="qb-voc-name">' + q.allLabel + '</span><div class="qb-mini-seg">' + mAllBtns + '</div></div>';
+		}
+		for (var mv = 0; mv < c.count; mv++) {
+			var mchips = "";
+			for (var ms = 0; ms < 3; ms++) {
+				mchips += '<button class="qb-mini-btn' + (qbMemState(mv) === ms ? " active" : "") + '" onclick="qbSetMem(' + mv + ',' + ms + ')">' + memStates[ms] + '</button>';
+			}
+			memRows += '<div class="qb-voc-row">' + (c.count > 1 ? '<span class="qb-voc-name">' + q.vocalistLabel + ' ' + (mv + 1) + '</span>' : "")
+				+ '<div class="qb-mini-seg">' + mchips + '</div></div>';
+		}
+		// 回本提示：挑出「加入后能省最多」的那位非会员，一键加入
+		var pbSave = -1, pbIdx = -1;
+		for (var pb = 0; pb < c.count; pb++) {
+			if (qbMemState(pb) > 0) continue;
+			var sv = Math.round(c.gShares[pb] * MEMBER_OFF);
+			if (sv > pbSave) { pbSave = sv; pbIdx = pb; }
+		}
+		var pbHtml = "";
+		if (pbIdx >= 0) {
+			var pbNet = pbSave - q.memberFee, pbGood = pbNet > 0;
+			var pbTxt = (pbGood ? q.pbYes : q.pbNo).replace("{fee}", qbFmt(q, q.memberFee))
+				.replace("{save}", qbFmt(q, pbSave)).replace("{net}", qbFmt(q, Math.abs(pbNet)));
+			if (c.count > 1) pbTxt = q.vocalistLabel + " " + (pbIdx + 1) + " · " + pbTxt;
+			pbHtml = '<button class="qb-payback' + (pbGood ? "" : " dim") + '" onclick="qbSetMem(' + pbIdx + ',2)">' + pbTxt + '</button>';
+		}
+		var memberHtml = '<div class="qb-memblock' + (c.discount > 0 ? " on" : "") + '">'
+			+ '<span class="qb-member-label">' + q.memberTitle
+			+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="qbScrollTo(\'svc-daomen\')">?</span></span>'
+			+ '<span class="qb-member-sub" style="margin-bottom:10px">' + q.memberBlockSub + '</span>'
+			+ '<div class="qb-voc-list">' + memRows + '</div>' + pbHtml + '</div>';
 		// 附加服务：担任制作人（按小计 +X%），打开后附一句 producer points 说明
 		var producerHtml = '<button class="qb-member qb-producer' + (qbState.producer ? " on" : "") + '" onclick="qbSet(\'producer\',' + (!qbState.producer) + ')" aria-pressed="' + qbState.producer + '">'
 			+ '<span><span class="qb-member-label">' + q.producerTitle + ' <span class="qb-plus">+' + Math.round(PRODUCER_RATE * 100) + '%</span></span>'
@@ -1778,7 +1869,8 @@ function qbCopy() {
 		if (c.editCounts[e] > 0 && q.edits[e].price > 0) L.push("＋" + q.edits[e].name + SP + "×" + c.editCounts[e] + SP + "+" + qbFmt(q, q.edits[e].price * c.editCounts[e]));
 	}
 	if (c.rush > 0) L.push("＋" + q.rushName + SP + "+" + Math.round(c.rushRate * 100) + "%" + SP + "+" + qbFmt(q, c.rush));
-	if (c.discount > 0) L.push("－" + q.memberLine + SP + "−" + qbFmt(q, c.discount));
+	if (c.discount > 0) L.push("－" + q.memberLine + (c.memCount > 1 ? SP + "×" + c.memCount : "") + SP + "−" + qbFmt(q, c.discount));
+	if (c.joinFee > 0) L.push("＋" + q.joinLine + (c.joinCount > 1 ? SP + "×" + c.joinCount : "") + SP + "+" + qbFmt(q, c.joinFee));
 	if (c.producer > 0) L.push("＋" + q.producerLine + SP + "+" + Math.round(PRODUCER_RATE * 100) + "%" + SP + "+" + qbFmt(q, c.producer));
 	L.push(HR);
 	L.push(q.totalLabel + SP + qbFmt(q, c.total) + sfx);
@@ -1796,6 +1888,7 @@ function qbCopy() {
 		for (var a = 0; a < c.count; a++) {
 			var cTag = q.edits[qbState.edits[a]].name;
 			if (qbState.prods[a] > 0) cTag = q.prods[qbState.prods[a]].name + "·" + cTag;
+			if (qbMemState(a) > 0) cTag += "·" + (qbMemState(a) === 2 ? q.mState2 : q.mState1);
 			L.push(SP + q.vocalistLabel + SP + (a + 1) + SP + "·" + SP + cTag + SP + qbFmt(q, shares[a]) + sfx);
 		}
 	}
