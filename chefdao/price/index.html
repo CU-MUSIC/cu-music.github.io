@@ -87,7 +87,8 @@
 		.qb-help:hover { border-color: var(--green-soft); color: var(--green-soft); }
 
 		/* ── Sections ──────────────────────────────────────── */
-		.service-section { margin-bottom: 72px; scroll-margin-top: 32px; }
+		.service-section { margin-bottom: 72px; scroll-margin-top: 72px; }
+		.faq-section, .member-card { scroll-margin-top: 72px; }
 		.section-head { margin-bottom: 28px; }
 		.step-tag { display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; gap: 6px; }
 		.step-tag::before { content: ""; display: block; width: 18px; height: 1px; background: currentColor; opacity: 0.6; }
@@ -312,6 +313,22 @@
 		.pl-cta:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.05); }
 
 		/* ── FAQ ───────────────────────────────────────────── */
+		/* 吸顶区块导航：25 屏长页的唯一路标 */
+		.sec-nav { position: sticky; top: 0; z-index: 90; margin: 0 -24px 8px; padding: 0 24px; background: rgba(8,8,8,0.82); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); border-bottom: 0.5px solid var(--border); }
+		.sec-nav-in { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 9px 0; }
+		.sec-nav-in::-webkit-scrollbar { display: none; }
+		.sec-nav-btn { flex: 0 0 auto; background: none; border: 0.5px solid transparent; border-radius: 100px; padding: 8px 13px; font-family: var(--font); font-size: 12.5px; font-weight: 600; color: var(--text-dim); cursor: pointer; white-space: nowrap; transition: color 0.2s, background 0.2s, border-color 0.2s; min-height: 36px; }
+		.sec-nav-btn:hover { color: var(--text-primary); }
+		.sec-nav-btn.on { color: var(--green-soft); background: rgba(96,176,134,0.10); border-color: var(--green-line); }
+		@media (max-width: 640px) { .sec-nav { margin: 0 -16px 6px; padding: 0 16px; } }
+		/* 报价器进度：ADHD 最需要「还剩几步」看得见 */
+		/* 吸顶在区块导航正下方（--navh 由 JS 实测写入）。
+		   必须渲染在 .quote-builder 之外——那个容器有 overflow:hidden，会让 sticky 失效。*/
+		.qb-prog { position: sticky; top: var(--navh, 55px); z-index: 80; display: flex; align-items: center; gap: 11px; margin-bottom: 12px; padding: 9px 15px; border-radius: 100px; border: 0.5px solid var(--border); background: rgba(12,12,12,0.9); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
+		.qb-prog-bar { flex: 1; height: 3px; border-radius: 100px; background: rgba(255,255,255,0.08); overflow: hidden; }
+		.qb-prog-fill { height: 100%; border-radius: 100px; background: var(--green-soft); transition: width 0.45s var(--ease); }
+		.qb-prog-txt { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+		.qb-prog.done .qb-prog-txt { color: var(--green-soft); }
 		.faq-section { margin-top: 8px; padding-top: 64px; border-top: 0.5px solid var(--border); }
 		.faq-head { margin-bottom: 36px; }
 		.faq-item { border-bottom: 0.5px solid var(--border); }
@@ -427,6 +444,7 @@
 		<h1 id="hero-title"></h1>
 		<p class="hero-sub" id="hero-sub"></p>
 	</div>
+	<nav class="sec-nav" id="sec-nav" aria-label="Sections"><div class="sec-nav-in" id="sec-nav-in"></div></nav>
 	<div id="services-container"></div>
 	<div id="faq-container"></div>
 	<footer><p id="footer-text"></p></footer>
@@ -569,6 +587,7 @@ var I18N = {
 			vpAdviceOk: "如果你的歌偏流行、人声编排本来就完整，只做音频编辑通常就够——这条可以直接忽略。",
 			vpAdviceCta1: "加上「执行向」+{p}", vpAdviceCtaN: "全部加上「执行向」+{p} / 人",
 			whyLabel: "为什么这么分？", whyVP: "人声制作具体做什么？",
+			progStep: "第 {n} 步 / 共 {m} 步", progDone: "报价已生成",
 			prodLead: "只给需要制作的主唱选，伴唱 / 和声可留「不需要」。",
 			editLead: "拿不准就按你平时录音的稳定度选。",
 			coverShort: "每位主唱至少选一项：音频编辑 或 人声制作。",
@@ -676,6 +695,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "常见问题",
+		navRec: "录音", navMix: "混音报价", navMaster: "母带", navExtra: "延伸服务", navMember: "刀门会员", navFaq: "常见问题",
 		faqGroups: ["我能做什么", "怎么开始 · 怎么发素材", "价格 · 付款 · 退款", "时间 · 交付 · 修改", "质量 · 素材"],
 		faqItems: [
 			{
@@ -861,6 +881,7 @@ var I18N = {
 			vpAdviceOk: "If your song leans pop and the vocal arrangement is already complete, audio editing alone is usually enough — feel free to ignore this.",
 			vpAdviceCta1: "Add \"Execution\" +{p}", vpAdviceCtaN: "Add \"Execution\" for all +{p} each",
 			whyLabel: "Why these tiers?", whyVP: "What does vocal production do?",
+			progStep: "Step {n} of {m}", progDone: "Quote ready",
 			prodLead: "Only pick a tier for vocalists who need production — backing vocals can stay \"Not needed\".",
 			editLead: "Not sure? Go by how consistent your takes usually are.",
 			coverShort: "Every vocalist needs at least one: Audio Editing or Vocal Production.",
@@ -968,6 +989,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "Questions",
+		navRec: "Recording", navMix: "Mixing", navMaster: "Mastering", navExtra: "Extended", navMember: "Membership", navFaq: "FAQ",
 		faqGroups: ["What I do", "Getting started & sending files", "Price, payment & refunds", "Timing, delivery & revisions", "Quality & source material"],
 		faqItems: [
 			{
@@ -1153,6 +1175,7 @@ var I18N = {
 			vpAdviceOk: "곡이 팝 성향이고 보컬 편곡이 이미 완성되어 있다면 오디오 편집만으로 충분합니다 — 이 안내는 무시하셔도 됩니다.",
 			vpAdviceCta1: "「실행형」 추가 +{p}", vpAdviceCtaN: "전원 「실행형」 추가 +{p} / 인",
 			whyLabel: "왜 이렇게 나뉘나요?", whyVP: "보컬 프로덕션은 무엇을 하나요?",
+			progStep: "{m}단계 중 {n}단계", progDone: "견적 완료",
 			prodLead: "프로덕션이 필요한 보컬만 선택하세요 — 백보컬은 「필요 없음」으로 두어도 됩니다.",
 			editLead: "고민되면 평소 녹음 안정도로 고르세요.",
 			coverShort: "보컬 1인당 최소 한 가지: 오디오 편집 또는 보컬 프로덕션.",
@@ -1260,6 +1283,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "자주 묻는 질문",
+		navRec: "레코딩", navMix: "믹싱", navMaster: "마스터링", navExtra: "확장 서비스", navMember: "멤버십", navFaq: "FAQ",
 		faqGroups: ["무엇을 하나요", "시작하기 · 파일 보내기", "가격 · 결제 · 환불", "일정 · 납품 · 수정", "퀄리티 · 소스"],
 		faqItems: [
 			{
@@ -1981,7 +2005,15 @@ function renderQuoteBuilder() {
 		+ '<span class="qb-sched-sep">·</span>'
 		+ '<span class="qb-sched-item">' + tt.schedRush.replace("{r}", rushRange) + '</span></div>';
 
-	mount.innerHTML = '<div class="quote-builder">' + schedHtml + html + '</div>';
+	// 进度：已答步数 / 总步数——逐步展开时客户看不到还剩几步
+	var progDone = 0;
+	for (var pg = 0; pg < steps.length; pg++) if (qbAnswered(steps[pg])) progDone++;
+	var progPct = Math.round(progDone / steps.length * 100);
+	var progTxt = done ? q.progDone : q.progStep.replace("{n}", Math.min(progDone + 1, steps.length)).replace("{m}", steps.length);
+	var progHtml = '<div class="qb-prog' + (done ? " done" : "") + '">'
+		+ '<div class="qb-prog-bar"><div class="qb-prog-fill" style="width:' + progPct + '%"></div></div>'
+		+ '<span class="qb-prog-txt">' + progTxt + '</span></div>';
+	mount.innerHTML = progHtml + '<div class="quote-builder">' + schedHtml + html + '</div>';
 
 	// 首次出现的步骤淡入；已出现过的（含每次重渲染）立刻可见，避免整块重播动画
 	var nodes = mount.querySelectorAll("[data-qstep]"), present = {};
@@ -2264,6 +2296,65 @@ function setupReveal() {
 	for (var k = 0; k < els.length; k++) io.observe(els[k]);
 }
 
+// ── 区块导航 ────────────────────────────────────────────────
+// 6 个锚点覆盖全部内容（词曲 + 项目负责人合并成「延伸」）
+var SEC_NAV = [
+	{ id: "svc-recording", k: "navRec" },
+	{ id: "svc-mixing", k: "navMix" },
+	{ id: "svc-mastering", k: "navMaster" },
+	{ id: "svc-creation", k: "navExtra" },
+	{ id: "svc-daomen", k: "navMember" },
+	{ id: "faq-container", k: "navFaq" }
+];
+// 进度条要吸在导航条正下方，高度实测写入 CSS 变量（字号/换行都会影响）
+function syncNavH() {
+	var nav = document.getElementById("sec-nav");
+	if (!nav) return;
+	var h = Math.round(nav.getBoundingClientRect().height);
+	if (h > 0) document.documentElement.style.setProperty("--navh", h + "px");
+}
+window.addEventListener("resize", syncNavH);
+function renderSecNav(t) {
+	var box = document.getElementById("sec-nav-in");
+	if (!box) return;
+	var h = "";
+	for (var i = 0; i < SEC_NAV.length; i++) {
+		h += '<button class="sec-nav-btn" data-sec="' + SEC_NAV[i].id + '" onclick="secJump(\'' + SEC_NAV[i].id + '\')">' + (t[SEC_NAV[i].k] || "") + '</button>';
+	}
+	box.innerHTML = h;
+	syncNavH();
+	secSpy();
+}
+function secJump(id) {
+	var el = document.getElementById(id);
+	if (!el) return;
+	var nav = document.getElementById("sec-nav");
+	var off = (nav ? nav.getBoundingClientRect().height : 0) + 14;
+	var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - off;
+	window.scrollTo({ top: y < 0 ? 0 : y, behavior: qbReduceMotion() ? "auto" : "smooth" });
+}
+// 当前区块高亮：取「已滚过导航条」的最后一个区块
+function secSpy() {
+	var btns = document.querySelectorAll(".sec-nav-btn");
+	if (!btns.length) return;
+	var nav = document.getElementById("sec-nav");
+	var line = (nav ? nav.getBoundingClientRect().height : 0) + 24;
+	var active = SEC_NAV[0].id;
+	for (var i = 0; i < SEC_NAV.length; i++) {
+		var el = document.getElementById(SEC_NAV[i].id);
+		if (el && el.getBoundingClientRect().top <= line) active = SEC_NAV[i].id;
+	}
+	for (var b = 0; b < btns.length; b++) {
+		var on = btns[b].getAttribute("data-sec") === active;
+		btns[b].classList.toggle("on", on);
+		if (on) btns[b].scrollIntoView({ block: "nearest", inline: "nearest" });
+	}
+}
+window.addEventListener("scroll", function () {
+	if (window.__secTick) return;
+	window.__secTick = requestAnimationFrame(function () { window.__secTick = 0; secSpy(); });
+}, { passive: true });
+
 // ── Top-level render ────────────────────────────────────────
 function render(lang) {
 	var t = I18N[lang];
@@ -2279,6 +2370,7 @@ function render(lang) {
 	for (i = 0; i < t.services.length; i++) html += renderService(t.services[i]);
 	document.getElementById("services-container").innerHTML = html;
 	document.getElementById("faq-container").innerHTML = renderFAQ(t);
+	renderSecNav(t);
 	renderQuoteBuilder();
 	setupReveal();
 }
