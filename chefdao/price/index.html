@@ -67,8 +67,15 @@
 
 		/* ── Hero ──────────────────────────────────────────── */
 		.hero { margin-bottom: 80px; }
-		.hero-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 14px; }
-		.hero h1 { font-size: clamp(36px, 9vw, 72px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 16px; }
+		/* 品牌锁：中文名主体 + 英文副行 */
+		.hero-kicker { margin-bottom: 20px; }
+		/* 立体品牌名：硬偏移的绿影做厚度，外加一层极淡的绿光做空气感 */
+		.hk-cn { display: block; font-size: 30px; font-weight: 800; letter-spacing: 0.01em; text-transform: none; color: var(--text-primary); line-height: 1.2;
+			text-shadow: 1px 1px 0 rgba(46,132,94,0.6), 2px 3px 0 rgba(46,132,94,0.95), 0 0 42px rgba(96,176,134,0.26); }
+		@media (max-width: 640px) { .hk-cn { font-size: 24px; text-shadow: 1px 1px 0 rgba(46,132,94,0.6), 2px 2px 0 rgba(46,132,94,0.95), 0 0 30px rgba(96,176,134,0.24); } }
+		/* 大标题只取极淡的一层：字号大，绿边一重就廉价 */
+		.hero h1 { font-size: clamp(36px, 9vw, 72px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 16px;
+			text-shadow: 2px 3px 0 rgba(96,176,134,0.16), 0 0 70px rgba(96,176,134,0.13); }
 		.hero-sub { color: var(--text-secondary); font-size: 15px; max-width: 480px; line-height: 1.7; }
 
 		/* ── Schedule line (排期，计算器顶部，克制细线) ─────── */
@@ -157,6 +164,19 @@
 			.qb-advice-btn:hover { background: rgba(232,201,138,0.2); }
 			/* 解释默认收起：一行结论常驻，细节按需展开 */
 			.qb-lead { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-top: 11px; }
+			/* 决策表：对号入座，替代整段说明文字 */
+			/* 标题旁的问号：所有说明收在这里，点开才显示 */
+			.qb-q { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 10px; padding: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,0.32); background: rgba(255,255,255,0.05); color: var(--text-primary); font-family: var(--font); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: 0; text-transform: none; cursor: pointer; vertical-align: middle; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+			.qb-q:hover { border-color: #fff; background: rgba(255,255,255,0.12); }
+			.qb-q.on { background: var(--green-soft); border-color: var(--green-soft); color: #0d1f16; }
+			.qb-help-panel { margin-top: 13px; padding: 14px 15px; border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.05); border-radius: 10px; }
+			.qb-help-ops { font-size: 12px; color: var(--text-dim); line-height: 1.7; margin-top: 12px; padding-top: 11px; border-top: 0.5px solid var(--border); }
+			.qb-guide-t { font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+			.qb-guide { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+			.qb-guide td { padding: 10px 0; border-top: 0.5px solid var(--border); vertical-align: top; line-height: 1.55; }
+			.qb-guide td:first-child { color: var(--text-secondary); padding-right: 16px; }
+			.qb-guide td:last-child { color: var(--text-primary); font-weight: 700; text-align: right; white-space: nowrap; }
+			@media (max-width: 640px) { .qb-guide td:last-child { white-space: normal; } }
 			.qb-why { margin-top: 7px; }
 			.qb-why > summary { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-dim); cursor: pointer; list-style: none; padding: 4px 0; min-height: 28px; }
 			.qb-why > summary::-webkit-details-marker { display: none; }
@@ -517,7 +537,7 @@ var I18N = {
 	zh: {
 		lang: "zh-CN",
 		back: "← Back to Works",
-		heroKicker: "ChefDao Studio",
+		heroKicker: "<span class=\"hk-cn\">刀大厨 ChefDao</span>",
 		heroTitle: "Service<br>Rates.",
 		heroSub: "所有报价所见即所得，没有隐藏费用。所有档位均含简易母带处理。",
 		gateTitle: "今天，想做点什么？",
@@ -561,11 +581,18 @@ var I18N = {
 				{ name: "铺满", price: 600, desc: "和声墙——几乎每句都有，人声当乐器铺。" }
 			],
 			prodLabel: "人声制作 · 每位主唱单独选", allLabel: "全部设为",
-			prodNote: "不需要＝纯混音；执行向＝你给方向、我执行精修；创意向＝我主导人声创意与层次。只给需要制作的主唱选，伴唱／和声主唱可留「不需要」。",
+			prodNote: "<strong>执行向动作：</strong>升降调、stutter、反转、电话音 / 失真、加宽、ad-lib 摆位、double 对齐、特定词效果。<br><strong>创意向</strong>＝以上全部 ＋ 做不做、做在哪由我决定。",
+			prodGuideTitle: "我该选哪一档？",
+			prodGuide: [
+				{ t: "轨道上写了备注：降调 / stutter / 电话音 / ad-lib 摆位", i: 1 },
+				{ t: "只给干声，方向你没想好", i: 2 },
+				{ t: "只要把现有轨道混干净，不加设计", i: 0 }
+			],
+			whyPick: "执行向具体做哪些动作？",
 			prods: [
-				{ name: "不需要", price: 0, desc: "纯混音——音色优化与基础平衡，适合方向明确、素材干净的项目。" },
-				{ name: "执行向", price: 100, desc: "你给创意方向与参考，工程师负责执行与精细打磨。" },
-				{ name: "创意向", price: 200, desc: "工程师主导人声创意——空间构建、情绪引导与层次规划统一执行。" }
+				{ name: "不需要", price: 0, desc: "只混音，不动人声本身——音色、动态、空间平衡。给几条轨道就混几条。" },
+				{ name: "执行向", price: 100, desc: "你已经想好要什么：轨道上标了降调、stutter、电话音、ad-lib 摆位……我照做并打磨。" },
+				{ name: "创意向", price: 200, desc: "你只给干声，我来决定——哪句加 ad-lib、哪里叠、用什么效果、段落怎么起伏。" }
 			],
 			tierNames: ["基础混音", "标准制作", "全案制作"], eqPrefix: "相当于",
 			countLabel: "主唱人数", perHead: 100, perHeadLabel: "每多 1 位 +¥100（混音）", countMax: 8,
@@ -582,8 +609,8 @@ var I18N = {
 			aaStep: 1, minOrder: 300,
 			floorNote: "混音最低消费 ¥300（基础混音 ¥200 + 至少 ¥100 音频编辑）。会让总价跌破下限的选项已置灰。",
 			coverNote: "每位主唱至少选一项人声处理（音频编辑 或 人声制作）。纯混音只处理音色、动态与空间——人声本身的音准、节奏与层次不会有任何改善。最低选「修音 or 修节奏」+¥100 即可。",
-			vpAdviceTitle: "没有人声制作，作品会「干净」，但立不住。",
-			vpAdviceBody: "基础混音只处理音色、动态与空间。人声的层次、氛围、ad-libs 与段落设计都不在里面——而这些才是让一首歌有记忆点的部分。嘻哈 / R&B 尤其吃这一环：叠唱、和声铺排、效果器设计、情绪起伏，全是人声制作在做。",
+			vpAdviceTitle: "加上人声制作，这首歌会更像「发行版」。",
+			vpAdviceBody: "叠唱、ad-lib 位置、效果器铺排、段落起伏——嘻哈听起来完整，靠的是这些。按主唱单独选。",
 			vpAdviceOk: "如果你的歌偏流行、人声编排本来就完整，只做音频编辑通常就够——这条可以直接忽略。",
 			vpAdviceCta1: "加上「执行向」+{p}", vpAdviceCtaN: "全部加上「执行向」+{p} / 人",
 			whyLabel: "为什么这么分？", whyVP: "人声制作具体做什么？",
@@ -620,7 +647,7 @@ var I18N = {
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
-			copyTitle: "报价单", copyMix: "混音", copyDeliver: "交付", copyWeChat: "微信预约"
+			brand: "刀大厨 ChefDao", copyTitle: "报价单", catProd: "人声制作", catEdit: "音频编辑", copyMix: "混音", copyDeliver: "交付", copyWeChat: "微信预约"
 		},
 		services: [
 			{
@@ -695,7 +722,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "常见问题",
-		navRec: "录音", navMix: "混音报价", navMaster: "母带", navExtra: "延伸服务", navMember: "刀门会员", navFaq: "常见问题",
+		navRec: "录音", navMix: "混音", navMaster: "母带", navExtra: "延伸服务", navMember: "刀门会员", navFaq: "常见问题",
 		faqGroups: ["我能做什么", "怎么开始 · 怎么发素材", "价格 · 付款 · 退款", "时间 · 交付 · 修改", "质量 · 素材"],
 		faqItems: [
 			{
@@ -812,7 +839,7 @@ var I18N = {
 	en: {
 		lang: "en",
 		back: "← Back to Works",
-		heroKicker: "ChefDao Studio",
+		heroKicker: "<span class=\"hk-cn\">刀大厨 ChefDao</span>",
 		heroTitle: "Service<br>Rates.",
 		heroSub: "Every price is what you see — no hidden fees. All tiers include light mastering.",
 		gateTitle: "What are we making today?",
@@ -855,11 +882,18 @@ var I18N = {
 				{ name: "Wall", price: 90, desc: "A wall of harmony — on nearly every line, vocals as texture." }
 			],
 			prodLabel: "Vocal Production · per vocalist", allLabel: "Set all",
-			prodNote: "None = pure mix. Execution = you direct, I refine. Creative = I lead the vocal design. Only pick production for the vocalists who need it — backing / harmony vocalists can stay on \"None\".",
+			prodNote: "<strong>Execution covers:</strong> pitch shifts, stutter, reverse, telephone / distortion, widening, ad-lib placement, double alignment, word-level FX.<br><strong>Creative</strong> = all of it, plus I decide whether and where.",
+			prodGuideTitle: "Which tier is mine?",
+			prodGuide: [
+				{ t: "You left notes on the tracks: pitch down / stutter / telephone / ad-lib placement", i: 1 },
+				{ t: "Raw vocals only, direction not decided", i: 2 },
+				{ t: "Just mix the tracks clean, no design added", i: 0 }
+			],
+			whyPick: "What does Execution actually do?",
 			prods: [
-				{ name: "Not needed", price: 0, desc: "Pure mix — tonal shaping and balance for projects with a clear direction." },
-				{ name: "Execution", price: 15, desc: "You bring the creative direction; the engineer executes and refines." },
-				{ name: "Creative", price: 30, desc: "Engineer-led vocal creative — spatial design, emotional direction, layering." }
+				{ name: "Not needed", price: 0, desc: "Mix only, vocal untouched — tone, dynamics, space. I mix the tracks you send, as they are." },
+				{ name: "Execution", price: 15, desc: "You already know what you want: notes on the tracks — pitch down, stutter, telephone, ad-lib placement. I execute and polish." },
+				{ name: "Creative", price: 30, desc: "You send raw vocals, I decide — where ad-libs go, what to stack, which FX, how sections build." }
 			],
 			tierNames: ["Basic Mix", "Standard", "Full Package"], eqPrefix: "Equivalent to",
 			countLabel: "Vocalists", perHead: 15, perHeadLabel: "+$15 each (mix)", countMax: 8,
@@ -876,8 +910,8 @@ var I18N = {
 			aaStep: 1, minOrder: 45,
 			floorNote: "Minimum mixing order $45 (Basic Mix $30 + at least $15 of editing). Options that would drop the total below it are greyed out.",
 			coverNote: "Every vocalist needs at least one form of vocal work (Audio Editing or Vocal Production). A mix alone only shapes tone, dynamics and space — the vocal itself, its pitch, timing and layering, is left untouched. \"Pitch or Timing\" at +$15 is enough to qualify.",
-			vpAdviceTitle: "Without vocal production the record will sound clean — but it won't land.",
-			vpAdviceBody: "A mix only shapes tone, dynamics and space. Vocal layering, atmosphere, ad-libs and section design sit outside it — and those are what make a song memorable. Hip-hop and R&B live on exactly that: stacks, harmony beds, FX design and emotional arc are all vocal production work.",
+			vpAdviceTitle: "Add vocal production and the record starts sounding like a release.",
+			vpAdviceBody: "Stacks, where the ad-libs sit, how the FX are dialled, how sections build — that is what makes hip-hop feel finished. Picked per vocalist.",
 			vpAdviceOk: "If your song leans pop and the vocal arrangement is already complete, audio editing alone is usually enough — feel free to ignore this.",
 			vpAdviceCta1: "Add \"Execution\" +{p}", vpAdviceCtaN: "Add \"Execution\" for all +{p} each",
 			whyLabel: "Why these tiers?", whyVP: "What does vocal production do?",
@@ -914,7 +948,7 @@ var I18N = {
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
-			copyTitle: "Quote", copyMix: "Mix", copyDeliver: "Delivery", copyWeChat: "Book on WeChat"
+			brand: "ChefDao 刀大厨", copyTitle: "Quote", catProd: "Vocal Production", catEdit: "Audio Editing", copyMix: "Mix", copyDeliver: "Delivery", copyWeChat: "Book on WeChat"
 		},
 		services: [
 			{
@@ -1106,7 +1140,7 @@ var I18N = {
 	ko: {
 		lang: "ko",
 		back: "← 작품으로 돌아가기",
-		heroKicker: "ChefDao Studio",
+		heroKicker: "<span class=\"hk-cn\">刀大厨 ChefDao</span>",
 		heroTitle: "Service<br>Rates.",
 		heroSub: "모든 가격은 보이는 그대로 — 숨은 비용이 없습니다. 모든 항목에 간편 마스터링이 포함됩니다.",
 		gateTitle: "오늘은 무엇을 만들까요?",
@@ -1149,11 +1183,18 @@ var I18N = {
 				{ name: "가득", price: 120000, desc: "화음의 벽 — 거의 모든 라인에, 보컬을 텍스처처럼." }
 			],
 			prodLabel: "보컬 프로덕션 · 보컬별 선택", allLabel: "전체 설정",
-			prodNote: "필요 없음 = 퓨어 믹스. 실행형 = 방향은 당신, 정밀 마무리는 저. 크리에이티브 = 보컬 디렉팅 주도. 프로덕션이 필요한 보컬에만 선택하고, 백보컬·화음 보컬은 「필요 없음」으로 두세요.",
+			prodNote: "<strong>실행형 작업:</strong> 피치 조정, 스터터, 리버스, 텔레폰 / 디스토션, 와이드닝, 애드립 배치, 더블 정렬, 단어 단위 FX.<br><strong>크리에이티브</strong> = 위 전부 ＋ 할지·어디에 할지를 제가 결정.",
+			prodGuideTitle: "저는 어느 등급인가요?",
+			prodGuide: [
+				{ t: "트랙에 메모를 남겼다: 피치 다운 / 스터터 / 텔레폰 / 애드립 배치", i: 1 },
+				{ t: "드라이 보컬만, 방향은 미정", i: 2 },
+				{ t: "기존 트랙을 깔끔하게 믹스만, 디자인 추가 없음", i: 0 }
+			],
+			whyPick: "실행형은 구체적으로 무엇을 하나요?",
 			prods: [
-				{ name: "필요 없음", price: 0, desc: "퓨어 믹스 — 방향이 명확한 프로젝트를 위한 음색과 밸런스." },
-				{ name: "실행형", price: 20000, desc: "방향은 당신이, 실행과 정밀 마무리는 엔지니어가." },
-				{ name: "크리에이티브", price: 40000, desc: "엔지니어 주도 — 공간 설계, 감정 디렉팅, 레이어링." }
+				{ name: "필요 없음", price: 0, desc: "믹스만, 보컬 자체는 그대로 — 음색·다이나믹·공간. 주신 트랙을 그대로 믹스합니다." },
+				{ name: "실행형", price: 20000, desc: "원하는 게 이미 정해진 경우: 트랙에 메모(피치 다운, 스터터, 텔레폰, 애드립 배치)를 남기면 그대로 실행·마감합니다." },
+				{ name: "크리에이티브", price: 40000, desc: "드라이 보컬만 주시면 제가 결정 — 애드립 위치, 더블 구성, FX 선택, 구간 전개." }
 			],
 			tierNames: ["베이직 믹스", "스탠다드", "풀 패키지"], eqPrefix: "동일 구성:",
 			countLabel: "보컬 인원", perHead: 20000, perHeadLabel: "1인당 +₩20,000 (믹스)", countMax: 8,
@@ -1170,8 +1211,8 @@ var I18N = {
 			aaStep: 100, minOrder: 60000,
 			floorNote: "믹싱 최소 주문 ₩60,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩20,000). 하한 미만이 되는 옵션은 비활성화됩니다.",
 			coverNote: "보컬 1인당 최소 한 가지 보컬 작업(오디오 편집 또는 보컬 프로덕션)이 필요합니다. 믹스만으로는 음색·다이나믹·공간만 다루며 보컬 자체의 음정·타이밍·레이어는 전혀 개선되지 않습니다. 「피치 or 타이밍」+₩20,000 이면 충족됩니다.",
-			vpAdviceTitle: "보컬 프로덕션이 없으면 곡은 '깔끔'해질 뿐, 설득력을 갖지 못합니다.",
-			vpAdviceBody: "믹스는 음색·다이나믹·공간만 다룹니다. 보컬 레이어, 분위기, 애드리브, 구성 설계는 그 바깥에 있고 — 곡을 기억에 남게 만드는 건 바로 그 부분입니다. 힙합·R&B는 특히 여기서 살아납니다: 스택, 화음 배치, FX 설계, 감정의 기복 모두 보컬 프로덕션의 영역입니다.",
+			vpAdviceTitle: "보컬 프로덕션을 더하면 곡이 「발매작」에 가까워집니다.",
+			vpAdviceBody: "스택, 애드립 위치, FX 세팅, 구간 전개 — 힙합이 완성돼 들리는 건 이 부분 덕분입니다. 보컬별로 선택할 수 있습니다.",
 			vpAdviceOk: "곡이 팝 성향이고 보컬 편곡이 이미 완성되어 있다면 오디오 편집만으로 충분합니다 — 이 안내는 무시하셔도 됩니다.",
 			vpAdviceCta1: "「실행형」 추가 +{p}", vpAdviceCtaN: "전원 「실행형」 추가 +{p} / 인",
 			whyLabel: "왜 이렇게 나뉘나요?", whyVP: "보컬 프로덕션은 무엇을 하나요?",
@@ -1208,7 +1249,7 @@ var I18N = {
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
-			copyTitle: "견적서", copyMix: "믹스", copyDeliver: "납품", copyWeChat: "위챗 예약"
+			brand: "刀大厨 ChefDao", copyTitle: "견적서", catProd: "보컬 프로덕션", catEdit: "오디오 편집", copyMix: "믹스", copyDeliver: "납품", copyWeChat: "위챗 예약"
 		},
 		services: [
 			{
@@ -1405,7 +1446,7 @@ var I18N = {
 // edits 索引：0 = 免修，1 = 修音 or 修节奏（二选一，只做一项），2 = 节奏+修音，3 = 节奏+精修（每位主唱各选一档）
 // 纯混音（全员 prods=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
 // null = 尚未作答。逐步揭示：一步作答后下一步才挂载，引导文案随之分批出现。
-var qbState = { mode: null, stems: null, prods: [], harmony: null, count: null, edits: [], mem: [], producer: false, lane: null, targetDate: null, moreCount: false, aaOpen: false, fineOpen: false };
+var qbState = { mode: null, stems: null, prods: [], harmony: null, count: null, edits: [], mem: [], producer: false, lane: null, targetDate: null, moreCount: false, aaOpen: false, fineOpen: false, help: {} };
 // 制作人附加服务：按混音/制作小计加收的百分比（改这一个数就调价）
 var PRODUCER_RATE = 0.5;
 // 刀门会员折扣率（8 折 = 省 20%），按主唱逐位计算：只有会员/本单加入的那份享折扣
@@ -1427,6 +1468,28 @@ var qbMounted = {};
 var QB_REC = { mode: "vocal", stems: 1, harmony: 0, lane: 0 };
 // 人声制作默认「执行向」：推荐档就是默认档，客户主动点「不需要」才会看到那张建议卡
 var QB_PROD_DEFAULT = 1;
+// ── 本地记忆（localStorage，纯本机，不上传）────────────────
+// 会员身份记住后，老客户不用每次重选；上次配置记住后，回来能接着上次改
+var LS_MEMBER = "cd_member", LS_STATE = "cd_quote", LS_MAX_AGE = 30 * 86400000;
+function qbLsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function qbLsSet(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function qbIsRemembered() { return qbLsGet(LS_MEMBER) === "1"; }
+function qbRememberMember(on) { qbLsSet(LS_MEMBER, on ? "1" : null); }
+function qbSaveState() {
+	qbLsSet(LS_STATE, JSON.stringify({ v: 1, t: Date.now(), s: qbState }));
+}
+function qbRestoreState() {
+	var raw = qbLsGet(LS_STATE);
+	if (!raw) return false;
+	try {
+		var o = JSON.parse(raw);
+		if (!o || o.v !== 1 || !o.s || Date.now() - o.t > LS_MAX_AGE) return false;
+		var k, src = o.s;
+		for (k in qbState) if (src.hasOwnProperty(k)) qbState[k] = src[k];
+		qbState.help = {};
+		return true;
+	} catch (e) { return false; }
+}
 function qbBadge(text) { return '<span class="qb-badge">' + text + '</span>'; }
 // 一行结论常驻，长解释收进折叠——屏幕上永远是「选项」多过「说明」
 function qbWhy(label, body) {
@@ -1478,7 +1541,11 @@ function qbSetDate(v) { qbAdvance(function () { qbState.targetDate = v || null; 
 function qbSetEdit(i, val) { qbAdvance(function () { qbState.edits[i] = val; }); }
 function qbSetProd(i, val) { qbAdvance(function () { qbState.prods[i] = val; }); }
 // 会员/入会在报价单里操作，此时已全部答完（before=after=null），不会触发滚动
-function qbSetMem(i, val) { qbState.mem[i] = val; renderQuoteBuilder(); }
+function qbSetMem(i, val) {
+	qbState.mem[i] = val;
+	if (i === 0) qbRememberMember(val > 0); // 主唱 1 视为下单本人
+	renderQuoteBuilder();
+}
 function qbSetAllMem(val) { for (var i = 0; i < qbState.count; i++) qbState.mem[i] = val; renderQuoteBuilder(); }
 // 一键把所有主唱设成同一档，人多时省得逐位点
 function qbSetAllProd(val) { qbAdvance(function () { for (var i = 0; i < qbState.count; i++) qbState.prods[i] = val; }); }
@@ -1495,7 +1562,7 @@ function qbResizeEdits(n) {
 	for (var i = 0; i < n; i++) {
 		nextE.push(i < qbState.edits.length ? qbState.edits[i] : null);
 		nextP.push(i < qbState.prods.length ? qbState.prods[i] : QB_PROD_DEFAULT);
-		nextM.push(i < qbState.mem.length ? qbState.mem[i] : 0);
+		nextM.push(i < qbState.mem.length ? qbState.mem[i] : (i === 0 && qbIsRemembered() ? 1 : 0));
 	}
 	qbState.edits = nextE;
 	qbState.prods = nextP;
@@ -1520,7 +1587,8 @@ function qbStep(delta) { qbSetCount((qbState.count || 1) + delta); }
 function qbReset() {
 	qbState.mode = null; qbState.stems = null; qbState.prods = []; qbState.harmony = null;
 	qbState.count = null; qbState.edits = []; qbState.lane = null; qbState.targetDate = null;
-	qbState.moreCount = false; qbState.mem = []; qbState.producer = false;
+	qbState.moreCount = false; qbState.mem = []; qbState.producer = false; qbState.help = {};
+	qbLsSet(LS_STATE, null); // 会员身份单独保存，不随重置清掉
 	qbMounted = {};
 	renderQuoteBuilder();
 	qbScrollTo("svc-mixing");
@@ -1662,12 +1730,16 @@ function qbEnforceFloor(q) {
 	qbState.edits[0] = 1; // 主唱 1 → 修音 or 修节奏
 }
 // 一个步骤的外壳：编号 + 标题 + 内容；未作答时挂 .active 并显示引导语
-function qbRow(key, idx, label, body, note, hint) {
+function qbToggleHelp(key) { qbState.help[key] = !qbState.help[key]; renderQuoteBuilder(); }
+function qbRow(key, idx, label, body, note, hint, help) {
 	var num = (idx < 10 ? "0" : "") + idx;
 	var active = !qbAnswered(key);
+	var hOpen = !!qbState.help[key];
+	var qBtn = help ? '<button class="qb-q' + (hOpen ? " on" : "") + '" onclick="qbToggleHelp(\'' + key + '\')" aria-expanded="' + hOpen + '" title="?">?</button>' : "";
+	var hPanel = (help && hOpen) ? '<div class="qb-help-panel">' + help + '</div>' : "";
 	return '<div class="qb-row qb-step' + (active ? " active" : "") + '" data-qstep="' + key + '">'
-		+ '<div class="qb-label"><span class="qb-step-idx">' + num + '</span>' + label + '</div>'
-		+ body
+		+ '<div class="qb-label"><span class="qb-step-idx">' + num + '</span>' + label + qBtn + '</div>'
+		+ body + hPanel
 		+ (active ? '<div class="qb-hint">' + hint + '</div>' : (note ? '<div class="qb-tier-desc">' + note + '</div>' : ''))
 		+ '</div>';
 }
@@ -1769,15 +1841,24 @@ function renderQuoteBuilder() {
 			var cta = (qbState.count > 1 ? q.vpAdviceCtaN : q.vpAdviceCta1).replace("{p}", vpPrice);
 			adviceHtml = '<div class="qb-advice">'
 				+ '<div class="qb-advice-t">' + q.vpAdviceTitle + '</div>'
+				+ '<div class="qb-advice-b">' + q.vpAdviceBody + '</div>'
 				+ '<button class="qb-advice-btn" onclick="qbSetAllProd(1)">' + cta + '</button>'
-				+ qbWhy(q.whyVP, q.vpAdviceBody)
 			+ '</div>';
 		}
+		// 决策表：档位名与价格从 q.prods 取，改价不用动文案
+		var guideRows = "";
+		for (var gi = 0; gi < (q.prodGuide || []).length; gi++) {
+			var gRow = q.prodGuide[gi], gTier = q.prods[gRow.i];
+			guideRows += '<tr><td>' + gRow.t + '</td><td>' + gTier.name
+				+ (gTier.price ? " +" + qbFmt(q, gTier.price) : "") + '</td></tr>';
+		}
+		var prodHelp = '<div class="qb-guide-t">' + q.prodGuideTitle + '</div>'
+			+ '<table class="qb-guide"><tbody>' + guideRows + '</tbody></table>'
+			+ '<div class="qb-help-ops">' + q.prodNote + '</div>';
 		var prodBody = '<div class="qb-voc-list">' + prodRows + '</div>'
 			+ (coverBinding ? '<div class="qb-cover-line">' + q.coverShort + '</div>' : "")
-			+ qbWhy(q.whyLabel, q.prodNote)
 			+ adviceHtml;
-		html += qbRow("prod", idx.prod, q.prodLabel, prodBody, "", q.hints.prod);
+		html += qbRow("prod", idx.prod, q.prodLabel, prodBody, "", q.hints.prod, prodHelp);
 	}
 
 	// 音频编辑：每位主唱各选一档（编号随模式自动排）
@@ -1826,9 +1907,8 @@ function renderQuoteBuilder() {
 		}
 		var editWhy = q.editNote + (coverBind2 ? '<br><br>' + q.coverNote : '') + (floorBinding ? '<br><br>' + q.floorNote : '');
 		var editBody = '<div class="qb-voc-list">' + vocRows + '</div>'
-			+ (coverBind2 ? '<div class="qb-cover-line">' + q.coverShort + '</div>' : '')
-			+ qbWhy(q.whyLabel, editWhy);
-		html += qbRow("edit", idx.edit, q.editLabel, editBody, "", q.hints.edit);
+			+ (coverBind2 ? '<div class="qb-cover-line">' + q.coverShort + '</div>' : '');
+		html += qbRow("edit", idx.edit, q.editLabel, editBody, "", q.hints.edit, editWhy);
 	}
 
 	// 和声 / 叠唱密度：靠后选（人数、音编之后，交付之前）。按感觉分档，不数轨道，让和声多的人自己认领更高档
@@ -1880,8 +1960,7 @@ function renderQuoteBuilder() {
 					+ '<input type="date" class="qb-date-native" min="' + minISO + '" value="' + (qbState.targetDate || "") + '" onclick="try{this.showPicker()}catch(e){}" onchange="qbSetDate(this.value)">'
 					+ '</label><div class="' + cls + '">' + info + '</div></div>';
 		}
-		laneBody += qbWhy(q.whyLabel, q.laneNote);
-		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, "", q.hints.lane);
+		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, "", q.hints.lane, q.laneNote);
 	}
 
 	// 全部作答完毕，报价单才登场
@@ -2025,6 +2104,7 @@ function renderQuoteBuilder() {
 	}
 	// 被收回的步骤（改了前面的选择）忘掉它，下次再露面时重新淡入
 	for (var k in qbMounted) { if (!present[k]) delete qbMounted[k]; }
+	qbSaveState();
 }
 function qbFadeIn(el) {
 	requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add("qb-in"); }); });
@@ -2037,49 +2117,58 @@ function qbCopy() {
 	var stems = qbState.mode === "stems";
 	var baseName = stems ? c.baseItem.name : q.tierNames[0];
 	var sfx = c.from ? "+" : "";
-	var HR = "──────────────";      // 细分隔（区内）
-	var HH = "━━━━━━━━━━━━━━";      // 粗分隔（区间）
-	var SP = "　";               // 全角空格，缩进用
+	// 微信是比例字体，列对不齐——所以不做对齐，靠「【】小节 + · 项目符 + 空行」分层
+	var HH = "━━━━━━━━━━━━";
 	var L = [];
-	L.push(SP + q.copyTitle + SP + "·" + SP + "ChefDao");
+	var d = new Date();
+	var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+	L.push(q.brand + " ｜ " + q.copyTitle);
+	L.push(d.getFullYear() + "." + pad(d.getMonth() + 1) + "." + pad(d.getDate()));
 	L.push(HH);
-	// 明细：基础价无前缀，加项 ＋，折扣 －
-	L.push((stems ? q.modeStems : q.modeVocal));
-	L.push(SP + baseName + SP + qbFmt(q, c.base) + sfx);
+	// 小节标题：混音类型 · 人数
+	L.push((stems ? q.modeStems : q.modeVocal) + " · " + c.count + q.countUnit + q.vocalistLabel);
+	L.push("");
+	// 金额在前：一列数字最好扫。品类在前缀里补回来——
+	// 「执行向」单独出现是黑话，「人声制作 · 执行向」才对得上计算器里的第 03 步
+	var item = function (amount, name) { L.push(amount + "　" + name); };
+	var mul = function (n) { return n > 1 ? " ×" + n : ""; };
+	item(qbFmt(q, c.base) + sfx, baseName);
 	for (var p = 0; p < q.prods.length; p++) {
-		if (c.prodCounts[p] > 0 && q.prods[p].price > 0) L.push("＋" + q.prods[p].name + SP + "×" + c.prodCounts[p] + SP + "+" + qbFmt(q, q.prods[p].price * c.prodCounts[p]));
+		if (c.prodCounts[p] > 0 && q.prods[p].price > 0) item("+" + qbFmt(q, q.prods[p].price * c.prodCounts[p]), q.catProd + " · " + q.prods[p].name + mul(c.prodCounts[p]));
 	}
-	if (c.harmony.price > 0) L.push("＋" + q.harmonyBd + "·" + c.harmony.name + SP + "+" + qbFmt(q, c.harmony.price));
-	if (c.count > 1) L.push("＋" + q.bdExtra + SP + "×" + (c.count - 1) + SP + "+" + qbFmt(q, c.mixExtra));
 	for (var e = 0; e < q.edits.length; e++) {
-		if (c.editCounts[e] > 0 && q.edits[e].price > 0) L.push("＋" + q.edits[e].name + SP + "×" + c.editCounts[e] + SP + "+" + qbFmt(q, q.edits[e].price * c.editCounts[e]));
+		if (c.editCounts[e] > 0 && q.edits[e].price > 0) item("+" + qbFmt(q, q.edits[e].price * c.editCounts[e]), q.catEdit + " · " + q.edits[e].name + mul(c.editCounts[e]));
 	}
-	if (c.rush > 0) L.push("＋" + q.rushName + SP + "+" + Math.round(c.rushRate * 100) + "%" + SP + "+" + qbFmt(q, c.rush));
-	if (c.discount > 0) L.push("－" + q.memberLine + (c.memCount > 1 ? SP + "×" + c.memCount : "") + SP + "−" + qbFmt(q, c.discount));
-	if (c.joinFee > 0) L.push("＋" + q.joinLine + (c.joinCount > 1 ? SP + "×" + c.joinCount : "") + SP + "+" + qbFmt(q, c.joinFee));
-	if (c.producer > 0) L.push("＋" + q.producerLine + SP + "+" + Math.round(PRODUCER_RATE * 100) + "%" + SP + "+" + qbFmt(q, c.producer));
-	L.push(HR);
-	L.push(q.totalLabel + SP + qbFmt(q, c.total) + sfx);
-	L.push(q.depositLabel + SP + qbFmt(q, c.deposit) + sfx + SP + "·" + SP + q.balanceLabel + SP + qbFmt(q, c.balance) + sfx);
+	if (c.harmony.price > 0) item("+" + qbFmt(q, c.harmony.price), q.harmonyBd + " · " + c.harmony.name);
+	if (c.count > 1) item("+" + qbFmt(q, c.mixExtra), q.bdExtra + " ×" + (c.count - 1));
+	if (c.producer > 0) item("+" + qbFmt(q, c.producer), q.producerLine + " +" + Math.round(PRODUCER_RATE * 100) + "%");
+	if (c.rush > 0) item("+" + qbFmt(q, c.rush), q.rushName + " +" + Math.round(c.rushRate * 100) + "%");
+	if (c.joinFee > 0) item("+" + qbFmt(q, c.joinFee), q.joinLine + mul(c.joinCount));
+	if (c.discount > 0) item("−" + qbFmt(q, c.discount), q.memberLine + mul(c.memCount));
+	L.push(HH);
+	L.push("▍" + q.totalLabel + "　" + qbFmt(q, c.total) + sfx);
+	L.push(q.depositLabel + " " + qbFmt(q, c.deposit) + sfx + " ／ " + q.balanceLabel + " " + qbFmt(q, c.balance) + sfx);
 	// 交付日期：按所选通道现算，含 18:00 顺延
 	var cut = qbCutoff();
 	var range = c.fast
 		? qbFmtDate(qbState.targetDate, currentLang)
 		: qbFmtRange(qbAddWorkdays(SCHEDULE.stdMin + SCHEDULE.backlogDays + cut), qbAddWorkdays(SCHEDULE.stdMax + SCHEDULE.backlogDays + cut), currentLang);
-	L.push(q.copyDeliver + SP + range);
+	L.push(q.copyDeliver + " " + range);
 	if (c.count > 1) {
 		var shares = qbShares(q, c);
 		L.push(HH);
 		L.push(q.aaTitle);
+		L.push("");
 		for (var a = 0; a < c.count; a++) {
 			var cTag = q.edits[qbState.edits[a]].name;
-			if (qbState.prods[a] > 0) cTag = q.prods[qbState.prods[a]].name + "·" + cTag;
-			if (qbMemState(a) > 0) cTag += "·" + (qbMemState(a) === 2 ? q.mState2 : q.mState1);
-			L.push(SP + q.vocalistLabel + SP + (a + 1) + SP + "·" + SP + cTag + SP + qbFmt(q, shares[a]) + sfx);
+			if (qbState.prods[a] > 0) cTag = q.prods[qbState.prods[a]].name + " · " + cTag;
+			if (qbMemState(a) > 0) cTag += " · " + (qbMemState(a) === 2 ? q.mState2 : q.mState1);
+			L.push(qbFmt(q, shares[a]) + sfx + "　" + q.vocalistLabel + " " + (a + 1));
+			L.push("　　　" + cTag);
 		}
 	}
 	L.push(HH);
-	L.push(q.copyWeChat + SP + "·" + SP + CONTACT.wechat);
+	L.push(q.copyWeChat + " · " + CONTACT.wechat);
 	var txt = L.join("\n");
 	var btn = document.querySelector(".qb-cta");
 	var done = function() {
@@ -2264,7 +2353,7 @@ function entryGo(target) {
 	}, 250);
 }
 function renderGate(t) {
-	document.getElementById("gate-kicker").textContent = t.heroKicker;
+	document.getElementById("gate-kicker").innerHTML = t.heroKicker;
 	document.getElementById("gate-title").innerHTML = t.gateTitle;
 	document.getElementById("gate-sub").textContent = t.gateSub;
 	var html = "";
@@ -2360,7 +2449,7 @@ function render(lang) {
 	var t = I18N[lang];
 	var i, html = "";
 	document.documentElement.lang = t.lang;
-	document.getElementById("hero-kicker").textContent = t.heroKicker;
+	document.getElementById("hero-kicker").innerHTML = t.heroKicker;
 	document.getElementById("hero-title").innerHTML = t.heroTitle;
 	document.getElementById("hero-sub").innerHTML = t.heroSub;
 	document.getElementById("footer-text").textContent = t.footer;
@@ -2402,7 +2491,10 @@ function copyContact() {
 		setTimeout(function() { label.textContent = t.ctaLabel; }, 2200);
 	});
 }
-document.addEventListener("DOMContentLoaded", function() { render("zh"); });
+document.addEventListener("DOMContentLoaded", function() {
+	qbRestoreState();
+	render("zh");
+});
 </script>
 </body>
 </html>
