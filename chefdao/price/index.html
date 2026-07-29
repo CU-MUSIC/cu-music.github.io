@@ -68,11 +68,10 @@
 		/* ── Hero ──────────────────────────────────────────── */
 		.hero { margin-bottom: 80px; }
 		/* 品牌锁：中文名主体 + 英文副行 */
-		.hero-kicker { margin-bottom: 20px; }
-		/* 立体品牌名：硬偏移的绿影做厚度，外加一层极淡的绿光做空气感 */
-		.hk-cn { display: block; font-size: 30px; font-weight: 800; letter-spacing: 0.01em; text-transform: none; color: var(--text-primary); line-height: 1.2;
-			text-shadow: 1px 1px 0 rgba(46,132,94,0.6), 2px 3px 0 rgba(46,132,94,0.95), 0 0 42px rgba(96,176,134,0.26); }
-		@media (max-width: 640px) { .hk-cn { font-size: 24px; text-shadow: 1px 1px 0 rgba(46,132,94,0.6), 2px 2px 0 rgba(46,132,94,0.95), 0 0 30px rgba(96,176,134,0.24); } }
+		.hero-kicker { margin-bottom: 16px; }
+		/* 品牌行只做「署名」，不跟主标题抢焦点：无阴影、字号压到主标题的 ~20% */
+		.hk-cn { display: block; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: none; color: var(--text-secondary); line-height: 1.35; }
+		@media (max-width: 640px) { .hk-cn { font-size: 14px; } }
 		/* 大标题只取极淡的一层：字号大，绿边一重就廉价 */
 		.hero h1 { font-size: clamp(36px, 9vw, 72px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 16px;
 			text-shadow: 2px 3px 0 rgba(96,176,134,0.16), 0 0 70px rgba(96,176,134,0.13); }
