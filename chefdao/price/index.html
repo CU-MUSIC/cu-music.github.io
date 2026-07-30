@@ -8,6 +8,20 @@
 	<style>
 		/* ── Dark canvas · 黑白极简 + 墨绿只做面（呼应 ChefDao 绿标）── */
 		:root {
+			color-scheme: dark;
+			/* --ink：所有半透明叠加层的底色三元组。深色模式是白、浅色模式是近黑，
+			   改这一处，几十个 rgba() 全部跟着翻转。 */
+			--ink: 255, 255, 255;
+			--veil: 8, 8, 8;
+			--well: rgba(0, 0, 0, 0.4);
+			--pill-bg: rgba(17, 17, 17, 0.85);
+			--warn: #d99;
+			--pure: var(--pure);
+			--cta-bg: #f0f0f0;
+			--cta-fg: #0a0a0a;
+			--amber: 232, 201, 138;
+			--amber-t: var(--amber-t);
+			--green-ink: 96, 176, 134;
 			--bg: #080808;
 			--surface: #111111;
 			--surface-hover: #161616;
@@ -15,14 +29,56 @@
 			--text-secondary: #9a9a9a;
 			--text-dim: #7d7d7d;
 			--green-deep: #0d1f16;
-			--green-line: rgba(96, 176, 134, 0.25);
+			--green-line: rgba(var(--green-ink), 0.25);
 			--green-soft: #8fc3a9;
-			--border: rgba(255, 255, 255, 0.08);
-			--border-hover: rgba(255, 255, 255, 0.2);
+			--border: rgba(var(--ink), 0.08);
+			--border-hover: rgba(var(--ink), 0.2);
 			--font: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
 			--ease: cubic-bezier(0.16, 1, 0.3, 1);
 			--r: 14px;
 		}
+		/* ── 浅色模式：中性灰底（不用纯白，室外不刺眼也不廉价）+ 深绿呼应 ── */
+		:root[data-theme="light"] {
+			color-scheme: light;
+			--ink: 22, 27, 24;          /* 叠加层改用近黑带一丝绿 */
+			--veil: 236, 238, 236;
+			--well: rgba(var(--ink), 0.06);
+			--pill-bg: rgba(252, 253, 252, 0.9);
+			--warn: #a33;
+			--pure: #0d100f;
+			--cta-bg: #1a1e1c;
+			--cta-fg: #f4f6f4;
+			--amber: 138, 106, 26;
+			--amber-t: #7a5d13;
+			--green-ink: 31, 107, 74;
+			--bg: #eceeec;
+			--surface: #f6f7f5;
+			--surface-hover: #e6e9e6;
+			--text-primary: #141816;
+			--text-secondary: #4f5653;
+			--text-dim: #656c68;
+			--green-deep: #e7efe9;      /* 报价单面板：极浅绿 */
+			--green-line: rgba(var(--green-ink), 0.3);
+			--green-soft: #1f6b4a;      /* 深绿，浅底上对比 5:1 */
+		}
+		/* 浅底上白字会消失，主按钮与总价改用反相色 */
+		:root[data-theme="light"] .qb-total { color: var(--text-primary); }
+		:root[data-theme="light"] .hero h1 { text-shadow: 1px 2px 0 rgba(var(--green-ink), 0.14); }
+		:root[data-theme="light"] .qb-prog-fill { background: var(--green-soft); }
+		/* 浅底上药丸接近白色，靠阴影而不是边框立起来 */
+		:root[data-theme="light"] .floating-btn { border-color: rgba(var(--ink), 0.1); box-shadow: 0 4px 20px rgba(var(--ink), 0.1), 0 1px 3px rgba(var(--ink), 0.08); }
+		:root[data-theme="light"] .sec-nav { box-shadow: 0 1px 12px rgba(var(--ink), 0.05); }
+		/* 开关：浅色模式下轨道用深色、滑块用浅色，否则两者同色会看不见 */
+		:root[data-theme="light"] .qb-switch { background: rgba(var(--ink), 0.2); }
+		:root[data-theme="light"] .qb-switch::after { background: var(--surface); }
+		:root[data-theme="light"] .qb-member.on .qb-switch { background: var(--green-soft); }
+		:root[data-theme="light"] .qb-producer.on .qb-switch { background: var(--text-primary); }
+		:root[data-theme="light"] .qb-member.on .qb-switch::after,
+		:root[data-theme="light"] .qb-producer.on .qb-switch::after { background: #f6f7f5; }
+		/* 主题切换按钮 */
+		.theme-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; margin-left: 8px; border-radius: 100px; border: 0.5px solid var(--border); background: var(--surface); color: var(--text-secondary); font-size: 14px; line-height: 1; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; flex-shrink: 0; }
+		.theme-btn:hover { color: var(--text-primary); border-color: var(--border-hover); }
+		body { transition: background 0.3s var(--ease), color 0.3s var(--ease); }
 		* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 		html { scroll-behavior: smooth; }
 		body { background: var(--bg); color: var(--text-primary); font-family: var(--font); -webkit-font-smoothing: antialiased; line-height: 1.6; }
@@ -38,7 +94,7 @@
 		}
 
 		/* ── Entry gate (开屏选择) ─────────────────────────── */
-		#entry-gate { position: fixed; inset: 0; z-index: 200; background: rgba(8,8,8,0.94); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 1; transition: opacity 0.55s var(--ease); }
+		#entry-gate { position: fixed; inset: 0; z-index: 200; background: rgba(var(--veil), 0.94); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 1; transition: opacity 0.55s var(--ease); }
 		#entry-gate.leaving { opacity: 0; pointer-events: none; }
 		.gate-inner { max-width: 720px; width: 100%; }
 		.gate-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 16px; }
@@ -49,7 +105,7 @@
 		.gate-card:nth-child(2) { animation-delay: 0.08s; }
 		.gate-card:nth-child(3) { animation-delay: 0.16s; }
 		@keyframes gateIn { to { opacity: 1; transform: none; } }
-		.gate-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.3); background: var(--surface-hover); }
+		.gate-card:hover { transform: translateY(-3px); border-color: rgba(var(--ink), 0.3); background: var(--surface-hover); }
 		.gate-card:active { transform: translateY(-1px); }
 		.gate-card-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
 		.gate-card-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; flex-grow: 1; }
@@ -74,13 +130,13 @@
 		@media (max-width: 640px) { .hk-cn { font-size: 14px; } }
 		/* 大标题只取极淡的一层：字号大，绿边一重就廉价 */
 		.hero h1 { font-size: clamp(36px, 9vw, 72px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 16px;
-			text-shadow: 2px 3px 0 rgba(96,176,134,0.16), 0 0 70px rgba(96,176,134,0.13); }
+			text-shadow: 2px 3px 0 rgba(var(--green-ink), 0.16), 0 0 70px rgba(var(--green-ink), 0.13); }
 		.hero-sub { color: var(--text-secondary); font-size: 15px; max-width: 480px; line-height: 1.7; }
 
 		/* ── Schedule line (排期，计算器顶部，克制细线) ─────── */
 		.qb-sched { display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; padding: 0 2px 16px; margin-bottom: 22px; border-bottom: 0.5px solid var(--border); }
 		.qb-sched-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-soft); flex-shrink: 0; animation: qpulse 2.6s var(--ease) infinite; }
-		@keyframes qpulse { 0% { box-shadow: 0 0 0 0 rgba(143,195,169,0.45); } 70% { box-shadow: 0 0 0 5px rgba(143,195,169,0); } 100% { box-shadow: 0 0 0 0 rgba(143,195,169,0); } }
+		@keyframes qpulse { 0% { box-shadow: 0 0 0 0 rgba(var(--green-ink),0.45); } 70% { box-shadow: 0 0 0 5px rgba(var(--green-ink),0); } 100% { box-shadow: 0 0 0 0 rgba(var(--green-ink),0); } }
 		.qb-sched-live { font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green-soft); margin-right: 4px; }
 		.qb-sched-item { font-size: 12px; color: var(--text-dim); }
 		.qb-sched-item strong { color: var(--text-primary); font-weight: 600; }
@@ -115,14 +171,14 @@
 		.tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border: 0.5px solid var(--border); color: var(--text-secondary); }
 
 		/* ── Quote Builder ─────────────────────────────────── */
-		.quote-builder { background: var(--surface); border: 0.5px solid rgba(255,255,255,0.12); border-radius: var(--r); padding: 28px; position: relative; overflow: hidden; }
+		.quote-builder { background: var(--surface); border: 0.5px solid rgba(var(--ink), 0.12); border-radius: var(--r); padding: 28px; position: relative; overflow: hidden; }
 		.quote-builder > * { position: relative; }
-		.qb-mode { display: flex; gap: 4px; background: rgba(0,0,0,0.4); border: 0.5px solid var(--border); border-radius: 12px; padding: 4px; }
+		.qb-mode { display: flex; gap: 4px; background: var(--well); border: 0.5px solid var(--border); border-radius: 12px; padding: 4px; }
 		.qb-mode-btn { flex: 1; background: none; border: 0.5px solid transparent; border-radius: 9px; padding: 11px 10px; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: background 0.25s, color 0.25s, border-color 0.25s; }
 		.qb-mode-btn.active { background: var(--surface-hover); color: var(--text-primary); border-color: var(--border-hover); }
 		.qb-row { margin-bottom: 24px; }
 		.qb-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; }
-		.qb-base-line { display: flex; justify-content: space-between; align-items: baseline; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; font-size: 12.5px; color: var(--text-secondary); margin-top: 12px; }
+		.qb-base-line { display: flex; justify-content: space-between; align-items: baseline; background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; font-size: 12.5px; color: var(--text-secondary); margin-top: 12px; }
 
 		/* ── Progressive reveal (逐步揭示) ─────────────────── */
 		/* 每一步只在上一步作答后才挂载；.qb-in 由 JS 在下一帧加上，
@@ -133,42 +189,42 @@
 		.qb-step.active .qb-step-idx { color: var(--green-soft); }
 		.qb-hint { font-size: 12px; color: var(--text-secondary); line-height: 1.65; margin-top: 12px; padding-left: 12px; border-left: 1px solid var(--green-line); }
 		.qb-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-		.qb-chip { background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 20px; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: border-color 0.25s, color 0.25s, background 0.25s; }
+		.qb-chip { background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 20px; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: border-color 0.25s, color 0.25s, background 0.25s; }
 		.qb-chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
-		.qb-chip.active { border-color: rgba(255,255,255,0.45); color: var(--text-primary); background: rgba(255,255,255,0.05); }
+		.qb-chip.active { border-color: rgba(var(--ink), 0.45); color: var(--text-primary); background: rgba(var(--ink), 0.05); }
 		.qb-reset { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: var(--text-dim); font-family: var(--font); font-size: 11.5px; padding: 8px; cursor: pointer; transition: color 0.2s; }
 		.qb-reset:hover { color: var(--text-secondary); }
 		/* 推荐档：只在该步待作答时呼吸微光，选完就安静下来 */
-		.qb-step.active .qb-rec { border-color: var(--green-line); background: rgba(96,176,134,0.06); animation: qbGlow 2.8s var(--ease) infinite; }
-		@keyframes qbGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(143,195,169,0); } 50% { box-shadow: 0 0 0 4px rgba(143,195,169,0.09); } }
-		.qb-badge { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 100px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.5; white-space: nowrap; color: var(--green-soft); border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.08); vertical-align: middle; transition: opacity 0.3s; }
+		.qb-step.active .qb-rec { border-color: var(--green-line); background: rgba(var(--green-ink), 0.06); animation: qbGlow 2.8s var(--ease) infinite; }
+		@keyframes qbGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--green-ink),0); } 50% { box-shadow: 0 0 0 4px rgba(var(--green-ink),0.09); } }
+		.qb-badge { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 100px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.5; white-space: nowrap; color: var(--green-soft); border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.08); vertical-align: middle; transition: opacity 0.3s; }
 		.qb-step:not(.active) .qb-badge { opacity: 0.4; }
 		@media (prefers-reduced-motion: reduce) { .qb-step { opacity: 1; transform: none; transition: none; } .qb-step.active .qb-rec { animation: none; } }
 		.qb-base-line strong { font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
 		.qb-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-		.qb-seg-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 13px; cursor: pointer; transition: border-color 0.25s, background 0.25s; font-family: var(--font); text-align: left; min-height: 60px; }
+		.qb-seg-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 13px; cursor: pointer; transition: border-color 0.25s, background 0.25s; font-family: var(--font); text-align: left; min-height: 60px; }
 		.qb-seg-btn:hover { border-color: var(--border-hover); }
-		.qb-seg-btn.active { border-color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.04); }
+		.qb-seg-btn.active { border-color: rgba(var(--ink), 0.45); background: rgba(var(--ink), 0.04); }
 		.qb-seg-name { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
 		.qb-seg-price { font-size: 12px; color: var(--text-secondary); }
 		.qb-seg-btn.active .qb-seg-price { color: var(--green-soft); font-weight: 600; }
 		.qb-tier-desc { font-size: 12px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
-			.qb-cover-note { font-size: 12px; color: var(--green-soft); line-height: 1.65; margin-top: 12px; padding: 10px 12px; border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.06); border-radius: 9px; }
+			.qb-cover-note { font-size: 12px; color: var(--green-soft); line-height: 1.65; margin-top: 12px; padding: 10px 12px; border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.06); border-radius: 9px; }
 			/* 建议卡：不拦人，只讲清没有 VP 会失去什么；流行歌可以理直气壮忽略 */
-			.qb-advice { margin-top: 12px; padding: 13px 14px; border: 0.5px solid rgba(232,201,138,0.28); background: rgba(232,201,138,0.055); border-radius: 10px; }
-			.qb-advice-t { font-size: 12.5px; font-weight: 700; color: #e8c98a; line-height: 1.55; }
+			.qb-advice { margin-top: 12px; padding: 13px 14px; border: 0.5px solid rgba(var(--amber), 0.28); background: rgba(var(--amber), 0.055); border-radius: 10px; }
+			.qb-advice-t { font-size: 12.5px; font-weight: 700; color: var(--amber-t); line-height: 1.55; }
 			.qb-advice-b { font-size: 12px; color: var(--text-secondary); line-height: 1.7; margin-top: 7px; }
-			.qb-advice-ok { font-size: 11.5px; color: var(--text-dim); line-height: 1.65; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(232,201,138,0.16); }
-			.qb-advice-btn { margin-top: 11px; background: rgba(232,201,138,0.12); border: 0.5px solid rgba(232,201,138,0.36); color: #e8c98a; font-family: var(--font); font-size: 12px; font-weight: 600; padding: 9px 15px; border-radius: 100px; cursor: pointer; transition: background 0.2s; }
-			.qb-advice-btn:hover { background: rgba(232,201,138,0.2); }
+			.qb-advice-ok { font-size: 11.5px; color: var(--text-dim); line-height: 1.65; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(var(--amber), 0.16); }
+			.qb-advice-btn { margin-top: 11px; background: rgba(var(--amber), 0.12); border: 0.5px solid rgba(var(--amber), 0.36); color: var(--amber-t); font-family: var(--font); font-size: 12px; font-weight: 600; padding: 9px 15px; border-radius: 100px; cursor: pointer; transition: background 0.2s; }
+			.qb-advice-btn:hover { background: rgba(var(--amber), 0.2); }
 			/* 解释默认收起：一行结论常驻，细节按需展开 */
 			.qb-lead { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-top: 11px; }
 			/* 决策表：对号入座，替代整段说明文字 */
 			/* 标题旁的问号：所有说明收在这里，点开才显示 */
-			.qb-q { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 10px; padding: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,0.32); background: rgba(255,255,255,0.05); color: var(--text-primary); font-family: var(--font); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: 0; text-transform: none; cursor: pointer; vertical-align: middle; transition: background 0.2s, border-color 0.2s, color 0.2s; }
-			.qb-q:hover { border-color: #fff; background: rgba(255,255,255,0.12); }
-			.qb-q.on { background: var(--green-soft); border-color: var(--green-soft); color: #0d1f16; }
-			.qb-help-panel { margin-top: 13px; padding: 14px 15px; border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.05); border-radius: 10px; }
+			.qb-q { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 10px; padding: 0; border-radius: 50%; border: 1px solid rgba(var(--ink), 0.32); background: rgba(var(--ink), 0.05); color: var(--text-primary); font-family: var(--font); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: 0; text-transform: none; cursor: pointer; vertical-align: middle; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+			.qb-q:hover { border-color: var(--pure); background: rgba(var(--ink), 0.12); }
+			.qb-q.on { background: var(--green-soft); border-color: var(--green-soft); color: var(--green-deep); }
+			.qb-help-panel { margin-top: 13px; padding: 14px 15px; border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.05); border-radius: 10px; }
 			.qb-help-ops { font-size: 12px; color: var(--text-dim); line-height: 1.7; margin-top: 12px; padding-top: 11px; border-top: 0.5px solid var(--border); }
 			.qb-guide-t { font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
 			.qb-guide { width: 100%; border-collapse: collapse; font-size: 12.5px; }
@@ -183,26 +239,26 @@
 			.qb-why[open] > summary::after { content: "\2212"; }
 			.qb-why > summary:hover { color: var(--text-secondary); }
 			.qb-why-body { font-size: 12px; color: var(--text-dim); line-height: 1.75; margin-top: 6px; padding-left: 11px; border-left: 1px solid var(--border); }
-			.qb-cover-line { font-size: 12px; font-weight: 600; color: var(--green-soft); line-height: 1.55; margin-top: 11px; padding: 9px 12px; border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.06); border-radius: 9px; }
-			.qb-advice .qb-why > summary { color: rgba(232,201,138,0.75); }
-			.qb-advice .qb-why > summary:hover { color: #e8c98a; }
-			.qb-advice .qb-why-body { color: var(--text-secondary); border-left-color: rgba(232,201,138,0.25); }
+			.qb-cover-line { font-size: 12px; font-weight: 600; color: var(--green-soft); line-height: 1.55; margin-top: 11px; padding: 9px 12px; border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.06); border-radius: 9px; }
+			.qb-advice .qb-why > summary { color: rgba(var(--amber), 0.75); }
+			.qb-advice .qb-why > summary:hover { color: var(--amber-t); }
+			.qb-advice .qb-why-body { color: var(--text-secondary); border-left-color: rgba(var(--amber), 0.25); }
 		.qb-stepper { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-		.qb-step-btn { width: 40px; height: 40px; border-radius: 50%; border: 0.5px solid var(--border-hover); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 19px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, background 0.2s, transform 0.12s; flex-shrink: 0; }
-		.qb-step-btn:hover { border-color: #fff; }
+		.qb-step-btn { width: 40px; height: 40px; border-radius: 50%; border: 0.5px solid var(--border-hover); background: rgba(var(--ink), 0.03); color: var(--text-primary); font-size: 19px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, background 0.2s, transform 0.12s; flex-shrink: 0; }
+		.qb-step-btn:hover { border-color: var(--pure); }
 		.qb-step-btn:active { transform: scale(0.94); }
 		.qb-count { font-size: 22px; font-weight: 700; min-width: 30px; text-align: center; }
 		.qb-perhead { font-size: 11.5px; color: var(--text-dim); }
 		.qb-more-note { font-size: 11.5px; color: var(--text-secondary); margin-top: 10px; }
 		.qb-voc-list { display: flex; flex-direction: column; gap: 8px; }
-		.qb-voc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 15px; flex-wrap: wrap; }
+		.qb-voc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 15px; flex-wrap: wrap; }
 		.qb-voc-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; }
-		.qb-all-row { background: rgba(96,176,134,0.05); border-color: var(--green-line); margin-bottom: 8px; }
+		.qb-all-row { background: rgba(var(--green-ink), 0.05); border-color: var(--green-line); margin-bottom: 8px; }
 		.qb-all-row .qb-voc-name { color: var(--green-soft); font-weight: 700; letter-spacing: 0.02em; }
 		.qb-mini-seg { display: flex; gap: 4px; flex-wrap: wrap; }
 		.qb-mini-btn { background: none; border: 0.5px solid var(--border); border-radius: 100px; padding: 6px 12px; font-family: var(--font); font-size: 11.5px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; white-space: nowrap; }
 		.qb-mini-btn:hover { border-color: var(--border-hover); }
-		.qb-mini-btn.active { border-color: rgba(255,255,255,0.45); color: var(--text-primary); background: rgba(255,255,255,0.05); }
+		.qb-mini-btn.active { border-color: rgba(var(--ink), 0.45); color: var(--text-primary); background: rgba(var(--ink), 0.05); }
 		.qb-mini-btn.disabled { opacity: 0.3; cursor: not-allowed; }
 		.qb-mini-btn.disabled:hover { border-color: var(--border); }
 		/* summary panel */
@@ -213,65 +269,65 @@
 		.qb-eq strong { color: var(--text-secondary); font-weight: 600; }
 		.qb-total-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 13px; border-top: 0.5px solid var(--border); }
 		.qb-total-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); }
-		.qb-total { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; color: #fff; }
+		.qb-total { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; color: var(--pure); }
 		.qb-total .qb-from { font-size: 12px; font-weight: 500; color: var(--text-dim); margin-left: 4px; }
 		.qb-note { font-size: 11.5px; color: var(--text-dim); margin-top: 11px; line-height: 1.7; }
-		.qb-cta { display: block; width: 100%; margin-top: 16px; background: #f0f0f0; color: #0a0a0a; border: none; border-radius: 10px; padding: 15px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; font-family: var(--font); transition: background 0.2s, transform 0.15s; }
-		.qb-cta:hover { background: #fff; }
+		.qb-cta { display: block; width: 100%; margin-top: 16px; background: var(--cta-bg); color: var(--cta-fg); border: none; border-radius: 10px; padding: 15px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; font-family: var(--font); transition: background 0.2s, transform 0.15s; }
+		.qb-cta:hover { background: var(--pure); }
 		.qb-cta:active { transform: scale(0.985); }
 		.qb-addon-note { font-size: 11.5px; color: var(--text-dim); margin-top: 14px; line-height: 1.7; }
 		/* member toggle */
-		.qb-member { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; cursor: pointer; margin-bottom: 16px; font-family: var(--font); text-align: left; transition: border-color 0.2s, background 0.2s; }
+		.qb-member { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 15px; cursor: pointer; margin-bottom: 16px; font-family: var(--font); text-align: left; transition: border-color 0.2s, background 0.2s; }
 		.qb-member:hover { border-color: var(--border-hover); }
-		.qb-member.on { border-color: var(--green-line); background: rgba(96,176,134,0.05); }
+		.qb-member.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.05); }
 		.qb-member-label { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
 		.qb-member-sub { display: block; font-size: 11.5px; color: var(--text-dim); font-weight: 400; margin-top: 2px; }
-		.qb-switch { width: 36px; height: 22px; border-radius: 100px; background: rgba(255,255,255,0.12); position: relative; flex-shrink: 0; transition: background 0.25s; }
-		.qb-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #f0f0f0; transition: transform 0.25s var(--ease); }
+		.qb-switch { width: 36px; height: 22px; border-radius: 100px; background: rgba(var(--ink), 0.12); position: relative; flex-shrink: 0; transition: background 0.25s; }
+		.qb-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--cta-bg); transition: transform 0.25s var(--ease); }
 		.qb-member.on .qb-switch { background: var(--green-soft); }
-		.qb-member.on .qb-switch::after { transform: translateX(14px); background: #0d1f16; }
-		.qb-producer.on { border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.05); }
-		.qb-producer.on .qb-switch { background: #f0f0f0; }
+		.qb-member.on .qb-switch::after { transform: translateX(14px); background: var(--green-deep); }
+		.qb-producer.on { border-color: rgba(var(--ink), 0.28); background: rgba(var(--ink), 0.05); }
+		.qb-producer.on .qb-switch { background: var(--cta-bg); }
 		.qb-producer.on .qb-switch::after { transform: translateX(14px); background: #0a0a0a; }
 		.qb-plus { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: var(--text-primary); border: 0.5px solid var(--border-hover); vertical-align: middle; }
-		.qb-producer.on .qb-plus { border-color: rgba(255,255,255,0.5); }
+		.qb-producer.on .qb-plus { border-color: rgba(var(--ink), 0.5); }
 		.qb-bd-line.discount span, .qb-bd-line.discount .qb-bd-val { color: var(--green-soft); }
-		.qb-bd-line.rush .qb-bd-val { color: #f0f0f0; }
+		.qb-bd-line.rush .qb-bd-val { color: var(--text-primary); }
 			.qb-date { margin-top: 12px; }
-			.qb-date-field { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border-hover); border-radius: 10px; padding: 15px; cursor: pointer; transition: border-color 0.2s, background 0.2s; min-height: 54px; }
-			.qb-date-field:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); }
-			.qb-date-field.set { border-color: rgba(255,255,255,0.4); }
+			.qb-date-field { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border-hover); border-radius: 10px; padding: 15px; cursor: pointer; transition: border-color 0.2s, background 0.2s; min-height: 54px; }
+			.qb-date-field:hover { border-color: rgba(var(--ink), 0.4); background: rgba(var(--ink), 0.05); }
+			.qb-date-field.set { border-color: rgba(var(--ink), 0.4); }
 			.qb-date-ic { flex-shrink: 0; color: var(--text-secondary); display: flex; }
 			.qb-date-field.set .qb-date-ic { color: var(--text-primary); }
 			.qb-date-face { flex: 1; font-size: 15px; color: var(--text-secondary); font-weight: 500; }
 			.qb-date-field.set .qb-date-face { color: var(--text-primary); font-weight: 600; }
-			.qb-date-cta { flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-primary); background: rgba(255,255,255,0.09); border-radius: 100px; padding: 5px 12px; letter-spacing: 0.02em; white-space: nowrap; }
+			.qb-date-cta { flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-primary); background: rgba(var(--ink), 0.09); border-radius: 100px; padding: 5px 12px; letter-spacing: 0.02em; white-space: nowrap; }
 			.qb-date-native { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; cursor: pointer; font-size: 16px; -webkit-appearance: none; appearance: none; background: transparent; }
 			.qb-date-info { font-size: 12px; color: var(--text-secondary); margin-top: 10px; line-height: 1.6; }
-			.qb-date-info.fee { color: #e8c98a; font-weight: 600; }
+			.qb-date-info.fee { color: var(--amber-t); font-weight: 600; }
 			.qb-date-info.ok { color: var(--green-soft); font-weight: 600; }
-			.qb-date-info.warn { color: #d99; font-weight: 600; }
+			.qb-date-info.warn { color: var(--warn); font-weight: 600; }
 			.qb-bd-line.deliver .qb-bd-val { color: var(--text-primary); }
-			.qb-memblock { background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px 15px; margin-bottom: 16px; transition: border-color 0.2s, background 0.2s; }
-			.qb-memblock.on { border-color: var(--green-line); background: rgba(96,176,134,0.05); }
-			.qb-memblock .qb-voc-row { background: rgba(255,255,255,0.02); }
+			.qb-memblock { background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px 15px; margin-bottom: 16px; transition: border-color 0.2s, background 0.2s; }
+			.qb-memblock.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.05); }
+			.qb-memblock .qb-voc-row { background: rgba(var(--ink), 0.02); }
 			/* 单人单：整块只剩「一张要约卡 + 一个小字切换」，权益写在要约里，不另开卡片 */
-			.qb-mem-on { font-size: 12.5px; font-weight: 600; color: var(--green-soft); line-height: 1.55; padding: 12px 14px; border: 0.5px solid var(--green-line); background: rgba(96,176,134,0.08); border-radius: 10px; margin-top: 12px; }
+			.qb-mem-on { font-size: 12.5px; font-weight: 600; color: var(--green-soft); line-height: 1.55; padding: 12px 14px; border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.08); border-radius: 10px; margin-top: 12px; }
 			.qb-mem-link { display: block; width: 100%; margin-top: 9px; padding: 6px 0; background: none; border: 0; font-family: var(--font); font-size: 11.5px; color: var(--text-dim); text-align: left; cursor: pointer; transition: color 0.2s; }
 			.qb-mem-link:hover { color: var(--text-secondary); }
 			.qb-pb-main { display: block; font-size: 13px; font-weight: 700; color: var(--green-soft); line-height: 1.45; }
 			.qb-pb-sub { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
 			.qb-payback.dim .qb-pb-main { color: var(--text-primary); }
-			.qb-payback { display: block; width: 100%; margin-top: 10px; background: rgba(96,176,134,0.10); border: 0.5px solid var(--green-line); border-radius: 9px; padding: 11px 13px; color: var(--green-soft); font-size: 12px; font-weight: 600; font-family: var(--font); text-align: left; cursor: pointer; line-height: 1.55; transition: background 0.2s; }
-			.qb-payback:hover { background: rgba(96,176,134,0.18); }
-			.qb-payback.dim { color: var(--text-secondary); background: rgba(255,255,255,0.03); border-color: var(--border); }
-			.qb-payback.dim:hover { background: rgba(255,255,255,0.06); }
+			.qb-payback { display: block; width: 100%; margin-top: 10px; background: rgba(var(--green-ink), 0.10); border: 0.5px solid var(--green-line); border-radius: 9px; padding: 11px 13px; color: var(--green-soft); font-size: 12px; font-weight: 600; font-family: var(--font); text-align: left; cursor: pointer; line-height: 1.55; transition: background 0.2s; }
+			.qb-payback:hover { background: rgba(var(--green-ink), 0.18); }
+			.qb-payback.dim { color: var(--text-secondary); background: rgba(var(--ink), 0.03); border-color: var(--border); }
+			.qb-payback.dim:hover { background: rgba(var(--ink), 0.06); }
 		.qb-seg.two { grid-template-columns: repeat(2, 1fr); }
 		.qb-seg.four { grid-template-columns: repeat(2, 1fr); }
 		.qb-split { margin-top: 13px; padding-top: 13px; border-top: 0.5px dashed var(--green-line); display: flex; flex-direction: column; gap: 7px; }
 		.qb-split-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); }
 		.qb-split-row .qb-split-val { font-variant-numeric: tabular-nums; white-space: nowrap; }
-		.qb-split-row.deposit .qb-split-val, .qb-split-row.deposit span { color: #fff; font-weight: 600; }
+		.qb-split-row.deposit .qb-split-val, .qb-split-row.deposit span { color: var(--pure); font-weight: 600; }
 		.qb-split-note { font-size: 11.5px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
 
 		/* ── Collapsible folds (AA 账单 / 费用说明) ─────────── */
@@ -282,9 +338,9 @@
 		.qb-fold[open] summary::after { transform: rotate(45deg); }
 		.qb-fold summary:hover { color: var(--text-primary); }
 		.qb-fold-body { padding-bottom: 4px; }
-		.qb-aa-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); padding: 7px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); }
+		.qb-aa-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); padding: 7px 0; border-bottom: 0.5px solid rgba(var(--ink), 0.05); }
 		.qb-aa-row:last-of-type { border-bottom: none; }
-		.qb-aa-val { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.qb-aa-val { color: var(--pure); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 		.qb-aa-tag { font-size: 11px; color: var(--text-dim); margin-left: 6px; }
 		.qb-fold-note { font-size: 11.5px; color: var(--text-dim); line-height: 1.7; margin-top: 9px; }
 
@@ -306,7 +362,7 @@
 		.loc-meta { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
 		.loc-meta strong { color: var(--text-secondary); font-weight: 600; }
 		.loc-map { color: var(--green-soft); text-decoration: none; border-bottom: 0.5px solid var(--green-line); padding-bottom: 1px; }
-		.loc-map:hover { color: #fff; }
+		.loc-map:hover { color: var(--pure); }
 		.loc-gear { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
 		.loc-gear .tag { text-transform: none; letter-spacing: 0; }
 		@media (max-width: 640px) { .loc-grid { grid-template-columns: 1fr; } .loc-card { padding: 20px 18px; } }
@@ -326,35 +382,47 @@
 		.perk-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
 
 		/* ── Project Lead ──────────────────────────────────── */
-		.projectlead-card { background: var(--surface); border: 0.5px solid rgba(255,255,255,0.15); border-radius: var(--r); padding: 28px 32px; }
+		.projectlead-card { background: var(--surface); border: 0.5px solid rgba(var(--ink), 0.15); border-radius: var(--r); padding: 28px 32px; }
 		.pl-highlights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
-		.pl-highlight-item { padding: 12px 14px; background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 10px; }
+		.pl-highlight-item { padding: 12px 14px; background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; }
 		.pl-highlight-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
 		.pl-highlight-value { font-size: 12px; color: var(--text-primary); font-weight: 500; line-height: 1.4; }
 		.pl-deposit-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; display: block; margin-bottom: 3px; }
-		.pl-deposit-num { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; color: #fff; display: block; margin-bottom: 14px; }
+		.pl-deposit-num { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; color: var(--pure); display: block; margin-bottom: 14px; }
 		.pl-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 14px; max-width: 560px; }
 		.pl-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-		.pl-cta { display: inline-block; font-size: 12px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.06em; padding: 9px 18px; border: 0.5px solid rgba(255,255,255,0.25); border-radius: 100px; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
-		.pl-cta:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.05); }
+		.pl-cta { display: inline-block; font-size: 12px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.06em; padding: 9px 18px; border: 0.5px solid rgba(var(--ink), 0.25); border-radius: 100px; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+		.pl-cta:hover { border-color: rgba(var(--ink), 0.5); background: rgba(var(--ink), 0.05); }
 
 		/* ── FAQ ───────────────────────────────────────────── */
 		/* 吸顶区块导航：25 屏长页的唯一路标 */
-		.sec-nav { position: sticky; top: 0; z-index: 90; margin: 0 -24px 8px; padding: 0 24px; background: rgba(8,8,8,0.82); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); border-bottom: 0.5px solid var(--border); }
+		.sec-nav { position: sticky; top: 0; z-index: 90; margin: 0 -24px 8px; padding: 0 24px; background: rgba(var(--veil), 0.82); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); border-bottom: 0.5px solid var(--border); }
 		.sec-nav-in { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 9px 0; }
 		.sec-nav-in::-webkit-scrollbar { display: none; }
 		.sec-nav-btn { flex: 0 0 auto; background: none; border: 0.5px solid transparent; border-radius: 100px; padding: 8px 13px; font-family: var(--font); font-size: 12.5px; font-weight: 600; color: var(--text-dim); cursor: pointer; white-space: nowrap; transition: color 0.2s, background 0.2s, border-color 0.2s; min-height: 36px; }
 		.sec-nav-btn:hover { color: var(--text-primary); }
-		.sec-nav-btn.on { color: var(--green-soft); background: rgba(96,176,134,0.10); border-color: var(--green-line); }
+		.sec-nav-btn.on { color: var(--green-soft); background: rgba(var(--green-ink), 0.10); border-color: var(--green-line); }
 		@media (max-width: 640px) { .sec-nav { margin: 0 -16px 6px; padding: 0 16px; } }
 		/* 报价器进度：ADHD 最需要「还剩几步」看得见 */
 		/* 吸顶在区块导航正下方（--navh 由 JS 实测写入）。
 		   必须渲染在 .quote-builder 之外——那个容器有 overflow:hidden，会让 sticky 失效。*/
-		.qb-prog { position: sticky; top: var(--navh, 55px); z-index: 80; display: flex; align-items: center; gap: 11px; margin-bottom: 12px; padding: 9px 15px; border-radius: 100px; border: 0.5px solid var(--border); background: rgba(12,12,12,0.9); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
-		.qb-prog-bar { flex: 1; height: 3px; border-radius: 100px; background: rgba(255,255,255,0.08); overflow: hidden; }
+		.qb-prog { position: sticky; top: var(--navh, 55px); z-index: 80; display: flex; align-items: center; gap: 11px; margin-bottom: 12px; padding: 9px 15px; border-radius: 100px; border: 0.5px solid var(--border); background: rgba(var(--veil), 0.9); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
+		.qb-prog-bar { flex: 1; height: 3px; border-radius: 100px; background: rgba(var(--ink), 0.08); overflow: hidden; }
 		.qb-prog-fill { height: 100%; border-radius: 100px; background: var(--green-soft); transition: width 0.45s var(--ease); }
 		.qb-prog-txt { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
 		.qb-prog.done .qb-prog-txt { color: var(--green-soft); }
+		/* 合作流程：编号 + 一行标题 + 一行说明，扫读用 */
+		.flow-list { display: flex; flex-direction: column; margin-top: 6px; }
+		.flow-step { position: relative; display: flex; gap: 17px; padding-bottom: 26px; }
+		.flow-step:last-child { padding-bottom: 0; }
+		/* 竖线把编号串起来，读作「流程」而不是「列表」 */
+		.flow-step::before { content: ""; position: absolute; left: 14px; top: 30px; bottom: 2px; width: 1px; background: var(--green-line); }
+		.flow-step:last-child::before { display: none; }
+		.flow-n { position: relative; z-index: 1; flex: 0 0 29px; height: 29px; border-radius: 50%; border: 1px solid var(--green-line); background: var(--bg); color: var(--green-soft); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+		.flow-c { padding-top: 5px; }
+		.flow-t { display: block; font-size: 14.5px; font-weight: 700; color: var(--text-primary); line-height: 1.35; letter-spacing: -0.01em; }
+		.flow-d { display: block; font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; margin-top: 6px; max-width: 620px; }
+		@media (max-width: 640px) { .flow-step { gap: 13px; padding-bottom: 22px; } .flow-step::before { left: 13px; } .flow-n { flex: 0 0 27px; height: 27px; font-size: 11.5px; } .flow-t { font-size: 14px; } }
 		.faq-section { margin-top: 8px; padding-top: 64px; border-top: 0.5px solid var(--border); }
 		.faq-head { margin-bottom: 36px; }
 		.faq-item { border-bottom: 0.5px solid var(--border); }
@@ -377,11 +445,11 @@
 		/* ── Footer & floating CTA ─────────────────────────── */
 		footer { text-align: center; color: var(--text-dim); font-size: 11px; letter-spacing: 0.06em; margin-top: 80px; padding-bottom: env(safe-area-inset-bottom); }
 		.floating-cta { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap; }
-		.floating-btn { display: flex; align-items: center; gap: 10px; background: rgba(17,17,17,0.85); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 0.5px solid var(--border-hover); color: var(--text-primary); padding: 14px 28px; border-radius: 100px; font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s; min-height: 52px; }
-		.floating-btn:hover { background: #fff; border-color: #fff; color: #000; }
+		.floating-btn { display: flex; align-items: center; gap: 10px; background: var(--pill-bg); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 0.5px solid var(--border-hover); color: var(--text-primary); padding: 14px 28px; border-radius: 100px; font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s; min-height: 52px; }
+		.floating-btn:hover { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg); }
 		.floating-btn:active { transform: scale(0.97); }
 		.btn-dot { width: 6px; height: 6px; background: var(--green-soft); border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
-		.floating-btn:hover .btn-dot { background: #000; }
+		.floating-btn:hover .btn-dot { background: var(--cta-fg); }
 		#services-container { transition: opacity 0.18s ease; }
 		#services-container.fading { opacity: 0; }
 
@@ -464,6 +532,7 @@
 			<button class="lang-btn" data-lang="en" onclick="switchLang('en')">EN</button>
 			<button class="lang-btn" data-lang="ko" onclick="switchLang('ko')">한국어</button>
 		</div>
+		<button class="theme-btn" id="theme-btn" onclick="qbToggleTheme()" aria-label="Theme"></button>
 	</div>
 	<div class="hero">
 		<div class="hero-kicker" id="hero-kicker"></div>
@@ -489,6 +558,7 @@
 // 内部工资·成本·毛利结构见 _internal-pricing.md
 // （该文件已在 .gitignore 中忽略，不会发布——此页为公开页面，请勿把内部经济数据写进这里）
 var CONTACT = { wechat: "Cookdao" };
+var SITE_URL = "cumusic.work/chefdao/price";
 // ── 排期设置 ─────────────────────────────────────────────
 // 标准：stdMin–stdMax 工作日（周日休息，跳过）；加急：rushMin–rushMax 自然日（含周日，加班）
 // 交付日期全自动现算，平时零维护；真排爆了才把 backlogDays 调大几天，标准区间自动整体顺延
@@ -677,7 +747,15 @@ var I18N = {
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
-			brand: "刀大厨 ChefDao", copyTitle: "报价单", catProd: "人声制作", catEdit: "音频编辑", copyMix: "混音", copyDeliver: "交付", copyWeChat: "微信预约"
+			brand: "刀大厨 ChefDao", copyTitle: "报价单",
+			copyTerms: "合作要点", copyMore: "完整说明",
+			copyTermsList: [
+				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
+				"意见请听完整首、攒成一条发我；交付后 7 日内提出",
+				"方向确认版之前可全额退定金，之后定金不退",
+				"默认交付成品母带 ×1；TV Mix / 纯伴奏提前说可一起给"
+			],
+			ctaNote: "复制的报价单里附了合作要点，请连同报价一起发给我。", catProd: "人声制作", catEdit: "音频编辑", copyMix: "混音", copyDeliver: "交付", copyWeChat: "微信预约"
 		},
 		services: [
 			{
@@ -749,11 +827,22 @@ var I18N = {
 					{ t: "持续输出", d: "前沿录音混音技术、工程思路、实战经验，定期更新。" },
 					{ t: "每周作品点评", d: "每周一次，不间断。练习作品、demo、已发布单曲、商业项目均可交流。" }
 				]
+			},
+			{
+				id: "flow", type: "flow", groupHead: "合作方式 How we work", step: "合作流程", title: "制作流程 Process",
+				sub: "五个阶段，从方向对齐到成品交付。",
+				steps: [
+					{ t: "方向对齐", d: "确认风格方向、参考作品与期望交付日期。" },
+					{ t: "定金与素材", d: "支付 50% 定金后锁定档期与报价。请提供未经效果处理的干声与伴奏，24-bit / 48kHz 或更高。" },
+					{ t: "方向确认版", d: "交付 30–60 秒试听片段用于确认整体方向（此阶段仅供方向判断，非最终质感）。如方向不符，<strong>定金全额退还</strong>，项目终止。" },
+					{ t: "制作与审听", d: "朝既定方向的修正<strong>不限次数</strong>。变更方向或追加创意需求视为新方案，将于执行前另行报价。审听意见通过 Samply 时间轴提交，建议完整试听后一并汇总。" },
+					{ t: "母带与交付", d: "尾款结清后交付成品母带，附制作信息（Credits）。修改意见请于交付后 <strong>7 日内</strong>提出。" }
+				]
 			}
 		],
 		faqTitle: "FAQ",
 		faqStep: "常见问题",
-		navRec: "录音", navMix: "混音", navMaster: "母带", navExtra: "延伸服务", navMember: "刀门会员", navFaq: "常见问题",
+		navRec: "录音", navMix: "混音", navFlow: "流程", navMaster: "母带", navExtra: "延伸服务", navMember: "刀门会员", navFaq: "常见问题",
 		faqGroups: ["我能做什么", "怎么开始 · 怎么发素材", "价格 · 付款 · 退款", "时间 · 交付 · 修改", "质量 · 素材"],
 		faqItems: [
 			{
@@ -783,7 +872,14 @@ var I18N = {
 			},
 			{
 				q: "修改次数有限制吗？",
-				a: "正常范围内的修改都可以。我更在意最后作品是否成立，而不是卡死修改次数。但如果中途大幅改编排、换人声、重做方向，会按新工时计算。"
+				a: "不限次数。判断依据不是次数，而是改动的性质：",
+				list: [
+					"修正：使成品更贴近既定方向（人声位置、亮度、空间、清晰度、平衡等），不限次数，已含在费用内",
+					"新方案：尝试新的处理思路、追加创意效果或变更整体方向，属新增创作工作，另行计费",
+					"人声制作含方案数：执行向 1 版、创意向 3 版，超出部分按方案计费",
+					"执行向的需求请于开工前一次性提出；开工后追加为 50 元/次",
+					"审听意见建议完整试听后一并汇总，并于交付后 7 日内提出；涉及另行计费的工作均于执行前先行报价"
+				]
 			},
 			{
 				q: "没有母带工程师怎么办？",
@@ -805,18 +901,20 @@ var I18N = {
 				list: [
 					"干声：不加任何效果的原始录音（混响、autotune 都别印上去），WAV 48kHz/24bit 最佳",
 					"伴奏：成品 instrumental，注明 BPM 与调性（不确定也没关系）",
-					"参考曲：1 首，告诉我你想要的方向",
+					"参考曲：1–3 首（第一次做歌必需），确认后作为本次项目的方向基准",
 					"多条 take 想让我挑选拼合（comp）可以，这是额外服务，会另计"
 				]
 			},
 			{
 				q: "做完交付什么文件？交付后还能改吗？",
-				a: "默认交付两个版本，格式 WAV / MP3 / M4A（48kHz / 24bit）：",
+				a: "默认交付成品母带一个版本，24-bit / 48kHz 无损（WAV / MP3 / M4A）：",
 				list: [
-					"完整母带版 ×1、简易现场版 ×1",
-					"工程文件不含在默认交付里，仅用于维护售后，保留 30 天（到期前 3 天提醒，之后自动删除，请提前备份）",
-					"额外导出（分轨 stems / 伴奏 / Acapella / TV Mix / 其他格式）：150 元/小时按需处理",
-					"交付后微调：7 日内 100 元/次，7 日后 200 元/次；结构性修改（重编曲、换段落、大量编辑）150 元/小时"
+					"成品母带（Master）×1，并附制作信息（Credits）",
+					"现场版 / TV Mix、纯伴奏（Instrumental）：提前告知可一并交付，不另计费",
+					"试听与成品通过 Samply 交付，支持时间轴逐段留言",
+					"工程文件不含在默认交付内，仅用于售后维护，保留 30 天（到期前 3 天提醒，之后自动删除）",
+					"额外导出（分轨 / Acapella / 干声 / 其他格式）：150 元/小时",
+					"交付后微调：7 日内 100 元/次，7 日后 200 元/次；结构性修改 150 元/小时。成品请自行长期备份"
 				]
 			},
 			{
@@ -825,11 +923,24 @@ var I18N = {
 			},
 			{
 				q: "需要我提供参考曲（reference）吗？",
-				a: "强烈建议。一首 reference 抵一千字——它告诉我你要的空间、人声位置、情绪和整体质感。可以发 1–3 首，并说清你具体喜欢它哪里：是人声、氛围，还是律动。"
+				a: "视制作经验而定。一首参考曲可省去大量描述——它直接说明所需的空间、人声位置、情绪与整体质感。",
+				list: [
+					"已有制作经验、能以语言描述方向者：非必需",
+					"首次制作歌曲者：必需提供 1–3 首，为开工前置条件",
+					"提供时请说明具体偏好之处：人声、氛围或律动",
+					"参考曲经确认后即为本项目的方向基准，后续修改均以此为准",
+					"中途更换参考曲或变更方向基准，视为方向变更，另行计费"
+				]
 			},
 			{
 				q: "怎么付款？定金和尾款怎么算？",
-				a: "半半模式：定金开工，成品交付时补齐尾款。定金确认后我才排期开工，尾款结清后交付无水印成品。走微信。"
+				a: "半半模式：定金开工，成品交付时结清尾款。定金确认后进入排期，尾款结清后交付无水印成品。",
+				list: [
+					"定金 50%，确认后锁定档期与当前报价",
+					"定金到账后，先于音频编辑前交付 30–60 秒方向确认版",
+					"如方向不符：定金全额退还，项目终止",
+					"方向确认后正式开工；此后中途终止，定金用于已投入的创作时间，不予退还"
+				]
 			},
 			{
 				q: "做整张专辑会比单曲便宜吗？",
@@ -843,11 +954,18 @@ var I18N = {
 			},
 			{
 				q: "混到一半我想改方向，会加钱吗？",
-				a: "正常范围的修改不加钱，我在意作品成不成立，不卡修改次数。但大幅改编排、换人声、或推翻方向重做，相当于一首新歌的工作量，会按新工时另计——我会先跟你确认再动手，不会先做后收。另外：如果第一版交付时双方就觉得不对，往往说明我们没在一个频道上，请立刻告诉我你的真实感受。真的不对，我们可以下次再合作，不硬着头皮做下去——对彼此都更好。"
+				a: "只要是朝着已确认方向的修正，都不加钱，也不卡次数。但大幅改编排、换人声、或推翻方向重做，相当于一首新歌的工作量，会按新工时另计——我会先跟你确认再动手，不会先做后收。另外：如果第一版交付时双方就觉得不对，往往说明我们没在一个频道上，请立刻告诉我你的真实感受。真的不对，我们可以下次再合作，不硬着头皮做下去——对彼此都更好。"
 			},
 			{
 				q: "混得不满意，能退款吗？",
-				a: "我不提供免费完整试混——混音本身就是高强度的创作判断。如果你不确定合不合适，可以先付 30% 定金试混一小段，方向不对及时止损。正式开工后，定金用于已投入的创作时间，不退；但只要在正常范围内，我会一直修到你满意为止。"
+				a: "以「方向确认版」为界，分两个阶段：",
+				list: [
+					"方向确认版之前：如方向不符，定金全额退还，项目终止",
+					"方向确认版之后：定金用于已投入的创作时间，不予退还",
+					"朝既定方向的修正不限次数，直至满意为止",
+					"不提供免费完整试混——方向确认版已承担该职能",
+					"若首版交付时双方即判断方向不符，请如实反馈；确不契合则本次终止，另择时机合作"
+				]
 			},
 			{
 				q: "能保证质量、保证上热门吗？",
@@ -860,6 +978,17 @@ var I18N = {
 			{
 				q: "「担任制作人」和普通混音有什么区别？",
 				a: "普通混音：你给我成型的编排和人声，我把它混到最好。担任制作人（Produced by ChefDao）：我从创意层面主导整首歌——人声怎么设计、和声怎么铺、氛围往哪走、哪里该改，深度参与并署名。前者是「把你的想法实现好」，后者是「我和你一起决定这首歌该是什么样」。报价器里可勾选，按混音小计加收。"
+			},
+			{
+				q: "Vocal Production 阶段可以一直试新想法吗？",
+				a: "可以，但需区分「修正」与「探索」。尝试是有产出的创作工作，不属于修正：",
+				list: [
+					"执行向含 1 版：需求于开工前提出，按指令执行",
+					"创意向含 3 版：方向可完全不同，由工作室提案供选择",
+					"选定方案后的细节修正不限次数，已含在费用内",
+					"超出所含版数的尝试、或定稿后追加创意效果，按方案另行计费；执行向开工后追加为 50 元/次",
+					"减少试错最有效的方式，是开工前提供更多信息：参考曲、明确排除的方向，以及作品想传达的感受"
+				]
 			},
 			{
 				q: "我不懂混音术语，能顺畅沟通吗？",
@@ -983,7 +1112,15 @@ var I18N = {
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
-			brand: "ChefDao 刀大厨", copyTitle: "Quote", catProd: "Vocal Production", catEdit: "Audio Editing", copyMix: "Mix", copyDeliver: "Delivery", copyWeChat: "Book on WeChat"
+			brand: "ChefDao 刀大厨", copyTitle: "Quote",
+			copyTerms: "Working terms", copyMore: "Full details",
+			copyTermsList: [
+				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before I start",
+				"Listen through, then send notes in one message; within 7 days of delivery",
+				"Full deposit refund before the direction check; after that the deposit is non-refundable",
+				"Default delivery is the final master ×1; TV mix / instrumental included if you ask in advance"
+			],
+			ctaNote: "The copied quote includes the working terms — please send it to me as-is.", catProd: "Vocal Production", catEdit: "Audio Editing", copyMix: "Mix", copyDeliver: "Delivery", copyWeChat: "Book on WeChat"
 		},
 		services: [
 			{
@@ -1055,11 +1192,22 @@ var I18N = {
 					{ t: "Ongoing insights", d: "Recording and mixing techniques, engineering approaches, and hands-on experience, updated regularly." },
 					{ t: "Weekly feedback", d: "Once a week, every week. Practice tracks, demos, released singles, and commercial projects all welcome." }
 				]
+			},
+			{
+				id: "flow", type: "flow", groupHead: "How we work", step: "Process", title: "Production process",
+				sub: "Five stages, from aligning the direction to final delivery.",
+				steps: [
+					{ t: "Direction alignment", d: "Confirm the stylistic direction, reference tracks and target delivery date." },
+					{ t: "Deposit & material", d: "A 50% deposit secures the slot and the quote. Please supply unprocessed dry vocals and the instrumental at 24-bit / 48kHz or higher." },
+					{ t: "Direction check", d: "A 30–60 second excerpt is delivered to confirm the overall direction (indicative of direction only, not the final sound). Should the direction not be right, the <strong>deposit is refunded in full</strong> and the project ends." },
+					{ t: "Production & review", d: "Corrections toward the agreed direction are <strong>unlimited</strong>. A change of direction or additional creative requests constitute a new approach and are quoted before work begins. Notes are submitted on the Samply timeline, ideally consolidated after a full listen." },
+					{ t: "Mastering & delivery", d: "The final master is delivered with credits once the balance is settled. Revision notes are accepted <strong>within 7 days</strong> of delivery." }
+				]
 			}
 		],
 		faqTitle: "FAQ",
 		faqStep: "Questions",
-		navRec: "Recording", navMix: "Mixing", navMaster: "Mastering", navExtra: "Extended", navMember: "Membership", navFaq: "FAQ",
+		navRec: "Recording", navMix: "Mixing", navFlow: "Process", navMaster: "Mastering", navExtra: "Extended", navMember: "Membership", navFaq: "FAQ",
 		faqGroups: ["What I do", "Getting started & sending files", "Price, payment & refunds", "Timing, delivery & revisions", "Quality & source material"],
 		faqItems: [
 			{
@@ -1089,7 +1237,16 @@ var I18N = {
 			},
 			{
 				q: "Is there a revision limit?",
-				a: "Normal revisions are fine. I care more about whether the final work holds up than counting edits. That said, major mid-project changes — new arrangement, new vocals, new direction — will be billed as a new project."
+				a: "No limit. What matters isn't the count — it's which category the change falls into:",
+				list: [
+					"Corrections: bringing the mix closer to the direction we already agreed on (vocal placement, brightness, space, clarity, balance) — unlimited, included, until you're happy",
+					"New approaches: trying a different treatment, layering in new creative effects, changing the overall direction — that's new creative work, not a correction, and it's quoted separately",
+					"Versions included: Execution = 1 (built from the notes you send before I start), Creative = 3 (I propose directions, you pick)",
+					"For Execution, send everything before I start; new ideas added after that are $8 each",
+					"<strong>Send your notes in one message</strong>: listen to the whole track, then collect them. Scattered notes get queued anyway — the same edits take half the time when they arrive together",
+					"Revision notes within 7 days of delivery; after that it counts as accepted",
+					"Anything billable is always quoted and confirmed before I start — never billed after the fact"
+				]
 			},
 			{
 				q: "What if I don't have a mastering engineer?",
@@ -1111,18 +1268,22 @@ var I18N = {
 				list: [
 					"Dry vocals: raw recording with no effects (no reverb or autotune printed in), WAV 48kHz/24bit ideal",
 					"Instrumental: the finished beat, with BPM and key noted (no worries if you're unsure)",
-					"Reference: 1 track that shows me the direction you want",
+					"Reference: 1–3 tracks (required if this is your first record) — once confirmed, it's the agreed direction",
 					"Multiple takes for me to comp? Sure — that's an add-on and billed separately"
 				]
 			},
 			{
 				q: "What files do I get on delivery? Can I still make changes after?",
-				a: "You get two versions by default, in WAV / MP3 / M4A (48kHz / 24bit):",
+				a: "One version by default — the final master, 24-bit / 48kHz lossless (WAV / MP3 / M4A):",
 				list: [
-					"Full mastered version ×1, simple reference version ×1",
+					"<strong>Final master ×1</strong> — that's the default delivery",
+					"TV mix (vocal over instrumental) and instrumental: <strong>ask in advance and they come with it</strong>, no extra charge",
+					"Previews and finals go through <strong>Samply</strong>, so you can leave notes right on the timeline — far clearer than passing files back and forth",
 					"Project/session files aren't part of the default delivery — kept 30 days for maintenance only (reminder 3 days before, auto-deleted after, so back up in time)",
-					"Extra exports (stems / instrumental / acapella / TV mix / other formats): billed at an hourly rate on request",
-					"Post-delivery tweaks: minor edits ¥100 within 7 days, ¥200 after; structural changes (re-arrangement, section swaps, heavy editing) billed hourly"
+					"Extra exports (stems / acapella / dry vocals / other formats): $25/hr on request",
+					"Post-delivery tweaks: minor edits $15 within 7 days, $30 after; structural changes (re-arrangement, section swaps, heavy editing) $25/hr",
+					"Credits are included on delivery — audio editing / mixing / mastering listed separately, ready for your release",
+					"Please back up the finals yourself too — I don't promise permanent storage"
 				]
 			},
 			{
@@ -1131,11 +1292,25 @@ var I18N = {
 			},
 			{
 				q: "Do you need me to send a reference track?",
-				a: "Highly recommended. One reference is worth a thousand words — it tells me the space, vocal placement, emotion, and overall texture you're after. Send 1–3 and be specific about what you like in them: the vocals, the atmosphere, or the groove."
+				a: "Depends on how much experience you have. One reference is worth a thousand words: it tells me the space, vocal placement, emotion, and overall texture you're after.",
+				list: [
+					"Made records before and can describe the direction in words? Not required — we can just talk it through",
+					"First record? Then 1–3 references are required before I start — without a shared standard, \"too dark\" and \"too bright\" just burn both our time",
+					"When you send them, be specific about what you like: the vocals, the atmosphere, or the groove",
+					"Once confirmed, the reference becomes the agreed direction for the project — all revisions are judged against it",
+					"Swapping the reference or shifting the benchmark mid-project counts as a change of direction, billed as new hours",
+					"First record and genuinely can't find a reference? We'll talk the direction through and I'll set the benchmark — but that step can't be skipped"
+				]
 			},
 			{
 				q: "How does payment work? Deposit and balance?",
-				a: "50/50: pay the deposit to start, the balance on delivery. I schedule and start once the deposit is confirmed, and deliver the watermark-free final once the balance is settled. Via WeChat."
+				a: "50/50: pay the deposit to start, the balance on delivery. I schedule and start once the deposit is confirmed, and deliver the watermark-free final once the balance is settled. Via WeChat.",
+				list: [
+					"Once the deposit lands I build a 30–60 second <strong>direction check</strong> from the raw material — before any editing starts — so you can hear where I'm taking it",
+					"Not feeling it? <strong>Full deposit refund</strong>, project ends, no hard feelings — that step exists so either of us can stop early",
+					"Once the direction is signed off I start properly; cancelling after that, the deposit covers the creative time already spent",
+					"Watermark-free final is delivered when the balance clears"
+				]
 			},
 			{
 				q: "Is a full album cheaper than singles?",
@@ -1149,11 +1324,17 @@ var I18N = {
 			},
 			{
 				q: "If I want to change direction mid-mix, does it cost more?",
-				a: "Normal-range revisions don't cost extra — I care whether the track lands, not about capping revisions. But major re-arrangement, swapping the vocal, or scrapping and redoing the direction is essentially a new song's worth of work, billed as new hours — I'll confirm with you before touching it, never bill after the fact. Also: if the first version already feels off to both of us, it usually means we're not on the same wavelength. Tell me honestly right away. If it's really not clicking, we can work together next time instead of forcing it through — better for both of us."
+				a: "Any correction that moves the mix toward the direction we agreed on is free and uncapped. But major re-arrangement, swapping the vocal, or scrapping and redoing the direction is essentially a new song's worth of work, billed as new hours — I'll confirm with you before touching it, never bill after the fact. Also: if the first version already feels off to both of us, it usually means we're not on the same wavelength. Tell me honestly right away. If it's really not clicking, we can work together next time instead of forcing it through — better for both of us."
 			},
 			{
 				q: "What if I'm not happy with the mix — can I get a refund?",
-				a: "I don't offer a free full trial mix — mixing is high-intensity creative judgment in itself. If you're unsure we're a fit, you can pay a 30% deposit for a short trial mix and cut your losses early if the direction's wrong. Once work officially starts, the deposit covers the creative time already invested and isn't refundable — but within a normal range, I'll keep revising until you're happy."
+				a: "Two phases, and the line between them is the direction check:",
+				list: [
+					"<strong>Before the direction check</strong>: if it isn't landing, full deposit refund and we stop — I'd rather refund you here than have us both grind out something neither of us likes",
+					"<strong>After the direction check</strong>: the deposit covers creative time already spent and isn't refundable; but any correction toward the direction we agreed on, I'll keep revising until you're happy",
+					"I don't offer a free full trial mix — mixing is high-intensity creative judgment, and the direction check already serves that purpose",
+					"If the first delivery feels off to both of us, tell me straight away. If we're genuinely not a fit we stop here and work together another time — better for both of us"
+				]
 			},
 			{
 				q: "Can you guarantee quality, or a hit?",
@@ -1166,6 +1347,17 @@ var I18N = {
 			{
 				q: "What's the difference between \"Producer\" and a regular mix?",
 				a: "Regular mix: you give me a finished arrangement and vocals, and I mix it to its best. As Producer (Produced by ChefDao): I lead the whole record creatively — how the vocals are designed, how the harmonies are layered, where the atmosphere goes, what should change — I'm deeply involved and credited. The former is \"realizing your idea well\"; the latter is \"deciding together what this song should be.\" Toggle it in the quote builder — charged on top of the mix subtotal."
+			},
+			{
+				q: "Can we keep trying new ideas during Vocal Production?",
+				a: "Yes — but let's separate \"fixing\" from \"exploring.\" Trying things is the whole point of VP and I won't discourage it. Exploring is just creative work with its own output, not a correction:",
+				list: [
+					"Execution includes 1 version: you tell me what you want before I start, I build it",
+					"Creative includes 3 versions — completely different directions, I propose and you pick",
+					"Once you've picked one, detail corrections on it are unlimited and included",
+					"Want to explore beyond what's included, or add effects after we've locked it? Quoted per version; ideas added to an Execution job after start are $8 each — always quoted first",
+					"The best way to avoid trial and error is more information upfront: references, the directions you don't want, and what you want the listener to feel"
+				]
 			},
 			{
 				q: "I don't know mixing terms — can we still communicate?",
@@ -1289,7 +1481,15 @@ var I18N = {
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
-			brand: "刀大厨 ChefDao", copyTitle: "견적서", catProd: "보컬 프로덕션", catEdit: "오디오 편집", copyMix: "믹스", copyDeliver: "납품", copyWeChat: "위챗 예약"
+			brand: "刀大厨 ChefDao", copyTitle: "견적서",
+			copyTerms: "협업 요점", copyMore: "전체 안내",
+			copyTermsList: [
+				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
+				"전체를 들으신 뒤 의견을 한 번에 모아 주세요. 납품 후 7일 이내",
+				"방향 확인본 이전에는 계약금 전액 환불, 이후에는 환불되지 않습니다",
+				"기본 납품은 완성 마스터 ×1. TV 믹스 / 인스트루멘탈은 미리 말씀하시면 함께 드립니다"
+			],
+			ctaNote: "복사된 견적서에 협업 요점이 포함되어 있습니다. 그대로 보내주세요.", catProd: "보컬 프로덕션", catEdit: "오디오 편집", copyMix: "믹스", copyDeliver: "납품", copyWeChat: "위챗 예약"
 		},
 		services: [
 			{
@@ -1361,11 +1561,22 @@ var I18N = {
 					{ t: "지속적인 인사이트", d: "최신 레코딩·믹싱 테크닉, 엔지니어링 사고방식, 실전 경험을 정기 업데이트." },
 					{ t: "주간 작품 피드백", d: "매주 1회, 빠짐없이. 연습 작품, 데모, 발매 싱글, 커머셜 프로젝트 모두 환영." }
 				]
+			},
+			{
+				id: "flow", type: "flow", groupHead: "협업 방식 How we work", step: "협업 프로세스", title: "제작 프로세스 Process",
+				sub: "방향 확정부터 완성본 납품까지, 다섯 단계.",
+				steps: [
+					{ t: "방향 확정", d: "스타일 방향, 레퍼런스, 희망 납품일을 확정합니다." },
+					{ t: "계약금 및 소스", d: "계약금 50% 입금 시 일정과 견적이 확정됩니다. 이펙트를 적용하지 않은 드라이 보컬과 반주를 24-bit / 48kHz 이상으로 보내주시기 바랍니다." },
+					{ t: "방향 확인본", d: "전체 방향 확인을 위해 30–60초 발췌본을 전달합니다(방향 판단용이며 최종 사운드가 아닙니다). 방향이 맞지 않을 경우 <strong>계약금은 전액 환불</strong>되며 프로젝트는 종료됩니다." },
+					{ t: "제작 및 검토", d: "합의된 방향으로의 보정은 <strong>횟수 제한이 없습니다</strong>. 방향 변경 또는 크리에이티브 추가 요청은 새로운 방안으로 간주되어 착수 전 별도 견적을 드립니다. 검토 의견은 Samply 타임라인을 통해, 전체 청취 후 일괄 정리하여 전달해 주시기 바랍니다." },
+					{ t: "마스터링 및 납품", d: "잔금 정산 후 크레딧과 함께 완성 마스터를 납품합니다. 수정 의견은 납품 후 <strong>7일 이내</strong>에 접수됩니다." }
+				]
 			}
 		],
 		faqTitle: "FAQ",
 		faqStep: "자주 묻는 질문",
-		navRec: "레코딩", navMix: "믹싱", navMaster: "마스터링", navExtra: "확장 서비스", navMember: "멤버십", navFaq: "FAQ",
+		navRec: "레코딩", navMix: "믹싱", navFlow: "프로세스", navMaster: "마스터링", navExtra: "확장 서비스", navMember: "멤버십", navFaq: "FAQ",
 		faqGroups: ["무엇을 하나요", "시작하기 · 파일 보내기", "가격 · 결제 · 환불", "일정 · 납품 · 수정", "퀄리티 · 소스"],
 		faqItems: [
 			{
@@ -1395,7 +1606,16 @@ var I18N = {
 			},
 			{
 				q: "수정 횟수에 제한이 있나요?",
-				a: "일반적인 범위 내 수정은 모두 가능합니다. 수정 횟수보다 최종 결과물의 완성도를 더 중요하게 생각합니다. 다만, 편곡 대폭 변경·보컬 교체·방향 전환 등은 새 작업 시간으로 별도 산정됩니다."
+				a: "횟수 제한은 없습니다. 기준은 횟수가 아니라 해당 수정이 어느 쪽에 속하는지입니다:",
+				list: [
+					"보정: 이미 합의된 방향에 더 가깝게 다듬는 작업(보컬 위치, 밝기, 공간감, 명료도, 밸런스 등) — 횟수 무제한, 요금에 포함, 만족하실 때까지",
+					"새 방향: 새로운 처리 방식 시도, 크리에이티브 이펙트 추가, 전체 방향 변경 — 보정이 아닌 새로운 창작 작업이므로 별도 산정",
+					"포함 버전 수: 실행형 1개(착수 전 주신 지시대로 작업), 크리에이티브 3개(제가 방향을 제안하고 선택하십니다)",
+					"실행형은 착수 전에 모두 알려주세요. 착수 후 추가되는 아이디어는 1건당 ₩10,000입니다",
+					"<strong>의견은 한 번에 모아 보내주세요</strong>: 곡 전체를 들으신 뒤 정리해 주시면 됩니다. 나눠 보내셔도 모아서 작업하게 되며, 같은 수정량이라도 한 번에 오면 시간이 절반입니다",
+					"수정 의견은 납품 후 7일 이내에 주세요. 이후는 검수 완료로 간주합니다",
+					"별도 청구가 발생하는 작업은 반드시 착수 전에 견적을 드리고 확인받습니다 — 사후 청구는 없습니다"
+				]
 			},
 			{
 				q: "마스터링 엔지니어가 없으면 어떻게 하나요?",
@@ -1417,18 +1637,22 @@ var I18N = {
 				list: [
 					"드라이 보컬: 아무 효과도 걸지 않은 원본 녹음(리버브·오토튠 인쇄 금지), WAV 48kHz/24bit 권장",
 					"반주: 완성된 인스트루멘털, BPM과 키 표기(모르셔도 괜찮습니다)",
-					"레퍼런스: 원하는 방향을 보여주는 1곡",
+					"레퍼런스: 1–3곡(첫 곡이라면 필수) — 확정 후 프로젝트의 방향 기준이 됩니다",
 					"여러 테이크를 제가 골라 편집(comp)하는 것도 가능 — 추가 서비스로 별도 청구됩니다"
 				]
 			},
 			{
 				q: "납품 시 어떤 파일을 받나요? 이후 수정도 가능한가요?",
-				a: "기본적으로 두 가지 버전을 WAV / MP3 / M4A(48kHz / 24bit)로 드립니다:",
+				a: "기본은 완성 마스터 한 가지입니다. 24-bit / 48kHz 무손실(WAV / MP3 / M4A):",
 				list: [
-					"풀 마스터링 버전 ×1, 심플 레퍼런스 버전 ×1",
+					"<strong>완성 마스터 ×1</strong> — 기본 납품 내용입니다",
+					"TV 믹스(보컬+반주), 인스트루멘탈: <strong>미리 말씀해 주시면 함께 드립니다</strong>, 추가 요금 없음",
+					"시안과 완성본은 <strong>Samply</strong>로 납품하여 타임라인에 바로 코멘트를 남기실 수 있습니다 — 파일을 주고받는 것보다 훨씬 명확합니다",
 					"프로젝트/세션 파일은 기본 납품에 포함되지 않으며, 유지·사후관리용으로 30일 보관(만료 3일 전 알림, 이후 자동 삭제되니 미리 백업)",
-					"추가 익스포트(스템 / 반주 / 아카펠라 / TV 믹스 / 기타 포맷): 요청 시 시간당 요금",
-					"납품 후 수정: 7일 이내 미세 조정 ¥100/회, 이후 ¥200/회; 구조적 변경(재편곡, 구간 교체, 대량 편집)은 시간당 청구"
+					"추가 익스포트(스템 / 아카펠라 / 드라이 보컬 / 기타 포맷): 요청 시 ₩30,000/시간",
+					"납품 후 수정: 7일 이내 미세 조정 ₩20,000/회, 이후 ₩40,000/회; 구조적 변경(재편곡, 구간 교체, 대량 편집) ₩30,000/시간",
+					"납품 시 크레딧(Credits)을 함께 드립니다 — 오디오 편집 / 믹싱 / 마스터링 각각 표기되어 발매에 바로 사용하실 수 있습니다",
+					"완성본도 직접 장기 백업해 주세요 — 영구 보관은 약속드리지 않습니다"
 				]
 			},
 			{
@@ -1437,11 +1661,25 @@ var I18N = {
 			},
 			{
 				q: "레퍼런스 트랙을 제공해야 하나요?",
-				a: "강력히 권장합니다. 레퍼런스 한 곡이 천 마디 설명보다 낫습니다 — 원하는 공간감, 보컬 위치, 감정, 전체 질감을 알려줍니다. 1–3곡을 보내시고, 그 곡의 어떤 점이 좋은지(보컬인지, 분위기인지, 그루브인지) 구체적으로 알려주세요."
+				a: "곡 작업 경험에 따라 다릅니다. 레퍼런스 한 곡이 천 마디 설명보다 낫습니다 — 원하는 공간감, 보컬 위치, 감정, 전체 질감을 알려줍니다.",
+				list: [
+					"곡을 만들어 보셨고 방향을 말로 설명할 수 있다면: 필수 아닙니다. 대화로 맞추면 됩니다",
+					"첫 곡이라면: 1–3곡 필수이며 착수 전 조건입니다 — 공통 기준이 없으면 '너무 어둡다' '너무 밝다'로 서로의 시간만 소모됩니다",
+					"보내실 때 어떤 점이 좋은지(보컬인지, 분위기인지, 그루브인지) 구체적으로 알려주세요",
+					"확정된 레퍼런스는 해당 프로젝트의 방향 기준이 되며, 이후 모든 수정은 이를 기준으로 판단합니다",
+					"작업 도중 레퍼런스 교체·기준 변경은 방향 변경으로 간주되어 새 작업 시간으로 청구됩니다",
+					"첫 곡인데 레퍼런스를 찾기 어렵다면 방향을 함께 논의해 제가 기준을 정해드립니다 — 다만 이 단계는 생략할 수 없습니다"
+				]
 			},
 			{
 				q: "결제는 어떻게 하나요? 계약금과 잔금은?",
-				a: "반반 방식: 계약금으로 착수하고 완성본 납품 시 잔금을 결제합니다. 계약금 확인 후 일정을 잡고 착수하며, 잔금 완납 후 워터마크 없는 완성본을 드립니다. 위챗으로 진행합니다."
+				a: "반반 방식: 계약금으로 착수하고 완성본 납품 시 잔금을 결제합니다. 계약금 확인 후 일정을 잡고 착수하며, 잔금 정산 후 워터마크 없는 완성본을 드립니다. 위챗으로 진행합니다.",
+				list: [
+					"계약금이 확인되면 편집에 들어가기 전에 원본 소스로 30–60초 <strong>방향 확인본</strong>을 만들어 어떤 방향으로 가는지 들려드립니다",
+					"방향이 맞지 않으면 <strong>계약금 전액 환불</strong>, 프로젝트 종료 — 서로 일찍 멈출 수 있게 만든 단계입니다",
+					"방향 확정 후 본격 착수하며, 이후 중도 취소 시 계약금은 이미 투입된 창작 시간에 대한 비용으로 환불되지 않습니다",
+					"잔금 정산 후 워터마크 없는 완성본을 드립니다"
+				]
 			},
 			{
 				q: "앨범 전체가 싱글보다 저렴한가요?",
@@ -1455,11 +1693,17 @@ var I18N = {
 			},
 			{
 				q: "믹싱 중간에 방향을 바꾸면 추가 요금이 붙나요?",
-				a: "일반 범위의 수정은 추가 요금이 없습니다 — 저는 수정 횟수보다 작품이 성립하는지를 중요하게 봅니다. 다만 대폭적인 재편곡, 보컬 교체, 방향을 뒤엎는 재작업은 사실상 새 곡 분량이라 새 작업 시간으로 청구됩니다 — 손대기 전에 먼저 확인하며, 사후 청구는 없습니다. 그리고: 첫 버전 납품 시 양쪽 다 뭔가 어긋난다고 느낀다면, 대개 서로 주파수가 맞지 않는다는 뜻입니다. 솔직한 느낌을 즉시 말씀해 주세요. 정말 맞지 않으면 억지로 밀어붙이지 말고 다음에 다시 협업하는 게 서로에게 낫습니다."
+				a: "이미 합의된 방향으로 다듬는 보정 작업은 추가 요금 없이, 횟수 제한 없이 진행됩니다. 다만 대폭적인 재편곡, 보컬 교체, 방향을 뒤엎는 재작업은 사실상 새 곡 분량이라 새 작업 시간으로 청구됩니다 — 손대기 전에 먼저 확인하며, 사후 청구는 없습니다. 그리고: 첫 버전 납품 시 양쪽 다 뭔가 어긋난다고 느낀다면, 대개 서로 주파수가 맞지 않는다는 뜻입니다. 솔직한 느낌을 즉시 말씀해 주세요. 정말 맞지 않으면 억지로 밀어붙이지 말고 다음에 다시 협업하는 게 서로에게 낫습니다."
 			},
 			{
 				q: "믹스가 마음에 안 들면 환불되나요?",
-				a: "무료 풀 트라이얼 믹스는 제공하지 않습니다 — 믹싱 자체가 고강도의 창작적 판단이기 때문입니다. 확신이 서지 않으면 30% 계약금으로 짧은 구간을 트라이얼 믹스해 방향이 틀렸을 때 일찍 손절할 수 있습니다. 정식 착수 후 계약금은 이미 투입된 창작 시간에 대한 것이라 환불되지 않지만, 일반 범위 내라면 만족하실 때까지 계속 수정합니다."
+				a: "「방향 확인본」을 기준으로 두 단계로 나뉩니다:",
+				list: [
+					"<strong>방향 확인본 이전</strong>: 방향이 아니라고 느끼시면 계약금 전액 환불 후 종료합니다 — 서로 만족하지 못할 결과를 끝까지 끌고 가느니 여기서 환불해 드리는 편이 낫습니다",
+					"<strong>방향 확인본 이후</strong>: 계약금은 이미 투입된 창작 시간에 대한 비용으로 환불되지 않습니다. 다만 합의된 방향으로의 보정이라면 만족하실 때까지 계속 수정합니다",
+					"무료 풀 트라이얼 믹스는 제공하지 않습니다 — 믹싱 자체가 고강도의 창작 판단이며, 방향 확인본이 그 역할을 합니다",
+					"첫 납품에서 서로 아니라고 느껴진다면 바로 솔직히 말씀해 주세요. 정말 맞지 않으면 이번은 여기서 마무리하고 다음에 함께하는 편이 서로에게 낫습니다"
+				]
 			},
 			{
 				q: "퀄리티나 흥행을 보장하나요?",
@@ -1472,6 +1716,17 @@ var I18N = {
 			{
 				q: "'프로듀서 참여'와 일반 믹싱의 차이는?",
 				a: "일반 믹싱: 완성된 편곡과 보컬을 주시면 최상으로 믹스합니다. 프로듀서 참여(Produced by ChefDao): 곡 전체를 크리에이티브 차원에서 주도합니다 — 보컬 설계, 화음 구성, 분위기 방향, 무엇을 바꿀지까지 깊이 관여하고 크레딧에 이름이 올라갑니다. 전자는 '당신의 아이디어를 잘 구현하는 것', 후자는 '이 곡이 어떤 모습이어야 할지 함께 결정하는 것'입니다. 견적 계산기에서 선택할 수 있고, 믹스 소계에 추가로 청구됩니다."
+			},
+			{
+				q: "보컬 프로덕션 단계에서 새로운 아이디어를 계속 시도할 수 있나요?",
+				a: "가능합니다. 다만 '수정'과 '시도'는 구분해야 합니다. 시도야말로 VP의 핵심이고 저도 말리지 않습니다 — 단지 시도는 그 자체로 결과물이 있는 창작 작업이지, 보정이 아닙니다:",
+				list: [
+					"실행형은 1개 버전 포함: 착수 전에 원하시는 바를 말씀해 주시면 그대로 작업합니다",
+					"크리에이티브는 3개 버전 포함 — 완전히 다른 방향으로, 제가 제안하고 선택하십니다",
+					"선택하신 버전에 대한 디테일 보정은 횟수 제한 없이 포함됩니다",
+					"포함 버전을 넘어 시도하거나 확정 후 이펙트를 추가하려면 버전 단위로 청구됩니다. 실행형 착수 후 추가 아이디어는 1건당 ₩10,000이며, 항상 사전에 견적을 드립니다",
+					"시행착오를 줄이는 가장 좋은 방법은 시작 전 정보를 더 주시는 것입니다: 레퍼런스, 원하지 않는 방향, 그리고 이 곡으로 듣는 사람에게 전하고 싶은 것"
+				]
 			},
 			{
 				q: "믹싱 용어를 몰라도 소통할 수 있나요?",
@@ -1511,9 +1766,28 @@ var QB_REC = { mode: "vocal", stems: 1, harmony: 0, lane: 0 };
 var QB_PROD_DEFAULT = 1;
 // ── 本地记忆（localStorage，纯本机，不上传）────────────────
 // 会员身份记住后，老客户不用每次重选；上次配置记住后，回来能接着上次改
-var LS_MEMBER = "cd_member", LS_STATE = "cd_quote", LS_MAX_AGE = 30 * 86400000;
+var LS_MEMBER = "cd_member", LS_STATE = "cd_quote", LS_THEME = "cd_theme", LS_MAX_AGE = 30 * 86400000;
 function qbLsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function qbLsSet(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+// ── 深/浅色 ────────────────────────────────────────────────
+// 首次访问跟随系统，之后记住用户的选择
+function qbApplyTheme(t) {
+	document.documentElement.setAttribute("data-theme", t);
+	var b = document.getElementById("theme-btn");
+	if (b) { b.textContent = t === "light" ? "\u25D3" : "\u25D2"; b.title = t === "light" ? "Dark" : "Light"; }
+	var m = document.querySelector('meta[name="theme-color"]');
+	if (m) m.setAttribute("content", t === "light" ? "#eceeec" : "#080808");
+}
+function qbToggleTheme() {
+	var next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+	qbLsSet(LS_THEME, next);
+	qbApplyTheme(next);
+}
+function qbInitTheme() {
+	// 默认深色；只有用户主动切换过才用他存的偏好
+	var t = qbLsGet(LS_THEME);
+	qbApplyTheme(t === "light" ? "light" : "dark");
+}
 function qbIsRemembered() { return qbLsGet(LS_MEMBER) === "1"; }
 function qbRememberMember(on) { qbLsSet(LS_MEMBER, on ? "1" : null); }
 function qbSaveState() {
@@ -2317,9 +2591,24 @@ function renderRecording(svc) {
 	}
 	return '<div class="loc-grid">' + cards + '</div>' + (svc.note ? '<div class="qb-addon-note">' + svc.note + '</div>' : "");
 }
+function renderFlow(svc) {
+	var h = "";
+	for (var i = 0; i < svc.steps.length; i++) {
+		h += '<div class="flow-step"><span class="flow-n">' + (i + 1) + '</span>'
+			+ '<span class="flow-c"><span class="flow-t">' + svc.steps[i].t + '</span>'
+			+ '<span class="flow-d">' + svc.steps[i].d + '</span></span></div>';
+	}
+	return '<div class="flow-list">' + h + '</div>';
+}
 function renderService(svc) {
 	var groupHead = svc.groupHead ? '<div class="group-head reveal">' + svc.groupHead + '</div>' : "";
 	if (svc.type === "projectlead") return groupHead + renderProjectLead(svc);
+	if (svc.type === "flow") {
+		return groupHead + '<div class="service-section reveal" id="svc-flow">'
+			+ '<div class="section-head"><div class="step-tag">' + svc.step + '</div><h2>' + svc.title + '</h2>'
+			+ (svc.sub ? '<span class="sub-desc">' + svc.sub + '</span>' : "") + '</div>'
+			+ renderFlow(svc) + '</div>';
+	}
 	var head = '<div class="section-head"><div class="step-tag">' + svc.step + '</div><h2>' + svc.title + '</h2>'
 		+ (svc.sub ? '<span class="sub-desc">' + svc.sub + '</span>' : "") + '</div>';
 	var body;
@@ -2340,9 +2629,9 @@ function renderService(svc) {
 // 索引是 0 基，三语言条目顺序一致，所以一份映射通用。
 var FAQ_GROUPS = [
 	[0, 1, 2, 19],
-	[8, 9, 12, 18, 20],
+	[8, 9, 12, 18, 21],
 	[3, 13, 14, 15, 16],
-	[4, 5, 10],
+	[4, 5, 10, 20],
 	[6, 7, 11, 17]
 ];
 function renderFAQ(t) {
@@ -2452,6 +2741,7 @@ var SEC_NAV = [
 	{ id: "svc-mastering", k: "navMaster" },
 	{ id: "svc-creation", k: "navExtra" },
 	{ id: "svc-daomen", k: "navMember" },
+	{ id: "svc-flow", k: "navFlow" },
 	{ id: "faq-container", k: "navFaq" }
 ];
 // 进度条要吸在导航条正下方，高度实测写入 CSS 变量（字号/换行都会影响）
@@ -2551,6 +2841,7 @@ function copyContact() {
 	});
 }
 document.addEventListener("DOMContentLoaded", function() {
+	qbInitTheme();
 	qbRestoreState();
 	render("zh");
 });
