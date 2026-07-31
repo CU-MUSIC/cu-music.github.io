@@ -262,7 +262,7 @@
 		.qb-mini-btn.disabled { opacity: 0.3; cursor: not-allowed; }
 		.qb-mini-btn.disabled:hover { border-color: var(--border); }
 		/* summary panel */
-		.qb-summary { background: var(--green-deep); border: 0.5px solid var(--green-line); border-radius: 12px; padding: 20px; margin-top: 4px; }
+		.qb-summary { position: relative; overflow: hidden; background: var(--green-deep); border: 0.5px solid var(--green-line); border-radius: 12px; padding: 20px; margin-top: 4px; }
 		.qb-bd-line { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); padding: 5px 0; }
 		.qb-bd-line .qb-bd-val { color: var(--text-primary); white-space: nowrap; font-variant-numeric: tabular-nums; }
 		.qb-eq { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
@@ -319,7 +319,39 @@
 			.qb-pb-sub { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
 			.qb-payback.dim .qb-pb-main { color: var(--text-primary); }
 			.qb-payback { display: block; width: 100%; margin-top: 10px; background: rgba(var(--green-ink), 0.10); border: 0.5px solid var(--green-line); border-radius: 9px; padding: 11px 13px; color: var(--green-soft); font-size: 12px; font-weight: 600; font-family: var(--font); text-align: left; cursor: pointer; line-height: 1.55; transition: background 0.2s; }
-			.qb-payback:hover { background: rgba(var(--green-ink), 0.18); }
+			.qb-payback:hover { background: rgba(var(--green-ink), 0.18); transform: translateY(-1px); }
+		.qb-payback:active { transform: scale(0.99); }
+		/* 深绿呼吸光：这是全页唯一持续动的元素，视线自然被吸过去 */
+		@keyframes pbBreathe {
+			0%, 100% { box-shadow: 0 0 0 0 rgba(var(--green-ink), 0.26), 0 0 16px -6px rgba(var(--green-ink), 0.30); }
+			50%      { box-shadow: 0 0 0 5px rgba(var(--green-ink), 0.09), 0 0 30px -4px rgba(var(--green-ink), 0.55); }
+		}
+		.qb-payback { animation: pbBreathe 2.8s var(--ease) infinite; transition: background 0.2s, transform 0.15s; }
+		.qb-payback.dim { animation: none; }
+		/* 交付提速是会员的第二个卖点，单独给它一层呼吸，和按钮的光错开节奏 */
+		@keyframes hlBreathe {
+			0%, 100% { background: rgba(var(--green-ink), 0.10); box-shadow: 0 0 0 0 rgba(var(--green-ink), 0); }
+			50%      { background: rgba(var(--green-ink), 0.22); box-shadow: 0 0 14px -2px rgba(var(--green-ink), 0.5); }
+		}
+		.qb-hl { display: inline-block; padding: 1px 7px; margin: 0 1px; border-radius: 6px; color: var(--green-soft); font-weight: 700; animation: hlBreathe 2.2s var(--ease) infinite; }
+		.qb-payback.dim .qb-hl { animation: none; background: rgba(var(--green-ink), 0.14); }
+		/* 会员生效后：交付也是卖点，给一档更轻、更慢的呼吸——存在感有，但不抢戏 */
+		@keyframes hlSoft {
+			0%, 100% { background: rgba(var(--green-ink), 0.06); box-shadow: 0 0 0 0 rgba(var(--green-ink), 0); }
+			50%      { background: rgba(var(--green-ink), 0.14); box-shadow: 0 0 11px -3px rgba(var(--green-ink), 0.30); }
+		}
+		.qb-bd-line.deliver.fast .qb-bd-val { color: var(--green-soft); font-weight: 700; display: inline-block; padding: 1px 8px; border-radius: 6px; animation: hlSoft 3.6s var(--ease) infinite; }
+		.qb-fast-tag { display: inline-block; margin-left: 7px; padding: 1px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--green-soft); border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.08); vertical-align: middle; }
+		@media (prefers-reduced-motion: reduce) { .qb-bd-line.deliver.fast .qb-bd-val { animation: none; } }
+		@media (prefers-reduced-motion: reduce) { .qb-hl { animation: none; } }
+		/* 加入成功：绿光扫过报价单 + 会员块轻微上浮 */
+		@keyframes qbSweep { from { transform: translateX(-130%); opacity: 1; } to { transform: translateX(130%); opacity: 0; } }
+		.qb-sweep::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 100%; pointer-events: none; z-index: 2; opacity: 0;
+			background: linear-gradient(105deg, transparent 32%, rgba(var(--green-ink), 0.26) 50%, transparent 68%);
+			animation: qbSweep 0.95s var(--ease) 1 forwards; }
+		@keyframes qbRise { from { transform: translateY(7px); opacity: 0.55; } to { transform: none; opacity: 1; } }
+		.qb-rise { animation: qbRise 0.5s var(--ease) 1; }
+		@media (prefers-reduced-motion: reduce) { .qb-payback { animation: none; } .qb-sweep::after, .qb-rise { animation: none; } }
 			.qb-payback.dim { color: var(--text-secondary); background: rgba(var(--ink), 0.03); border-color: var(--border); }
 			.qb-payback.dim:hover { background: rgba(var(--ink), 0.06); }
 		.qb-seg.two { grid-template-columns: repeat(2, 1fr); }
@@ -411,6 +443,38 @@
 		.qb-prog-fill { height: 100%; border-radius: 100px; background: var(--green-soft); transition: width 0.45s var(--ease); }
 		.qb-prog-txt { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
 		.qb-prog.done .qb-prog-txt { color: var(--green-soft); }
+		/* 课程：阶段卡（STAGE 01 可报名 / STAGE 02 预告） */
+		.course-stage { border: 0.5px solid var(--border); border-radius: var(--r); padding: 26px; background: var(--surface); }
+		.course-stage + .course-stage { margin-top: 14px; }
+		.course-stage.soon { background: none; border-style: dashed; opacity: 0.62; }
+		.course-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+		.course-tag { font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em; color: var(--green-soft); }
+		.course-badge { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; color: var(--green-soft); border: 0.5px solid var(--green-line); border-radius: 100px; padding: 5px 12px; white-space: nowrap; }
+		.course-name { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1.25; margin-top: 8px; }
+		.course-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.75; margin-top: 10px; max-width: 620px; }
+		.course-fit { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+		.course-chip { font-size: 11.5px; font-weight: 600; color: var(--green-soft); border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.07); border-radius: 100px; padding: 5px 12px; }
+		.course-chip.off { color: var(--text-dim); border-color: var(--border); background: none; text-decoration: line-through; text-decoration-thickness: 0.5px; }
+		.course-mods { display: flex; flex-direction: column; gap: 9px; margin-top: 18px; }
+		.course-mod { display: flex; gap: 10px; font-size: 13px; color: var(--text-primary); line-height: 1.5; }
+		.course-mod::before { content: "\2192"; color: var(--green-soft); flex-shrink: 0; }
+		.course-prices { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; padding-top: 18px; border-top: 0.5px solid var(--border); }
+		.course-p { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; color: var(--text-primary); line-height: 1.1; }
+		.course-l { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--text-dim); margin-top: 6px; }
+		.course-soon { font-size: 11.5px; font-weight: 700; letter-spacing: 0.18em; color: var(--text-dim); margin-top: 14px; }
+		@media (max-width: 720px) {
+			.course-stage { padding: 20px 16px; }
+			.course-name { font-size: 18px; }
+			.course-desc { font-size: 12.5px; margin-top: 9px; }
+			/* 双栏价格在窄屏会挤成两团，改成上下排列 + 分隔线 */
+			.course-prices { grid-template-columns: 1fr; gap: 0; margin-top: 18px; padding-top: 14px; }
+			.course-prices > div { padding: 12px 0; }
+			.course-prices > div + div { border-top: 0.5px solid var(--border); }
+			.course-p { font-size: 22px; }
+			.course-l { margin-top: 4px; }
+			.course-mod { font-size: 12.5px; }
+			.course-head { gap: 10px; }
+		}
 		/* 合作流程：编号 + 一行标题 + 一行说明，扫读用 */
 		.flow-list { display: flex; flex-direction: column; margin-top: 6px; }
 		.flow-step { position: relative; display: flex; gap: 17px; padding-bottom: 26px; }
@@ -739,15 +803,15 @@ var I18N = {
 			memberPerNote: "折扣按主唱逐位算，非会员不受影响。",
 			mState0: "非会员", mState1: "已是会员", mState2: "本单加入", joinLine: "加入刀门",
 			pbYesMain: "加入刀门 {fee}，本单立省 {save}",
-			pbYesSub: "净赚 {net} · 交付快 {fast} 个工作日 · 点此加入 ›",
-			pbNoMain: "加入刀门 {fee}，交付快 {fast} 个工作日",
+			pbYesSub: "净赚 {net} · <span class=\"qb-hl\">交付快 {fast} 个工作日</span> · 点此加入 ›",
+			pbNoMain: "加入刀门 {fee}，<span class=\"qb-hl\">交付快 {fast} 个工作日</span>",
 			pbNoSub: "本单省 {save} · 权益终身有效 · 点此加入 ›",
 			producerTitle: "让我担任制作人", producerSub: "我主导这首歌的创意与完成度 · 署名 Produced by ChefDao", producerLine: "制作人费",
 			producerNote: "在混音/制作小计基础上按项目加收，作品署名「Produced by ChefDao」。制作人费同样享刀门会员 8 折，加急时一并计入加急基数。商业项目可另谈 producer points（版税分成）。",
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
-			brand: "刀大厨 ChefDao", copyTitle: "报价单",
+			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
 				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
@@ -787,7 +851,7 @@ var I18N = {
 			},
 			{
 				id: "mastering", step: "Step 03", title: "母带 Mastering",
-				sub: "每档混音已含简易母带，单曲发行直接可用。只有需要 EP/专辑多首统一、实体介质，或只做最后一道母带时，才需要独立处理——不确定就问我，大多数单曲用不上。",
+				sub: "各档混音均含简易母带，单曲发行可直接使用。独立母带适用于 EP／专辑的多首统一、实体介质压制，或混音由他方完成的项目；多数单曲无需另行处理。",
 				items: [
 						{ title: "单曲母带处理", price: "¥200", unit: "", desc: "适用于已完成混音的歌曲。响度、动态与频谱最终优化。", tags: ["商业标准"] },
 						{ title: "分轨母带 Stem Mastering", price: "¥400", unit: "", desc: "在分轨编组（人声 / 鼓 / 乐器等）上做母带处理，控制力更强。适合需要在母带阶段精细调整平衡的项目。", tags: ["进阶"] }
@@ -811,6 +875,20 @@ var I18N = {
 				desc: "从前期规划、人声录制、创意设计到混音终混，全程深度参与每个创作决策。报价及合作周期视项目规模与需求私信洽谈。",
 				tags: ["EP / 专辑", "创作主导", "私信洽谈"],
 				cta: "→ 档期有限，请私信洽谈"
+			},
+			{
+				id: "course", type: "course", groupHead: "课程 Course", step: "1v1 定制授课", title: "混音教学 Coaching",
+				sub: "1v1 案例拆解，按你的工程实时调整进度。",
+				stages: [
+					{
+						tag: "STAGE 01", badge: "可报名", name: "贴唱混音 · 标准制作流程",
+						desc: "针对 Vocal Mixing Standard。通过 1v1 案例拆解，掌握标准化、工业级的音频编辑与混音流程。",
+						fit: ["短视频流媒体", "个人 Demo 交付"], unfit: ["扩声 / 演出系统"],
+						modules: ["DAW 工业化模板搭建与文件管理", "Vocal Production（音高修正 / 节奏对齐）", "音频编辑工业流程（清理 / 淡入淡出 / 增益）", "Demo 质量控制（QC）与输出标准"],
+						prices: [{ p: "¥1,200", l: "线上" }, { p: "¥2,000", l: "线下 · 首尔工作室" }]
+					},
+					{ tag: "STAGE 02", name: "高级商业混音实战", soon: "COMING SOON" }
+				]
 			},
 			{
 				id: "daomen", type: "membership", step: "C / U Music", title: "刀门 Daomen", groupHead: "会员 Membership",
@@ -842,7 +920,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "常见问题",
-		navRec: "录音", navMix: "混音", navFlow: "流程", navMaster: "母带", navExtra: "延伸服务", navMember: "刀门会员", navFaq: "常见问题",
+		navRec: "录音", navMix: "混音", navFlow: "流程", navCourse: "课程", navMaster: "母带", navExtra: "延伸服务", navMember: "刀门会员", navFaq: "常见问题",
 		faqGroups: ["我能做什么", "怎么开始 · 怎么发素材", "价格 · 付款 · 退款", "时间 · 交付 · 修改", "质量 · 素材"],
 		faqItems: [
 			{
@@ -862,8 +940,11 @@ var I18N = {
 			},
 			{
 				q: "可以先免费试听 / 试混吗？",
-				a: "一般不提供免费完整试混。因为混音本身就是高强度创作和判断工作。如果你不确定适不适合，可以：",
-				list: ["发 reference", "发一小段 demo", "30%定金 试混"]
+				a: "不提供免费完整试混——混音本身即为高强度的创作与判断工作。如需先行评估契合度：",
+				list: [
+					"提供参考曲与一小段 demo，先行沟通方向",
+					"正式下单后设有「方向确认版」环节：交付 30–60 秒试听片段，如方向不符，定金全额退还"
+				]
 			},
 			{
 				q: "一首歌大概多久？",
@@ -892,17 +973,23 @@ var I18N = {
 			},
 			{
 				q: "怎么开始合作？",
-				a: "直接发给我：",
-				list: ["Demo", "干声", "Reference", "你的预算", "截止时间"]
+				a: "提供以下信息即可开始：",
+				list: [
+					"Demo",
+					"干声",
+					"参考曲（Reference）",
+					"预算范围",
+					"期望交付日期"
+				]
 			},
 			{
 				q: "怎么把干声和素材发给我？",
-				a: "发我这些就行——素材越规整，我越能把时间花在创作上：",
+				a: "素材越规整，可投入创作的时间越多。请按以下标准提供：",
 				list: [
-					"干声：不加任何效果的原始录音（混响、autotune 都别印上去），WAV 48kHz/24bit 最佳",
-					"伴奏：成品 instrumental，注明 BPM 与调性（不确定也没关系）",
-					"参考曲：1–3 首（第一次做歌必需），确认后作为本次项目的方向基准",
-					"多条 take 想让我挑选拼合（comp）可以，这是额外服务，会另计"
+					"干声：未经任何效果处理的原始录音（不含混响、Auto-Tune），建议 WAV 48kHz / 24bit",
+					"伴奏：成品 instrumental，并注明 BPM 与调性（如不确定可留空）",
+					"参考曲：1–3 首（首次制作歌曲者必需），确认后作为本项目的方向基准",
+					"多条 take 的挑选与拼合（comp）属额外服务，另行计费"
 				]
 			},
 			{
@@ -954,7 +1041,7 @@ var I18N = {
 			},
 			{
 				q: "混到一半我想改方向，会加钱吗？",
-				a: "只要是朝着已确认方向的修正，都不加钱，也不卡次数。但大幅改编排、换人声、或推翻方向重做，相当于一首新歌的工作量，会按新工时另计——我会先跟你确认再动手，不会先做后收。另外：如果第一版交付时双方就觉得不对，往往说明我们没在一个频道上，请立刻告诉我你的真实感受。真的不对，我们可以下次再合作，不硬着头皮做下去——对彼此都更好。"
+				a: "朝既定方向的修正不加价，亦不限次数。大幅变更编排、更换人声或推翻方向重做，工作量等同一首新歌，按新工时另行计费——均于执行前确认，不会先做后收。<br><br>若首版交付时双方即判断方向不符，通常说明前期沟通未能对齐，请如实反馈。确不契合则本次终止、另择时机合作，对双方都更好。"
 			},
 			{
 				q: "混得不满意，能退款吗？",
@@ -973,7 +1060,7 @@ var I18N = {
 			},
 			{
 				q: "我不在上海 / 首尔，能远程合作吗？",
-				a: "可以，大部分项目都是远程。把干声、伴奏、参考发我，全程微信沟通，交付成品。需要监制录音的，我也能线上实时指导你录——不在同一个城市完全不影响。"
+				a: "可以，多数项目均为远程协作。提供干声、伴奏与参考曲，全程通过微信沟通并交付成品。需监制录音的项目亦可线上实时指导，地域不构成限制。"
 			},
 			{
 				q: "「担任制作人」和普通混音有什么区别？",
@@ -1104,15 +1191,15 @@ var I18N = {
 			memberPerNote: "The discount applies per vocalist; non-members are unaffected.",
 			mState0: "Not a member", mState1: "Member", mState2: "Join now", joinLine: "Join Daomen",
 			pbYesMain: "Join Daomen for {fee}, save {save} on this order",
-			pbYesSub: "{net} ahead · {fast} working days faster · tap to join ›",
-			pbNoMain: "Join Daomen for {fee}, {fast} working days faster",
+			pbYesSub: "{net} ahead · <span class=\"qb-hl\">{fast} working days faster</span> · tap to join ›",
+			pbNoMain: "Join Daomen for {fee}, <span class=\"qb-hl\">{fast} working days faster</span>",
 			pbNoSub: "Saves {save} here · membership is for life · tap to join ›",
 			producerTitle: "Add me as Producer", producerSub: "I lead this record's creative & finish · credit \"Produced by ChefDao\"", producerLine: "Producer fee",
 			producerNote: "Charged as a percentage on top of the mix/production subtotal, with a \"Produced by ChefDao\" credit. The producer fee is also covered by the Daomen 20% discount, and counts toward the rush-fee base. Producer points (royalty share) available for commercial projects.",
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
-			brand: "ChefDao 刀大厨", copyTitle: "Quote",
+			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane",
 			copyTerms: "Working terms", copyMore: "Full details",
 			copyTermsList: [
 				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before I start",
@@ -1178,6 +1265,20 @@ var I18N = {
 				cta: "→ Limited slots — DM to discuss"
 			},
 			{
+				id: "course", type: "course", groupHead: "Course", step: "1-on-1 coaching", title: "Mixing Coaching",
+				sub: "1-on-1 case breakdowns, paced against your own sessions.",
+				stages: [
+					{
+						tag: "STAGE 01", badge: "Open", name: "Vocal Mixing · Standard Workflow",
+						desc: "Built around the Vocal Mixing Standard. Through 1-on-1 case breakdowns, you learn a standardised, industry-grade editing and mixing workflow.",
+						fit: ["Short-form / streaming", "Personal demos"], unfit: ["Live sound / PA systems"],
+						modules: ["Industrial DAW templates and file management", "Vocal production (pitch correction / timing)", "Audio editing workflow (cleanup / fades / gain)", "Demo QC and output standards"],
+						prices: [{ p: "$180", l: "Online" }, { p: "$300", l: "In person · Seoul studio" }]
+					},
+					{ tag: "STAGE 02", name: "Advanced Commercial Mixing", soon: "COMING SOON" }
+				]
+			},
+			{
 				id: "daomen", type: "membership", step: "C / U Music", title: "Daomen Membership", groupHead: "Membership",
 				intro: "It's <strong>not a fan club</strong> — it's where people serious about music help each other level up. Join Daomen and your questions get real answers: recording, mixing, mastering, career direction, with long-term, steady guidance.",
 				joinLabel: "How to join · either one",
@@ -1207,7 +1308,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "Questions",
-		navRec: "Recording", navMix: "Mixing", navFlow: "Process", navMaster: "Mastering", navExtra: "Extended", navMember: "Membership", navFaq: "FAQ",
+		navRec: "Recording", navMix: "Mixing", navFlow: "Process", navCourse: "Course", navMaster: "Mastering", navExtra: "Extended", navMember: "Membership", navFaq: "FAQ",
 		faqGroups: ["What I do", "Getting started & sending files", "Price, payment & refunds", "Timing, delivery & revisions", "Quality & source material"],
 		faqItems: [
 			{
@@ -1473,15 +1574,15 @@ var I18N = {
 			memberPerNote: "할인은 보컬별로 적용되며 비회원에게는 영향이 없습니다.",
 			mState0: "비회원", mState1: "회원", mState2: "지금 가입", joinLine: "刀门 가입",
 			pbYesMain: "{fee} 가입, 이번 주문에서 {save} 절약",
-			pbYesSub: "순 {net} 이득 · 납품 {fast} 영업일 단축 · 탭하여 가입 ›",
-			pbNoMain: "{fee} 가입, 납품 {fast} 영업일 단축",
+			pbYesSub: "순 {net} 이득 · <span class=\"qb-hl\">납품 {fast} 영업일 단축</span> · 탭하여 가입 ›",
+			pbNoMain: "{fee} 가입, <span class=\"qb-hl\">납품 {fast} 영업일 단축</span>",
 			pbNoSub: "이번에 {save} 절약 · 혜택은 평생 · 탭하여 가입 ›",
 			producerTitle: "프로듀서로 참여", producerSub: "이 곡의 크리에이티브와 완성도를 주도 · 크레딧 \"Produced by ChefDao\"", producerLine: "프로듀서 비용",
 			producerNote: "믹스/프로덕션 소계에 프로젝트별 퍼센트로 추가되며, \"Produced by ChefDao\" 크레딧이 붙습니다. 프로듀서 비용도 刀门 회원 20% 할인 대상이며, 긴급 요금 산정 기준에 포함됩니다. 상업 프로젝트는 producer points(버전세 분배) 별도 협의.",
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
-			brand: "刀大厨 ChefDao", copyTitle: "견적서",
+			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인",
 			copyTerms: "협업 요점", copyMore: "전체 안내",
 			copyTermsList: [
 				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
@@ -1547,6 +1648,20 @@ var I18N = {
 				cta: "→ 슬롯 한정 — DM으로 문의해 주세요"
 			},
 			{
+				id: "course", type: "course", groupHead: "코스 Course", step: "1:1 맞춤 레슨", title: "믹싱 코칭 Coaching",
+				sub: "1:1 케이스 분석, 본인 세션에 맞춰 진도를 조절합니다.",
+				stages: [
+					{
+						tag: "STAGE 01", badge: "모집 중", name: "보컬 믹싱 · 표준 제작 프로세스",
+						desc: "Vocal Mixing Standard 기준. 1:1 케이스 분석을 통해 표준화된 산업 수준의 편집·믹싱 프로세스를 익힙니다.",
+						fit: ["숏폼 / 스트리밍", "개인 데모"], unfit: ["확성 / 공연 시스템"],
+						modules: ["DAW 산업용 템플릿 구축과 파일 관리", "보컬 프로덕션(피치 보정 / 타이밍 정렬)", "오디오 편집 워크플로(클린업 / 페이드 / 게인)", "데모 QC와 출력 기준"],
+						prices: [{ p: "₩240,000", l: "온라인" }, { p: "₩400,000", l: "오프라인 · 서울 스튜디오" }]
+					},
+					{ tag: "STAGE 02", name: "고급 커머셜 믹싱 실전", soon: "COMING SOON" }
+				]
+			},
+			{
 				id: "daomen", type: "membership", step: "C / U Music", title: "刀门 Daomen 멤버십", groupHead: "멤버십 Membership",
 				intro: "<strong>팬클럽이 아닙니다</strong> — 진지하게 음악을 만드는 사람들이 서로 성장하는 곳입니다. 刀门에 가입하면 레코딩, 믹싱, 마스터링, 커리어 방향까지 장기적이고 안정적인 가이드를 받을 수 있습니다.",
 				joinLabel: "가입 방법 · 택 1",
@@ -1576,7 +1691,7 @@ var I18N = {
 		],
 		faqTitle: "FAQ",
 		faqStep: "자주 묻는 질문",
-		navRec: "레코딩", navMix: "믹싱", navFlow: "프로세스", navMaster: "마스터링", navExtra: "확장 서비스", navMember: "멤버십", navFaq: "FAQ",
+		navRec: "레코딩", navMix: "믹싱", navFlow: "프로세스", navCourse: "코스", navMaster: "마스터링", navExtra: "확장 서비스", navMember: "멤버십", navFaq: "FAQ",
 		faqGroups: ["무엇을 하나요", "시작하기 · 파일 보내기", "가격 · 결제 · 환불", "일정 · 납품 · 수정", "퀄리티 · 소스"],
 		faqItems: [
 			{
@@ -1856,10 +1971,41 @@ function qbSetDate(v) { qbAdvance(function () { qbState.targetDate = v || null; 
 function qbSetEdit(i, val) { qbAdvance(function () { qbState.edits[i] = val; }); }
 function qbSetProd(i, val) { qbAdvance(function () { qbState.prods[i] = val; }); }
 // 会员/入会在报价单里操作，此时已全部答完（before=after=null），不会触发滚动
+// 加入刀门的确认动效：总价滚动到新价 + 绿光扫过 + 一记短震。
+// 让「省了多少」被看见——比打勾更贴合这里的价值主张。
+function qbJoinAnimate(fromTotal) {
+	var q = I18N[currentLang].quote, el = document.querySelector(".qb-total");
+	if (!el) return;
+	try { if (navigator.vibrate) navigator.vibrate([10, 45, 18]); } catch (e) {}
+	var sum = document.querySelector(".qb-summary");
+	if (sum) {
+		sum.classList.remove("qb-sweep"); void sum.offsetWidth; sum.classList.add("qb-sweep");
+		setTimeout(function () { sum.classList.remove("qb-sweep"); }, 1100); // 收尾，避免渐变层停在画面里
+	}
+	var blk = document.querySelector(".qb-memblock");
+	if (blk) {
+		blk.classList.remove("qb-rise"); void blk.offsetWidth; blk.classList.add("qb-rise");
+		setTimeout(function () { blk.classList.remove("qb-rise"); }, 700);
+	}
+	var to = qbCompute(q).total;
+	if (fromTotal === to || qbReduceMotion()) return;
+	var sfxEl = el.querySelector(".qb-from"), sfx = sfxEl ? sfxEl.outerHTML : "";
+	var t0 = 0, dur = 850;
+	function tick(now) {
+		if (!t0) t0 = now;
+		var pr = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - pr, 3);
+		el.innerHTML = qbFmt(q, Math.round(fromTotal + (to - fromTotal) * e)) + sfx;
+		if (pr < 1) requestAnimationFrame(tick);
+	}
+	requestAnimationFrame(tick);
+}
 function qbSetMem(i, val) {
+	var before = qbComplete() ? qbCompute(I18N[currentLang].quote).total : null;
 	qbState.mem[i] = val;
 	if (i === 0) qbRememberMember(val > 0); // 主唱 1 视为下单本人
 	renderQuoteBuilder();
+	// 只有「本单加入」才放动效——切换已是会员是陈述事实，不是成交
+	if (val === 2 && before !== null) requestAnimationFrame(function () { qbJoinAnimate(before); });
 }
 function qbSetAllMem(val) { for (var i = 0; i < qbState.count; i++) qbState.mem[i] = val; renderQuoteBuilder(); }
 // 一键把所有主唱设成同一档，人多时省得逐位点
@@ -2404,7 +2550,9 @@ function renderQuoteBuilder() {
 		html += '<div class="qb-step" data-qstep="summary">' + memberHtml + producerHtml
 			+ '<div class="qb-summary">' + eq + lines
 			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
-			+ '<div class="qb-bd-line deliver"><span>' + q.copyDeliver + '</span><span class="qb-bd-val">' + delivStr + '</span></div>'
+			+ '<div class="qb-bd-line deliver' + (qbHasMember() ? ' fast' : '') + '"><span>' + q.copyDeliver
+				+ (qbHasMember() ? '<span class="qb-fast-tag">' + q.fastTag + '</span>' : '')
+				+ '</span><span class="qb-bd-val">' + delivStr + '</span></div>'
 				+ splitHtml + aaHtml + fineHtml + '</div>'
 			+ '<button class="qb-cta" onclick="qbCopy()">' + q.cta + '</button>'
 			+ '<button class="qb-reset" onclick="qbReset()">' + q.reset + '</button>'
@@ -2591,6 +2739,36 @@ function renderRecording(svc) {
 	}
 	return '<div class="loc-grid">' + cards + '</div>' + (svc.note ? '<div class="qb-addon-note">' + svc.note + '</div>' : "");
 }
+function renderCourse(svc) {
+	var h = "";
+	for (var i = 0; i < svc.stages.length; i++) {
+		var st = svc.stages[i];
+		h += '<div class="course-stage' + (st.soon ? " soon" : "") + '">'
+			+ '<div class="course-head"><span class="course-tag">' + st.tag + '</span>'
+			+ (st.badge ? '<span class="course-badge">' + st.badge + '</span>' : "") + '</div>'
+			+ '<div class="course-name">' + st.name + '</div>';
+		if (st.desc) h += '<div class="course-desc">' + st.desc + '</div>';
+		if (st.fit || st.unfit) {
+			var c = "";
+			for (var a = 0; a < (st.fit || []).length; a++) c += '<span class="course-chip">' + st.fit[a] + '</span>';
+			for (var b = 0; b < (st.unfit || []).length; b++) c += '<span class="course-chip off">' + st.unfit[b] + '</span>';
+			h += '<div class="course-fit">' + c + '</div>';
+		}
+		if (st.modules) {
+			var m = "";
+			for (var k = 0; k < st.modules.length; k++) m += '<div class="course-mod">' + st.modules[k] + '</div>';
+			h += '<div class="course-mods">' + m + '</div>';
+		}
+		if (st.prices) {
+			var pr = "";
+			for (var q2 = 0; q2 < st.prices.length; q2++) pr += '<div><span class="course-p">' + st.prices[q2].p + '</span><span class="course-l">' + st.prices[q2].l + '</span></div>';
+			h += '<div class="course-prices">' + pr + '</div>';
+		}
+		if (st.soon) h += '<div class="course-soon">' + st.soon + '</div>';
+		h += '</div>';
+	}
+	return h;
+}
 function renderFlow(svc) {
 	var h = "";
 	for (var i = 0; i < svc.steps.length; i++) {
@@ -2603,6 +2781,12 @@ function renderFlow(svc) {
 function renderService(svc) {
 	var groupHead = svc.groupHead ? '<div class="group-head reveal">' + svc.groupHead + '</div>' : "";
 	if (svc.type === "projectlead") return groupHead + renderProjectLead(svc);
+	if (svc.type === "course") {
+		return groupHead + '<div class="service-section reveal" id="svc-course">'
+			+ '<div class="section-head"><div class="step-tag">' + svc.step + '</div><h2>' + svc.title + '</h2>'
+			+ (svc.sub ? '<span class="sub-desc">' + svc.sub + '</span>' : "") + '</div>'
+			+ renderCourse(svc) + '</div>';
+	}
 	if (svc.type === "flow") {
 		return groupHead + '<div class="service-section reveal" id="svc-flow">'
 			+ '<div class="section-head"><div class="step-tag">' + svc.step + '</div><h2>' + svc.title + '</h2>'
@@ -2740,6 +2924,7 @@ var SEC_NAV = [
 	{ id: "svc-mixing", k: "navMix" },
 	{ id: "svc-mastering", k: "navMaster" },
 	{ id: "svc-creation", k: "navExtra" },
+	{ id: "svc-course", k: "navCourse" },
 	{ id: "svc-daomen", k: "navMember" },
 	{ id: "svc-flow", k: "navFlow" },
 	{ id: "faq-container", k: "navFaq" }
