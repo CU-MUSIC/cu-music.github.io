@@ -1970,7 +1970,17 @@ function qbSet(key, val) { qbAdvance(function () { qbState[key] = val; }); }
 function qbSetDate(v) { qbAdvance(function () { qbState.targetDate = v || null; }); }
 function qbSetEdit(i, val) { qbAdvance(function () { qbState.edits[i] = val; }); }
 function qbSetProd(i, val) { qbAdvance(function () { qbState.prods[i] = val; }); }
-// 会员/入会在报价单里操作，此时已全部答完（before=after=null），不会触发滚动
+// 报价单不在视野里就先滚过去——动效在屏幕外播完等于没播。
+// 已经完整可见时不动，避免无谓的跳动。
+function qbRevealSummary() {
+	var el = document.querySelector(".qb-summary");
+	if (!el) return false;
+	var r = el.getBoundingClientRect(), h = window.innerHeight || 800;
+	if (r.top >= 56 && r.bottom <= h - 16) return false;
+	var y = r.top + (window.pageYOffset || document.documentElement.scrollTop) - qbScrollOffset();
+	window.scrollTo({ top: y < 0 ? 0 : y, behavior: qbReduceMotion() ? "auto" : "smooth" });
+	return !qbReduceMotion();
+}
 // 加入刀门的确认动效：总价滚动到新价 + 绿光扫过 + 一记短震。
 // 让「省了多少」被看见——比打勾更贴合这里的价值主张。
 function qbJoinAnimate(fromTotal) {
@@ -2005,7 +2015,11 @@ function qbSetMem(i, val) {
 	if (i === 0) qbRememberMember(val > 0); // 主唱 1 视为下单本人
 	renderQuoteBuilder();
 	// 只有「本单加入」才放动效——切换已是会员是陈述事实，不是成交
-	if (val === 2 && before !== null) requestAnimationFrame(function () { qbJoinAnimate(before); });
+	if (val === 2 && before !== null) {
+		var moved = qbRevealSummary();
+		// 页面还在滚就等它停稳，否则数字滚动会被移动盖过去
+		setTimeout(function () { qbJoinAnimate(before); }, moved ? 420 : 20);
+	}
 }
 function qbSetAllMem(val) { for (var i = 0; i < qbState.count; i++) qbState.mem[i] = val; renderQuoteBuilder(); }
 // 一键把所有主唱设成同一档，人多时省得逐位点
