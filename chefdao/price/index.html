@@ -438,6 +438,15 @@
 		/* 报价器进度：ADHD 最需要「还剩几步」看得见 */
 		/* 吸顶在区块导航正下方（--navh 由 JS 实测写入）。
 		   必须渲染在 .quote-builder 之外——那个容器有 overflow:hidden，会让 sticky 失效。*/
+		/* 上次报价：只在空白状态出现，让回访客户看得见自己上次算到哪 */
+		.qb-last { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.06); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+		.qb-last-l { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
+		.qb-last-t { display: block; font-size: 15px; font-weight: 700; color: var(--text-primary); margin-top: 3px; }
+		.qb-last-a { display: flex; gap: 8px; flex-shrink: 0; }
+		.qb-last-btn { background: rgba(var(--ink), 0.06); border: 0.5px solid var(--border-hover); border-radius: 100px; padding: 8px 15px; font-family: var(--font); font-size: 12px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+		.qb-last-btn:hover { border-color: var(--green-line); background: rgba(var(--green-ink), 0.12); }
+		.qb-last-btn.ghost { color: var(--text-dim); border-color: var(--border); background: none; }
+		.qb-last-btn.ghost:hover { color: var(--text-secondary); background: rgba(var(--ink), 0.04); }
 		.qb-prog { position: sticky; top: var(--navh, 55px); z-index: 80; display: flex; align-items: center; gap: 11px; margin-bottom: 12px; padding: 9px 15px; border-radius: 100px; border: 0.5px solid var(--border); background: rgba(var(--veil), 0.9); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
 		.qb-prog-bar { flex: 1; height: 3px; border-radius: 100px; background: rgba(var(--ink), 0.08); overflow: hidden; }
 		.qb-prog-fill { height: 100%; border-radius: 100px; background: var(--green-soft); transition: width 0.45s var(--ease); }
@@ -811,7 +820,7 @@ var I18N = {
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
-			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速",
+			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", lastResume: "恢复", lastClear: "清除",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
 				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
@@ -1199,7 +1208,7 @@ var I18N = {
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
-			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane",
+			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", lastResume: "Resume", lastClear: "Clear",
 			copyTerms: "Working terms", copyMore: "Full details",
 			copyTermsList: [
 				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before I start",
@@ -1582,7 +1591,7 @@ var I18N = {
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
-			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인",
+			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", lastResume: "이어하기", lastClear: "삭제",
 			copyTerms: "협업 요점", copyMore: "전체 안내",
 			copyTermsList: [
 				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
@@ -1905,6 +1914,30 @@ function qbInitTheme() {
 }
 function qbIsRemembered() { return qbLsGet(LS_MEMBER) === "1"; }
 function qbRememberMember(on) { qbLsSet(LS_MEMBER, on ? "1" : null); }
+// 报价存档：点「复制报价」才算一次真订单，草稿不入档。最多留 5 条。
+var LS_ORDERS = "cd_orders";
+function qbOrders() { try { return JSON.parse(qbLsGet(LS_ORDERS) || "[]"); } catch (e) { return []; } }
+function qbArchiveOrder(q, c) {
+	var d = new Date(), stems = qbState.mode === "stems";
+	var list = qbOrders();
+	list.unshift({
+		t: d.getTime(),
+		dateTxt: (d.getMonth() + 1) + "/" + d.getDate(),
+		totalTxt: qbFmt(q, c.total) + (c.from ? "+" : ""),
+		label: (stems ? q.modeStems : q.modeVocal) + " · " + c.count + q.countUnit + q.vocalistLabel,
+		s: JSON.parse(JSON.stringify(qbState))
+	});
+	qbLsSet(LS_ORDERS, JSON.stringify(list.slice(0, 5)));
+}
+function qbLoadOrder() {
+	var o = qbOrders()[0];
+	if (!o || !o.s) return;
+	for (var k in qbState) if (o.s.hasOwnProperty(k)) qbState[k] = o.s[k];
+	qbState.help = {};
+	renderQuoteBuilder();
+	qbScrollTo("svc-mixing");
+}
+function qbClearOrders() { qbLsSet(LS_ORDERS, null); renderQuoteBuilder(); }
 function qbSaveState() {
 	qbLsSet(LS_STATE, JSON.stringify({ v: 1, t: Date.now(), s: qbState }));
 }
@@ -2587,7 +2620,20 @@ function renderQuoteBuilder() {
 	var progHtml = '<div class="qb-prog' + (done ? " done" : "") + '">'
 		+ '<div class="qb-prog-bar"><div class="qb-prog-fill" style="width:' + progPct + '%"></div></div>'
 		+ '<span class="qb-prog-txt">' + progTxt + '</span></div>';
-	mount.innerHTML = progHtml + '<div class="quote-builder">' + schedHtml + html + '</div>';
+	// 还没开始选时，把上次的报价亮出来——回访客户不用从头再点一遍
+	var lastHtml = "";
+	if (qbState.mode === null) {
+		var od = qbOrders();
+		if (od.length) {
+			lastHtml = '<div class="qb-last"><span class="qb-last-l">' + q.lastLabel + ' · ' + od[0].dateTxt
+				+ '<span class="qb-last-t">' + od[0].totalTxt + '　' + od[0].label + '</span></span>'
+				+ '<span class="qb-last-a">'
+				+ '<button class="qb-last-btn" onclick="qbLoadOrder()">' + q.lastResume + '</button>'
+				+ '<button class="qb-last-btn ghost" onclick="qbClearOrders()">' + q.lastClear + '</button>'
+				+ '</span></div>';
+		}
+	}
+	mount.innerHTML = lastHtml + progHtml + '<div class="quote-builder">' + schedHtml + html + '</div>';
 
 	// 首次出现的步骤淡入；已出现过的（含每次重渲染）立刻可见，避免整块重播动画
 	var nodes = mount.querySelectorAll("[data-qstep]"), present = {};
@@ -2664,6 +2710,7 @@ function qbCopy() {
 	}
 	L.push(HH);
 	L.push(q.copyWeChat + " · " + CONTACT.wechat);
+	qbArchiveOrder(q, c);
 	var txt = L.join("\n");
 	var btn = document.querySelector(".qb-cta");
 	var done = function() {
