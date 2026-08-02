@@ -192,6 +192,7 @@
 		.qb-chip { background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 20px; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: border-color 0.25s, color 0.25s, background 0.25s; }
 		.qb-chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
 		.qb-chip.active { border-color: rgba(var(--ink), 0.45); color: var(--text-primary); background: rgba(var(--ink), 0.05); }
+		.qb-fallback { display: block; width: 100%; margin-top: 10px; min-height: 190px; padding: 13px; border: 0.5px solid var(--border-hover); border-radius: 10px; background: var(--surface); color: var(--text-primary); font-family: var(--font); font-size: 12px; line-height: 1.7; resize: vertical; }
 		.qb-share { display: block; width: 100%; margin-top: 9px; background: rgba(var(--green-ink), 0.10); border: 0.5px solid var(--green-line); border-radius: 10px; padding: 13px; font-family: var(--font); font-size: 12.5px; font-weight: 600; color: var(--green-soft); cursor: pointer; transition: background 0.2s; }
 		.qb-share:hover { background: rgba(var(--green-ink), 0.18); }
 		.qb-reset { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: var(--text-dim); font-family: var(--font); font-size: 11.5px; padding: 8px; cursor: pointer; transition: color 0.2s; }
@@ -839,7 +840,7 @@ var I18N = {
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
-			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", perHeadTotal: "人均", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
+			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", perHeadTotal: "人均", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
 				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
@@ -1234,7 +1235,7 @@ var I18N = {
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
-			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", perHeadTotal: "Per person", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
+			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", perHeadTotal: "Per person", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
 			copyTerms: "Working terms", copyMore: "Full details",
 			copyTermsList: [
 				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before I start",
@@ -1624,7 +1625,7 @@ var I18N = {
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
-			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", perHeadTotal: "1인당", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
+			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", perHeadTotal: "1인당", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
 			copyTerms: "협업 요점", copyMore: "전체 안내",
 			copyTermsList: [
 				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
@@ -2730,6 +2731,42 @@ function qbFadeIn(el) {
 }
 // 复制成一张排版清爽的纯文本报价单：分区、缩进、留白——微信/任何输入框粘贴都稳。
 // 不做列对齐（微信是比例字体，空格对不齐），靠分隔线与缩进营造层次。
+// 复制的三种失败情形都要兜住：
+//  1. file:// 打开时 navigator.clipboard 不存在 → 直接抛错，界面毫无反应
+//  2. 页面失焦时 writeText 会 reject → 原来 .catch(done) 反而报「已复制」，是假成功
+//  3. 桌面 Chrome 没注册 weixin:// 协议，跳转静默失败
+// 同步的 execCommand 在点击手势内最可靠——navigator.clipboard 会先查文档焦点，
+// 页面刚切回来时第一次点必被拒，于是要点两下。所以把同步方式放在第一位。
+function qbLegacyCopy(txt) {
+	try {
+		var ta = document.createElement("textarea");
+		ta.value = txt; ta.setAttribute("readonly", "");
+		ta.style.cssText = "position:fixed;top:50%;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none";
+		document.body.appendChild(ta);
+		var sel = document.getSelection();
+		var prev = (sel && sel.rangeCount) ? sel.getRangeAt(0) : null;
+		ta.select(); ta.setSelectionRange(0, ta.value.length);
+		var ok = document.execCommand("copy");
+		document.body.removeChild(ta);
+		if (prev && sel) { sel.removeAllRanges(); sel.addRange(prev); } // 还原用户原有选区
+		return ok;
+	} catch (e) { return false; }
+}
+function qbWriteClipboard(txt) {
+	if (qbLegacyCopy(txt)) return Promise.resolve();
+	if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(txt);
+	return Promise.reject(new Error("copy unavailable"));
+}
+// 复制不成时把文本摊出来让用户自己选，总好过一片死寂
+function qbShowFallback(txt) {
+	var host = document.querySelector(".qb-cta");
+	if (!host || document.getElementById("qb-fallback")) return;
+	var ta = document.createElement("textarea");
+	ta.id = "qb-fallback"; ta.className = "qb-fallback"; ta.value = txt; ta.readOnly = true;
+	// 不自动 focus：抢焦点会把页面滚过去，视觉上就是「突然黑一下」
+	ta.onclick = function () { this.select(); };
+	host.parentNode.insertBefore(ta, host.nextSibling);
+}
 function qbCopy() {
 	var q = I18N[currentLang].quote;
 	var c = qbCompute(q);
@@ -2768,7 +2805,7 @@ function qbCopy() {
 		qbFmt(q, q.perHead) + " × " + (c.count - 1) + q.countUnit);
 	if (c.producer > 0) item("+" + qbFmt(q, c.producer), q.producerLine + " +" + Math.round(PRODUCER_RATE * 100) + "%");
 	if (c.rush > 0) item("+" + qbFmt(q, c.rush), q.rushName + " +" + Math.round(c.rushRate * 100) + "%");
-	if (c.joinFee > 0) item("+" + qbFmt(q, c.joinFee), q.joinLine + mul(c.joinCount));
+	if (c.joinFee > 0) item("+" + qbFmt(q, c.joinFee), q.joinLine, per(q.memberFee, c.joinCount));
 	if (c.discount > 0) item("−" + qbFmt(q, c.discount), q.memberLine, c.memCount > 1 ? c.memCount + q.countUnit : "");
 	L.push(HH);
 	L.push("▍" + q.totalLabel + "　" + qbFmt(q, c.total) + sfx);
@@ -2797,14 +2834,24 @@ function qbCopy() {
 	}
 	L.push(HH);
 	L.push(q.copyWeChat + " · " + CONTACT.wechat);
-	qbArchiveOrder(q, c);
 	var txt = L.join("\n");
 	var btn = document.querySelector(".qb-cta");
-	var done = function() {
-		if (btn) { btn.textContent = q.copied; setTimeout(function() { btn.textContent = q.cta; }, 2000); }
-		window.location.href = "weixin://";
+	var flash = function (label) {
+		if (!btn) return;
+		btn.textContent = label;
+		setTimeout(function () { btn.textContent = q.cta; }, 2200);
 	};
-	navigator.clipboard.writeText(txt).then(done).catch(done);
+	var isTouch = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+	qbWriteClipboard(txt).then(function () {
+		qbArchiveOrder(q, c); // 复制成功才入档
+		var fb = document.getElementById("qb-fallback");
+		if (fb) fb.parentNode.removeChild(fb); // 上次失败留下的兜底框，成功后收掉
+		flash(q.copied);
+		if (isTouch) setTimeout(function () { window.location.href = "weixin://"; }, 250);
+	}).catch(function () {
+		flash(q.copyFail);
+		qbShowFallback(txt);
+	});
 }
 
 // ── Section rendering ───────────────────────────────────────
