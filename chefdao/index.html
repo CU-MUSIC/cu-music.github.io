@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -242,7 +241,7 @@ body {
   transition:opacity 0.35s var(--easing);
   background:radial-gradient(circle at 50% 50%, rgba(255,255,255,0.22), rgba(0,0,0,0.38) 78%);
 }
-.has-link:hover .tilt-sheen { opacity:1; }
+@media (hover:hover) { .has-link:hover .tilt-sheen { opacity:1; } }
 
 /* ---- Listen affordance: only for albums that have a link ---- */
 .listen-veil {
@@ -252,7 +251,7 @@ body {
   background:linear-gradient(180deg, transparent 62%, rgba(0,0,0,0.42));
   opacity:0; transition:opacity 0.45s var(--easing); pointer-events:none;
 }
-.has-link:hover .listen-veil { opacity:1; }
+@media (hover:hover) { .has-link:hover .listen-veil { opacity:1; } }
 .listen-label {
   position:relative; display:inline-block;
   color:var(--brand); font-size:10px; font-weight:500;
@@ -262,7 +261,7 @@ body {
   transform:translateY(10px);
   transition:transform 0.55s var(--easing);
 }
-.has-link:hover .listen-label { transform:translateY(0); }
+@media (hover:hover) { .has-link:hover .listen-label { transform:translateY(0); } }
 /* hairline that draws itself in, left to right */
 .listen-label::after {
   content:''; position:absolute; left:0; right:0; bottom:-7px; height:1px;
@@ -270,7 +269,16 @@ body {
   transform:scaleX(0); transform-origin:left;
   transition:transform 0.7s var(--easing) 0.08s;
 }
-.has-link:hover .listen-label::after { transform:scaleX(1); }
+@media (hover:hover) { .has-link:hover .listen-label::after { transform:scaleX(1); } }
+
+/* ---- Touch: no cursor to hover with, so Listen appears when the cover
+   reaches the middle of the screen (class written by initScrollLight).
+   Featured rows only — the compact grid puts 2–3 covers on the same line,
+   so they would all light up at once. ---- */
+.album-cover-wrapper .tilt.centered .listen-veil  { opacity:1; }
+.album-cover-wrapper .tilt.centered .listen-label { transform:translateY(0); }
+.album-cover-wrapper .tilt.centered .listen-label::after { transform:scaleX(1); }
+.album-cover-wrapper .tilt.centered .tilt-sheen   { opacity:0.55; }
 
 /* no-link albums: no cursor, no hover, no affordance */
 .no-link, .album-compact.no-link { cursor:default; }
@@ -789,7 +797,11 @@ function initScrollLight() {
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => {
       if (e.isIntersecting) { onScreen.add(e.target); e.target.querySelector('.tilt-light')?.classList.add('lit'); }
-      else { onScreen.delete(e.target); e.target.querySelector('.tilt-light')?.classList.remove('lit'); }
+      else {
+        onScreen.delete(e.target);
+        e.target.classList.remove('centered');   // paint() no longer visits it
+        e.target.querySelector('.tilt-light')?.classList.remove('lit');
+      }
     });
     schedule();
   }, { rootMargin: '10% 0px' });
@@ -804,6 +816,11 @@ function initScrollLight() {
       const p = Math.max(0, Math.min(1, (r.top + r.height / 2) / vh));
       const rx = (p - 0.5) * 2 * MAX_DEG;
       tilt.classList.add('scroll-lit');
+      // Listen shows up when the cover sits in the middle band of the screen.
+      // Featured rows only: the compact grid is 2–3 covers wide, so a whole
+      // line would cross the middle together.
+      tilt.classList.toggle('centered',
+        Math.abs(p - 0.5) < 0.13 && !!tilt.closest('.album-cover-wrapper'));
       tilt.style.transform = `rotateX(${rx.toFixed(2)}deg) scale(1.01)`;
       tilt.style.filter =
         `drop-shadow(0 ${(14 + rx).toFixed(1)}px 34px rgba(0,0,0,0.55)) ` +
