@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -136,23 +137,6 @@ body {
 .nav-ext { text-decoration:none; }
 .nav-spotify { display:flex; align-items:center; gap:5px; }
 
-/* ================= Year Watermark ================= */
-#year-watermark {
-  position:fixed; top:50%; left:0;
-  transform:translateY(-50%);
-  font-size:clamp(60px, 20vw, 220px);
-  font-weight:800; color:#fff; letter-spacing:-0.02em;
-  pointer-events:none; z-index:0; white-space:nowrap; opacity:0; user-select:none;
-}
-#year-watermark.sweeping {
-  animation:year-sweep 2.4s cubic-bezier(0.16,1,0.3,1) forwards;
-}
-@keyframes year-sweep {
-  0%   { opacity:0;    transform:translateY(-50%) translateX(-6%); }
-  18%  { opacity:0.09; }
-  65%  { opacity:0.06; }
-  100% { opacity:0;    transform:translateY(-50%) translateX(14%); }
-}
 
 /* ================= Works Section ================= */
 #works-section { display:none; }
@@ -231,8 +215,12 @@ body {
   filter:drop-shadow(0 18px 40px rgba(0,0,0,0.55));
 }
 .tilt.is-tilting { transition:transform 0.12s ease-out, filter 0.12s ease-out; }
-/* scroll-driven mode writes a new transform every frame — easing it would smear */
-.tilt.scroll-lit { transition:none; }
+/* scroll-driven mode: short easing so each new scroll sample glides into the
+   next instead of snapping straight to it. Filter is left alone (no dynamic
+   drop-shadow recompute) — recalculating a blurred filter every scroll frame
+   was the actual source of the stutter, and it was stealing frames from the
+   .listen-veil fade below too. */
+.tilt.scroll-lit { transition:transform 0.2s linear; }
 
 /* mouse-following sheen — the thing that makes it read as a physical object */
 .tilt-sheen {
@@ -465,6 +453,26 @@ body {
 .chart-title { font-size:15px; font-weight:600; }
 .chart-artist { font-size:13px; color:rgba(255,255,255,0.4); }
 
+/* ================= Scroll cue ================= */
+/* centered so it clears the WeChat pill on the right; hides itself once the
+   visitor has actually scrolled (same 120px threshold the nav bar uses) */
+#scroll-cue {
+  position:fixed; left:50%; bottom:36px; transform:translateX(-50%);
+  z-index:500; pointer-events:none;
+  opacity:0; transition:opacity 0.6s var(--easing);
+}
+#scroll-cue.visible { opacity:0.5; }
+#scroll-cue.past-fold { opacity:0 !important; }
+.scroll-cue-arrow { display:block; animation:scroll-cue-bounce 1.7s ease-in-out infinite; }
+.scroll-cue-arrow::after {
+  content:''; display:block; width:9px; height:9px;
+  border-right:1.5px solid rgba(255,255,255,0.85); border-bottom:1.5px solid rgba(255,255,255,0.85);
+  transform:rotate(45deg);
+}
+@keyframes scroll-cue-bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(6px); } }
+@media (max-width:768px) { #scroll-cue { bottom:96px; } }
+@media (prefers-reduced-motion:reduce) { .scroll-cue-arrow { animation:none; } }
+
 /* ================= Floating WeChat ================= */
 #float-contact {
   position:fixed; bottom:28px; right:28px; z-index:999;
@@ -575,8 +583,8 @@ body {
   </a>
 </nav>
 
-<!-- Year Watermark -->
-<div id="year-watermark"></div>
+<!-- Scroll cue: nudges first-time visitors to keep scrolling past the hero card -->
+<div id="scroll-cue"><span class="scroll-cue-arrow"></span></div>
 
 <!-- Works -->
 <div id="works-section">
@@ -822,9 +830,6 @@ function initScrollLight() {
       tilt.classList.toggle('centered',
         Math.abs(p - 0.5) < 0.13 && !!tilt.closest('.album-cover-wrapper'));
       tilt.style.transform = `rotateX(${rx.toFixed(2)}deg) scale(1.01)`;
-      tilt.style.filter =
-        `drop-shadow(0 ${(14 + rx).toFixed(1)}px 34px rgba(0,0,0,0.55)) ` +
-        `brightness(${(0.88 + 0.18 * (1 - Math.abs(p - 0.5) * 2)).toFixed(3)})`;
       const light = tilt.querySelector('.tilt-light');
       if (light) light.style.background =
         `linear-gradient(${(180 - rx * 6).toFixed(0)}deg, rgba(255,255,255,${(0.34 * (1 - p)).toFixed(3)}) 0%, rgba(255,255,255,0) 46%, rgba(0,0,0,${(0.3 * p).toFixed(3)}) 100%)`;
@@ -900,26 +905,6 @@ function initExpand() {
   });
 }
 
-/* ========= Year Watermark ========= */
-function initYearWatermark() {
-  const wm = document.getElementById('year-watermark');
-  let lastYear = null;
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      const yr = e.target.dataset.year;
-      if (!yr || yr === lastYear) return;
-      lastYear = yr;
-      wm.textContent = yr;
-      wm.classList.remove('sweeping');
-      void wm.offsetWidth;
-      wm.classList.add('sweeping');
-      wm.addEventListener('animationend', () => wm.classList.remove('sweeping'), { once: true });
-    });
-  }, { threshold: 0.4 });
-  document.querySelectorAll('.album-row[data-year]').forEach(r => obs.observe(r));
-}
-
 /* ========= Nav ========= */
 function initNav() {
   const nav = document.getElementById('content-nav');
@@ -961,6 +946,21 @@ function initNav() {
   });
 }
 
+/* ========= Scroll cue ========= */
+function initScrollCue() {
+  const cue = document.getElementById('scroll-cue');
+  requestAnimationFrame(() => cue.classList.add('visible'));
+  const onScroll = () => cue.classList.toggle('past-fold', window.scrollY > 120);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  // only makes sense on the Works hero — About has its own scroll depth
+  document.querySelectorAll('.nav-link[data-tab]').forEach(link => {
+    link.addEventListener('click', () => {
+      cue.classList.toggle('past-fold', link.dataset.tab !== 'works' || window.scrollY > 120);
+    });
+  });
+}
+
 /* ========= Float Contact ========= */
 function initFloatContact() {
   const btn = document.getElementById('float-contact');
@@ -986,8 +986,8 @@ function revealContent() {
   }, { threshold: 0.1 });
   container.querySelectorAll('.album-row').forEach(r => obs.observe(r));
 
-  initYearWatermark();
   initNav();
+  initScrollCue();
   initFloatContact();
   initExpand();
   initTilt();
