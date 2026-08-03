@@ -1,11 +1,11 @@
 /**
- * C/U MUSIC - 专辑数据库
+ * CU MUSIC - 专辑数据库
  * 在此处添加、删除或修改作品记录
  */
 const albums = [
-	{ link: "https://music.163.com/album?id=386863760", image: "https://p1.music.126.net/7Eis9iJwDf9csf-lTBFr7g==/109951173554234007.jpg", year: "2026", artist: "WindMax", title: "TWISTED LOVE", credits:["uin"] },
 	{ link: "https://music.163.com/album?id=263242113", image: "https://p1.music.126.net/QpNRZsfMP5J4tOlziA8Pnw==/109951170504642760.jpg", year: "2025", artist: "Rapeter", title: "IMGOOD别担心我", credits:["cookdao"] },
 	{ link: "https://music.163.com/album?id=350777340", image: "https://p1.music.126.net/_-rFuALruNFFlRfoEslp7A==/109951172303441948.jpg", year: "2025", artist: "Føxco", title: "Fear Of Nothing", credits:["cookdao"] },
+	{ link: "https://music.163.com/album?id=386863760", image: "https://p2.music.126.net/7Eis9iJwDf9csf-lTBFr7g==/109951173554234007.jpg", year: "2026", artist: "WindMax", title: "TWISTED LOVE", credits:["uin"] },
 	{ link: "https://music.163.com/album?id=349892857", image: "https://p1.music.126.net/Z0XW7Vb1WHMnn0Z0aZ3tVw==/109951172263038796.jpg", year: "2025", artist: "安伊涵", title: "BAD DESIRE", credits:["cookdao","uin"] },
 	{ link: "https://music.163.com/album?id=368863399", image: "https://p1.music.126.net/b5WE69W4fkFuAaQtiWR2EA==/109951172978186945.jpg", year: "2026", artist: "安伊涵", title: "出海", credits:["uin"] },
 	{ link: "https://music.163.com/album?id=360128548", image: "https://p1.music.126.net/KK23i_doVojpXJL8kziCaA==/109951172660471716.jpg", year: "2026", artist: "Ele Jazz", title: "UFO" ,credits:["uin"] },
