@@ -844,7 +844,7 @@ var I18N = {
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
 			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", perHeadTotal: "人均", newbieOff: 50, newbieLine: "新客首单立减",
-			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50 · 可与刀门会员叠加", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
+			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50 · 本单加入刀门可叠加", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
 				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
@@ -1259,7 +1259,7 @@ var I18N = {
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
 			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", perHeadTotal: "Per person", newbieOff: 8, newbieLine: "First-order discount",
-			newbieTitle: "First-order discount", newbieSub: "$8 off your first single-vocalist order · stacks with membership", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
+			newbieTitle: "First-order discount", newbieSub: "$8 off your first single-vocalist order · stacks if you join Daomen with it", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
 			copyTerms: "Working terms", copyMore: "Full details",
 			copyTermsList: [
 				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before I start",
@@ -1669,7 +1669,7 @@ var I18N = {
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
 			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", perHeadTotal: "1인당", newbieOff: 10000, newbieLine: "첫 주문 할인",
-			newbieTitle: "첫 주문 할인", newbieSub: "첫 협업, 보컬 1인 주문 ₩10,000 할인 · 멤버십과 중복 적용", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
+			newbieTitle: "첫 주문 할인", newbieSub: "첫 협업, 보컬 1인 주문 ₩10,000 할인 · 이번에 가입 시 중복 적용", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
 			copyTerms: "협업 요점", copyMore: "전체 안내",
 			copyTermsList: [
 				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
@@ -2170,7 +2170,9 @@ function qbJoinAnimate(fromTotal) {
 // 12.5% < 会员的 20%，不抢刀门的戏；可与会员折扣叠加，正好把入会做成第二笔看得见的钱。
 var LS_NEWBIE_USED = "cd_newbie_used";
 function qbNewbieUsed() { return qbLsGet(LS_NEWBIE_USED) === "1"; }
-function qbNewbieOk() { return qbState.count === 1 && !qbNewbieUsed(); }
+// 已是会员（mem=1）不算新客——逻辑上说不通，且叠加后时薪会掉到 ¥88/h。
+// 当单加入（mem=2）仍算新客：他来的时候确实是新的，这也是最想促成的路径。
+function qbNewbieOk() { return qbState.count === 1 && !qbNewbieUsed() && qbMemState(0) !== 1; }
 function qbToggleNewbie() { qbState.newbie = !qbState.newbie; renderQuoteBuilder(); }
 function qbToggleAaCopy() { qbState.aaCopy = !(qbState.aaCopy !== false); renderQuoteBuilder(); }
 function qbSetMem(i, val) {
@@ -2313,7 +2315,7 @@ function qbCompute(q) {
 	var rushRate = fast ? (qbRushRate(qbDaysUntil(qbState.targetDate) - qbCutoff()) || 0) : 0;
 	var rush = Math.round(workBase * rushRate);
 	// 新客立减：在会员折扣之后再扣，两者可叠加
-	var newbie = (qbState.newbie && count === 1 && !qbNewbieUsed()) ? q.newbieOff : 0;
+	var newbie = (qbState.newbie && count === 1 && !qbNewbieUsed() && qbMemState(0) !== 1) ? q.newbieOff : 0;
 	var total = workBase + rush - discount + joinFee - newbie;
 	if (total < 0) { newbie += total; total = 0; }
 	// 半半模式：定金 50% 向上取整（略大的那一半先收），尾款为剩余，两者精确相加
