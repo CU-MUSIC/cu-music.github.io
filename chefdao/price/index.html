@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -292,6 +293,9 @@
 		.qb-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--cta-bg); transition: transform 0.25s var(--ease); }
 		.qb-member.on .qb-switch { background: var(--green-soft); }
 		.qb-member.on .qb-switch::after { transform: translateX(14px); background: var(--green-deep); }
+		.qb-newbie.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.07); }
+		.qb-newbie.on .qb-switch { background: var(--green-soft); }
+		.qb-newbie.on .qb-switch::after { transform: translateX(14px); background: var(--green-deep); }
 		.qb-producer.on { border-color: rgba(var(--ink), 0.28); background: rgba(var(--ink), 0.05); }
 		.qb-producer.on .qb-switch { background: var(--cta-bg); }
 		.qb-producer.on .qb-switch::after { transform: translateX(14px); background: #0a0a0a; }
@@ -839,7 +843,8 @@ var I18N = {
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
-			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", perHeadTotal: "人均", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
+			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", perHeadTotal: "人均", newbieOff: 50, newbieLine: "新客首单立减",
+			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50 · 可与刀门会员叠加", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
 				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
@@ -1108,6 +1113,25 @@ var I18N = {
 			{
 				q: "我不懂混音术语，能顺畅沟通吗？",
 				a: "完全没问题，甚至更好。你不用会任何术语——用「想要更空、更暖、更狠、更干净」这种感觉描述，或者直接发参考曲，我来翻译成技术动作。我的工作，就是把你说不清的那种感觉做出来。"
+			},
+			{
+				q: "¥300 的混音包含母带吗？",
+				a: "包含。所有混音档位都已含简易母带处理，单曲发行可直接使用。",
+				list: [
+					"简易母带＝响度、动态与频谱的最终优化，已含在混音价内，不另收费",
+					"需要独立母带的情况：EP／专辑多首统一、实体介质压制，或混音由他方完成",
+					"独立单曲母带 ¥200；分轨母带（Stem Mastering）¥400"
+				]
+			},
+			{
+				q: "干声有房间声、爆音，会额外收费吗？",
+				a: "视程度而定。轻微问题已含在音频编辑内；需要专门修复的，另加音频修复费 ¥100 / 位主唱。",
+				list: [
+					"<strong>已含在编辑内</strong>：底噪、齿音、呼吸声、轻微房间声",
+					"<strong>需修复费</strong>：明显房间混响、爆音／削波、电流声、严重齿音",
+					"修复费在方向确认版阶段听过素材后确认，不会事后追加",
+					"严重破音、爆麦、完全跑飞的段落修不回来——会建议补录，而不是硬修出廉价感"
+				]
 			}
 		]
 	},
@@ -1234,7 +1258,8 @@ var I18N = {
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
-			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", perHeadTotal: "Per person", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
+			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", perHeadTotal: "Per person", newbieOff: 8, newbieLine: "First-order discount",
+			newbieTitle: "First-order discount", newbieSub: "$8 off your first single-vocalist order · stacks with membership", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
 			copyTerms: "Working terms", copyMore: "Full details",
 			copyTermsList: [
 				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before I start",
@@ -1498,6 +1523,25 @@ var I18N = {
 			{
 				q: "I don't know mixing terms — can we still communicate?",
 				a: "Totally fine — even better. You don't need any jargon. Describe it by feel — \"more spacious, warmer, harder, cleaner\" — or just send a reference, and I'll translate it into technical moves. My whole job is making the feeling you can't quite put into words."
+			},
+			{
+				q: "Does the mixing price include mastering?",
+				a: "Yes. Every mixing tier already includes light mastering, so a single is ready to release as-is.",
+				list: [
+					"Light mastering = final loudness, dynamics and spectral optimisation, included at no extra cost",
+					"Standalone mastering is for EP/album cohesion, physical formats, or a mix done elsewhere",
+					"Single mastering $30; stem mastering $60"
+				]
+			},
+			{
+				q: "My dry vocals have room sound or clipping — is that extra?",
+				a: "Depends on severity. Minor issues are covered by audio editing; anything needing dedicated repair is $15 per vocalist.",
+				list: [
+					"<strong>Covered by editing</strong>: noise floor, sibilance, breaths, slight room tone",
+					"<strong>Repair fee applies</strong>: obvious room reverb, clipping, electrical hum, heavy sibilance",
+					"Confirmed at the direction-check stage once I have heard the material — never billed after the fact",
+					"Severe clipping, mic overload and completely off sections cannot be recovered — I will suggest a re-take rather than force a cheap-sounding fix"
+				]
 			}
 		]
 	},
@@ -1624,7 +1668,8 @@ var I18N = {
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
-			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", perHeadTotal: "1인당", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
+			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", perHeadTotal: "1인당", newbieOff: 10000, newbieLine: "첫 주문 할인",
+			newbieTitle: "첫 주문 할인", newbieSub: "첫 협업, 보컬 1인 주문 ₩10,000 할인 · 멤버십과 중복 적용", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
 			copyTerms: "협업 요점", copyMore: "전체 안내",
 			copyTermsList: [
 				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
@@ -1888,6 +1933,25 @@ var I18N = {
 			{
 				q: "믹싱 용어를 몰라도 소통할 수 있나요?",
 				a: "전혀 문제없고, 오히려 더 좋습니다. 용어는 하나도 몰라도 됩니다 — '더 공간감 있게, 더 따뜻하게, 더 강하게, 더 깨끗하게' 같은 느낌으로 설명하거나 레퍼런스를 보내주시면 제가 기술적 동작으로 번역합니다. 말로 다 못 하는 그 느낌을 만들어내는 게 제 일입니다."
+			},
+			{
+				q: "믹싱 가격에 마스터링이 포함되나요?",
+				a: "포함됩니다. 모든 믹싱 등급에 심플 마스터링이 포함되어 싱글은 그대로 발매하실 수 있습니다.",
+				list: [
+					"심플 마스터링 = 라우드니스·다이나믹·스펙트럼 최종 최적화, 추가 요금 없이 포함",
+					"별도 마스터링이 필요한 경우: EP／앨범 통일감, 실물 매체, 또는 다른 곳에서 믹스한 경우",
+					"싱글 마스터링 ₩40,000, 스템 마스터링 ₩80,000"
+				]
+			},
+			{
+				q: "드라이 보컬에 룸 사운드나 클리핑이 있으면 추가 요금인가요?",
+				a: "정도에 따라 다릅니다. 경미한 문제는 오디오 편집에 포함되며, 전용 복원이 필요하면 보컬 1인당 ₩20,000이 추가됩니다.",
+				list: [
+					"<strong>편집에 포함</strong>: 노이즈 플로어, 치찰음, 호흡, 약한 룸톤",
+					"<strong>복원 요금 발생</strong>: 뚜렷한 룸 리버브, 클리핑, 전기 잡음, 심한 치찰음",
+					"방향 확인본 단계에서 소스를 들은 뒤 확정하며, 사후 청구는 없습니다",
+					"심한 클리핑·마이크 오버로드·완전히 어긋난 구간은 복원할 수 없습니다 — 억지 보정보다 재녹음을 권해 드립니다"
+				]
 			}
 		]
 	}
@@ -1899,7 +1963,7 @@ var I18N = {
 // edits 索引：0 = 不需要，1 = 基础编辑（音准/节奏二选一），2 = 标准编辑（节奏+音准），3 = 深度编辑（每位主唱各选一档）
 // 纯混音（全员 prods=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
 // null = 尚未作答。逐步揭示：一步作答后下一步才挂载，引导文案随之分批出现。
-var qbState = { mode: null, stems: null, prods: [], harmony: null, count: null, edits: [], mem: [], producer: false, lane: null, targetDate: null, moreCount: false, aaOpen: false, fineOpen: false, aaCopy: true, help: {} };
+var qbState = { mode: null, stems: null, prods: [], harmony: null, count: null, edits: [], mem: [], producer: false, lane: null, targetDate: null, moreCount: false, aaOpen: false, fineOpen: false, aaCopy: true, newbie: false, help: {} };
 // 制作人附加服务：按混音/制作小计加收的百分比（改这一个数就调价）
 var PRODUCER_RATE = 0.5;
 // 刀门会员折扣率（8 折 = 省 20%），按主唱逐位计算：只有会员/本单加入的那份享折扣
@@ -2102,6 +2166,12 @@ function qbJoinAnimate(fromTotal) {
 	}
 	requestAnimationFrame(tick);
 }
+// 新客首单优惠：立减 ¥50，仅限单人单、仅限首单。
+// 12.5% < 会员的 20%，不抢刀门的戏；可与会员折扣叠加，正好把入会做成第二笔看得见的钱。
+var LS_NEWBIE_USED = "cd_newbie_used";
+function qbNewbieUsed() { return qbLsGet(LS_NEWBIE_USED) === "1"; }
+function qbNewbieOk() { return qbState.count === 1 && !qbNewbieUsed(); }
+function qbToggleNewbie() { qbState.newbie = !qbState.newbie; renderQuoteBuilder(); }
 function qbToggleAaCopy() { qbState.aaCopy = !(qbState.aaCopy !== false); renderQuoteBuilder(); }
 function qbSetMem(i, val) {
 	var before = qbComplete() ? qbCompute(I18N[currentLang].quote).total : null;
@@ -2156,7 +2226,7 @@ function qbStep(delta) { qbSetCount((qbState.count || 1) + delta); }
 function qbReset() {
 	qbState.mode = null; qbState.stems = null; qbState.prods = []; qbState.harmony = null;
 	qbState.count = null; qbState.edits = []; qbState.lane = null; qbState.targetDate = null;
-	qbState.moreCount = false; qbState.mem = []; qbState.producer = false; qbState.help = {}; qbState.aaCopy = true;
+	qbState.moreCount = false; qbState.mem = []; qbState.producer = false; qbState.help = {}; qbState.aaCopy = true; qbState.newbie = false;
 	qbLsSet(LS_STATE, null); // 会员身份单独保存，不随重置清掉
 	qbMounted = {};
 	renderQuoteBuilder();
@@ -2242,14 +2312,17 @@ function qbCompute(q) {
 	var fast = qbState.lane === 1 && !!qbState.targetDate;
 	var rushRate = fast ? (qbRushRate(qbDaysUntil(qbState.targetDate) - qbCutoff()) || 0) : 0;
 	var rush = Math.round(workBase * rushRate);
-	var total = workBase + rush - discount + joinFee;
+	// 新客立减：在会员折扣之后再扣，两者可叠加
+	var newbie = (qbState.newbie && count === 1 && !qbNewbieUsed()) ? q.newbieOff : 0;
+	var total = workBase + rush - discount + joinFee - newbie;
+	if (total < 0) { newbie += total; total = 0; }
 	// 半半模式：定金 50% 向上取整（略大的那一半先收），尾款为剩余，两者精确相加
 	var deposit = Math.ceil(total / 2);
 	var balance = total - deposit;
 	return { base: base, baseItem: baseItem, from: stems && baseItem.from, harmony: harmony, count: count,
 		mixExtra: mixExtra, prodTotal: prodTotal, prodCounts: prodCounts, maxProd: maxProd,
 		editTotal: editTotal, editCounts: editCounts,
-		gross: gross, gShares: gShares, workBase: workBase, discount: discount, memDisc: memDisc,
+		gross: gross, gShares: gShares, workBase: workBase, discount: discount, memDisc: memDisc, newbie: newbie,
 		memCount: memCount, joinCount: joinCount, joinFee: joinFee,
 		fast: fast, rush: rush, rushRate: rushRate, producer: producer,
 		total: total, deposit: deposit, balance: balance };
@@ -2571,6 +2644,9 @@ function renderQuoteBuilder() {
 		if (c.joinFee > 0) {
 			lines += '<div class="qb-bd-line"><span>' + q.joinLine + (c.joinCount > 1 ? ' × ' + c.joinCount : "") + '</span><span class="qb-bd-val">+' + qbFmt(q, c.joinFee) + '</span></div>';
 		}
+		if (c.newbie > 0) {
+			lines += '<div class="qb-bd-line discount"><span>' + q.newbieLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.newbie) + '</span></div>';
+		}
 		if (c.producer > 0) {
 			lines += '<div class="qb-bd-line"><span>' + q.producerLine + ' +' + Math.round(PRODUCER_RATE * 100) + '%</span><span class="qb-bd-val">+' + qbFmt(q, c.producer) + '</span></div>';
 		}
@@ -2659,6 +2735,14 @@ function renderQuoteBuilder() {
 			memBody = '<div class="qb-voc-list">' + memRows + '</div>'
 				+ '<div class="qb-member-sub" style="margin-top:9px">' + q.memberPerNote + '</div>' + pbHtml;
 		}
+		// 新客开关只在「单人单 + 没用过」时出现，用完自动消失
+		var newbieHtml = "";
+		if (qbNewbieOk()) {
+			newbieHtml = '<button class="qb-member qb-newbie' + (qbState.newbie ? " on" : "") + '" onclick="qbToggleNewbie()" aria-pressed="' + !!qbState.newbie + '">'
+				+ '<span><span class="qb-member-label">' + q.newbieTitle + ' <span class="qb-plus">−' + qbFmt(q, q.newbieOff) + '</span></span>'
+				+ '<span class="qb-member-sub">' + q.newbieSub + '</span></span>'
+				+ '<span class="qb-switch"></span></button>';
+		}
 		var memberHtml = '<div class="qb-memblock' + (c.discount > 0 ? " on" : "") + '">'
 			+ '<span class="qb-member-label">' + q.memberTitle
 			+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="qbScrollTo(\'svc-daomen\')">?</span></span>'
@@ -2670,7 +2754,7 @@ function renderQuoteBuilder() {
 			+ '<span class="qb-switch"></span></button>'
 			+ (qbState.producer ? '<div style="margin-top:-8px;margin-bottom:16px">' + qbWhy(q.whyLabel, q.producerNote) + '</div>' : '');
 
-		html += '<div class="qb-step" data-qstep="summary">' + memberHtml + producerHtml
+		html += '<div class="qb-step" data-qstep="summary">' + newbieHtml + memberHtml + producerHtml
 			+ '<div class="qb-summary">' + eq + lines
 			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
 			+ (c.count > 1 ? '<div class="qb-percap"><span>' + q.perHeadTotal + '</span><span class="qb-percap-v">' + qbFmt(q, Math.round(c.total / c.count)) + (c.from ? '+' : '') + '</span></div>' : '')
@@ -2806,6 +2890,7 @@ function qbCopy() {
 	if (c.rush > 0) item("+" + qbFmt(q, c.rush), q.rushName + " +" + Math.round(c.rushRate * 100) + "%");
 	if (c.joinFee > 0) item("+" + qbFmt(q, c.joinFee), q.joinLine, per(q.memberFee, c.joinCount));
 	if (c.discount > 0) item("−" + qbFmt(q, c.discount), q.memberLine, c.memCount > 1 ? c.memCount + q.countUnit : "");
+	if (c.newbie > 0) item("−" + qbFmt(q, c.newbie), q.newbieLine);
 	L.push(HH);
 	L.push("▍" + q.totalLabel + "　" + qbFmt(q, c.total) + sfx);
 	// 多人单的关键卖点：人均比单独做更便宜，但客户只看得到总价
@@ -2843,6 +2928,7 @@ function qbCopy() {
 	var isTouch = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 	qbWriteClipboard(txt).then(function () {
 		qbArchiveOrder(q, c); // 复制成功才入档
+		if (c.newbie > 0) qbLsSet(LS_NEWBIE_USED, "1"); // 首单优惠只用一次
 		var fb = document.getElementById("qb-fallback");
 		if (fb) fb.parentNode.removeChild(fb); // 上次失败留下的兜底框，成功后收掉
 		flash(q.copied);
@@ -3006,11 +3092,11 @@ function renderService(svc) {
 // FAQ 分组：21 条一字排开没人扫得完，切成 5 组、每组 ≤5 条。
 // 索引是 0 基，三语言条目顺序一致，所以一份映射通用。
 var FAQ_GROUPS = [
-	[0, 1, 2, 19],
+	[0, 1, 2, 19, 22],
 	[8, 9, 12, 18, 21],
 	[3, 13, 14, 15, 16],
 	[4, 5, 10, 20],
-	[6, 7, 11, 17]
+	[6, 7, 11, 17, 23]
 ];
 function renderFAQ(t) {
 	if (!t.faqItems || !t.faqItems.length) return "";
