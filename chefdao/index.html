@@ -165,39 +165,19 @@ body {
   perspective:900px;
 }
 
-/* ---- Idle breathing: covers drift up and down when nothing is hovered ----
-   Lives on the perspective wrapper, not on .tilt — a running animation
-   outranks the inline transform the tilt script writes. */
-@keyframes cover-breathe {
-  0%,100% { transform:translate3d(0,-2.5px,0); }
-  50%     { transform:translate3d(0, 2.5px,0); }
-}
-.album-cover-wrapper, .album-compact-cover {
-  animation:cover-breathe 7s ease-in-out infinite;
-  animation-play-state:running;
-}
-.album-cover-wrapper:hover, .album-compact:hover .album-compact-cover {
-  animation-play-state:paused;
-}
-/* stagger so the grid never pulses in unison */
-.album-compact:nth-child(4n+1) .album-compact-cover { animation-duration:7.5s; animation-delay:-0.4s; }
-.album-compact:nth-child(4n+2) .album-compact-cover { animation-duration:6.2s; animation-delay:-2.1s; }
-.album-compact:nth-child(4n+3) .album-compact-cover { animation-duration:8.1s; animation-delay:-3.6s; }
-.album-compact:nth-child(4n+4) .album-compact-cover { animation-duration:6.8s; animation-delay:-5.2s; }
-.album-row:nth-child(odd)  .album-cover-wrapper { animation-duration:8.4s; animation-delay:-1.2s; }
-.album-row:nth-child(even) .album-cover-wrapper { animation-duration:7.1s; animation-delay:-4.3s; }
-.album-compact-cover { animation-name:cover-breathe; }
 .album-cover-wrapper img { width:100%; height:100%; object-fit:cover; display:block; }
 
 /* ---- Ambient light layer: driven by scroll position on touch devices.
    Separate from .tilt-sheen — this is lighting, not a tap affordance,
-   so it lives on every cover including the ones with no link. ---- */
+   so it lives on every cover including the ones with no link. Opacity is
+   written continuously in JS (scroll proximity → brightness); a short
+   linear transition keeps consecutive scroll samples smooth without the
+   lag a long eased curve would add to a continuously-updated value. ---- */
 .tilt-light {
   position:absolute; inset:0; z-index:1; pointer-events:none;
   mix-blend-mode:soft-light; opacity:0;
-  transition:opacity 0.4s ease;
+  transition:opacity 0.15s linear;
 }
-.tilt-light.lit { opacity:1; }
 
 /* ---- Blur-up: covers resolve out of a blur instead of popping in ---- */
 .tilt { background:#0c0c0c; }
@@ -215,12 +195,11 @@ body {
   filter:drop-shadow(0 18px 40px rgba(0,0,0,0.55));
 }
 .tilt.is-tilting { transition:transform 0.12s ease-out, filter 0.12s ease-out; }
-/* scroll-driven mode: short easing so each new scroll sample glides into the
-   next instead of snapping straight to it. Filter is left alone (no dynamic
-   drop-shadow recompute) — recalculating a blurred filter every scroll frame
-   was the actual source of the stutter, and it was stealing frames from the
-   .listen-veil fade below too. */
-.tilt.scroll-lit { transition:transform 0.2s linear; }
+/* scroll-driven mode: no rotation at all — a rotateX tilt read as "wobbly"
+   on real phones, so the whole cue is now brightness only (dim off-centre,
+   full brightness dead-centre). Short linear transition smooths brightness
+   between scroll samples without the lag a long eased curve would add. */
+.tilt.scroll-lit { transition:filter 0.15s linear; }
 
 /* mouse-following sheen — the thing that makes it read as a physical object */
 .tilt-sheen {
@@ -250,23 +229,27 @@ body {
   transition:transform 0.55s var(--easing);
 }
 @media (hover:hover) { .has-link:hover .listen-label { transform:translateY(0); } }
-/* hairline that draws itself in, left to right */
+/* hairline that draws itself in, left to right. Driven by a custom property
+   (not a class) so touch can set it to a continuous 0..1 value in JS while
+   hover keeps setting it to a flat 1. ::after inherits custom properties
+   from .listen-label, so both paths land on the same variable. */
 .listen-label::after {
   content:''; position:absolute; left:0; right:0; bottom:-7px; height:1px;
   background:var(--brand-line);
-  transform:scaleX(0); transform-origin:left;
+  transform:scaleX(var(--listen-line, 0)); transform-origin:left;
   transition:transform 0.7s var(--easing) 0.08s;
 }
-@media (hover:hover) { .has-link:hover .listen-label::after { transform:scaleX(1); } }
+@media (hover:hover) { .has-link:hover .listen-label { --listen-line:1; } }
 
-/* ---- Touch: no cursor to hover with, so Listen appears when the cover
-   reaches the middle of the screen (class written by initScrollLight).
-   Featured rows only — the compact grid puts 2–3 covers on the same line,
-   so they would all light up at once. ---- */
-.album-cover-wrapper .tilt.centered .listen-veil  { opacity:1; }
-.album-cover-wrapper .tilt.centered .listen-label { transform:translateY(0); }
-.album-cover-wrapper .tilt.centered .listen-label::after { transform:scaleX(1); }
-.album-cover-wrapper .tilt.centered .tilt-sheen   { opacity:0.55; }
+/* ---- Touch: no cursor to hover with, so Listen's opacity/position are
+   written continuously in JS as the cover nears screen-centre (featured
+   rows only — the compact grid puts 2–3 covers on one line, so they'd all
+   light up together). A short linear transition-duration override (vs. the
+   0.45s/0.7s eased ones above) keeps it tracking the scroll instead of
+   lagging behind a value that's already changing every frame. ---- */
+.tilt.scroll-lit .listen-veil,
+.tilt.scroll-lit .listen-label,
+.tilt.scroll-lit .listen-label::after { transition-duration:0.12s; transition-timing-function:linear; transition-delay:0s; }
 
 /* no-link albums: no cursor, no hover, no affordance */
 .no-link, .album-compact.no-link { cursor:default; }
@@ -275,7 +258,7 @@ body {
 @media (prefers-reduced-motion:reduce){
   .tilt { transform:none !important; transition:none; }
   .tilt-sheen { display:none; }
-  .album-cover-wrapper, .album-compact-cover, .wc-dot { animation:none; }
+  .wc-dot { animation:none; }
 }
 
 .album-info { flex:1; position:relative; z-index:2; min-width:0; }
@@ -788,28 +771,37 @@ function initBlurUp(root = document) {
 const FORCE_SCROLL_LIGHT =
   new URLSearchParams(location.search).get('motion') === 'scroll';
 
-/* ========= Scroll-driven light + tilt (touch devices) =========
-   No cursor on a phone, so the light source is the scroll position instead:
-   a cover leans back as it enters from the bottom, comes level in the middle
-   of the screen, and leans away as it exits the top. The highlight and the
-   brightness track the same angle, so it reads as one physical light. */
+/* ========= Scroll-driven brightness (touch devices) =========
+   No cursor on a phone, so the "coming into focus" cue is pure brightness
+   instead of a cursor-follow tilt: a cover is dim as it enters/leaves the
+   screen and reaches full brightness dead-centre. (An earlier version also
+   rotated the card on rotateX — that read as "wobbly" on real phones, so
+   it's gone; brightness alone carries the cue now.) Listen fades in/out
+   with the same scroll position, written as a continuous value every frame
+   rather than toggled at a threshold, so it never snaps. */
 function initScrollLight() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   // ?motion=scroll forces the touch behaviour on a desktop, for previewing it
   if (!FORCE_SCROLL_LIGHT && window.matchMedia('(hover: hover)').matches) return;
 
-  const MAX_DEG = 7;
   const onScreen = new Set();
   let frame = null;
 
+  function reset(tilt) {
+    tilt.classList.remove('scroll-lit');
+    tilt.style.filter = '';
+    const light = tilt.querySelector('.tilt-light');
+    if (light) light.style.opacity = '';
+    const veil = tilt.querySelector('.listen-veil');
+    if (veil) veil.style.opacity = '';
+    const label = tilt.querySelector('.listen-label');
+    if (label) { label.style.transform = ''; label.style.removeProperty('--listen-line'); }
+  }
+
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => {
-      if (e.isIntersecting) { onScreen.add(e.target); e.target.querySelector('.tilt-light')?.classList.add('lit'); }
-      else {
-        onScreen.delete(e.target);
-        e.target.classList.remove('centered');   // paint() no longer visits it
-        e.target.querySelector('.tilt-light')?.classList.remove('lit');
-      }
+      if (e.isIntersecting) onScreen.add(e.target);
+      else { onScreen.delete(e.target); reset(e.target); }
     });
     schedule();
   }, { rootMargin: '10% 0px' });
@@ -820,19 +812,30 @@ function initScrollLight() {
     onScreen.forEach(tilt => {
       const r = tilt.getBoundingClientRect();
       if (!r.height) return;
-      // 0 = card centre at the top of the screen, 1 = at the bottom
+      // 0 = card centre at the top of the screen, 1 = at the bottom,
+      // 0.5 = dead-centre
       const p = Math.max(0, Math.min(1, (r.top + r.height / 2) / vh));
-      const rx = (p - 0.5) * 2 * MAX_DEG;
+      // 1 at dead-centre, fading to 0 at the top/bottom edges
+      const centered = 1 - Math.abs(p - 0.5) * 2;
       tilt.classList.add('scroll-lit');
-      // Listen shows up when the cover sits in the middle band of the screen.
-      // Featured rows only: the compact grid is 2–3 covers wide, so a whole
-      // line would cross the middle together.
-      tilt.classList.toggle('centered',
-        Math.abs(p - 0.5) < 0.13 && !!tilt.closest('.album-cover-wrapper'));
-      tilt.style.transform = `rotateX(${rx.toFixed(2)}deg) scale(1.01)`;
+
+      tilt.style.filter =
+        `brightness(${(0.72 + 0.34 * centered).toFixed(3)}) drop-shadow(0 18px 40px rgba(0,0,0,0.55))`;
       const light = tilt.querySelector('.tilt-light');
-      if (light) light.style.background =
-        `linear-gradient(${(180 - rx * 6).toFixed(0)}deg, rgba(255,255,255,${(0.34 * (1 - p)).toFixed(3)}) 0%, rgba(255,255,255,0) 46%, rgba(0,0,0,${(0.3 * p).toFixed(3)}) 100%)`;
+      if (light) light.style.opacity = (0.15 + 0.75 * centered).toFixed(3);
+
+      // Listen: featured rows only (compact grid rows would all light up
+      // together), and only in a narrow band right around dead-centre.
+      if (tilt.closest('.album-cover-wrapper')) {
+        const listenStrength = Math.max(0, 1 - Math.abs(p - 0.5) / 0.13);
+        const veil = tilt.querySelector('.listen-veil');
+        const label = tilt.querySelector('.listen-label');
+        if (veil) veil.style.opacity = listenStrength.toFixed(3);
+        if (label) {
+          label.style.transform = `translateY(${(10 * (1 - listenStrength)).toFixed(2)}px)`;
+          label.style.setProperty('--listen-line', listenStrength.toFixed(3));
+        }
+      }
     });
   }
   function schedule() { if (!frame) frame = requestAnimationFrame(paint); }
