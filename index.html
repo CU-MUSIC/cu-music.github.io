@@ -155,17 +155,18 @@ a{color:inherit;text-decoration:none}
 .hero::before{
   content:'';position:absolute;left:50%;top:44%;
   width:min(150vw,880px);aspect-ratio:1;
-  transform:translate(-50%,-50%);
   background:radial-gradient(circle,
     rgba(255,252,248,.075) 0%,
     rgba(255,252,248,.022) 34%,
     transparent 68%);
   pointer-events:none;
   opacity:0;
+  will-change:opacity;
+  transform:translate(-50%,-50%) translateZ(0);
 }
 @keyframes glow-in{to{opacity:1}}
 /* nothing animates until .ready — the first paint gets the whole frame budget */
-.hero.ready::before{animation:glow-in 2.6s ease .1s forwards}
+.hero.ready::before{animation:glow-in 1.6s ease 2.3s forwards}
 
 .hero-inner{
   position:relative;z-index:2;
@@ -175,25 +176,36 @@ a{color:inherit;text-decoration:none}
 .mark{
   width:clamp(190px,52vw,320px);
   height:auto;display:block;overflow:visible;
+  /* own layer from the very first paint, so frame 2 isn't spent promoting it */
+  will-change:transform;
+  backface-visibility:hidden;
+  transform-origin:50% 50%;
+  transform:rotate(-32deg) scale(.9) translateZ(0);
 }
-.mark-group{
-  transform-origin:500px 392px;
-  transform:rotate(-32deg) scale(.9);
-}
-.hero.ready .mark-group{animation:mark-settle 2.4s var(--ease) .05s both}
+.hero.ready .mark{animation:mark-settle 2.4s var(--ease) .05s both}
 @keyframes mark-settle{
-  from{transform:rotate(-32deg) scale(.9)}
-  to{transform:rotate(0deg) scale(1)}
+  from{transform:rotate(-32deg) scale(.9) translateZ(0)}
+  to{transform:rotate(0deg) scale(1) translateZ(0)}
+}
+/* phones repaint big stroked paths slowly — sweep a smaller area there */
+@media (max-width:820px){
+  .mark{transform:rotate(-18deg) scale(.94) translateZ(0)}
+  @keyframes mark-settle{
+    from{transform:rotate(-18deg) scale(.94) translateZ(0)}
+    to{transform:rotate(0deg) scale(1) translateZ(0)}
+  }
 }
 .ring{
   fill:none;stroke:#fff;stroke-width:36;stroke-linecap:round;
-  stroke-dasharray:1;stroke-dashoffset:1;
+  stroke-dasharray:1;stroke-dashoffset:1;opacity:0;
 }
-.hero.ready .ring{animation:ring-draw 1.7s cubic-bezier(.62,.02,.16,1) both}
-.hero.ready .ring-outer{animation-delay:.12s}
-.hero.ready .ring-inner{animation-delay:.52s}
+/* the draw is the only thing moving — nothing else competes for the frame */
+.hero.ready .ring{animation:ring-draw 1.9s cubic-bezier(.45,.05,.15,1) both}
+.hero.ready .ring-outer{animation-delay:.1s}
+.hero.ready .ring-inner{animation-delay:.5s}
 @keyframes ring-draw{
-  from{stroke-dashoffset:1;opacity:.35}
+  from{stroke-dashoffset:1;opacity:0}
+  8%{opacity:1}
   to{stroke-dashoffset:0;opacity:1}
 }
 
@@ -625,8 +637,8 @@ footer{
 @media (prefers-reduced-motion: reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
-  .ring{stroke-dashoffset:0}
-  .mark-group{transform:none}
+  .ring{stroke-dashoffset:0;opacity:1}
+  .mark{transform:none}
   .hero::before{opacity:1}
   .hero-meta{opacity:.6}
   .scroll-cue{opacity:.7;transform:translate(-50%,0)}
@@ -1007,13 +1019,38 @@ function observeAlbumItems(){
    layout settle, then start the ring animation. Album images are injected
    afterwards so image decoding never competes with the opening frames. */
 (function(){
-  const hero = document.querySelector('.hero');
+  const hero  = document.querySelector('.hero');
+  const rings = [...document.querySelectorAll('.ring')];
+
+  // Populate the path-geometry and style caches while nothing is moving.
+  // Doing this lazily is exactly what costs the second frame.
+  const warm = () => {
+    rings.forEach(r => {
+      try { r.getTotalLength(); } catch (e) {}
+      getComputedStyle(r).strokeDashoffset;
+    });
+    void hero.offsetHeight;
+  };
+
   const start = () => {
+    warm();
     requestAnimationFrame(() => requestAnimationFrame(() => {
       hero.classList.add('ready');
-      setTimeout(() => renderAlbums('all'), 600);
+      // albums land only after the rings finish drawing, so image decode and
+      // layout never share a frame with the animation
+      const paint = () => {
+        renderAlbums('all');
+        const mark = document.querySelector('.mark');
+        mark.style.willChange = 'auto';
+        hero.style.setProperty('--glow-wc', 'auto');
+      };
+      setTimeout(() => {
+        if (window.requestIdleCallback) requestIdleCallback(paint, {timeout: 800});
+        else paint();
+      }, 2700);
     }));
   };
+
   const settled = (document.fonts && document.fonts.ready)
     ? document.fonts.ready.catch(() => {})
     : Promise.resolve();
