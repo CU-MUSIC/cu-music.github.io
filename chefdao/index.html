@@ -28,6 +28,8 @@
   --cols: 8;
   --brand:rgba(255,255,255,0.92);
   --brand-line:rgba(255,255,255,0.35);
+  --gold:#cbb47c;
+  --gold-dim:rgba(203,180,124,0.35);
 }
 
 body {
@@ -343,20 +345,28 @@ body {
 #about-section.visible { display:block; }
 #about-section.fadein { opacity:1; }
 
-/* Hero split: portrait photo left, bio right */
-.about-hero {
-  display:grid; grid-template-columns:1fr 1fr; min-height:90vh; align-items:stretch;
-}
-.about-hero-photo {
+/* Portrait + content: photo pins in place on desktop while everything
+   else — bio, collaborators, streaming, awards — scrolls past it. One
+   photo now carries the whole page instead of just the top fold. */
+.about-wrap { display:block; }
+.about-photo-col { width:100%; }
+.about-photo-sticky {
   position:relative; overflow:hidden; background:#0a0a0a;
+  aspect-ratio:3/4; max-height:80vh;
 }
 /* 竖构图人像：人脸约在画面 38% 高度处，裁切锚点定在 30% 以保证任何比例下都露脸 */
-.about-hero-photo img {
+.about-photo-sticky img {
   width:100%; height:100%; object-fit:cover; object-position:center 30%;
   display:block; image-orientation:from-image;
 }
-.about-hero-text {
-  padding:80px 60px; display:flex; flex-direction:column; justify-content:center;
+.about-content-col { padding:56px 24px 0; }
+.about-hero-text { display:flex; flex-direction:column; justify-content:center; }
+
+@media (min-width:1025px) {
+  .about-wrap { display:grid; grid-template-columns:40% 1fr; align-items:start; }
+  .about-photo-col { position:sticky; top:0; height:100vh; }
+  .about-photo-sticky { height:100vh; max-height:none; aspect-ratio:auto; }
+  .about-content-col { padding:110px 70px 120px 64px; }
 }
 
 /* Section eyebrow label (简介 / 成绩 / 荣誉) — 给 about 加逻辑分段 */
@@ -381,18 +391,16 @@ body {
   border-radius:100px; padding:6px 14px;
 }
 
-/* Street photo full-bleed band */
-.about-street {
-  width:100%; aspect-ratio:16/7; overflow:hidden; margin:60px 0; position:relative;
-}
-.about-street img {
-  width:100%; height:100%; object-fit:cover; object-position:center 30%;
-  display:block; filter:brightness(0.85);
-}
-
 /* Certs + awards container */
-.about-bottom { max-width:900px; margin:0 auto; padding:0 40px; }
+.about-bottom { max-width:640px; margin:64px 0 0; padding:0; }
 .about-block + .about-block { margin-top:72px; padding-top:72px; border-top:1px solid rgba(255,255,255,0.07); }
+
+/* scroll-triggered reveal — same fade-up language as .album-row */
+.about-block {
+  opacity:0; transform:translateY(36px);
+  transition:opacity 1s var(--easing), transform 1s var(--easing);
+}
+.about-block.is-visible { opacity:1; transform:translateY(0); }
 
 .about-certs {
   display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
@@ -401,8 +409,13 @@ body {
   background:rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:26px 24px;
   display:flex; flex-direction:column; gap:8px;
+  transition:border-color 0.3s var(--easing), transform 0.3s var(--easing), background 0.3s var(--easing);
 }
-.cert-num { font-size:clamp(30px,4vw,38px); font-weight:700; letter-spacing:-0.02em; line-height:1; }
+.cert-item:hover { border-color:var(--gold-dim); background:rgba(255,255,255,0.06); transform:translateY(-3px); }
+.cert-num {
+  font-size:clamp(30px,4vw,38px); font-weight:700; letter-spacing:-0.02em; line-height:1;
+  color:rgba(255,255,255,0.95); font-variant-numeric:tabular-nums;
+}
 .cert-label { font-size:13px; font-weight:600; color:rgba(255,255,255,0.78); line-height:1.4; }
 .cert-label small { display:block; font-size:11px; font-weight:400; color:rgba(255,255,255,0.4); margin-top:5px; letter-spacing:0.01em; }
 
@@ -410,13 +423,19 @@ body {
 .about-awards-heading {
   font-size:17px; font-weight:700; letter-spacing:0.01em;
   color:rgba(255,255,255,0.92); margin-bottom:22px;
+  display:flex; align-items:center; gap:10px;
+}
+.about-awards-heading::before {
+  content:""; width:6px; height:6px; border-radius:50%;
+  background:var(--gold); box-shadow:0 0 8px 1px var(--gold-dim); flex-shrink:0;
 }
 .nomination-cards { display:flex; flex-direction:column; gap:0; margin-bottom:16px; }
 .nom-card {
   display:flex; align-items:baseline; gap:0; padding:18px 20px;
   border-left:1px solid rgba(255,255,255,0.1);
-  transition:border-color 0.2s;
+  transition:border-color 0.25s var(--easing), background 0.25s var(--easing), padding-left 0.25s var(--easing);
 }
+.nom-card:hover { border-left-color:var(--gold); background:rgba(255,255,255,0.03); padding-left:26px; }
 .nom-card + .nom-card { border-top:1px solid rgba(255,255,255,0.05); }
 .nom-category {
   min-width:200px; font-size:11px; letter-spacing:0.1em;
@@ -429,12 +448,24 @@ body {
   display:flex; align-items:center; gap:20px; padding:20px 24px;
   background:rgba(255,255,255,0.04); border-radius:12px;
   border:1px solid rgba(255,255,255,0.07); margin-top:16px;
+  transition:border-color 0.3s var(--easing), background 0.3s var(--easing);
 }
-.chart-rank { font-size:2rem; font-weight:800; color:rgba(255,255,255,0.3); min-width:40px; }
+.chart-entry:hover { border-color:var(--gold-dim); background:rgba(255,255,255,0.06); }
+.chart-rank { font-size:2rem; font-weight:800; color:rgba(255,255,255,0.85); min-width:40px; font-variant-numeric:tabular-nums; }
 .chart-info { flex:1; }
 .chart-label { font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:0.1em; margin-bottom:4px; }
 .chart-title { font-size:15px; font-weight:600; }
 .chart-artist { font-size:13px; color:rgba(255,255,255,0.4); }
+
+@media (prefers-reduced-motion: reduce) {
+  .about-block, .cert-item, .nom-card, .chart-entry { transition:none !important; }
+  .about-block { opacity:1 !important; transform:none !important; }
+}
+
+/* ================= Collaborators (plain text list) ================= */
+.collab-text { font-size:14.5px; line-height:2.1; color:rgba(255,255,255,0.55); max-width:760px; }
+.collab-name { color:rgba(255,255,255,0.92); font-weight:500; transition:color 0.2s; }
+.collab-name:hover { color:var(--gold); }
 
 /* ================= Scroll cue ================= */
 /* centered so it clears the WeChat pill on the right; hides itself once the
@@ -499,12 +530,9 @@ body {
   .title { font-size:38px; }
 
   #float-contact { left:50%; right:auto; transform:translateX(-50%); bottom:28px; }
-  .about-hero { grid-template-columns:1fr; min-height:auto; }
   /* 源图是 2808×4992 竖构图，别再压成 4/3 横幅（会把脸裁掉，只剩顶部墙面） */
-  .about-hero-photo { aspect-ratio:3/4; max-height:70vh; }
-  .about-hero-text { padding:40px 24px; }
-  .about-street { aspect-ratio:16/9; margin:40px 0; }
-  .about-bottom { padding:0 24px; }
+  .about-photo-sticky { aspect-ratio:3/4; max-height:70vh; }
+  .about-content-col { padding:40px 24px 0; }
   #wechat-toast { left:50%; right:auto; transform:translateX(-50%) translateY(8px); }
   #wechat-toast.show { transform:translateX(-50%) translateY(0); }
 
@@ -519,7 +547,6 @@ body {
   .cert-num { font-size:30px; min-width:78px; }
   .about-block + .about-block { margin-top:52px; padding-top:52px; }
   .bio-primary { font-size:15px; }
-  #about-section { padding:80px 20px 80px; }
   .about-photos { grid-template-columns:repeat(2,1fr); }
 }
 
@@ -580,28 +607,30 @@ body {
 
 <!-- About -->
 <section id="about-section">
-  <div class="about-hero">
-    <div class="about-hero-photo">
-      <img src="about/photo_F319CCE3-7B5C-4AEA-8BEF-0C5096869AB0_20251005_011631_407.jpeg" alt="">
-    </div>
-    <div class="about-hero-text">
-      <div class="about-bio">
-        <div class="about-eyebrow">简介 · Profile</div>
-        <h2>ChefDao</h2>
-        <div class="bio-role">音频工程师 &amp; 制作人 <span>Audio Engineer &amp; Producer</span></div>
-        <p class="bio-primary">现居韩国首尔。与制作人、词曲作者 Uin 共同创立 C/U Music Studio。自 2022 年起横跨 Hip-Hop、R&amp;B、流行等多种曲风，已参与制作逾百首作品。</p>
-        <p class="bio-secondary">Based in Seoul, KR. Co-founder of C/U Music Studio with producer &amp; songwriter Uin. 100+ songs across 10+ albums since 2022 — Hip-Hop, R&amp;B, Pop and beyond.</p>
-        <p class="bio-tertiary">서울 기반 오디오 엔지니어 &amp; 프로듀서. Uin과 함께 C/U Music Studio 공동 설립. 2022년부터 100곡 이상 작업.</p>
-        <div class="bio-tags"><span>Seoul</span><span>C/U Music Studio</span><span>Since 2022</span></div>
+  <div class="about-wrap">
+    <div class="about-photo-col">
+      <div class="about-photo-sticky">
+        <img src="about/photo_F319CCE3-7B5C-4AEA-8BEF-0C5096869AB0_20251005_011631_407.jpeg" alt="ChefDao">
       </div>
     </div>
-  </div>
+    <div class="about-content-col">
+      <div class="about-hero-text">
+        <div class="about-bio">
+          <div class="about-eyebrow">简介 · Profile</div>
+          <h2>ChefDao</h2>
+          <div class="bio-role">音频工程师 &amp; 制作人 <span>Audio Engineer &amp; Producer</span></div>
+          <p class="bio-primary">现居韩国首尔。与制作人、词曲作者 Uin 共同创立 C/U Music Studio。自 2022 年起横跨 Hip-Hop、R&amp;B、流行等多种曲风，已参与制作逾百首作品。</p>
+          <p class="bio-secondary">Based in Seoul, KR. Co-founder of C/U Music Studio with producer &amp; songwriter Uin. 100+ songs across 10+ albums since 2022 — Hip-Hop, R&amp;B, Pop and beyond.</p>
+          <p class="bio-tertiary">서울 기반 오디오 엔지니어 &amp; 프로듀서. Uin과 함께 C/U Music Studio 공동 설립. 2022년부터 100곡 이상 작업.</p>
+          <div class="bio-tags"><span>Seoul</span><span>C/U Music Studio</span><span>Since 2022</span></div>
+        </div>
+      </div>
 
-  <div class="about-street">
-    <img src="about/DSC00396.JPG" alt="">
-  </div>
-
-  <div class="about-bottom">
+      <div class="about-bottom">
+    <div class="about-block about-collab">
+      <div class="about-eyebrow">合作艺人 · Collaborators</div>
+      <p class="collab-text">先后与 <span class="collab-name">Rapeter</span>、<span class="collab-name">BOBBYNOPEACE</span>、<span class="collab-name">GALI</span>、<span class="collab-name">小酷Coola</span>、<span class="collab-name">杨和苏KeyNG</span>、<span class="collab-name">CheezeK</span>、<span class="collab-name">RioT婷</span>、<span class="collab-name">西凹木</span>、<span class="collab-name">SevenJ</span>、<span class="collab-name">Keyso寿君超</span>、<span class="collab-name">安伊涵</span>、<span class="collab-name">HanP</span>、<span class="collab-name">脑浆poppy</span>、<span class="collab-name">Ele Jazz</span>、<span class="collab-name">ChickenBB</span>、<span class="collab-name">一刀阿阿</span>、<span class="collab-name">未来特</span>、<span class="collab-name">邹元朗</span>、<span class="collab-name">Føxco</span>、<span class="collab-name">Uin尤因</span>、<span class="collab-name">盖盖Enjoythevacation</span>、<span class="collab-name">程思源</span> 等 130+ 位音乐人合作，累计参与作品 100+ 首。</p>
+    </div>
     <div class="about-block">
       <div class="about-eyebrow">成绩 · Streaming</div>
       <div class="about-certs">
@@ -646,6 +675,8 @@ body {
           <div class="chart-title">IMGOOD别担心我</div>
           <div class="chart-artist">Rapeter</div>
         </div>
+      </div>
+    </div>
       </div>
     </div>
   </div>
@@ -935,18 +966,65 @@ function initNav() {
         worksEl.style.display = 'none';
         aboutEl.style.display = 'block';
         setTimeout(() => aboutEl.classList.add('fadein'), 10);
-        // build photo grid if not yet built
+        // build photo grid if not yet built (grid is optional — no #about-photos in the current layout)
         const grid = document.getElementById('about-photos');
-        if (!grid.dataset.built) {
+        if (grid && !grid.dataset.built) {
           grid.dataset.built = '1';
           const aboutPhotos = []; // 在这里添加照片文件名，例如: ['about/1.jpg','about/2.jpg']
           grid.innerHTML = aboutPhotos.map(p =>
             `<div class="about-photo"><img src="${p}" loading="lazy"></div>`
           ).join('') || '';
         }
+        initAboutReveal();
       }
     });
   });
+}
+
+/* ========= About: scroll reveal + stat count-up ========= */
+let aboutRevealBuilt = false;
+function initAboutReveal() {
+  if (aboutRevealBuilt) return;
+  aboutRevealBuilt = true;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // fade-up each block as it scrolls into view
+  const revealTargets = document.querySelectorAll('#about-section .about-block');
+  if (reduceMotion) {
+    revealTargets.forEach(el => el.classList.add('is-visible'));
+  } else {
+    const revealObs = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); revealObs.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+    revealTargets.forEach(el => revealObs.observe(el));
+  }
+
+  // count the streaming certs up from 0 once their card enters view
+  if (reduceMotion) return;
+  const certNums = document.querySelectorAll('.cert-num');
+  const targets = new Map();
+  certNums.forEach(el => {
+    const m = el.textContent.trim().match(/^(\d+)(.*)$/);
+    if (!m) return;
+    targets.set(el, { value: parseInt(m[1], 10), suffix: m[2] });
+    el.textContent = '0' + m[2];
+  });
+  const countObs = new IntersectionObserver(es => {
+    es.forEach(e => {
+      const t = targets.get(e.target);
+      if (!e.isIntersecting || !t) return;
+      countObs.unobserve(e.target);
+      const dur = 900, start = performance.now();
+      const step = now => {
+        const p = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        e.target.textContent = Math.round(eased * t.value) + t.suffix;
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }, { threshold: 0.4 });
+  certNums.forEach(el => countObs.observe(el));
 }
 
 /* ========= Scroll cue ========= */
