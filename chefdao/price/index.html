@@ -140,6 +140,12 @@
 		.qb-sched-live { font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green-soft); margin-right: 4px; }
 		.qb-sched-item { font-size: 12px; color: var(--text-dim); }
 		.qb-sched-item strong { color: var(--text-primary); font-weight: 600; }
+		.qb-lane-cap { display: flex; align-items: flex-start; gap: 9px; margin-top: 12px; padding: 12px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; line-height: 1.62; color: var(--amber-t); background: rgba(var(--amber), 0.11); border: 1px solid rgba(var(--amber), 0.42); animation: capPulse 3.4s ease-in-out infinite; }
+		.qb-lane-cap-tag { flex: none; margin-top: 0.5px; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.02em; color: #14100a; background: rgb(var(--amber)); }
+		@keyframes capPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--amber), 0); } 50% { box-shadow: 0 0 0 4px rgba(var(--amber), 0.10); } }
+		@media (prefers-reduced-motion: reduce) { .qb-lane-cap { animation: none; } }
+		.qb-cap { font-size: 12px; font-weight: 600; line-height: 1.65; margin: -2px 0 16px; padding: 10px 13px; border-radius: 9px; color: var(--amber-t); border: 0.5px solid rgba(var(--amber), 0.3); background: rgba(var(--amber), 0.07); }
+		.qb-cap.full { border-color: rgba(var(--amber), 0.42); background: rgba(var(--amber), 0.11); }
 		.qb-sched-sep { color: var(--text-dim); opacity: 0.45; font-size: 11px; }
 		@media (prefers-reduced-motion: reduce) { .qb-sched-dot { animation: none; } }
 		@media (max-width: 640px) { .qb-sched-item { font-size: 11.5px; } .qb-sched-sep { display: none; } }
@@ -365,6 +371,38 @@
 			.qb-payback.dim { color: var(--text-secondary); background: rgba(var(--ink), 0.03); border-color: var(--border); }
 			.qb-payback.dim:hover { background: rgba(var(--ink), 0.06); }
 		.qb-seg.two { grid-template-columns: repeat(2, 1fr); }
+		.qb-cal { margin-top: 12px; }
+		.qb-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+		.qb-cal-wd { padding: 4px 0 6px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: rgba(var(--ink), 0.4); }
+		.qb-cal-wd.off { color: rgba(var(--ink), 0.26); }
+		.qb-cal-d { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 44px; padding: 5px 2px; border: 1px solid transparent; border-radius: 8px; background: rgba(var(--ink), 0.035); font: inherit; color: rgba(var(--ink), 0.85); text-align: center; }
+		button.qb-cal-d { cursor: pointer; transition: transform 0.1s ease, border-color 0.15s ease; }
+		button.qb-cal-d:hover { transform: translateY(-1px); border-color: rgba(var(--ink), 0.35); }
+		.qb-cal-n { font-size: 13px; font-weight: 650; line-height: 1.1; }
+		.qb-cal-t { min-height: 12px; font-size: 9.5px; font-weight: 700; line-height: 1.2; opacity: 0.9; }
+		.qb-cal-d.past { opacity: 0.2; }
+		.qb-cal-d.off { background: transparent; color: rgba(var(--ink), 0.24); }
+		.qb-cal-d.blocked { background: rgba(var(--ink), 0.02); color: rgba(var(--ink), 0.22); text-decoration: line-through; }
+		.qb-cal-d.free { background: rgba(var(--green-ink), 0.11); color: var(--green-soft); }
+		.qb-cal-d.r1 { background: rgba(var(--amber), 0.09); color: var(--amber-t); }
+		.qb-cal-d.r2 { background: rgba(var(--amber), 0.17); color: var(--amber-t); }
+		.qb-cal-d.r3 { background: rgba(var(--amber), 0.26); color: var(--amber-t); }
+		.qb-cal-d.r4 { background: rgba(var(--amber), 0.36); color: var(--amber-t); }
+		.qb-cal-d.win { box-shadow: inset 0 0 0 1.5px var(--green-soft); }
+		.qb-cal-d.today { border-color: rgba(var(--ink), 0.55); }
+		.qb-cal-d.sel { border-color: var(--green-soft); background: var(--green-soft); color: #0d1410; transform: none; }
+		.qb-cal-d.sel .qb-cal-t { opacity: 0.75; }
+		.qb-cal-lg { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 11px; font-size: 11.5px; font-weight: 600; color: rgba(var(--ink), 0.5); }
+		.qb-cal-lg span { display: inline-flex; align-items: center; gap: 6px; }
+		.qb-cal-lg .lg { width: 11px; height: 11px; border-radius: 3px; }
+		.qb-cal-lg .lg.band { box-shadow: inset 0 0 0 1.5px var(--green-soft); }
+		.qb-cal-lg .lg.win { background: rgba(var(--green-ink), 0.11); }
+		.qb-cal-lg .lg.r2 { background: rgba(var(--amber), 0.35); }
+		.qb-cal-lg .lg.off { background: rgba(var(--ink), 0.08); }
+		.qb-cal-lg .lg.blocked { background: rgba(var(--ink), 0.04); box-shadow: inset 0 0 0 1px rgba(var(--ink), 0.14); }
+		.qb-seg.one { grid-template-columns: 1fr; margin-top: 8px; }
+		.qb-seg-btn.ghost { cursor: not-allowed; opacity: 0.42; filter: grayscale(1); }
+		.qb-seg-btn.ghost .qb-seg-name { text-decoration: line-through; text-decoration-thickness: 1px; }
 		.qb-seg.four { grid-template-columns: repeat(2, 1fr); }
 		.qb-split { margin-top: 13px; padding-top: 13px; border-top: 0.5px dashed var(--green-line); display: flex; flex-direction: column; gap: 7px; }
 		.qb-split-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); }
@@ -652,7 +690,37 @@ var SITE_URL = "cumusic.work/chefdao/price";
 // 标准：stdMin–stdMax 工作日（周日休息，跳过）；加急：rushMin–rushMax 自然日（含周日，加班）
 // 交付日期全自动现算，平时零维护；真排爆了才把 backlogDays 调大几天，标准区间自动整体顺延
 // memberMin/Max：刀门加速通道的工作日区间。6 个工作日（跳周日）正好是一周。
-var SCHEDULE = { stdMin: 10, stdMax: 12, memberMin: 6, memberMax: 9, rushMin: 3, rushMax: 5, backlogDays: 0 };
+// ── 排期 ────────────────────────────────────────────────────
+// capacity：档期状态，平时只改这一个数。
+//   0 = 正常   1 = 有点满（+6 工作日 = 整推一周）   2 = 满档（+12 工作日 = 整推两周）
+// ⚠️ 满档也照常给具体日期——绝不设「无期限」档位。没有截止日的活等于永远不做，
+//    还会一直占着心理带宽。想更快的客户走加急，那才是加急费该起作用的时候。
+var SCHEDULE = {
+	stdMin: 10, stdMax: 12, memberMin: 6, memberMax: 9, rushMin: 3, rushMax: 5,
+	backlogDays: 0,
+	capacity: 2,
+	capacityDays: [0, 6, 12],
+	// 到期日：过了这天自动回到「正常」。设 capacity 时必须一起设，别留空。
+	// 存在的意义是防止「满档」变成永久状态——档期满是暂时的，忘了关就等于停业。
+	// 2026-08-04 设为满档，到 08-20 自动解除。提前排空就手动改回 0。
+//    周日不算工作日，所以 +6 正好是整推一周、+12 正好两周——比 +5/+10 好算也好解释。
+	capacityUntil: "2026-08-20"
+};
+// 过期自动归零：不需要记得关，日子到了页面自己恢复正常报价
+function qbCapLevel() {
+	var c = SCHEDULE.capacity || 0;
+	if (!c) return 0;
+	var u = SCHEDULE.capacityUntil;
+	if (!u) return c;
+	var end = new Date(u + "T23:59:59");
+	if (isNaN(end.getTime())) return c;
+	return (new Date() > end) ? 0 : c;
+}
+function qbCapDays() {
+	var list = SCHEDULE.capacityDays || [0, 5, 10];
+	return list[qbCapLevel()] || 0;
+}
+function qbIsFull() { return qbCapLevel() >= 2; }
 function qbAddWorkdays(n) {
 	var d = new Date(), added = 0;
 	while (added < n) {
@@ -680,16 +748,67 @@ function qbFmtRange(d1, d2, lang) {
 var RUSH_MIN_DAYS = 3;
 function qbRushRate(days) {
 	if (days < RUSH_MIN_DAYS) return null;
-	// 按「比自己那条标准线快几天」分档，而不是按绝对天数——
-	// 否则会员基线提前后梯度会塌掉（想快 1 天却落进 35% 档）。
-	// 非会员结果与旧的绝对档位完全一致。
-	var faster = (qbStdLead() - qbCutoff()) - days;
+	// 按「砍掉了多少比例的等待」定价，不按绝对提前天数。
+	// 绝对天数在档期满时会塌成一大片同价：排期 25 天时，想快 5 天和想快 20 天
+	// 都落进最高档，可对我来说是两种工作量。比例定价在任何档期都摊得开。
+	var lead = qbStdLead() - qbCutoff();
+	var faster = lead - days;
 	if (faster <= 0) return 0;
-	if (faster <= 3) return 0.20;
-	if (faster <= 6) return 0.35;
-	return 0.50;
+	var cut = faster / Math.max(1, lead); // 砍掉的等待占比
+	if (cut <= 0.25) return 0.15;
+	if (cut <= 0.50) return 0.30;
+	if (cut <= 0.75) return 0.50;
+	return 0.75;
 }
 function qbToday0() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+// 交付日历：把「哪天要加多少钱、哪天休息、哪天来不及」直接画出来。
+// 只给一个日期输入框的话，客户感受不到这些差别，只能一个个日期去试。
+function qbCalHtml(q) {
+	var today = qbToday0(), cut = qbCutoff();
+	// 归零到当天 0 点：qbAddWorkdays 带着当前时分，不清掉的话同一天会比不过，交付窗口会整体错一格
+	var winA = qbAddWorkdays(qbStdMinDays()), winB = qbAddWorkdays(qbStdMaxDays());
+	winA.setHours(0, 0, 0, 0); winB.setHours(0, 0, 0, 0);
+	// 起点放在本周一，客户能看到「今天在这周的哪」；终点比最晚交付日再多一周
+	var start = new Date(today);
+	start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+	var end = new Date(winB); end.setDate(end.getDate() + 7);
+	var head = "";
+	for (var w = 0; w < 7; w++) head += '<div class="qb-cal-wd' + (w === 6 ? " off" : "") + '">' + q.calWeek[w] + '</div>';
+	var cells = "", cur = new Date(start), guard = 0;
+	while (cur <= end && guard++ < 120) {
+		var iso = qbFmtISO(cur), diff = Math.round((cur - today) / 86400000);
+		var cls = "qb-cal-d", tip = "", pick = false;
+		if (cur.getDay() === 0) { cls += " off"; tip = q.calOffTip; }
+		else if (diff < 0) cls += " past";
+		else {
+			var rr = qbRushRate(diff - cut);
+			if (rr === null) cls += " blocked";
+			else {
+				pick = true;
+				cls += rr === 0 ? " free" : (rr >= 0.75 ? " r4" : (rr >= 0.5 ? " r3" : (rr >= 0.3 ? " r2" : " r1")));
+				if (rr > 0) tip = "+" + Math.round(rr * 100) + "%";
+			}
+		}
+		// 周日不交付，别把它框进交付窗口——客户会以为交付日落在周日
+		if (cur >= winA && cur <= winB && cur.getDay() !== 0) cls += " win";
+		if (diff === 0) cls += " today";
+		if (qbState.targetDate === iso) cls += " sel";
+		var n = cur.getDate();
+		var tag = pick ? 'button type="button" onclick="qbSetDate(\'' + iso + '\')"' : "div";
+		cells += "<" + tag + ' class="' + cls + '">'
+			+ '<span class="qb-cal-n">' + (n === 1 ? (cur.getMonth() + 1) + "/" + n : n) + '</span>'
+			+ '<span class="qb-cal-t">' + tip + '</span>'
+			+ "</" + (pick ? "button" : "div") + ">";
+		cur.setDate(cur.getDate() + 1);
+	}
+	var lg = '<div class="qb-cal-lg">'
+		+ '<span><i class="lg band"></i>' + q.calLgBand + '</span>'
+		+ '<span><i class="lg win"></i>' + q.calLgWin + '</span>'
+		+ '<span><i class="lg r2"></i>' + q.calLgRush + '</span>'
+		+ '<span><i class="lg off"></i>' + q.calLgOff + '</span>'
+		+ '<span><i class="lg blocked"></i>' + q.calLgBlocked + '</span></div>';
+	return '<div class="qb-cal"><div class="qb-cal-grid">' + head + cells + '</div>' + lg + '</div>';
+}
 function qbFmtISO(d) { var m = d.getMonth() + 1, day = d.getDate(); return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day; }
 function qbDaysUntil(iso) { return Math.round((new Date(iso + "T00:00:00") - qbToday0()) / 86400000); }
 // 标准最速交付日距今自然天数（stdMin 工作日折成日历天，含积压与 18:00 顺延）
@@ -698,14 +817,31 @@ function qbHasMember() {
 	for (var i = 0; i < (qbState.count || 0); i++) if (qbMemState(i) > 0) return true;
 	return false;
 }
-function qbMemSpan() { return SCHEDULE.memberMin + "–" + SCHEDULE.memberMax; }
+function qbMemSpan() { var c = qbCapDays(); return (SCHEDULE.memberMin + c) + "–" + (SCHEDULE.memberMax + c); }
 // 比标准快几个工作日——对非会员来说，差值比区间更好懂
 function qbFastGain() { return SCHEDULE.stdMin - SCHEDULE.memberMin; }
 function qbBaseMin() { return qbHasMember() ? SCHEDULE.memberMin : SCHEDULE.stdMin; }
 function qbBaseMax() { return qbHasMember() ? SCHEDULE.memberMax : SCHEDULE.stdMax; }
 // 承诺给客户看的工作日区间（不含积压与 18:00 顺延，那两项只影响日期）
-function qbStdSpan() { return qbBaseMin() + "–" + qbBaseMax(); }
-function qbStdOff() { return SCHEDULE.backlogDays + qbCutoff(); }
+function qbStdSpan() { return (qbBaseMin() + qbCapDays()) + "–" + (qbBaseMax() + qbCapDays()); }
+// 交付时间对外一律按「周」说：一周 / 两周 / 三周。
+// 「10–12 个工作日」要客户自己心算跨不跨周日，没人算得动；
+// 具体是哪几天，日历上的绿框已经画出来了，不用再写一遍数字。
+// 一周 = 6 个工作日（周日休息），所以除以 6 向上取整。
+function qbWeeks() { return Math.max(1, Math.ceil((qbBaseMin() + qbCapDays()) / 6)); }
+function qbMemWeekLabel(q) {
+	var w = Math.max(1, Math.ceil((SCHEDULE.memberMin + qbCapDays()) / 6));
+	return (q.weekNames && q.weekNames[w - 1]) || q.weekN.replace("{w}", w);
+}
+function qbStdWeekLabel(q) {
+	var w = Math.max(1, Math.ceil((SCHEDULE.stdMin + qbCapDays()) / 6));
+	return (q.weekNames && q.weekNames[w - 1]) || q.weekN.replace("{w}", w);
+}
+function qbWeekLabel(q) {
+	var w = qbWeeks();
+	return (q.weekNames && q.weekNames[w - 1]) || q.weekN.replace("{w}", w);
+}
+function qbStdOff() { return SCHEDULE.backlogDays + qbCapDays() + qbCutoff(); }
 function qbStdMinDays() { return Math.max(1, qbBaseMin() + qbStdOff()); }
 function qbStdMaxDays() { return Math.max(2, qbBaseMax() + qbStdOff()); }
 function qbStdLead() { var d = qbAddWorkdays(qbStdMinDays()); d.setHours(0, 0, 0, 0); return Math.round((d - qbToday0()) / 86400000); }
@@ -819,8 +955,16 @@ var I18N = {
 			stemsNote: "人声相关加价与贴唱一致——人声制作、和声与音编的工作量不随伴奏轨数变化。标注「起」的规格，最终报价按工程复杂度与你确认后才开始。",
 			laneLabel: "交付通道", laneFeeRate: 0.5, laneFeeLabel: "加急费 +50%",
 			lanes: [ { name: "标准交付" }, { name: "指定日期" } ],
-			laneStdSub: "{n} 工作日 · {r}", laneRushSub: "3–5 天 · {r}",
-			laneNote: "标准 {n} 工作日（周日休息）。刀门会员走加速通道 6–9 工作日，最快一周；同一单里有一位会员，整单都加速。<br><br>指定更早的交付日期即按紧急度计加急费，越近越高；3 天内请私信确认。",
+			laneStdSub: "{n} · {r}", laneRushSub: "3–5 天 · {r}",
+			weekNames: ["一周", "两周", "三周", "四周", "五周", "六周"], weekN: "{w} 周", weekOne: "一周",
+			calWeek: ["一", "二", "三", "四", "五", "六", "日"],
+			calOffTip: "休", calLgBand: "预计交付", calLgWin: "无加急费", calLgRush: "加急 · 越早越贵", calLgOff: "周日休息", calLgBlocked: "太近，需私信",
+			calStdHint: "绿框是预计交付的日子。想更早，直接点日历上的日期。",
+			laneStdGhost: "{n} · 当前不可选",
+			laneCapTag: "档期已满",
+			laneCapNote: "标准档已按宽松排期。有截止日请选「指定日期」，按加急处理。",
+			laneFast: "刀门会员走加速通道，{m}交付，比标准快整整一周；",
+			laneNote: "标准 {n}（周日休息，一周按 6 个工作日算）。具体交付日看日历上的绿框。{fastline}同一单里有一位会员，整单都加速。<br><br>工期自「素材齐全且方向确认版通过」当日起算，非自付定金起算。<br><br>指定更早的交付日期即按紧急度计加急费，越近越高；3 天内请私信确认。",
 			rushName: "加急费", laneSpecSub: "选具体日期 · 现算",
 			laneDatePrompt: "选择你的期望交付日期，自动算出加急费。",
 			laneDaysLeft: "距今 {d} 天", laneNoRush: "落在标准区间 · 无需加急费",
@@ -830,20 +974,23 @@ var I18N = {
 			depositNote: "半半模式：定金开工，成品交付时补齐尾款。",
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
 			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音与制作人费 8 折 · 加速通道 · 终身有效", memberLine: "刀门会员 · 8 折",
-			memberFee: 99, memOnLine: "刀门会员已启用 · 混音 8 折 · 交付 {d} 工作日",
+			memberFee: 99, memOnLine: "刀门会员已启用 · 混音 8 折 · {d}交付",
 			memOff: "我不是会员 ›", memAlready: "我已经是会员 ›",
 			memberPerNote: "折扣按主唱逐位算，非会员不受影响。",
 			mState0: "非会员", mState1: "已是会员", mState2: "本单加入", joinLine: "加入刀门",
 			pbYesMain: "加入刀门 {fee}，本单立省 {save}",
-			pbYesSub: "净赚 {net} · <span class=\"qb-hl\">交付快 {fast} 个工作日</span> · 点此加入 ›",
-			pbNoMain: "加入刀门 {fee}，<span class=\"qb-hl\">交付快 {fast} 个工作日</span>",
+			pbYesSub: "净赚 {net} · <span class=\"qb-hl\">交付快{fast}</span> · 点此加入 ›",
+			pbNoMain: "加入刀门 {fee}，<span class=\"qb-hl\">交付快{fast}</span>",
 			pbNoSub: "本单省 {save} · 权益终身有效 · 点此加入 ›",
 			producerTitle: "让我担任制作人", producerSub: "我主导这首歌的创意与完成度 · 署名 Produced by ChefDao", producerLine: "制作人费",
 			producerNote: "在混音/制作小计基础上按项目加收，作品署名「Produced by ChefDao」。制作人费同样享刀门会员 8 折，加急时一并计入加急基数。商业项目可另谈 producer points（版税分成）。",
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
-			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", perHeadTotal: "人均", newbieOff: 50, newbieLine: "新客首单立减",
+			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", perHeadTotal: "人均", laneRelaxed: "宽松交付",
+			capBusy: "当前排期较满，交付日期已相应顺延。需要更快可指定日期，按加急处理。",
+			capFull: "档期已满 · 标准档按宽松排期，日期仍然明确。有截止日的项目请指定日期走加急，或私信确认。",
+			newbieOff: 50, newbieLine: "新客首单立减",
 			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50 · 本单加入刀门可叠加", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
@@ -852,7 +999,7 @@ var I18N = {
 				"方向确认版之前可全额退定金，之后定金不退",
 				"默认交付成品母带 ×1；TV Mix / 纯伴奏提前说可一起给"
 			],
-			ctaNote: "复制的报价单里附了合作要点，请连同报价一起发给我。", catProd: "人声制作", catEdit: "音频编辑", copyMix: "混音", copyDeliver: "交付", copyWeChat: "微信预约"
+			ctaNote: "复制的报价单里附了合作要点，请连同报价一起发给我。", catProd: "人声制作", catEdit: "音频编辑", copyMix: "混音", copyDeliver: "预计交付", copyWeChat: "微信预约"
 		},
 		services: [
 			{
@@ -1115,6 +1262,16 @@ var I18N = {
 				a: "完全没问题，甚至更好。你不用会任何术语——用「想要更空、更暖、更狠、更干净」这种感觉描述，或者直接发参考曲，我来翻译成技术动作。我的工作，就是把你说不清的那种感觉做出来。"
 			},
 			{
+				q: "交付日期准吗？会延期吗？",
+				a: "页面显示的是<strong>预计交付日期</strong>，按当前排期实时推算。工期自「素材齐全且方向确认版通过」当日起算，非自付定金起算。",
+				list: [
+					"<strong>客户侧原因</strong>（素材不全、审听意见超时、中途变更方向）：交付日期相应顺延，不另收费",
+					"<strong>工作室侧原因</strong>：会提前告知并给出新的交付日期，不会临到期才说",
+					"<strong>特殊情况</strong>（疾病、设备故障、不可抗力）：可能超出预计日期，此情形不构成违约，但仍会第一时间同步进度",
+					"有硬性截止日（发行、比赛、影视）请在开工前说明，走加急通道并单独确认"
+				]
+			},
+			{
 				q: "¥300 的混音包含母带吗？",
 				a: "包含。所有混音档位都已含简易母带处理，单曲发行可直接使用。",
 				list: [
@@ -1234,8 +1391,16 @@ var I18N = {
 			stemsNote: "Vocal add-ons are identical to Vocal Mix — production, harmony and editing effort don't change with instrumental track count. For tiers marked \"from\", the final quote is confirmed with you before work begins.",
 			laneLabel: "Delivery", laneFeeRate: 0.5, laneFeeLabel: "Rush fee +50%",
 			lanes: [ { name: "Standard" }, { name: "Pick a date" } ],
-			laneStdSub: "{n} working days · {r}", laneRushSub: "3–5 days · {r}",
-			laneNote: "Standard {n} working days (closed Sun). Daomen members get the fast lane at 6–9 working days, as fast as one week; one member on the order moves the whole order up.<br><br>Pick an earlier date and the rush fee scales with urgency, the closer the higher. Under 3 days, message me to confirm.",
+			laneStdSub: "{n} · {r}", laneRushSub: "3–5 days · {r}",
+			weekNames: ["1 week", "2 weeks", "3 weeks", "4 weeks", "5 weeks", "6 weeks"], weekN: "{w} weeks", weekOne: "a week",
+			calWeek: ["M", "T", "W", "T", "F", "S", "S"],
+			calOffTip: "off", calLgBand: "Delivery window", calLgWin: "No rush fee", calLgRush: "Rush · earlier costs more", calLgOff: "Sunday off", calLgBlocked: "Too soon — message me",
+			calStdHint: "The outlined days are your delivery window. Want it earlier? Tap any date.",
+			laneStdGhost: "{n} · unavailable now",
+			laneCapTag: "Fully booked",
+			laneCapNote: "Standard orders run on a relaxed schedule. On a deadline? Choose “Pick a date” and it runs as rush.",
+			laneFast: "Daomen members take the fast lane — delivery in {m}, a full week ahead of standard; ",
+			laneNote: "Standard turnaround {n} (closed Sun; a week counts as 6 working days). The outlined days on the calendar are your delivery window. {fastline}one member on the order moves the whole order up.<br><br>The clock starts the day your material is complete and the direction check is signed off — not the day the deposit lands.<br><br>Pick an earlier date and the rush fee scales with urgency, the closer the higher. Under 3 days, message me to confirm.",
 			rushName: "Rush fee", laneSpecSub: "Pick a date · auto-priced",
 			laneDatePrompt: "Choose your target delivery date — the rush fee is calculated automatically.",
 			laneDaysLeft: "{d} days out", laneNoRush: "Within the standard window · no rush fee",
@@ -1245,20 +1410,23 @@ var I18N = {
 			depositNote: "50 / 50: pay the deposit to start, the balance on delivery.",
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
 			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off mixing & producer fee · fast lane · for life", memberLine: "Daomen member · 20% off",
-			memberFee: 15, memOnLine: "Daomen member active · 20% off · {d} working days",
+			memberFee: 15, memOnLine: "Daomen member active · 20% off · delivery in {d}",
 			memOff: "I'm not a member ›", memAlready: "I'm already a member ›",
 			memberPerNote: "The discount applies per vocalist; non-members are unaffected.",
 			mState0: "Not a member", mState1: "Member", mState2: "Join now", joinLine: "Join Daomen",
 			pbYesMain: "Join Daomen for {fee}, save {save} on this order",
-			pbYesSub: "{net} ahead · <span class=\"qb-hl\">{fast} working days faster</span> · tap to join ›",
-			pbNoMain: "Join Daomen for {fee}, <span class=\"qb-hl\">{fast} working days faster</span>",
+			pbYesSub: "{net} ahead · <span class=\"qb-hl\">{fast} faster</span> · tap to join ›",
+			pbNoMain: "Join Daomen for {fee}, <span class=\"qb-hl\">{fast} faster</span>",
 			pbNoSub: "Saves {save} here · membership is for life · tap to join ›",
 			producerTitle: "Add me as Producer", producerSub: "I lead this record's creative & finish · credit \"Produced by ChefDao\"", producerLine: "Producer fee",
 			producerNote: "Charged as a percentage on top of the mix/production subtotal, with a \"Produced by ChefDao\" credit. The producer fee is also covered by the Daomen 20% discount, and counts toward the rush-fee base. Producer points (royalty share) available for commercial projects.",
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
-			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", perHeadTotal: "Per person", newbieOff: 8, newbieLine: "First-order discount",
+			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", perHeadTotal: "Per person", laneRelaxed: "Relaxed",
+			capBusy: "The schedule is fairly full, so delivery dates have moved back. Need it sooner? Pick a date and it goes through the rush lane.",
+			capFull: "Fully booked · standard orders run on a relaxed schedule, with firm dates. On a deadline? Pick a date for the rush lane, or message me.",
+			newbieOff: 8, newbieLine: "First-order discount",
 			newbieTitle: "First-order discount", newbieSub: "$8 off your first single-vocalist order · stacks if you join Daomen with it", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
 			copyTerms: "Working terms", copyMore: "Full details",
 			copyTermsList: [
@@ -1267,7 +1435,7 @@ var I18N = {
 				"Full deposit refund before the direction check; after that the deposit is non-refundable",
 				"Default delivery is the final master ×1; TV mix / instrumental included if you ask in advance"
 			],
-			ctaNote: "The copied quote includes the working terms — please send it to me as-is.", catProd: "Vocal Production", catEdit: "Audio Editing", copyMix: "Mix", copyDeliver: "Delivery", copyWeChat: "Book on WeChat"
+			ctaNote: "The copied quote includes the working terms — please send it to me as-is.", catProd: "Vocal Production", catEdit: "Audio Editing", copyMix: "Mix", copyDeliver: "Est. delivery", copyWeChat: "Book on WeChat"
 		},
 		services: [
 			{
@@ -1525,6 +1693,16 @@ var I18N = {
 				a: "Totally fine — even better. You don't need any jargon. Describe it by feel — \"more spacious, warmer, harder, cleaner\" — or just send a reference, and I'll translate it into technical moves. My whole job is making the feeling you can't quite put into words."
 			},
 			{
+				q: "Is the delivery date guaranteed? What if it slips?",
+				a: "The date shown is an <strong>estimate</strong>, calculated live against the current schedule. The clock starts the day your material is complete and the direction check is signed off — not the day the deposit lands.",
+				list: [
+					"<strong>Client-side causes</strong> (incomplete material, late feedback, mid-project direction changes): the date moves accordingly, at no extra charge",
+					"<strong>Studio-side causes</strong>: you are told in advance and given a new date — never at the last minute",
+					"<strong>Exceptional circumstances</strong> (illness, equipment failure, force majeure): delivery may fall outside the estimate; this does not constitute a breach, and progress is still communicated immediately",
+					"Hard deadlines (release, competition, film) must be stated before work begins — those go through the rush lane and are confirmed separately"
+				]
+			},
+			{
 				q: "Does the mixing price include mastering?",
 				a: "Yes. Every mixing tier already includes light mastering, so a single is ready to release as-is.",
 				list: [
@@ -1644,8 +1822,16 @@ var I18N = {
 			stemsNote: "보컬 관련 추가 요금은 보컬 믹스와 동일합니다 — 프로덕션·화음·편집 작업량은 악기 트랙 수와 무관합니다. \"부터\"로 표시된 규격은 작업 시작 전 최종 견적을 확인해 드립니다.",
 			laneLabel: "납품 방식", laneFeeRate: 0.5, laneFeeLabel: "긴급 요금 +50%",
 			lanes: [ { name: "표준 납품" }, { name: "날짜 지정" } ],
-			laneStdSub: "{n} 영업일 · {r}", laneRushSub: "3–5일 · {r}",
-			laneNote: "표준 {n} 영업일(일요일 휴무). 刀门 회원은 패스트 레인 6–9 영업일, 최단 일주일; 한 주문에 회원이 한 명만 있어도 전체가 빨라집니다.<br><br>더 이른 날짜를 지정하면 긴급도에 따라 요금이 붙고, 가까울수록 높아집니다. 3일 이내는 문의해 주세요.",
+			laneStdSub: "{n} · {r}", laneRushSub: "3–5일 · {r}",
+			weekNames: ["1주", "2주", "3주", "4주", "5주", "6주"], weekN: "{w}주", weekOne: "1주",
+			calWeek: ["월", "화", "수", "목", "금", "토", "일"],
+			calOffTip: "휴", calLgBand: "납품 예정", calLgWin: "긴급 요금 없음", calLgRush: "긴급 · 빠를수록 비쌈", calLgOff: "일요일 휴무", calLgBlocked: "너무 촉박 · 문의",
+			calStdHint: "테두리 표시가 납품 예정일입니다. 더 빠르게 원하시면 날짜를 눌러 주세요.",
+			laneStdGhost: "{n} · 현재 선택 불가",
+			laneCapTag: "일정 마감",
+			laneCapNote: "표준 주문은 여유 일정으로 진행됩니다. 마감일이 있다면 「날짜 지정」을 선택해 긴급으로 진행해 주세요.",
+			laneFast: "刀门 회원은 패스트 레인 — {m} 납품으로 표준보다 정확히 일주일 빠릅니다; ",
+			laneNote: "표준 {n}(일요일 휴무, 1주 = 영업일 6일). 정확한 납품일은 달력의 테두리 표시를 확인해 주세요. {fastline}한 주문에 회원이 한 명만 있어도 전체가 빨라집니다.<br><br>기간은 소스가 완비되고 방향 확인본이 승인된 날부터 산정되며, 계약금 입금일 기준이 아닙니다.<br><br>더 이른 날짜를 지정하면 긴급도에 따라 요금이 붙고, 가까울수록 높아집니다. 3일 이내는 문의해 주세요.",
 			rushName: "긴급 요금", laneSpecSub: "날짜 선택 · 자동 계산",
 			laneDatePrompt: "희망 납품일을 선택하면 긴급 요금이 자동 계산됩니다.",
 			laneDaysLeft: "{d}일 후", laneNoRush: "표준 범위 내 · 긴급 요금 없음",
@@ -1655,20 +1841,23 @@ var I18N = {
 			depositNote: "반반 방식: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
 			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱·프로듀서 20% 할인 · 패스트 레인 · 평생", memberLine: "刀门 회원 · 20% 할인",
-			memberFee: 20000, memOnLine: "刀门 회원 적용 중 · 20% 할인 · 납품 {d} 영업일",
+			memberFee: 20000, memOnLine: "刀门 회원 적용 중 · 20% 할인 · {d} 납품",
 			memOff: "회원이 아닙니다 ›", memAlready: "이미 회원입니다 ›",
 			memberPerNote: "할인은 보컬별로 적용되며 비회원에게는 영향이 없습니다.",
 			mState0: "비회원", mState1: "회원", mState2: "지금 가입", joinLine: "刀门 가입",
 			pbYesMain: "{fee} 가입, 이번 주문에서 {save} 절약",
-			pbYesSub: "순 {net} 이득 · <span class=\"qb-hl\">납품 {fast} 영업일 단축</span> · 탭하여 가입 ›",
-			pbNoMain: "{fee} 가입, <span class=\"qb-hl\">납품 {fast} 영업일 단축</span>",
+			pbYesSub: "순 {net} 이득 · <span class=\"qb-hl\">납품 {fast} 단축</span> · 탭하여 가입 ›",
+			pbNoMain: "{fee} 가입, <span class=\"qb-hl\">납품 {fast} 단축</span>",
 			pbNoSub: "이번에 {save} 절약 · 혜택은 평생 · 탭하여 가입 ›",
 			producerTitle: "프로듀서로 참여", producerSub: "이 곡의 크리에이티브와 완성도를 주도 · 크레딧 \"Produced by ChefDao\"", producerLine: "프로듀서 비용",
 			producerNote: "믹스/프로덕션 소계에 프로젝트별 퍼센트로 추가되며, \"Produced by ChefDao\" 크레딧이 붙습니다. 프로듀서 비용도 刀门 회원 20% 할인 대상이며, 긴급 요금 산정 기준에 포함됩니다. 상업 프로젝트는 producer points(버전세 분배) 별도 협의.",
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
-			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", perHeadTotal: "1인당", newbieOff: 10000, newbieLine: "첫 주문 할인",
+			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", perHeadTotal: "1인당", laneRelaxed: "여유 납품",
+			capBusy: "현재 일정이 다소 밀려 납품일이 순연되었습니다. 더 빠르게 원하시면 날짜를 지정해 긴급으로 진행하실 수 있습니다.",
+			capFull: "일정 마감 · 표준 주문은 여유 일정으로 진행되며 날짜는 명확히 안내됩니다. 마감일이 있다면 날짜를 지정해 긴급으로 진행하거나 문의해 주세요.",
+			newbieOff: 10000, newbieLine: "첫 주문 할인",
 			newbieTitle: "첫 주문 할인", newbieSub: "첫 협업, 보컬 1인 주문 ₩10,000 할인 · 이번에 가입 시 중복 적용", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
 			copyTerms: "협업 요점", copyMore: "전체 안내",
 			copyTermsList: [
@@ -1677,7 +1866,7 @@ var I18N = {
 				"방향 확인본 이전에는 계약금 전액 환불, 이후에는 환불되지 않습니다",
 				"기본 납품은 완성 마스터 ×1. TV 믹스 / 인스트루멘탈은 미리 말씀하시면 함께 드립니다"
 			],
-			ctaNote: "복사된 견적서에 협업 요점이 포함되어 있습니다. 그대로 보내주세요.", catProd: "보컬 프로덕션", catEdit: "오디오 편집", copyMix: "믹스", copyDeliver: "납품", copyWeChat: "위챗 예약"
+			ctaNote: "복사된 견적서에 협업 요점이 포함되어 있습니다. 그대로 보내주세요.", catProd: "보컬 프로덕션", catEdit: "오디오 편집", copyMix: "믹스", copyDeliver: "예상 납품", copyWeChat: "위챗 예약"
 		},
 		services: [
 			{
@@ -1935,6 +2124,16 @@ var I18N = {
 				a: "전혀 문제없고, 오히려 더 좋습니다. 용어는 하나도 몰라도 됩니다 — '더 공간감 있게, 더 따뜻하게, 더 강하게, 더 깨끗하게' 같은 느낌으로 설명하거나 레퍼런스를 보내주시면 제가 기술적 동작으로 번역합니다. 말로 다 못 하는 그 느낌을 만들어내는 게 제 일입니다."
 			},
 			{
+				q: "납품일은 확정인가요? 지연될 수 있나요?",
+				a: "표시되는 날짜는 현재 일정에 따라 실시간 산정된 <strong>예상 납품일</strong>입니다. 기간은 소스가 완비되고 방향 확인본이 승인된 날부터 산정되며, 계약금 입금일 기준이 아닙니다.",
+				list: [
+					"<strong>고객 측 사유</strong>(소스 미비, 피드백 지연, 중도 방향 변경): 납품일이 그만큼 순연되며 추가 요금은 없습니다",
+					"<strong>스튜디오 측 사유</strong>: 사전에 안내드리고 새로운 납품일을 제시합니다. 마감 직전 통보는 하지 않습니다",
+					"<strong>특수 상황</strong>(질병, 장비 고장, 불가항력): 예상일을 초과할 수 있으며 이는 계약 위반에 해당하지 않습니다. 진행 상황은 즉시 공유합니다",
+					"발매·공모전·영상 등 확정 마감일이 있다면 착수 전에 알려주세요. 긴급 통로로 별도 확인합니다"
+				]
+			},
+			{
 				q: "믹싱 가격에 마스터링이 포함되나요?",
 				a: "포함됩니다. 모든 믹싱 등급에 심플 마스터링이 포함되어 싱글은 그대로 발매하실 수 있습니다.",
 				list: [
@@ -2124,7 +2323,7 @@ function qbAdvance(mutate) {
 	requestAnimationFrame(function () { qbScrollStep(target); });
 }
 function qbSet(key, val) { qbAdvance(function () { qbState[key] = val; }); }
-function qbSetDate(v) { qbAdvance(function () { qbState.targetDate = v || null; }); }
+function qbSetDate(v) { qbAdvance(function () { qbState.targetDate = v || null; if (v) qbState.lane = 1; }); }
 function qbSetEdit(i, val) { qbAdvance(function () { qbState.edits[i] = val; }); }
 function qbSetProd(i, val) { qbAdvance(function () { qbState.prods[i] = val; }); }
 // 报价单不在视野里就先滚过去——动效在屏幕外播完等于没播。
@@ -2588,14 +2787,25 @@ function renderQuoteBuilder() {
 	// 交付通道（最后一步）
 	if (shown >= idx.lane) {
 		var minISO = qbFmtISO(qbAddDays(RUSH_MIN_DAYS + cut));
-		var laneBtns = ''
-			+ '<button class="qb-seg-btn' + (QB_REC.lane === 0 ? " qb-rec" : "") + (qbState.lane === 0 ? " active" : "") + '" onclick="qbSet(\'lane\',0)">'
-			+ '<span class="qb-seg-name">' + q.lanes[0].name + qbBadge(q.recMost) + '</span>'
-			+ '<span class="qb-seg-price">' + q.laneStdSub.replace("{n}", qbStdSpan()).replace("{r}", stdRange) + '</span></button>'
-			+ '<button class="qb-seg-btn' + (qbState.lane === 1 ? " active" : "") + '" onclick="qbSet(\'lane\',1)">'
+		var relaxBtn = '<button class="qb-seg-btn' + (QB_REC.lane === 0 ? " qb-rec" : "") + (qbState.lane === 0 ? " active" : "") + '" onclick="qbSet(\'lane\',0)">'
+			+ '<span class="qb-seg-name">' + (qbIsFull() ? q.laneRelaxed : q.lanes[0].name) + qbBadge(q.recMost) + '</span>'
+			+ '<span class="qb-seg-price">' + q.laneStdSub.replace("{n}", qbWeekLabel(q)).replace("{r}", stdRange) + '</span></button>';
+		var specBtn = '<button class="qb-seg-btn' + (qbState.lane === 1 ? " active" : "") + '" onclick="qbSet(\'lane\',1)">'
 			+ '<span class="qb-seg-name">' + q.lanes[1].name + '</span>'
 			+ '<span class="qb-seg-price">' + q.laneSpecSub + '</span></button>';
-		var laneBody = '<div class="qb-seg two">' + laneBtns + '</div>';
+		// 满档时把「标准交付」留在原位但置灰——客户要看得到正常档是什么样，
+		// 才明白宽松档是暂时的例外，而不是我一直就这么慢。
+		var laneBody;
+		if (qbIsFull()) {
+			var ghost = '<div class="qb-seg-btn ghost" aria-disabled="true">'
+				+ '<span class="qb-seg-name">' + q.lanes[0].name + '</span>'
+				+ '<span class="qb-seg-price">' + q.laneStdGhost.replace("{n}", (q.weekNames && q.weekNames[Math.max(1, Math.ceil(qbBaseMin() / 6)) - 1]) || q.weekN.replace("{w}", Math.max(1, Math.ceil(qbBaseMin() / 6)))) + '</span></div>';
+			laneBody = '<div class="qb-seg two">' + ghost + relaxBtn + '</div>'
+				+ '<div class="qb-seg one">' + specBtn + '</div>'
+				+ '<div class="qb-lane-cap"><span class="qb-lane-cap-tag">' + q.laneCapTag + '</span><span>' + q.laneCapNote + '</span></div>';
+		} else {
+			laneBody = '<div class="qb-seg two">' + relaxBtn + specBtn + '</div>';
+		}
 		if (qbState.lane === 1) {
 			var info = q.laneDatePrompt, cls = "qb-date-info";
 			if (qbState.targetDate) {
@@ -2604,18 +2814,12 @@ function renderQuoteBuilder() {
 				else if (rr === 0) { info = q.laneNoRush; cls += " ok"; }
 				else { info = q.laneDaysLeft.replace("{d}", effDays) + " · " + q.rushName + " +" + Math.round(rr * 100) + "%"; cls += " fee"; }
 			}
-			var face = qbState.targetDate ? qbFmtDate(qbState.targetDate, currentLang) : q.laneDatePick;
-				var setCls = qbState.targetDate ? " set" : "";
-				var cta = qbState.targetDate ? q.laneDateChange : q.laneDateCta;
-				var dIcon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2.5" x2="8" y2="6"></line><line x1="16" y1="2.5" x2="16" y2="6"></line></svg>';
-				laneBody += '<div class="qb-date"><label class="qb-date-field' + setCls + '">'
-					+ '<span class="qb-date-ic">' + dIcon + '</span>'
-					+ '<span class="qb-date-face">' + face + '</span>'
-					+ '<span class="qb-date-cta">' + cta + ' \u203a</span>'
-					+ '<input type="date" class="qb-date-native" min="' + minISO + '" value="' + (qbState.targetDate || "") + '" onclick="try{this.showPicker()}catch(e){}" onchange="qbSetDate(this.value)">'
-					+ '</label><div class="' + cls + '">' + info + '</div></div>';
+			laneBody += '<div class="qb-date">' + qbCalHtml(q) + '<div class="' + cls + '">' + info + '</div></div>';
+		} else {
+			laneBody += '<div class="qb-date">' + qbCalHtml(q) + '<div class="qb-date-info">' + q.calStdHint + '</div></div>';
 		}
-		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, "", q.hints.lane, q.laneNote.replace("{n}", qbStdSpan()));
+		var fastLine = q.laneFast.replace("{m}", qbMemWeekLabel(q));
+		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, "", q.hints.lane, q.laneNote.replace("{n}", qbStdWeekLabel(q)).replace("{fastline}", fastLine));
 	}
 
 	// 全部作答完毕，报价单才登场
@@ -2715,7 +2919,7 @@ function renderQuoteBuilder() {
 			var pbNet = pbSave - q.memberFee, pbGood = pbNet > 0;
 			var fill = function (t) {
 				return t.replace("{fee}", qbFmt(q, q.memberFee)).replace("{save}", qbFmt(q, pbSave))
-					.replace("{net}", qbFmt(q, Math.abs(pbNet))).replace("{d}", qbMemSpan()).replace("{fast}", qbFastGain());
+					.replace("{net}", qbFmt(q, Math.abs(pbNet))).replace("{d}", qbMemWeekLabel(q)).replace("{fast}", q.weekOne);
 			};
 			var pbMain = fill(pbGood ? q.pbYesMain : q.pbNoMain);
 			if (c.count > 1) pbMain = q.vocalistLabel + " " + (pbIdx + 1) + " · " + pbMain;
@@ -2728,7 +2932,7 @@ function renderQuoteBuilder() {
 		var memBody;
 		if (c.count === 1) {
 			if (qbMemState(0) > 0) {
-				memBody = '<div class="qb-mem-on">' + q.memOnLine.replace("{d}", qbMemSpan()) + '</div>'
+				memBody = '<div class="qb-mem-on">' + q.memOnLine.replace("{d}", qbMemWeekLabel(q)) + '</div>'
 					+ '<button class="qb-mem-link" onclick="qbSetMem(0,0)">' + q.memOff + '</button>';
 			} else {
 				memBody = pbHtml + '<button class="qb-mem-link" onclick="qbSetMem(0,1)">' + q.memAlready + '</button>';
@@ -2771,6 +2975,11 @@ function renderQuoteBuilder() {
 	}
 
 	var tt = I18N[currentLang];
+	// 档期紧张/满档主动说明，否则客户只看到日期变远，会读成「你变慢了」而不是「你很忙」
+	var capHtml = "";
+	if (qbCapLevel() > 0) {
+		capHtml = '<div class="qb-cap' + (qbIsFull() ? " full" : "") + '">' + (qbIsFull() ? q.capFull : q.capBusy) + '</div>';
+	}
 	var schedHtml = '<div class="qb-sched"><span class="qb-sched-dot"></span><span class="qb-sched-live">' + tt.schedLive + '</span>'
 		+ '<span class="qb-sched-item">' + tt.schedStd.replace("{r}", stdRange) + '</span>'
 		+ '<span class="qb-sched-sep">·</span>'
@@ -2797,7 +3006,7 @@ function renderQuoteBuilder() {
 				+ '</span></div>';
 		}
 	}
-	mount.innerHTML = lastHtml + progHtml + '<div class="quote-builder">' + schedHtml + html + '</div>';
+	mount.innerHTML = lastHtml + progHtml + '<div class="quote-builder">' + schedHtml + capHtml + html + '</div>';
 
 	// 首次出现的步骤淡入；已出现过的（含每次重渲染）立刻可见，避免整块重播动画
 	var nodes = mount.querySelectorAll("[data-qstep]"), present = {};
@@ -3094,11 +3303,11 @@ function renderService(svc) {
 // FAQ 分组：21 条一字排开没人扫得完，切成 5 组、每组 ≤5 条。
 // 索引是 0 基，三语言条目顺序一致，所以一份映射通用。
 var FAQ_GROUPS = [
-	[0, 1, 2, 19, 22],
+	[0, 1, 2, 19, 23],
 	[8, 9, 12, 18, 21],
 	[3, 13, 14, 15, 16],
-	[4, 5, 10, 20],
-	[6, 7, 11, 17, 23]
+	[4, 5, 10, 20, 22],
+	[6, 7, 11, 17, 24]
 ];
 function renderFAQ(t) {
 	if (!t.faqItems || !t.faqItems.length) return "";
