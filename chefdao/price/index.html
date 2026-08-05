@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -397,6 +398,17 @@
 		.qb-cal-d.today { border-color: rgba(var(--ink), 0.55); }
 		.qb-cal-d.sel { border-color: var(--green-soft); background: var(--green-soft); color: #0d1410; transform: none; }
 		.qb-cal-d.sel .qb-cal-t { opacity: 0.75; }
+		/* 加急费下面的入会入口：绿色代表「有更划算的路」，跟上面琥珀色的加急费形成对照 */
+		.qb-date-join { display: block; width: 100%; margin-top: 10px; padding: 12px 15px; text-align: left; border: 1px solid var(--green-line); border-radius: 11px; background: rgba(var(--green-ink), 0.12); font: inherit; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; animation: djGlow 3.2s ease-in-out infinite; }
+		.qb-date-join:hover { background: rgba(var(--green-ink), 0.2); }
+		.qb-date-join:active { transform: scale(0.99); }
+		.qb-dj-main { display: block; font-size: 13.5px; font-weight: 750; line-height: 1.45; color: var(--green-soft); }
+		.qb-dj-sub { display: block; margin-top: 4px; font-size: 12px; font-weight: 600; line-height: 1.5; color: rgba(var(--ink), 0.55); }
+		@keyframes djGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--green-ink), 0); } 50% { box-shadow: 0 0 0 4px rgba(var(--green-ink), 0.12); } }
+		@media (prefers-reduced-motion: reduce) { .qb-date-join { animation: none; } }
+		.qb-date-ok { display: block; width: 100%; margin-top: 12px; padding: 13px 16px; border: 1px solid var(--green-line); border-radius: 11px; background: rgba(var(--green-ink), 0.16); color: var(--green-soft); font: inherit; font-size: 14px; font-weight: 750; letter-spacing: 0.01em; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; }
+		.qb-date-ok:hover { background: rgba(var(--green-ink), 0.26); }
+		.qb-date-ok:active { transform: scale(0.985); }
 		.qb-cal-lg { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 11px; font-size: 11.5px; font-weight: 600; color: rgba(var(--ink), 0.5); }
 		.qb-cal-lg span { display: inline-flex; align-items: center; gap: 6px; }
 		.qb-cal-lg .lg { width: 11px; height: 11px; border-radius: 3px; }
@@ -811,7 +823,7 @@ function qbCalHtml(q) {
 		if (diff === 0) cls += " today";
 		if (qbState.targetDate === iso) cls += " sel";
 		var n = cur.getDate();
-		var tag = pick ? 'button type="button" onclick="qbSetDate(\'' + iso + '\')"' : "div";
+		var tag = pick ? 'button type="button" onclick="qbPickDate(\'' + iso + '\')"' : "div";
 		cells += "<" + tag + ' class="' + cls + '">'
 			+ '<span class="qb-cal-n">' + (n === 1 ? (cur.getMonth() + 1) + "/" + n : n) + '</span>'
 			+ '<span class="qb-cal-t">' + tip + '</span>'
@@ -977,6 +989,10 @@ var I18N = {
 			calWeek: ["一", "二", "三", "四", "五", "六", "日"],
 			calOffTip: "休", calLgBand: "预计交付", calLgWin: "无加急费", calLgRush: "加急 · 越早越贵", calLgOff: "周日休息", calLgBlocked: "太近，需私信",
 			calStdHint: "绿框是预计交付的日子。想更早，直接点日历上的日期。",
+			dateConfirm: "确认 {d} · 继续 ↓",
+			djFree: "感觉太慢？加入刀门 · 这天就不用加急费了",
+			djCheaper: "感觉太慢？加入刀门 · 这天的加急费降到 +{r}%",
+			djSub: "会员优先排期，本单立省 {s} · 点此加入 ›",
 			laneStdGhost: "{n} · 当前不可选",
 			laneFast: "刀门会员走加速通道，{m}交付，比标准快整整一周；",
 			laneNote: "标准 {n}（周日休息，一周按 6 个工作日算）。具体交付日看日历上的绿框。{fastline}同一单里有一位会员，整单都加速。<br><br>工期自「素材齐全且方向确认版通过」当日起算，非自付定金起算。<br><br>指定更早的交付日期即按紧急度计加急费，越近越高；3 天内请私信确认。",
@@ -1415,6 +1431,10 @@ var I18N = {
 			calWeek: ["M", "T", "W", "T", "F", "S", "S"],
 			calOffTip: "off", calLgBand: "Delivery window", calLgWin: "No rush fee", calLgRush: "Rush · earlier costs more", calLgOff: "Sunday off", calLgBlocked: "Too soon — message me",
 			calStdHint: "The outlined days are your delivery window. Want it earlier? Tap any date.",
+			dateConfirm: "Confirm {d} · continue ↓",
+			djFree: "Too slow? Join Daomen — no rush fee on this date",
+			djCheaper: "Too slow? Join Daomen — rush drops to +{r}% on this date",
+			djSub: "Members get scheduling priority. Saves {s} on this order · tap to join ›",
 			laneStdGhost: "{n} · unavailable now",
 			laneFast: "Daomen members take the fast lane — delivery in {m}, a full week ahead of standard; ",
 			laneNote: "Standard turnaround {n} (closed Sun; a week counts as 6 working days). The outlined days on the calendar are your delivery window. {fastline}one member on the order moves the whole order up.<br><br>The clock starts the day your material is complete and the direction check is signed off — not the day the deposit lands.<br><br>Pick an earlier date and the rush fee scales with urgency, the closer the higher. Under 3 days, message me to confirm.",
@@ -1848,6 +1868,10 @@ var I18N = {
 			calWeek: ["월", "화", "수", "목", "금", "토", "일"],
 			calOffTip: "휴", calLgBand: "납품 예정", calLgWin: "긴급 요금 없음", calLgRush: "긴급 · 빠를수록 비쌈", calLgOff: "일요일 휴무", calLgBlocked: "너무 촉박 · 문의",
 			calStdHint: "테두리 표시가 납품 예정일입니다. 더 빠르게 원하시면 날짜를 눌러 주세요.",
+			dateConfirm: "{d} 확정 · 계속 ↓",
+			djFree: "너무 느리신가요? 刀门 가입 시 이 날짜는 긴급 요금이 없습니다",
+			djCheaper: "너무 느리신가요? 刀门 가입 시 이 날짜의 긴급 요금이 +{r}%로 내려갑니다",
+			djSub: "회원 우선 배정 · 이 주문에서 {s} 절약 · 탭하여 가입 ›",
 			laneStdGhost: "{n} · 현재 선택 불가",
 			laneFast: "刀门 회원은 패스트 레인 — {m} 납품으로 표준보다 정확히 일주일 빠릅니다; ",
 			laneNote: "표준 {n}(일요일 휴무, 1주 = 영업일 6일). 정확한 납품일은 달력의 테두리 표시를 확인해 주세요. {fastline}한 주문에 회원이 한 명만 있어도 전체가 빨라집니다.<br><br>기간은 소스가 완비되고 방향 확인본이 승인된 날부터 산정되며, 계약금 입금일 기준이 아닙니다.<br><br>더 이른 날짜를 지정하면 긴급도에 따라 요금이 붙고, 가까울수록 높아집니다. 3일 이내는 문의해 주세요.",
@@ -2325,28 +2349,104 @@ function qbNextUnanswered() {
 	for (var i = 0; i < s.length; i++) if (!qbAnswered(s[i])) return s[i];
 	return null;
 }
+// 自定义缓动滚动。原生 scroll-behavior: smooth 不管距离多远都是固定时长，
+// 从日历滑到报价单要走 1300px，挤进那点时间里中段一帧要走 100px 以上，看着就是一窜。
+// 这里让时长跟距离走，并且用户一动手就立刻让位。
+var qbScrollRAF = 0;
+function qbScrollCancel() { if (qbScrollRAF) { cancelAnimationFrame(qbScrollRAF); qbScrollRAF = 0; } }
+["wheel", "touchstart", "keydown"].forEach(function (ev) {
+	window.addEventListener(ev, qbScrollCancel, { passive: true });
+});
+function qbSmoothTo(y) {
+	y = Math.max(0, y);
+	if (qbReduceMotion()) { window.scrollTo({ top: y, behavior: "instant" }); return; }
+	var start = window.pageYOffset || document.documentElement.scrollTop;
+	var dist = y - start;
+	if (Math.abs(dist) < 2) return;
+	qbScrollCancel();
+	var dur = Math.min(950, Math.max(340, Math.abs(dist) * 0.55)), t0 = null;
+	function step(ts) {
+		if (t0 === null) t0 = ts;
+		var p = Math.min(1, (ts - t0) / dur);
+		var e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // easeInOutCubic
+		window.scrollTo({ top: start + dist * e, behavior: "instant" });
+		qbScrollRAF = p < 1 ? requestAnimationFrame(step) : 0;
+	}
+	qbScrollRAF = requestAnimationFrame(step);
+}
 function qbScrollStep(key) {
 	var el = document.querySelector('[data-qstep="' + (key || "summary") + '"]');
 	if (!el) return;
-	var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - qbScrollOffset();
-	window.scrollTo({ top: y < 0 ? 0 : y, behavior: qbReduceMotion() ? "auto" : "smooth" });
+	var r = el.getBoundingClientRect(), h = window.innerHeight || 800, off = qbScrollOffset();
+	// 已经在舒服的位置就别动。每答一步都硬滚一次，页面看起来一直在抖。
+	if (r.top >= 64 && r.top <= off + 80 && r.bottom <= h - 16) return;
+	qbSmoothTo(r.top + (window.pageYOffset || document.documentElement.scrollTop) - off);
 }
 // 包住所有作答动作：只有当「下一处待选」真的变了才滚动——
 // 回头改早先的选项（下一处没变）不会把人甩走，逐位选人声/音编也只在整步答完时才走。
 function qbAdvance(mutate) {
 	var before = qbNextUnanswered();
+	// 记住「正在作答那一步」在视口里的高度。整块 innerHTML 重渲染会改变它上方的高度，
+	// 不补偿的话页面会先自己跳一下，平滑滚动再从跳完的位置起步——看起来就是一顿一顿的。
+	var anchor = before ? document.querySelector('[data-qstep="' + before + '"]') : null;
+	var anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
 	mutate();
 	renderQuoteBuilder();
+	if (anchorTop !== null) {
+		var re = document.querySelector('[data-qstep="' + before + '"]');
+		if (re) {
+			var drift = re.getBoundingClientRect().top - anchorTop;
+			// 必须是瞬时的：html 上有 scroll-behavior: smooth，
+			// 不显式指定 instant 的话这次补偿也会变成动画，跟随后的滚动打架。
+			if (Math.abs(drift) > 1) window.scrollBy({ top: drift, behavior: "instant" });
+		}
+	}
 	var after = qbNextUnanswered();
 	if (before === after) return;
 	// 落到「刚答完那一步的下一步」，而不是「下一处未作答」——
 	// 否则带默认值的步骤（人声制作）会被直接跳过，客户根本看不到
 	var seq = qbSteps(), bi = before ? seq.indexOf(before) : -1;
 	var target = (bi >= 0 && bi + 1 < seq.length) ? seq[bi + 1] : after;
-	requestAnimationFrame(function () { qbScrollStep(target); });
+	// 两帧之后再滚：一帧只保证节点进了 DOM，布局和字体回流可能还没定，
+	// 这时候量出来的位置是错的，滚到一半会被拽一下。
+	requestAnimationFrame(function () {
+		requestAnimationFrame(function () { qbScrollStep(target); });
+	});
 }
 function qbSet(key, val) { qbAdvance(function () { qbState[key] = val; }); }
-function qbSetDate(v) { qbAdvance(function () { qbState.targetDate = v || null; if (v) qbState.lane = 1; }); }
+// 点日历 = 试算，不滚动。客户往往要来回比几个日期，每点一次就被甩到报价单太烦。
+// 真正的「决定」交给确认按钮。
+function qbPickDate(v) {
+	qbState.targetDate = v || null;
+	if (v) qbState.lane = 1;
+	renderQuoteBuilder();
+}
+// 只推进一步：落到优惠区，而不是一路滑到报价单。
+// 跨过「新客优惠 / 刀门会员」会让人以为那两块不用管，还跟加入刀门的按钮抢注意力。
+// 选中的这天要加急费，但换成会员就不用（或者便宜一档）——这时候入会几乎一定更划算。
+// 不在这里说，客户就得自己在日历和会员区之间来回换算，多半算不出来，直接付了加急费。
+function qbJoinBeatsRush(q) {
+	if (qbHasMember()) return null;
+	if (qbState.lane !== 1 || !qbState.targetDate) return null;
+	var days = qbDaysUntil(qbState.targetDate) - qbCutoff();
+	var nowRate = qbRushRate(days);
+	if (nowRate === null || nowRate === 0) return null;
+	var before = qbCompute(q).total;
+	var keep = qbState.mem.slice();
+	qbState.mem[0] = 2; // 2 = 本单加入，算进 ¥99 入会费
+	var memRate = qbRushRate(days), after = qbCompute(q).total;
+	qbState.mem = keep;
+	var save = before - after;
+	if (save <= 0) return null;
+	return { save: save, free: memRate === 0, rate: Math.round((memRate || 0) * 100) };
+}
+function qbConfirmDate() {
+	var el = document.querySelector(".qb-extras");
+	if (!el) { qbRevealSummary(); return; }
+	var r = el.getBoundingClientRect(), h = window.innerHeight || 800;
+	if (r.top >= 64 && r.bottom <= h - 16) return; // 已经看得见就别动
+	qbSmoothTo(r.top + (window.pageYOffset || document.documentElement.scrollTop) - qbScrollOffset());
+}
 function qbSetEdit(i, val) { qbAdvance(function () { qbState.edits[i] = val; }); }
 function qbSetProd(i, val) { qbAdvance(function () { qbState.prods[i] = val; }); }
 // 报价单不在视野里就先滚过去——动效在屏幕外播完等于没播。
@@ -2356,8 +2456,7 @@ function qbRevealSummary() {
 	if (!el) return false;
 	var r = el.getBoundingClientRect(), h = window.innerHeight || 800;
 	if (r.top >= 56 && r.bottom <= h - 16) return false;
-	var y = r.top + (window.pageYOffset || document.documentElement.scrollTop) - qbScrollOffset();
-	window.scrollTo({ top: y < 0 ? 0 : y, behavior: qbReduceMotion() ? "auto" : "smooth" });
+	qbSmoothTo(r.top + (window.pageYOffset || document.documentElement.scrollTop) - qbScrollOffset());
 	return !qbReduceMotion();
 }
 // 加入刀门的确认动效：总价滚动到新价 + 绿光扫过 + 一记短震。
@@ -2838,7 +2937,18 @@ function renderQuoteBuilder() {
 				else if (rr === 0) { info = q.laneNoRush; cls += " ok"; }
 				else { info = q.laneDaysLeft.replace("{d}", effDays) + " · " + q.rushName + " +" + Math.round(rr * 100) + "%"; cls += " fee"; }
 			}
-			laneBody += '<div class="qb-date">' + qbCalHtml(q) + '<div class="' + cls + '">' + info + '</div></div>';
+			// 加急费提示的正下方就是入会入口，省得客户跑去会员区再跑回来
+			var jb = qbJoinBeatsRush(q), joinHtml = "";
+			if (jb) {
+				joinHtml = '<button type="button" class="qb-date-join" onclick="qbSetMem(0,2)">'
+					+ '<span class="qb-dj-main">' + (jb.free ? q.djFree : q.djCheaper.replace("{r}", jb.rate)) + '</span>'
+					+ '<span class="qb-dj-sub">' + q.djSub.replace("{s}", qbFmt(q, jb.save)) + '</span></button>';
+			}
+			var okBtn = qbState.targetDate
+				? '<button type="button" class="qb-date-ok" onclick="qbConfirmDate()">'
+					+ q.dateConfirm.replace("{d}", qbFmtDate(qbState.targetDate, currentLang)) + '</button>'
+				: '';
+			laneBody += '<div class="qb-date">' + qbCalHtml(q) + '<div class="' + cls + '">' + info + '</div>' + joinHtml + okBtn + '</div>';
 		} else {
 			laneBody += '<div class="qb-date">' + qbCalHtml(q) + '<div class="qb-date-info">' + q.calStdHint + '</div></div>';
 		}
@@ -2984,7 +3094,8 @@ function renderQuoteBuilder() {
 			+ '<span class="qb-switch"></span></button>'
 			+ (qbState.producer ? '<div style="margin-top:-8px;margin-bottom:16px">' + qbWhy(q.whyLabel, q.producerNote) + '</div>' : '');
 
-		html += '<div class="qb-step" data-qstep="summary">' + newbieHtml + memberHtml + producerHtml
+		html += '<div class="qb-step" data-qstep="summary">'
+			+ '<div class="qb-extras">' + newbieHtml + memberHtml + producerHtml + '</div>'
 			+ '<div class="qb-summary">' + eq + lines
 			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
 			+ (c.count > 1 ? '<div class="qb-percap"><span>' + q.perHeadTotal + '</span><span class="qb-percap-v">' + qbFmt(q, Math.round(c.total / c.count)) + (c.from ? '+' : '') + '</span></div>' : '')
@@ -3468,8 +3579,7 @@ function secJump(id) {
 	if (!el) return;
 	var nav = document.getElementById("sec-nav");
 	var off = (nav ? nav.getBoundingClientRect().height : 0) + 14;
-	var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - off;
-	window.scrollTo({ top: y < 0 ? 0 : y, behavior: qbReduceMotion() ? "auto" : "smooth" });
+	qbSmoothTo(el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - off);
 }
 // 当前区块高亮：取「已滚过导航条」的最后一个区块
 function secSpy() {
