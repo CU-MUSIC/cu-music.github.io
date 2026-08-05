@@ -462,6 +462,14 @@ body {
   .about-block { opacity:1 !important; transform:none !important; }
 }
 
+/* Touch/mobile: skip the scroll-reveal fade-up entirely. Momentum scrolling
+   can leave IntersectionObserver-triggered opacity transitions stuck
+   mid-fade on phones, which reads as "content missing". Content just
+   shows — the animation was decorative, not worth the risk. */
+@media (hover:none), (max-width:768px) {
+  .about-block { opacity:1 !important; transform:none !important; transition:none !important; }
+}
+
 /* ================= Collaborators (plain text list) ================= */
 .collab-text { font-size:14.5px; line-height:2.1; color:rgba(255,255,255,0.55); max-width:760px; }
 .collab-name { color:rgba(255,255,255,0.92); font-weight:500; transition:color 0.2s; }
@@ -543,8 +551,8 @@ body {
   .chart-rank { font-size:1.4rem; min-width:32px; }
   .chart-title { font-size:13px; }
   .about-certs { grid-template-columns:1fr; gap:10px; }
-  .cert-item { flex-direction:row; align-items:baseline; gap:14px; padding:18px 20px; }
-  .cert-num { font-size:30px; min-width:78px; }
+  .cert-item { flex-direction:row; align-items:center; gap:14px; padding:18px 20px; }
+  .cert-num { font-size:30px; min-width:78px; text-align:center; }
   .about-block + .about-block { margin-top:52px; padding-top:52px; }
   .bio-primary { font-size:15px; }
   .about-photos { grid-template-columns:repeat(2,1fr); }
@@ -987,10 +995,14 @@ function initAboutReveal() {
   if (aboutRevealBuilt) return;
   aboutRevealBuilt = true;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // touch devices skip the animations outright: momentum scrolling can leave
+  // IntersectionObserver-triggered opacity/rAF work stuck mid-way, which
+  // reads as broken content rather than a missed flourish
+  const skipAnim = reduceMotion || window.matchMedia('(hover: none)').matches || window.innerWidth <= 768;
 
   // fade-up each block as it scrolls into view
   const revealTargets = document.querySelectorAll('#about-section .about-block');
-  if (reduceMotion) {
+  if (skipAnim) {
     revealTargets.forEach(el => el.classList.add('is-visible'));
   } else {
     const revealObs = new IntersectionObserver(es => {
@@ -1000,7 +1012,7 @@ function initAboutReveal() {
   }
 
   // count the streaming certs up from 0 once their card enters view
-  if (reduceMotion) return;
+  if (skipAnim) return;
   const certNums = document.querySelectorAll('.cert-num');
   const targets = new Map();
   certNums.forEach(el => {
