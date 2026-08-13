@@ -5,10 +5,10 @@
 const albums = [
 	{ link: "https://music.163.com/album?id=263242113", image: "https://p1.music.126.net/QpNRZsfMP5J4tOlziA8Pnw==/109951170504642760.jpg", year: "2025", artist: "Rapeter", title: "IMGOOD别担心我", credits:["cookdao"] },
 	{ link: "https://music.163.com/album?id=350777340", image: "https://p1.music.126.net/_-rFuALruNFFlRfoEslp7A==/109951172303441948.jpg", year: "2025", artist: "Føxco", title: "Fear Of Nothing", credits:["cookdao"] },
-	{ link: "https://music.163.com/album?id=386863760", image: "https://p2.music.126.net/7Eis9iJwDf9csf-lTBFr7g==/109951173554234007.jpg", year: "2026", artist: "WindMax", title: "TWISTED LOVE", credits:["uin"] },
+	{ link: "https://music.163.com/album?id=386863760", image: "https://p2.music.126.net/7Eis9iJwDf9csf-lTBFr7g==/109951173554234007.jpg", year: "2026", artist: "WindMax", title: "TWISTED LOVE", date: "2026-07-18", credits:["uin"] },
 	{ link: "https://music.163.com/album?id=349892857", image: "https://p1.music.126.net/Z0XW7Vb1WHMnn0Z0aZ3tVw==/109951172263038796.jpg", year: "2025", artist: "安伊涵", title: "BAD DESIRE", credits:["cookdao","uin"] },
-	{ link: "https://music.163.com/album?id=368863399", image: "https://p1.music.126.net/b5WE69W4fkFuAaQtiWR2EA==/109951172978186945.jpg", year: "2026", artist: "安伊涵", title: "出海", credits:["uin"] },
-	{ link: "https://music.163.com/album?id=360128548", image: "https://p1.music.126.net/KK23i_doVojpXJL8kziCaA==/109951172660471716.jpg", year: "2026", artist: "Ele Jazz", title: "UFO" ,credits:["uin"] },
+	{ link: "https://music.163.com/album?id=368863399", image: "https://p1.music.126.net/b5WE69W4fkFuAaQtiWR2EA==/109951172978186945.jpg", year: "2026", artist: "安伊涵", title: "出海", date: "2026-04-02", credits:["uin"] },
+	{ link: "https://music.163.com/album?id=360128548", image: "https://p1.music.126.net/KK23i_doVojpXJL8kziCaA==/109951172660471716.jpg", year: "2026", artist: "Ele Jazz", title: "UFO", date: "2026-01-29", credits:["uin"] },
 	{ link: "https://music.163.com/album?id=273398421", image: "https://p2.music.126.net/EZUw2Idccw7OkinISOXpeQ==/109951171093017111.jpg", year: "2025", artist: "RioT婷", title: "小巴辣子", credits:["cookdao"] },
 	{ link: "https://music.163.com/album?id=285430095", image: "https://p2.music.126.net/fUvIMTUbos3A397_tb6Tzw==/109951172032384990.jpg", year: "2025", artist: "Uin", title: "首尔病(Take Me Out)", credits:["cookdao","uin"] },
 	{ link: "https://music.163.com/album?id=276925482", image: "https://p2.music.126.net/m0opMAaNB1eOGnd30EYFZg==/109951171387080337.jpg", year: "2025", artist: "焦娇JoJo", title: "陕北女子", credits:["cookdao"] },
