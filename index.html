@@ -849,16 +849,19 @@ footer{
   <span>已复制微信号 CUMUSIC-</span>
 </div>
 
-<script src="album-select.js"></script>
+<script src="albums.js"></script>
 
 <script>
 const container = document.getElementById('album-container');
 const toast = document.getElementById('toast');
 
+/* 全站唯一数据库 albums.js（根目录），本页只取标了 cu 的精选，按 cu 值升序 */
+const works = albums.filter(a => a.cu).sort((a, b) => a.cu - b.cu);
+
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const countFor = f => f === 'all' ? albums.length : albums.filter(a => a.credits.includes(f)).length;
+const countFor = f => f === 'all' ? works.length : works.filter(a => a.credits.includes(f)).length;
 
 /* ── filter buttons ──────────────────────────────────────── */
 document.querySelectorAll('.control-btn').forEach(btn => {
@@ -899,7 +902,7 @@ function filterByMember(member){
 function renderAlbums(filter = 'all'){
   container.style.opacity = '0';
   setTimeout(() => {
-    const list = filter === 'all' ? albums : albums.filter(a => a.credits.includes(filter));
+    const list = filter === 'all' ? works : works.filter(a => a.credits.includes(filter));
 
     if(!list.length){
       container.innerHTML = '<p class="works-empty">该筛选下暂无公开作品。</p>';
