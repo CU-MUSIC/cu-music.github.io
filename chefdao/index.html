@@ -701,9 +701,12 @@ body {
 </div>
 <div id="wechat-toast">微信号已复制 · Cookdao</div>
 
-<script src="album.js"></script>
+<script src="/albums.js"></script>
 <script>
 const CURRENT_YEAR = '2026';
+
+/* 全站唯一数据库 /albums.js，本页只取 ChefDao 参与工程的作品 */
+const works = albums.filter(a => a.credits.includes('cookdao'));
 
 /* ========= Utils ========= */
 function shuffle(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
@@ -776,13 +779,13 @@ function buildCompactCard(a) {
 function generateContent() {
   const keyOf = a => a.link || `${a.artist}|${a.title}`;
   const seen = new Set();
-  const featured = albums.filter(a => {
+  const featured = works.filter(a => {
     if (a.highlighted && !seen.has(keyOf(a))) {
       seen.add(keyOf(a)); return true;
     }
     return false;
   });
-  const rest = albums.filter(a => !seen.has(keyOf(a)));
+  const rest = works.filter(a => !seen.has(keyOf(a)));
 
   document.getElementById('albums-container').innerHTML =
     featured.map((a, i) => buildRow(a, i, true)).join('');
@@ -1096,8 +1099,8 @@ async function initHybridAnimation() {
   const rows = Math.ceil(window.innerHeight / cellWidth) + 1;
   const totalCells = cols * rows;
 
-  const highlights = shuffle(albums.filter(a => a.highlighted));
-  const others = shuffle(albums.filter(a => !a.highlighted));
+  const highlights = shuffle(works.filter(a => a.highlighted));
+  const others = shuffle(works.filter(a => !a.highlighted));
   const combined = [...highlights, ...others];
   if (!combined.length) return;
 
