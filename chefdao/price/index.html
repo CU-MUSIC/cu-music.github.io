@@ -1093,16 +1093,29 @@ var I18N = {
 			},
 			{
 				id: "course", type: "course", groupHead: "课程 Course", step: "1v1 定制授课", title: "混音教学 Coaching",
-				sub: "1v1 案例拆解，按你的工程实时调整进度。",
+				sub: "1v1 案例拆解，按你的工程实时调整进度。每节 90 分钟，全部一对一。不确定选哪档，可先上 ¥380 诊断试听课，报名正课全额抵扣。",
 				stages: [
 					{
-						tag: "STAGE 01", badge: "可报名", name: "贴唱混音 · 标准制作流程",
-						desc: "针对 Vocal Mixing Standard。通过 1v1 案例拆解，掌握标准化、工业级的音频编辑与混音流程。",
+						tag: "STAGE 01", badge: "可报名", name: "零基础入门 · 从零跑通一首歌",
+						desc: "没打开过音乐制作软件也可以。6 节 × 90 分钟，从装软件开始，把录音、编排、基础混音、导出完整跑通一遍，结课时你能独立做出一个完整的小作品。",
+						fit: ["完全零基础", "会唱会写但不会做"], unfit: ["已能独立完成 Demo"],
+						modules: ["软件安装、工程设置与文件管理", "录音基础与监听设置", "音频编辑入门（对齐 / 淡变 / 增益）", "基础混音与导出交付"],
+						prices: [{ p: "¥1,980", l: "线上 · 6 节" }, { p: "¥3,180", l: "线下 · 首尔工作室" }]
+					},
+					{
+						tag: "STAGE 02", badge: "可报名", name: "贴唱混音 · 标准制作流程",
+						desc: "针对 Vocal Mixing Standard。8 节 × 90 分钟，通过 1v1 案例拆解掌握标准化、工业级的音频编辑与混音流程。用你自己的素材推进，结课交付一首完整可听的作品。",
 						fit: ["短视频流媒体", "个人 Demo 交付"], unfit: ["扩声 / 演出系统"],
 						modules: ["DAW 工业化模板搭建与文件管理", "Vocal Production（音高修正 / 节奏对齐）", "音频编辑工业流程（清理 / 淡入淡出 / 增益）", "Demo 质量控制（QC）与输出标准"],
-						prices: [{ p: "¥1,200", l: "线上" }, { p: "¥2,000", l: "线下 · 首尔工作室" }]
+						prices: [{ p: "¥3,180", l: "线上 · 8 节" }, { p: "¥4,980", l: "线下 · 首尔工作室" }]
 					},
-					{ tag: "STAGE 02", name: "高级商业混音实战", soon: "COMING SOON" }
+					{
+						tag: "STAGE 03", badge: "需作品评估", name: "高级商业混音实战",
+						desc: "8 节 × 90 分钟。不含基础操作教学，默认你已能稳定交付接单级作品。重点是商业标准对齐、细节打磨与决策逻辑——为什么这么处理、什么时候该停手。报名前请提交 1–2 首代表作，评估通过后开课。",
+						fit: ["已有接单 / 项目经验", "目标商业发行标准"], unfit: ["零基础", "基础操作教学"],
+						modules: ["商业标准对齐（响度 / 动态 / 频谱参照）", "人声商业质感链路搭建", "频段冲突与立体声空间层次决策", "Reference A/B 与终混 QC", "接单工作流与交付规范"],
+						prices: [{ p: "¥5,980", l: "线上 · 8 节" }, { p: "¥8,980", l: "线下 · 首尔工作室" }]
+					}
 				]
 			},
 			{
@@ -1535,16 +1548,29 @@ var I18N = {
 			},
 			{
 				id: "course", type: "course", groupHead: "Course", step: "1-on-1 coaching", title: "Mixing Coaching",
-				sub: "1-on-1 case breakdowns, paced against your own sessions.",
+				sub: "1-on-1 case breakdowns, paced against your own sessions. 90 minutes per session, always one-on-one. Not sure which stage fits? Start with a $60 diagnostic session — fully credited toward any course.",
 				stages: [
 					{
-						tag: "STAGE 01", badge: "Open", name: "Vocal Mixing · Standard Workflow",
-						desc: "Built around the Vocal Mixing Standard. Through 1-on-1 case breakdowns, you learn a standardised, industry-grade editing and mixing workflow.",
+						tag: "STAGE 01", badge: "Open", name: "Absolute Beginner · Your First Full Track",
+						desc: "No prior DAW experience needed. 6 sessions × 90 minutes, from installing the software through recording, arranging, basic mixing and export — the whole loop. You finish able to complete a short track on your own.",
+						fit: ["True beginners", "Writers and singers who can't produce yet"], unfit: ["Already finishing demos solo"],
+						modules: ["Installation, session setup and file management", "Recording basics and monitoring setup", "Intro to audio editing (alignment / fades / gain)", "Basic mixing and export delivery"],
+						prices: [{ p: "$300", l: "Online · 6 sessions" }, { p: "$480", l: "In person · Seoul studio" }]
+					},
+					{
+						tag: "STAGE 02", badge: "Open", name: "Vocal Mixing · Standard Workflow",
+						desc: "Built around the Vocal Mixing Standard. 8 sessions × 90 minutes of 1-on-1 case breakdowns to learn a standardised, industry-grade editing and mixing workflow. We work on your own material, and you finish with one complete, listenable track.",
 						fit: ["Short-form / streaming", "Personal demos"], unfit: ["Live sound / PA systems"],
 						modules: ["Industrial DAW templates and file management", "Vocal production (pitch correction / timing)", "Audio editing workflow (cleanup / fades / gain)", "Demo QC and output standards"],
-						prices: [{ p: "$180", l: "Online" }, { p: "$300", l: "In person · Seoul studio" }]
+						prices: [{ p: "$480", l: "Online · 8 sessions" }, { p: "$750", l: "In person · Seoul studio" }]
 					},
-					{ tag: "STAGE 02", name: "Advanced Commercial Mixing", soon: "COMING SOON" }
+					{
+						tag: "STAGE 03", badge: "Audition required", name: "Advanced Commercial Mixing",
+						desc: "8 sessions × 90 minutes. No basic operation is covered — this assumes you already deliver client-level work. The focus is commercial standards, fine detail, and decision-making: why a move is made, and when to stop. Send 1–2 tracks before booking; the course starts once they are approved.",
+						fit: ["Existing paid or project work", "Aiming at commercial release"], unfit: ["Beginners", "Basic operation training"],
+						modules: ["Commercial referencing (loudness / dynamics / spectrum)", "Building a commercial-grade vocal chain", "Frequency conflicts and stereo depth decisions", "Reference A/B and final-mix QC", "Client workflow and delivery standards"],
+						prices: [{ p: "$900", l: "Online · 8 sessions" }, { p: "$1,350", l: "In person · Seoul studio" }]
+					}
 				]
 			},
 			{
@@ -1972,16 +1998,29 @@ var I18N = {
 			},
 			{
 				id: "course", type: "course", groupHead: "코스 Course", step: "1:1 맞춤 레슨", title: "믹싱 코칭 Coaching",
-				sub: "1:1 케이스 분석, 본인 세션에 맞춰 진도를 조절합니다.",
+				sub: "1:1 케이스 분석, 본인 세션에 맞춰 진도를 조절합니다. 회당 90분, 전 과정 1:1입니다. 어느 단계가 맞을지 모르겠다면 ₩80,000 진단 체험 레슨부터 — 정규 과정 등록 시 전액 차감됩니다.",
 				stages: [
 					{
-						tag: "STAGE 01", badge: "모집 중", name: "보컬 믹싱 · 표준 제작 프로세스",
-						desc: "Vocal Mixing Standard 기준. 1:1 케이스 분석을 통해 표준화된 산업 수준의 편집·믹싱 프로세스를 익힙니다.",
+						tag: "STAGE 01", badge: "모집 중", name: "왕초보 입문 · 첫 완성곡까지",
+						desc: "음악 제작 프로그램을 켜본 적이 없어도 괜찮습니다. 6회 × 90분, 프로그램 설치부터 녹음·편곡·기본 믹싱·익스포트까지 전 과정을 한 번 완주합니다. 수료 시 짧은 곡 하나를 혼자 완성할 수 있습니다.",
+						fit: ["완전 초보", "노래·작사는 하지만 제작은 못 하는 분"], unfit: ["이미 혼자 데모를 완성하는 분"],
+						modules: ["프로그램 설치, 세션 설정과 파일 관리", "녹음 기초와 모니터링 세팅", "오디오 편집 입문(정렬 / 페이드 / 게인)", "기본 믹싱과 익스포트 납품"],
+						prices: [{ p: "₩400,000", l: "온라인 · 6회" }, { p: "₩640,000", l: "오프라인 · 서울 스튜디오" }]
+					},
+					{
+						tag: "STAGE 02", badge: "모집 중", name: "보컬 믹싱 · 표준 제작 프로세스",
+						desc: "Vocal Mixing Standard 기준. 8회 × 90분, 1:1 케이스 분석을 통해 표준화된 산업 수준의 편집·믹싱 프로세스를 익힙니다. 본인 소재로 진행하며 완성도 있는 곡 한 곡을 결과물로 가져갑니다.",
 						fit: ["숏폼 / 스트리밍", "개인 데모"], unfit: ["확성 / 공연 시스템"],
 						modules: ["DAW 산업용 템플릿 구축과 파일 관리", "보컬 프로덕션(피치 보정 / 타이밍 정렬)", "오디오 편집 워크플로(클린업 / 페이드 / 게인)", "데모 QC와 출력 기준"],
-						prices: [{ p: "₩240,000", l: "온라인" }, { p: "₩400,000", l: "오프라인 · 서울 스튜디오" }]
+						prices: [{ p: "₩640,000", l: "온라인 · 8회" }, { p: "₩1,000,000", l: "오프라인 · 서울 스튜디오" }]
 					},
-					{ tag: "STAGE 02", name: "고급 커머셜 믹싱 실전", soon: "COMING SOON" }
+					{
+						tag: "STAGE 03", badge: "심사 필요", name: "고급 커머셜 믹싱 실전",
+						desc: "8회 × 90분. 기본 조작은 다루지 않으며, 이미 의뢰 수준의 작업을 안정적으로 납품할 수 있다는 전제로 진행됩니다. 상업 기준 정렬, 디테일 다듬기, 판단 로직 — 왜 그렇게 처리하는지, 언제 멈춰야 하는지가 핵심입니다. 신청 전 대표곡 1–2곡을 보내주시고, 심사 통과 후 개강합니다.",
+						fit: ["실제 의뢰 / 프로젝트 경험 보유", "상업 발매 기준 목표"], unfit: ["초보", "기본 조작 교육"],
+						modules: ["상업 기준 정렬(라우드니스 / 다이나믹 / 스펙트럼 레퍼런스)", "상업 수준 보컬 체인 구축", "주파수 충돌과 스테레오 공간감 판단", "Reference A/B와 최종 믹스 QC", "의뢰 워크플로와 납품 규격"],
+						prices: [{ p: "₩1,200,000", l: "온라인 · 8회" }, { p: "₩1,800,000", l: "오프라인 · 서울 스튜디오" }]
+					}
 				]
 			},
 			{
