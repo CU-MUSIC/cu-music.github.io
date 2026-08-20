@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -150,6 +149,32 @@
 		@keyframes capDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
 		@media (prefers-reduced-motion: reduce) { .qb-lane-cap-h i { animation: none; } }
 		/* 顶部那条只报状态，细节留给交付通道里的卡片——两条一样重会互相抵消 */
+		/* 调价预告：要能单独截图发朋友圈，所以自成一块、信息自洽 */
+		.qb-notice { position: relative; overflow: hidden; margin: 0 0 20px; padding: 20px 22px 18px; border-radius: 14px; border: 1px solid rgba(var(--amber), 0.45); background: rgba(var(--amber), 0.10); }
+		.qb-notice::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: rgb(var(--amber)); }
+		.qb-notice-h { display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap; }
+		.qb-notice-t { font-size: 17px; font-weight: 800; letter-spacing: 0.01em; color: var(--amber-t); }
+		.qb-notice-d { font-size: 12.5px; font-weight: 700; color: var(--amber-t); opacity: 0.78; }
+		.qb-notice-lead { margin-top: 9px; font-size: 13px; font-weight: 650; line-height: 1.62; color: rgba(var(--ink), 0.8); }
+		.qb-notice-g { margin-top: 15px; }
+		.qb-notice-gt { font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; color: var(--amber-t); opacity: 0.9; margin-bottom: 2px; }
+		.qb-notice-r { display: grid; grid-template-columns: 1fr auto 18px auto; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid rgba(var(--ink), 0.07); font-size: 13.5px; }
+		.qb-notice-r:last-child { border-bottom: 0; padding-bottom: 2px; }
+		.qb-notice-r.head { padding: 0 0 7px; border-bottom: 1px solid rgba(var(--amber), 0.28); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: rgba(var(--ink), 0.42); text-align: right; }
+		.qb-notice-n { font-weight: 650; color: rgba(var(--ink), 0.86); text-align: left; }
+		.qb-notice-o { font-weight: 600; color: rgba(var(--ink), 0.4); text-decoration: line-through; text-align: right; }
+		.qb-notice-a { color: rgba(var(--ink), 0.3); text-align: center; }
+		.qb-notice-w { font-weight: 800; color: var(--amber-t); text-align: right; }
+		.qb-notice-f { margin-top: 13px; padding-top: 12px; border-top: 1px solid rgba(var(--amber), 0.22); font-size: 12px; font-weight: 600; line-height: 1.65; color: rgba(var(--ink), 0.55); }
+		/* 会员福利块用绿色：它是好消息，跟上面琥珀色的涨价分开 */
+		.qb-notice-perk { margin-top: 15px; padding: 13px 15px; border-radius: 10px; border: 1px solid var(--green-line); background: rgba(var(--green-ink), 0.10); }
+		.qb-notice-pt { font-size: 13px; font-weight: 800; letter-spacing: 0.01em; color: var(--green-soft); }
+		.qb-notice-pb { margin-top: 5px; font-size: 12.5px; font-weight: 600; line-height: 1.65; color: rgba(var(--ink), 0.7); }
+		.qb-notice-bot { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 7px; }
+		.qb-notice-x { flex: none; padding: 5px 11px; border: 1px solid rgba(var(--ink), 0.16); border-radius: 7px; background: none; font: inherit; font-size: 11.5px; font-weight: 650; color: rgba(var(--ink), 0.45); cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
+		.qb-notice-x:hover { color: rgba(var(--ink), 0.72); border-color: rgba(var(--ink), 0.34); }
+		.qb-notice-cta { margin-top: 7px; font-size: 12.5px; font-weight: 750; color: var(--green-soft); }
+		@media (max-width: 560px) { .qb-notice { padding: 17px 16px 15px; } .qb-notice-t { font-size: 16px; } .qb-notice-r { font-size: 13px; } }
 		.qb-cap { font-size: 12px; font-weight: 700; line-height: 1.55; margin: -2px 0 16px; padding: 9px 13px; border-radius: 9px; color: var(--amber-t); border: 0.5px solid rgba(var(--amber), 0.3); background: rgba(var(--amber), 0.07); }
 		.qb-cap.full { border-color: rgba(var(--amber), 0.42); background: rgba(var(--amber), 0.11); }
 		.qb-sched-sep { color: var(--text-dim); opacity: 0.45; font-size: 11px; }
@@ -525,6 +550,9 @@
 		.qb-prog.done .qb-prog-txt { color: var(--green-soft); }
 		/* 课程：阶段卡（STAGE 01 可报名 / STAGE 02 预告） */
 		.course-stage { border: 0.5px solid var(--border); border-radius: var(--r); padding: 26px; background: var(--surface); }
+		/* 诊断课是入口不是阶段：绿底区分开，价格只有一档所以不分栏 */
+		.course-stage.trial { background: rgba(var(--green-ink), 0.07); border-color: var(--green-line); }
+		.course-stage.trial .course-prices { grid-template-columns: 1fr; }
 		.course-stage + .course-stage { margin-top: 14px; }
 		.course-stage.soon { background: none; border-style: dashed; opacity: 0.62; }
 		.course-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -715,12 +743,12 @@ var SITE_URL = "cumusic.work/chefdao/price";
 var SCHEDULE = {
 	stdMin: 10, stdMax: 12, memberMin: 6, memberMax: 9, rushMin: 3, rushMax: 5,
 	backlogDays: 0,
-	capacity: 2,
+	// 周日不算工作日，所以 +6 正好是整推一周、+12 正好两周——比 +5/+10 好算也好解释。
+	capacity: 1,
 	capacityDays: [0, 6, 12],
 	// 到期日：过了这天自动回到「正常」。设 capacity 时必须一起设，别留空。
-	// 存在的意义是防止「满档」变成永久状态——档期满是暂时的，忘了关就等于停业。
-	// 2026-08-04 设为满档，到 08-20 自动解除。提前排空就手动改回 0。
-//    周日不算工作日，所以 +6 正好是整推一周、+12 正好两周——比 +5/+10 好算也好解释。
+	// 存在的意义是防止「档期紧」变成永久状态——排期满是暂时的，忘了关就等于停业。
+	// 2026-08-04 设为满档 → 2026-08-15 降为「有点满」，到 08-20 自动解除。提前排空就手动改回 0。
 	capacityUntil: "2026-08-20"
 };
 // 过期自动归零：不需要记得关，日子到了页面自己恢复正常报价
@@ -774,6 +802,189 @@ function qbFmtRange(d1, d2, lang) {
 	return m1 === m2 ? (m1 + 1) + "月" + a + "–" + b + "日" : (m1 + 1) + "月" + a + "日–" + (m2 + 1) + "月" + b + "日";
 }
 // 加急费按「期望交付日期」测算：目标日不早于标准最速交付日则无加急费；越早越贵；少于 RUSH_MIN_DAYS 天不自动报价，需私信确认
+// ── 调价预告 ────────────────────────────────────────────────
+// 表格里的数字全部从 PRICING 现算：换方案（A/B/C）预告自动跟着变，
+// 不会出现「公告写一套、报价器算另一套」。生效当天自动消失。
+function qbNoticeDayBefore(iso) {
+	var d = new Date((iso || PRICING.newFrom) + "T00:00:00");
+	d.setDate(d.getDate() - 1);
+	return qbFmtISO(d);
+}
+// 「丰富」「铺满」「基础编辑」孤零零列出来看不懂属于哪一类，补上类别前缀。
+// 步骤标题带着「· 每位主唱单独选」这类后缀，公告里不需要，截到分隔符为止。
+function qbNoticeCat(label) { return String(label || "").split(/\s*[·|\/]\s*/)[0].trim(); }
+function qbNoticeRows(q) {
+	var set = PRICING.plans[PRICING.plan], n = set && set[currentLang], rows = [];
+	if (!n) return rows;
+	// 最低消费不进公告：它只影响裸最低那种单，写出来反而抢了重点
+	if (n.perHead != null && n.perHead !== q.perHead) rows.push([q.noticePerHead, q.perHead, n.perHead]);
+	// 同一类别里有多项变动就合成一行区间——九行明细太长，
+	// 精确到分的数字客户在计算器里点两下就有，公告只要说清「哪类、涨多少」。
+	function push(list, cat, prices) {
+		if (!prices) return;
+		var hit = [];
+		prices.forEach(function (v, i) { if (list[i] && v !== list[i].price) hit.push([list[i], v]); });
+		if (!hit.length) return;
+		if (hit.length === 1) { rows.push([cat + " · " + hit[0][0].name, hit[0][0].price, hit[0][1]]); return; }
+		var oLo = hit[0][0].price, oHi = hit[hit.length - 1][0].price;
+		var nLo = hit[0][1], nHi = hit[hit.length - 1][1];
+		rows.push([cat, [oLo, oHi], [nLo, nHi]]);
+	}
+	push(q.prods, qbNoticeCat(q.prodLabel), n.prodPrices);
+	push(q.edits, qbNoticeCat(q.editLabel), n.editPrices);
+	push(q.harmonies, qbNoticeCat(q.harmonyLabel), n.harmPrices);
+	return rows;
+}
+// 公告内容变了就重新提醒一次——不然改了价还被旧的「不再提醒」压着
+function qbNoticeKey() { return "qbNotice:" + PRICING.newFrom + ":" + PRICING.plan; }
+function qbNoticeHidden() { try { return localStorage.getItem(qbNoticeKey()) === "1"; } catch (e) { return false; } }
+function qbNoticeDismiss() {
+	try { localStorage.setItem(qbNoticeKey(), "1"); } catch (e) {}
+	var el = document.querySelector(".qb-notice");
+	if (el) el.remove();
+}
+function qbNoticeHtml(q) {
+	// 用非会员那条线判断：会员延后是福利，公告本身照常提前挂
+	var live = new Date() >= new Date(PRICING.newFrom + "T00:00:00");
+	if (live || qbNoticeHidden()) return "";
+	var rows = qbNoticeRows(q);
+	if (!rows.length) return "";
+	var from = qbFmtDateY(PRICING.newFrom, currentLang);
+	var body = '<div class="qb-notice-r head"><span></span><span>' + q.noticeNow + '</span><span></span><span>' + q.noticeNew + '</span></div>';
+	for (var i = 0; i < rows.length; i++) {
+		var fmt = function (v) { return Array.isArray(v) ? qbFmt(q, v[0]) + "\u2013" + qbFmt(q, v[1]).replace(/^[^\d]*/, "") : qbFmt(q, v); };
+		body += '<div class="qb-notice-r"><span class="qb-notice-n">' + rows[i][0] + '</span>'
+			+ '<span class="qb-notice-o">' + fmt(rows[i][1]) + '</span>'
+			+ '<span class="qb-notice-a">\u2192</span>'
+			+ '<span class="qb-notice-w">' + fmt(rows[i][2]) + '</span></div>';
+	}
+	var perk = '<div class="qb-notice-perk"><div class="qb-notice-pt">' + q.noticePerkTitle.replace("{d}", qbFmtDateY(PRICING.memberFrom, currentLang)) + '</div>'
+		+ '<div class="qb-notice-pb">' + q.noticePerkBody
+			.replace("{d}", qbFmtDateY(PRICING.memberFrom, currentLang))
+			.replace("{e}", qbFmtDateY(qbNoticeDayBefore(PRICING.memberFrom), currentLang))
+			.replace("{f}", qbFmt(q, q.memberFee)) + '</div></div>';
+	return '<div class="qb-notice">'
+		+ '<div class="qb-notice-h"><span class="qb-notice-t">' + q.noticeTitle + '</span>'
+		+ '<span class="qb-notice-d">' + q.noticeMixHead.replace("{d}", from) + '</span></div>'
+		+ '<div class="qb-notice-lead">' + q.noticeLead.replace("{d}", qbFmtDateY(qbNoticeDayBefore(PRICING.newFrom), currentLang)).replace("{b}", qbFmt(q, q.base)) + '</div>'
+		+ '<div class="qb-notice-tbl">' + body + '</div>'
+		+ perk
+		+ '<div class="qb-notice-f">' + q.noticeKeep.replace("{b}", qbFmt(q, q.base)).replace("{f}", qbFmt(q, q.memberFee)) + '</div>'
+		+ '<div class="qb-notice-bot"><span class="qb-notice-cta">' + q.noticeCta.replace("{w}", CONTACT.wechat) + '</span>'
+		+ '<button type="button" class="qb-notice-x" onclick="qbNoticeDismiss()">' + q.noticeDismiss + '</button></div></div>';
+}
+// ── 调价生效日 ──────────────────────────────────────────────
+// 页面现在报的是现价；到了 newFrom 那天 00:00 自动切成新价，不用我手动改，
+// 也不会出现「公告说 11 月 1 日涨，页面却已经涨了」这种对不上的情况。
+//
+// 想换方案，只改 plan 这一个字母：
+//   A = 只抬最低门槛（¥300 → ¥400），其余一分不动
+//   B = 温和：人头价 + 基础编辑各 +50%，其余不动
+//   C = 全面：所有按人头的加项统一 +50%
+//   D = 入口钉死、天花板抬高（通缩期形状）           ← 当前
+// 推导与三方案对比见 _internal-pricing.md
+var PRICING = {
+	newFrom: "2026-11-01",
+	// 刀门会员延后两个月：这是会员福利，不是两套价格
+	memberFrom: "2027-01-01",
+	plan: "D",
+	plans: {
+		A: {
+			zh: { minOrder: 400, floorNote: "混音最低消费 ¥400（基础混音 ¥200 + 至少 ¥200 音频编辑）。会让总价跌破下限的选项已置灰。" },
+			en: { minOrder: 60, floorNote: "Minimum mixing order $60 (Basic Mix $30 + at least $30 of editing). Options that would drop the total below it are greyed out." },
+			ko: { minOrder: 80000, floorNote: "믹싱 최소 주문 ₩80,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩40,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
+		},
+		B: {
+			zh: { perHead: 150, perHeadLabel: "每多 1 位 +¥150（混音）", editPrices: [0, 150, 200, 300], minOrder: 350,
+				floorNote: "混音最低消费 ¥350（基础混音 ¥200 + 至少 ¥150 音频编辑）。会让总价跌破下限的选项已置灰。" },
+			en: { perHead: 22, perHeadLabel: "+$22 each (mix)", editPrices: [0, 22, 30, 45], minOrder: 52,
+				floorNote: "Minimum mixing order $52 (Basic Mix $30 + at least $22 of editing). Options that would drop the total below it are greyed out." },
+			ko: { perHead: 30000, perHeadLabel: "1인당 +₩30,000 (믹스)", editPrices: [0, 30000, 40000, 60000], minOrder: 70000,
+				floorNote: "믹싱 최소 주문 ₩70,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩30,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
+		},
+		C: {
+			zh: { perHead: 150, perHeadLabel: "每多 1 位 +¥150（混音）", prodPrices: [0, 150, 300], editPrices: [0, 150, 300, 450], minOrder: 350,
+				floorNote: "混音最低消费 ¥350（基础混音 ¥200 + 至少 ¥150 音频编辑）。会让总价跌破下限的选项已置灰。" },
+			en: { perHead: 22, perHeadLabel: "+$22 each (mix)", prodPrices: [0, 22, 45], editPrices: [0, 22, 45, 67], minOrder: 52,
+				floorNote: "Minimum mixing order $52 (Basic Mix $30 + at least $22 of editing). Options that would drop the total below it are greyed out." },
+			ko: { perHead: 30000, perHeadLabel: "1인당 +₩30,000 (믹스)", prodPrices: [0, 30000, 60000], editPrices: [0, 30000, 60000, 90000], minOrder: 70000,
+				floorNote: "믹싱 최소 주문 ₩70,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩30,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
+		},
+		// D：入口钉死，天花板抬高。通缩期价格敏感的客户集中在低端，
+		// 把涨幅压在「每单必买」的项上等于赶走最怕涨价的那批人。
+		// 另外修两个 B 引入的问题：执行向(自己做)不能比基础编辑(助理做)便宜；
+		// 编辑三档必须拉开梯度，否则客户只加 ¥50 就升到我自己做的那档。
+		D: {
+			zh: { perHead: 150, perHeadLabel: "每多 1 位 +¥150（混音）",
+				prodPrices: [0, 150, 350], editPrices: [0, 120, 280, 450], harmPrices: [0, 250, 500, 800], minOrder: 320,
+				floorNote: "混音最低消费 ¥320（基础混音 ¥200 + 至少 ¥120 音频编辑）。会让总价跌破下限的选项已置灰。" },
+			en: { perHead: 22, perHeadLabel: "+$22 each (mix)",
+				prodPrices: [0, 22, 53], editPrices: [0, 18, 42, 68], harmPrices: [0, 38, 75, 120], minOrder: 48,
+				floorNote: "Minimum mixing order $48 (Basic Mix $30 + at least $18 of editing). Options that would drop the total below it are greyed out." },
+			ko: { perHead: 30000, perHeadLabel: "1인당 +₩30,000 (믹스)",
+				prodPrices: [0, 30000, 70000], editPrices: [0, 24000, 56000, 90000], harmPrices: [0, 50000, 100000, 160000], minOrder: 64000,
+				floorNote: "믹싱 최소 주문 ₩64,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩24,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
+		}
+	}
+};
+function qbPricingLive() {
+	var d = new Date(PRICING.newFrom + "T00:00:00");
+	return !isNaN(d.getTime()) && new Date() >= d;
+}
+// 只在启动时跑一次，直接改写 I18N 里的价格——之后所有报价逻辑照常读同一份数据，
+// 不需要在每个算价的地方各判断一次「今天涨没涨」。
+// 启动时把现价拍个快照。之后要在「现价 / 新价」之间来回切，
+// 没有基准就回不去了。
+var PRICE_BASE = null;
+function qbSnapshotPrices() {
+	PRICE_BASE = {};
+	["zh", "en", "ko"].forEach(function (L) {
+		var q = I18N[L] && I18N[L].quote;
+		if (!q) return;
+		PRICE_BASE[L] = {
+			perHead: q.perHead, perHeadLabel: q.perHeadLabel, minOrder: q.minOrder, floorNote: q.floorNote,
+			prodPrices: q.prods.map(function (x) { return x.price; }),
+			editPrices: q.edits.map(function (x) { return x.price; }),
+			harmPrices: q.harmonies.map(function (x) { return x.price; })
+		};
+	});
+	qbSyncPricing();
+}
+function qbWritePrices(q, n) {
+	if (!q || !n) return;
+	if (n.perHead != null) q.perHead = n.perHead;
+	if (n.perHeadLabel) q.perHeadLabel = n.perHeadLabel;
+	if (n.minOrder != null) q.minOrder = n.minOrder;
+	if (n.floorNote) q.floorNote = n.floorNote;
+	if (n.prodPrices) n.prodPrices.forEach(function (v, i) { if (q.prods[i]) q.prods[i].price = v; });
+	if (n.editPrices) n.editPrices.forEach(function (v, i) { if (q.edits[i]) q.edits[i].price = v; });
+	if (n.harmPrices) n.harmPrices.forEach(function (v, i) { if (q.harmonies[i]) q.harmonies[i].price = v; });
+}
+// 订单内全部主唱都是会员才算——与加速通道不同：
+// 加速是「有一位会员就整单加速」，延后调价要求全员会员，别把两条规则混了。
+function qbAllMember() {
+	if (!qbState.count) return false;
+	for (var i = 0; i < qbState.count; i++) if (qbMemState(i) <= 0) return false;
+	return true;
+}
+// 刀门会员福利：调价对会员延后一个月。
+// 非会员 newFrom 起用新价，全员会员 memberFrom 起才用。
+function qbNewPriceOn() {
+	var iso = qbAllMember() ? PRICING.memberFrom : PRICING.newFrom;
+	var d = new Date(iso + "T00:00:00");
+	return !isNaN(d.getTime()) && new Date() >= d;
+}
+// 每次算价前对齐一次：会员身份随时会变，不能只在启动时定一次
+function qbSyncPricing() {
+	if (!PRICE_BASE) return;
+	var set = qbNewPriceOn() ? PRICING.plans[PRICING.plan] : null;
+	["zh", "en", "ko"].forEach(function (L) {
+		var q = I18N[L] && I18N[L].quote;
+		if (!q) return;
+		qbWritePrices(q, PRICE_BASE[L]);   // 先回到现价
+		if (set) qbWritePrices(q, set[L]); // 再覆盖新价
+	});
+}
 var RUSH_MIN_DAYS = 3;
 function qbRushRate(days) {
 	if (days < RUSH_MIN_DAYS) return null;
@@ -880,6 +1091,14 @@ function qbFmtDate(iso, lang) {
 	if (lang === "en") return MON[m] + " " + day;
 	if (lang === "ko") return (m + 1) + "월 " + day + "일";
 	return (m + 1) + "月" + day + "日";
+}
+// 公告里的日期是政策日期，可能跨年。跨年的才补年份，同年补了只会更啰嗦。
+function qbFmtDateY(iso, lang) {
+	var d = new Date(iso + "T00:00:00"), base = qbFmtDate(iso, lang);
+	if (d.getFullYear() === new Date().getFullYear()) return base;
+	if (lang === "en") return base + ", " + d.getFullYear();
+	if (lang === "ko") return d.getFullYear() + "년 " + base;
+	return d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() + " 日";
 }
 var currentLang = "zh";
 
@@ -1015,6 +1234,15 @@ var I18N = {
 			pbNoSub: "本单省 {save} · 权益终身有效 · 点此加入 ›",
 			producerTitle: "让我担任制作人", producerSub: "我主导这首歌的创意与完成度 · 署名 Produced by ChefDao", producerLine: "制作人费",
 			producerNote: "在混音/制作小计基础上按项目加收，作品署名「Produced by ChefDao」。制作人费同样享刀门会员 8 折，加急时一并计入加急基数。商业项目可另谈 producer points（版税分成）。",
+			noticeTitle: "档位结构调整", noticeNow: "现行", noticeNew: "调整后",
+			noticeMixHead: "{d} 起执行",
+			noticeLead: "基础混音 {b} 维持不变。以下高阶档位调整，{d} 前下单的项目按现行价格执行。",
+			noticePerkTitle: "刀门会员 · 价格调整自 {d} 起执行",
+			noticePerkBody: "会员项目的调整延后至 {d} 执行，{e} 前仍按现行价格结算。订单内全部主唱均为刀门会员时适用。",
+			noticeDismiss: "不再提醒",
+			noticePerHead: "每多 1 位主唱", noticeMinOrder: "混音最低消费",
+			noticeKeep: "基础混音 {b}、会员 8 折、入会费 {f} 均维持不变。已确认的项目不受本次调整影响。",
+			noticeCta: "按现行价格预约 · 微信 {w}",
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
@@ -1093,28 +1321,40 @@ var I18N = {
 			},
 			{
 				id: "course", type: "course", groupHead: "课程 Course", step: "1v1 定制授课", title: "混音教学 Coaching",
-				sub: "1v1 案例拆解，按你的工程实时调整进度。每节 90 分钟，全部一对一。不确定选哪档，可先上 ¥380 诊断试听课，报名正课全额抵扣。",
+				sub: "1v1 案例拆解，按你的工程实时调整进度。每节 90 分钟，全部一对一。",
 				stages: [
+					{
+						trial: true, tag: "先试一节", badge: "正课全额抵扣", name: "诊断试听课",
+						desc: "90 分钟 1v1。带上你正在做的工程，听完直接告诉你问题在哪、先解决哪一个。不确定自己该从哪个阶段开始，就先上这一节——报名任意正课全额抵扣。",
+						prices: [{ p: "¥380", l: "线上 · 1 节" }]
+					},
 					{
 						tag: "STAGE 01", badge: "可报名", name: "零基础入门 · 从零跑通一首歌",
 						desc: "没打开过音乐制作软件也可以。6 节 × 90 分钟，从装软件开始，把录音、编排、基础混音、导出完整跑通一遍，结课时你能独立做出一个完整的小作品。",
 						fit: ["完全零基础", "会唱会写但不会做"], unfit: ["已能独立完成 Demo"],
 						modules: ["软件安装、工程设置与文件管理", "录音基础与监听设置", "音频编辑入门（对齐 / 淡变 / 增益）", "基础混音与导出交付"],
-						prices: [{ p: "¥1,980", l: "线上 · 6 节" }, { p: "¥3,180", l: "线下 · 首尔工作室" }]
+						prices: [{ p: "¥1,980", l: "线上 · 6 节" }, { p: "¥3,280", l: "线下 · 6 节 · 首尔工作室" }]
 					},
 					{
 						tag: "STAGE 02", badge: "可报名", name: "贴唱混音 · 标准制作流程",
 						desc: "针对 Vocal Mixing Standard。8 节 × 90 分钟，通过 1v1 案例拆解掌握标准化、工业级的音频编辑与混音流程。用你自己的素材推进，结课交付一首完整可听的作品。",
 						fit: ["短视频流媒体", "个人 Demo 交付"], unfit: ["扩声 / 演出系统"],
 						modules: ["DAW 工业化模板搭建与文件管理", "Vocal Production（音高修正 / 节奏对齐）", "音频编辑工业流程（清理 / 淡入淡出 / 增益）", "Demo 质量控制（QC）与输出标准"],
-						prices: [{ p: "¥3,180", l: "线上 · 8 节" }, { p: "¥4,980", l: "线下 · 首尔工作室" }]
+						prices: [{ p: "¥3,180", l: "线上 · 8 节" }, { p: "¥4,980", l: "线下 · 8 节 · 首尔工作室" }]
 					},
 					{
 						tag: "STAGE 03", badge: "需作品评估", name: "高级商业混音实战",
 						desc: "8 节 × 90 分钟。不含基础操作教学，默认你已能稳定交付接单级作品。重点是商业标准对齐、细节打磨与决策逻辑——为什么这么处理、什么时候该停手。报名前请提交 1–2 首代表作，评估通过后开课。",
 						fit: ["已有接单 / 项目经验", "目标商业发行标准"], unfit: ["零基础", "基础操作教学"],
 						modules: ["商业标准对齐（响度 / 动态 / 频谱参照）", "人声商业质感链路搭建", "频段冲突与立体声空间层次决策", "Reference A/B 与终混 QC", "接单工作流与交付规范"],
-						prices: [{ p: "¥5,980", l: "线上 · 8 节" }, { p: "¥8,980", l: "线下 · 首尔工作室" }]
+						prices: [{ p: "¥5,980", l: "线上 · 8 节" }, { p: "¥8,980", l: "线下 · 8 节 · 首尔工作室" }]
+					},
+					{
+						tag: "STAGE 04", badge: "需 Stage 02 结课", name: "首尔线下集训 · 2 天",
+						desc: "2 天 × 6 小时，全程 1v1，在首尔工作室完成。第一天跟一个真实商业项目走完全程——从收素材到交付，你在旁边看我怎么判断、什么时候停手；第二天做你自己的歌，从头到尾，我坐在旁边。结课带走一首可发行的成品和一整套交付规范。（旁观需该项目客户同意；当期若无在跑的项目，改为完整案例复盘。）",
+						fit: ["已完成 Stage 02", "想看真实项目怎么跑"], unfit: ["零基础", "线上授课"],
+						modules: ["Day 1 · 真实商业项目全程跟工，边做边讲判断依据", "Day 2 · 你的作品在棚内从头做完", "商业交付规范与文件管理", "接单报价与客户沟通"],
+						prices: [{ p: "¥9,800", l: "线下 · 2 天 · 首尔工作室" }]
 					}
 				]
 			},
@@ -1470,6 +1710,15 @@ var I18N = {
 			pbNoSub: "Saves {save} here · membership is for life · tap to join ›",
 			producerTitle: "Add me as Producer", producerSub: "I lead this record's creative & finish · credit \"Produced by ChefDao\"", producerLine: "Producer fee",
 			producerNote: "Charged as a percentage on top of the mix/production subtotal, with a \"Produced by ChefDao\" credit. The producer fee is also covered by the Daomen 20% discount, and counts toward the rush-fee base. Producer points (royalty share) available for commercial projects.",
+			noticeTitle: "Tier structure update", noticeNow: "Current", noticeNew: "Adjusted",
+			noticeMixHead: "from {d}",
+			noticeLead: "Basic Mix {b} stays as it is. The higher tiers below are adjusted. Projects booked on or before {d} will be billed at current rates.",
+			noticePerkTitle: "Daomen members \u00b7 adjustment effective {d}",
+			noticePerkBody: "For members the adjustment takes effect on {d}; everything up to {e} is billed at current rates. Applies when every vocalist on the order is a Daomen member.",
+			noticeDismiss: "Don\u2019t show again",
+			noticePerHead: "Each extra vocalist", noticeMinOrder: "Minimum mixing order",
+			noticeKeep: "Basic Mix {b}, the 20% member discount and the {f} joining fee remain unchanged. Confirmed projects are not affected by this adjustment.",
+			noticeCta: "Book at current rates · WeChat {w}",
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
@@ -1548,28 +1797,40 @@ var I18N = {
 			},
 			{
 				id: "course", type: "course", groupHead: "Course", step: "1-on-1 coaching", title: "Mixing Coaching",
-				sub: "1-on-1 case breakdowns, paced against your own sessions. 90 minutes per session, always one-on-one. Not sure which stage fits? Start with a $60 diagnostic session — fully credited toward any course.",
+				sub: "1-on-1 case breakdowns, paced against your own sessions. 90 minutes per session, always one-on-one.",
 				stages: [
+					{
+						trial: true, tag: "Try one first", badge: "Fully credited", name: "Diagnostic session",
+						desc: "90 minutes, one-on-one. Bring the session you are working on — I listen, then tell you what is wrong and which problem to fix first. Not sure which stage fits, start here; the fee is fully credited toward any course.",
+						prices: [{ p: "$60", l: "Online · 1 session" }]
+					},
 					{
 						tag: "STAGE 01", badge: "Open", name: "Absolute Beginner · Your First Full Track",
 						desc: "No prior DAW experience needed. 6 sessions × 90 minutes, from installing the software through recording, arranging, basic mixing and export — the whole loop. You finish able to complete a short track on your own.",
 						fit: ["True beginners", "Writers and singers who can't produce yet"], unfit: ["Already finishing demos solo"],
 						modules: ["Installation, session setup and file management", "Recording basics and monitoring setup", "Intro to audio editing (alignment / fades / gain)", "Basic mixing and export delivery"],
-						prices: [{ p: "$300", l: "Online · 6 sessions" }, { p: "$480", l: "In person · Seoul studio" }]
+						prices: [{ p: "$300", l: "Online · 6 sessions" }, { p: "$500", l: "In person · 6 sessions · Seoul" }]
 					},
 					{
 						tag: "STAGE 02", badge: "Open", name: "Vocal Mixing · Standard Workflow",
 						desc: "Built around the Vocal Mixing Standard. 8 sessions × 90 minutes of 1-on-1 case breakdowns to learn a standardised, industry-grade editing and mixing workflow. We work on your own material, and you finish with one complete, listenable track.",
 						fit: ["Short-form / streaming", "Personal demos"], unfit: ["Live sound / PA systems"],
 						modules: ["Industrial DAW templates and file management", "Vocal production (pitch correction / timing)", "Audio editing workflow (cleanup / fades / gain)", "Demo QC and output standards"],
-						prices: [{ p: "$480", l: "Online · 8 sessions" }, { p: "$750", l: "In person · Seoul studio" }]
+						prices: [{ p: "$480", l: "Online · 8 sessions" }, { p: "$750", l: "In person · 8 sessions · Seoul" }]
 					},
 					{
 						tag: "STAGE 03", badge: "Audition required", name: "Advanced Commercial Mixing",
 						desc: "8 sessions × 90 minutes. No basic operation is covered — this assumes you already deliver client-level work. The focus is commercial standards, fine detail, and decision-making: why a move is made, and when to stop. Send 1–2 tracks before booking; the course starts once they are approved.",
 						fit: ["Existing paid or project work", "Aiming at commercial release"], unfit: ["Beginners", "Basic operation training"],
 						modules: ["Commercial referencing (loudness / dynamics / spectrum)", "Building a commercial-grade vocal chain", "Frequency conflicts and stereo depth decisions", "Reference A/B and final-mix QC", "Client workflow and delivery standards"],
-						prices: [{ p: "$900", l: "Online · 8 sessions" }, { p: "$1,350", l: "In person · Seoul studio" }]
+						prices: [{ p: "$900", l: "Online · 8 sessions" }, { p: "$1,350", l: "In person · 8 sessions · Seoul" }]
+					},
+					{
+						tag: "STAGE 04", badge: "Stage 02 required", name: "Seoul Intensive · 2 days",
+						desc: "2 days × 6 hours, one-on-one, at the Seoul studio. Day one you sit in on a real commercial project from intake to delivery and watch how the calls get made — and when to stop. Day two we build your own track start to finish, with me next to you. You leave with a release-ready song and a full delivery spec. (Sitting in requires that project client's consent; if nothing is running that week, we do a full case teardown instead.)",
+						fit: ["Stage 02 completed", "Want to see a real project run"], unfit: ["Absolute beginner", "Online only"],
+						modules: ["Day 1 · Sit in on a live commercial project, reasoning spoken out loud", "Day 2 · Your own track, built start to finish in the studio", "Commercial delivery specs and file management", "Quoting and client communication"],
+						prices: [{ p: "$1,480", l: "In person · 2 days · Seoul" }]
 					}
 				]
 			},
@@ -1920,6 +2181,15 @@ var I18N = {
 			pbNoSub: "이번에 {save} 절약 · 혜택은 평생 · 탭하여 가입 ›",
 			producerTitle: "프로듀서로 참여", producerSub: "이 곡의 크리에이티브와 완성도를 주도 · 크레딧 \"Produced by ChefDao\"", producerLine: "프로듀서 비용",
 			producerNote: "믹스/프로덕션 소계에 프로젝트별 퍼센트로 추가되며, \"Produced by ChefDao\" 크레딧이 붙습니다. 프로듀서 비용도 刀门 회원 20% 할인 대상이며, 긴급 요금 산정 기준에 포함됩니다. 상업 프로젝트는 producer points(버전세 분배) 별도 협의.",
+			noticeTitle: "옵션 구조 조정", noticeNow: "현행", noticeNew: "조정 후",
+			noticeMixHead: "{d}부터",
+			noticeLead: "베이직 믹스 {b}는 그대로 유지됩니다. 아래 상위 옵션이 조정되며, {d}까지 접수된 프로젝트는 현행 가격으로 진행됩니다.",
+			noticePerkTitle: "刀门 회원 · 가격 조정 {d} 시행",
+			noticePerkBody: "회원 프로젝트의 조정은 {d}부터 시행되며, {e}까지는 현행 가격으로 정산됩니다. 주문의 모든 보컬이 刀门 회원인 경우에 적용됩니다.",
+			noticeDismiss: "다시 표시 안 함",
+			noticePerHead: "보컬 1인 추가", noticeMinOrder: "믹싱 최소 주문",
+			noticeKeep: "베이직 믹스 {b}, 회원 20% 할인, 가입비 {f}는 변동이 없습니다. 확정된 프로젝트는 이번 조정의 영향을 받지 않습니다.",
+			noticeCta: "현행 가격으로 예약 · 위챗 {w}",
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
@@ -1998,28 +2268,40 @@ var I18N = {
 			},
 			{
 				id: "course", type: "course", groupHead: "코스 Course", step: "1:1 맞춤 레슨", title: "믹싱 코칭 Coaching",
-				sub: "1:1 케이스 분석, 본인 세션에 맞춰 진도를 조절합니다. 회당 90분, 전 과정 1:1입니다. 어느 단계가 맞을지 모르겠다면 ₩80,000 진단 체험 레슨부터 — 정규 과정 등록 시 전액 차감됩니다.",
+				sub: "1:1 케이스 분석, 본인 세션에 맞춰 진도를 조절합니다. 회당 90분, 전 과정 1:1입니다.",
 				stages: [
+					{
+						trial: true, tag: "먼저 한 번", badge: "정규 과정 전액 차감", name: "진단 체험 레슨",
+						desc: "90분 1:1. 작업 중인 세션을 가져오시면 무엇이 문제이고 무엇부터 고쳐야 하는지 바로 알려드립니다. 어느 단계가 맞을지 모르겠다면 여기서 시작하세요 — 정규 과정 등록 시 전액 차감됩니다.",
+						prices: [{ p: "₩80,000", l: "온라인 · 1회" }]
+					},
 					{
 						tag: "STAGE 01", badge: "모집 중", name: "왕초보 입문 · 첫 완성곡까지",
 						desc: "음악 제작 프로그램을 켜본 적이 없어도 괜찮습니다. 6회 × 90분, 프로그램 설치부터 녹음·편곡·기본 믹싱·익스포트까지 전 과정을 한 번 완주합니다. 수료 시 짧은 곡 하나를 혼자 완성할 수 있습니다.",
 						fit: ["완전 초보", "노래·작사는 하지만 제작은 못 하는 분"], unfit: ["이미 혼자 데모를 완성하는 분"],
 						modules: ["프로그램 설치, 세션 설정과 파일 관리", "녹음 기초와 모니터링 세팅", "오디오 편집 입문(정렬 / 페이드 / 게인)", "기본 믹싱과 익스포트 납품"],
-						prices: [{ p: "₩400,000", l: "온라인 · 6회" }, { p: "₩640,000", l: "오프라인 · 서울 스튜디오" }]
+						prices: [{ p: "₩400,000", l: "온라인 · 6회" }, { p: "₩660,000", l: "오프라인 · 6회 · 서울 스튜디오" }]
 					},
 					{
 						tag: "STAGE 02", badge: "모집 중", name: "보컬 믹싱 · 표준 제작 프로세스",
 						desc: "Vocal Mixing Standard 기준. 8회 × 90분, 1:1 케이스 분석을 통해 표준화된 산업 수준의 편집·믹싱 프로세스를 익힙니다. 본인 소재로 진행하며 완성도 있는 곡 한 곡을 결과물로 가져갑니다.",
 						fit: ["숏폼 / 스트리밍", "개인 데모"], unfit: ["확성 / 공연 시스템"],
 						modules: ["DAW 산업용 템플릿 구축과 파일 관리", "보컬 프로덕션(피치 보정 / 타이밍 정렬)", "오디오 편집 워크플로(클린업 / 페이드 / 게인)", "데모 QC와 출력 기준"],
-						prices: [{ p: "₩640,000", l: "온라인 · 8회" }, { p: "₩1,000,000", l: "오프라인 · 서울 스튜디오" }]
+						prices: [{ p: "₩640,000", l: "온라인 · 8회" }, { p: "₩1,000,000", l: "오프라인 · 8회 · 서울 스튜디오" }]
 					},
 					{
 						tag: "STAGE 03", badge: "심사 필요", name: "고급 커머셜 믹싱 실전",
 						desc: "8회 × 90분. 기본 조작은 다루지 않으며, 이미 의뢰 수준의 작업을 안정적으로 납품할 수 있다는 전제로 진행됩니다. 상업 기준 정렬, 디테일 다듬기, 판단 로직 — 왜 그렇게 처리하는지, 언제 멈춰야 하는지가 핵심입니다. 신청 전 대표곡 1–2곡을 보내주시고, 심사 통과 후 개강합니다.",
 						fit: ["실제 의뢰 / 프로젝트 경험 보유", "상업 발매 기준 목표"], unfit: ["초보", "기본 조작 교육"],
 						modules: ["상업 기준 정렬(라우드니스 / 다이나믹 / 스펙트럼 레퍼런스)", "상업 수준 보컬 체인 구축", "주파수 충돌과 스테레오 공간감 판단", "Reference A/B와 최종 믹스 QC", "의뢰 워크플로와 납품 규격"],
-						prices: [{ p: "₩1,200,000", l: "온라인 · 8회" }, { p: "₩1,800,000", l: "오프라인 · 서울 스튜디오" }]
+						prices: [{ p: "₩1,200,000", l: "온라인 · 8회" }, { p: "₩1,800,000", l: "오프라인 · 8회 · 서울 스튜디오" }]
+					},
+					{
+						tag: "STAGE 04", badge: "Stage 02 수료 필요", name: "서울 오프라인 집중 과정 · 2일",
+						desc: "2일 × 6시간, 전 과정 1:1, 서울 스튜디오에서 진행합니다. 첫째 날은 실제 상업 프로젝트를 소재 수령부터 납품까지 옆에서 지켜보며 어떤 판단을 내리고 어디서 멈추는지 확인합니다. 둘째 날은 본인 곡을 처음부터 끝까지 완성하며 제가 옆에 있습니다. 발매 가능한 완성곡과 전체 납품 규격을 가지고 돌아가십니다. (참관은 해당 프로젝트 클라이언트의 동의가 필요하며, 그 주에 진행 중인 프로젝트가 없으면 전체 케이스 리뷰로 대체합니다.)",
+						fit: ["Stage 02 수료", "실제 프로젝트 진행을 보고 싶은 분"], unfit: ["왕초보", "온라인 수강"],
+						modules: ["Day 1 · 실제 상업 프로젝트 전 과정 참관, 판단 근거 해설 포함", "Day 2 · 본인 곡을 스튜디오에서 처음부터 완성", "상업 납품 규격과 파일 관리", "수주 견적과 클라이언트 커뮤니케이션"],
+						prices: [{ p: "₩1,970,000", l: "오프라인 · 2일 · 서울 스튜디오" }]
 					}
 				]
 			},
@@ -2629,6 +2911,7 @@ function qbVisible() {
 }
 function qbComplete() { var s = qbSteps(); for (var i = 0; i < s.length; i++) if (!qbAnswered(s[i])) return false; return true; }
 function qbCompute(q) {
+	qbSyncPricing(); // 会员与否决定用哪套价
 	var stems = qbState.mode === "stems";
 	var baseItem = stems ? q.stems[qbState.stems] : null;
 	var base = stems ? baseItem.price : q.base;
@@ -2730,8 +3013,12 @@ function qbEnforceCover() {
 // 刀门会员在此之上再享 8 折，故会员最低实付 = ¥240（有意为之：会员时薪本就该低一档）。
 // 只有跌破下限时，才把主唱 1 抬到「基础编辑」补足。
 function qbEnforceFloor(q) {
-	if (qbGross(q) >= q.minOrder) return;
-	qbState.edits[0] = 1; // 主唱 1 → 基础编辑
+	// 从最便宜的一档往上抬，直到够到最低消费。
+	// 只设一次「基础编辑」不够——门槛调高后那一档可能仍然不够。
+	for (var t = 1; t < q.edits.length; t++) {
+		if (qbGross(q) >= q.minOrder) return;
+		if ((qbState.edits[0] || 0) < t) qbState.edits[0] = t;
+	}
 }
 // 一个步骤的外壳：编号 + 标题 + 内容；未作答时挂 .active 并显示引导语
 function qbToggleHelp(key) { qbState.help[key] = !qbState.help[key]; renderQuoteBuilder(); }
@@ -2748,6 +3035,7 @@ function qbRow(key, idx, label, body, note, hint, help) {
 		+ '</div>';
 }
 function renderQuoteBuilder() {
+	qbSyncPricing();
 	var mount = document.getElementById("qb-mount");
 	if (!mount) return;
 	var q = I18N[currentLang].quote;
@@ -3180,7 +3468,7 @@ function renderQuoteBuilder() {
 				+ '</span></div>';
 		}
 	}
-	mount.innerHTML = lastHtml + progHtml + '<div class="quote-builder">' + schedHtml + capHtml + html + '</div>';
+	mount.innerHTML = qbNoticeHtml(q) + lastHtml + progHtml + '<div class="quote-builder">' + schedHtml + capHtml + html + '</div>';
 
 	// 首次出现的步骤淡入；已出现过的（含每次重渲染）立刻可见，避免整块重播动画
 	var nodes = mount.querySelectorAll("[data-qstep]"), present = {};
@@ -3408,7 +3696,7 @@ function renderCourse(svc) {
 	var h = "";
 	for (var i = 0; i < svc.stages.length; i++) {
 		var st = svc.stages[i];
-		h += '<div class="course-stage' + (st.soon ? " soon" : "") + '">'
+		h += '<div class="course-stage' + (st.soon ? " soon" : "") + (st.trial ? " trial" : "") + '">'
 			+ '<div class="course-head"><span class="course-tag">' + st.tag + '</span>'
 			+ (st.badge ? '<span class="course-badge">' + st.badge + '</span>' : "") + '</div>'
 			+ '<div class="course-name">' + st.name + '</div>';
@@ -3690,6 +3978,7 @@ function copyContact() {
 	});
 }
 document.addEventListener("DOMContentLoaded", function() {
+	qbSnapshotPrices(); // 必须在任何报价渲染之前
 	qbInitTheme();
 	// 链接里带配置优先（别人分享过来的），否则恢复本机上次的
 	var hq = (location.hash || "").match(/[#&]q=([^&]+)/);
