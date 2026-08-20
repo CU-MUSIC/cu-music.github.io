@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -744,12 +745,12 @@ var SCHEDULE = {
 	stdMin: 10, stdMax: 12, memberMin: 6, memberMax: 9, rushMin: 3, rushMax: 5,
 	backlogDays: 0,
 	// 周日不算工作日，所以 +6 正好是整推一周、+12 正好两周——比 +5/+10 好算也好解释。
-	capacity: 1,
+	capacity: 0,
 	capacityDays: [0, 6, 12],
 	// 到期日：过了这天自动回到「正常」。设 capacity 时必须一起设，别留空。
 	// 存在的意义是防止「档期紧」变成永久状态——排期满是暂时的，忘了关就等于停业。
-	// 2026-08-04 设为满档 → 2026-08-15 降为「有点满」，到 08-20 自动解除。提前排空就手动改回 0。
-	capacityUntil: "2026-08-20"
+	// 2026-08-20 排期已排空，手动改回 0（capacity 为 0 时 capacityUntil 不生效，留空即可）。
+	capacityUntil: ""
 };
 // 过期自动归零：不需要记得关，日子到了页面自己恢复正常报价
 function qbCapLevel() {
