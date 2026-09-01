@@ -30,6 +30,8 @@
 			--text-dim: #7d7d7d;
 			--green-deep: #0d1f16;
 			--green-line: rgba(var(--green-ink), 0.25);
+			--green-fill: rgba(96, 176, 134, 0.14);
+			--green-fill-hi: rgba(96, 176, 134, 0.26);
 			--green-soft: #8fc3a9;
 			--border: rgba(var(--ink), 0.08);
 			--border-hover: rgba(var(--ink), 0.2);
@@ -59,12 +61,19 @@
 			--text-dim: #656c68;
 			--green-deep: #e7efe9;      /* 报价单面板：极浅绿 */
 			--green-line: rgba(var(--green-ink), 0.3);
+			--green-fill: rgba(31, 107, 74, 0.12);
+			--green-fill-hi: rgba(31, 107, 74, 0.24);
 			--green-soft: #1f6b4a;      /* 深绿，浅底上对比 5:1 */
 		}
 		/* 浅底上白字会消失，主按钮与总价改用反相色 */
 		:root[data-theme="light"] .qb-total { color: var(--text-primary); }
 		:root[data-theme="light"] .hero h1 { text-shadow: 1px 2px 0 rgba(var(--green-ink), 0.14); }
 		:root[data-theme="light"] .qb-prog-fill { background: var(--green-soft); }
+		/* 浅色下绿底要更淡，否则深绿总价掉到 4.2:1（低于 AA 4.5）。阴影也要收，浅页面上重影很脏。 */
+		:root[data-theme="light"] .qb-prog {
+			background: linear-gradient(rgba(var(--green-ink), 0.11), rgba(var(--green-ink), 0.09)), rgba(var(--veil), 0.92);
+			box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.55), 0 2px 14px rgba(var(--ink), 0.07);
+		}
 		/* 浅底上药丸接近白色，靠阴影而不是边框立起来 */
 		:root[data-theme="light"] .floating-btn { border-color: rgba(var(--ink), 0.1); box-shadow: 0 4px 20px rgba(var(--ink), 0.1), 0 1px 3px rgba(var(--ink), 0.08); }
 		:root[data-theme="light"] .sec-nav { box-shadow: 0 1px 12px rgba(var(--ink), 0.05); }
@@ -239,7 +248,7 @@
 		.qb-step.active .qb-rec { border-color: var(--green-line); background: rgba(var(--green-ink), 0.06); animation: qbGlow 2.8s var(--ease) infinite; }
 		@keyframes qbGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--green-ink),0); } 50% { box-shadow: 0 0 0 4px rgba(var(--green-ink),0.09); } }
 		.qb-badge { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 100px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.5; white-space: nowrap; color: var(--green-soft); border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.08); vertical-align: middle; transition: opacity 0.3s; }
-		.qb-step:not(.active) .qb-badge { opacity: 0.4; }
+		.qb-step:not(.active) .qb-badge { opacity: 1; }
 		@media (prefers-reduced-motion: reduce) { .qb-step { opacity: 1; transform: none; transition: none; } .qb-step.active .qb-rec { animation: none; } }
 		.qb-base-line strong { font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
 		.qb-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -262,9 +271,49 @@
 			.qb-lead { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-top: 11px; }
 			/* 决策表：对号入座，替代整段说明文字 */
 			/* 标题旁的问号：所有说明收在这里，点开才显示 */
+			/* 一句人话副标，紧跟标题——Apple 的「芯片：强大配置任你选。」句式 */
+			/* ── 按下即反馈：所有可点档位共用一套按压手感（§Response）── */
+		.qb-mode-btn, .qb-chip, .qb-mini-btn, .qb-seg-btn, .qb-preset-card, .qb-assist, .qb-member, .qb-preset-back, .qb-last-btn {
+			transition-property: background, color, border-color, transform; transition-duration: 0.25s, 0.25s, 0.25s, 0.22s; transition-timing-function: var(--ease); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+		}
+		.qb-mode-btn:active, .qb-chip:active, .qb-mini-btn:active, .qb-seg-btn:not(.ghost):active, .qb-preset-card:active, .qb-assist:active, .qb-member:active, .qb-preset-back:active, .qb-last-btn:active {
+			transform: scale(0.972); transition-duration: 0.06s;
+		}
+		.qb-mini-btn:disabled:active, .qb-seg-btn.ghost:active { transform: none; }
+		/* 小圆角胶囊按钮点击区补到 44px，允许拖开取消（§Gesture）*/
+		.qb-mini-btn { position: relative; }
+		.qb-mini-btn::before { content: ""; position: absolute; inset: -7px -2px; }
+		.qb-sub { font-size: 12.5px; line-height: 1.65; color: var(--text-secondary); margin: -3px 0 12px; max-width: 52em; }
+			/* 帮助卡：与选项同宽、降一级灰、默认折叠。图标从不单独当入口。 */
+			.qb-assist { display: flex; width: 100%; align-items: center; gap: 12px; text-align: left; margin-top: 10px; padding: 13px 14px; border: 0.5px solid var(--border); border-radius: 10px; background: none; cursor: pointer; font-family: var(--font); transition: border-color 0.25s, background 0.25s; }
+			.qb-assist:hover { border-color: var(--border-hover); background: rgba(var(--ink), 0.02); }
+			.qb-assist-txt { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+			.qb-assist-t { font-size: 12.5px; font-weight: 600; letter-spacing: 0; color: var(--text-secondary); }
+			.qb-assist-d { font-size: 11.5px; line-height: 1.55; color: var(--text-dim); }
+			.qb-assist-ico { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; border: 0.5px solid var(--border-hover); color: var(--text-dim); font-size: 13px; line-height: 1; transition: color 0.2s, border-color 0.2s; }
+			.qb-assist.on { border-color: var(--green-line); }
+			.qb-assist.on .qb-assist-t { color: var(--green-soft); }
+			.qb-assist.on .qb-assist-ico { border-color: var(--green-line); color: var(--green-soft); }
+			/* 分工声明：客户问得最多的一句，放帮助卡最上面，比表格更重 */
+			.qb-scope { font-size: 12.5px; line-height: 1.75; color: var(--text-secondary); padding-bottom: 13px; margin-bottom: 13px; border-bottom: 0.5px solid var(--border); }
+			.qb-scope strong { color: var(--text-primary); }
 			.qb-q { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 10px; padding: 0; border-radius: 50%; border: 1px solid rgba(var(--ink), 0.32); background: rgba(var(--ink), 0.05); color: var(--text-primary); font-family: var(--font); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: 0; text-transform: none; cursor: pointer; vertical-align: middle; transition: background 0.2s, border-color 0.2s, color 0.2s; }
 			.qb-q:hover { border-color: var(--pure); background: rgba(var(--ink), 0.12); }
 			.qb-q.on { background: var(--green-soft); border-color: var(--green-soft); color: var(--green-deep); }
+			@keyframes qbPanelIn { from { opacity: 0; transform: translateY(-6px) scale(0.99); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+			.qb-help-panel { animation: qbPanelIn 0.34s var(--ease) both; }
+			.qb-assist-ico { transition: transform 0.3s var(--ease), color 0.2s, border-color 0.2s; }
+			.qb-assist.on .qb-assist-ico { transform: rotate(180deg); }
+			@media (prefers-reduced-motion: reduce) {
+				.qb-prog, .floating-cta { transition-property: opacity; }
+				body.qb-bar-on .qb-prog, .qb-prog { transform: none; }
+				body.qb-bar-on .floating-cta { transform: translate(-50%, 0); }
+				.qb-help-panel { animation-duration: 0.16s; animation-name: none; }
+				.qb-assist.on .qb-assist-ico, .qb-preset-card:hover { transform: none; }
+			}
+			@media (prefers-reduced-transparency: reduce) {
+				.qb-prog { background: var(--green-deep); border-color: var(--green-line); backdrop-filter: none; -webkit-backdrop-filter: none; }
+			}
 			.qb-help-panel { margin-top: 13px; padding: 14px 15px; border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.05); border-radius: 10px;
 			font-family: var(--font); font-size: 12.5px; line-height: 1.75; color: var(--text-secondary); }
 			.qb-help-panel strong { color: var(--text-primary); font-weight: 700; }
@@ -275,6 +324,12 @@
 			.qb-guide td:first-child { color: var(--text-secondary); padding-right: 16px; }
 			.qb-guide td:last-child { color: var(--text-primary); font-weight: 700; text-align: right; white-space: nowrap; }
 			@media (max-width: 640px) { .qb-guide td:last-child { white-space: normal; } }
+			/* 四列对照表（套餐）：手机上横向滚动，页面本体绝不横滚 */
+			.qb-guide th { padding: 0 0 8px; text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
+			.qb-guide th:not(:first-child), .qb-guide.cols td:not(:first-child) { padding-left: 14px; }
+			.qb-guide.cols td:last-child { text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap; }
+			.qb-guide.cols td:first-child { color: var(--text-primary); font-weight: 700; }
+			.qb-guide-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 			.qb-why { margin-top: 7px; }
 			.qb-why > summary { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-dim); cursor: pointer; list-style: none; padding: 4px 0; min-height: 28px; }
 			.qb-why > summary::-webkit-details-marker { display: none; }
@@ -544,11 +599,40 @@
 		.qb-last-btn:hover { border-color: var(--green-line); background: rgba(var(--green-ink), 0.12); }
 		.qb-last-btn.ghost { color: var(--text-dim); border-color: var(--border); background: none; }
 		.qb-last-btn.ghost:hover { color: var(--text-secondary); background: rgba(var(--ink), 0.04); }
-		.qb-prog { position: sticky; top: var(--navh, 55px); z-index: 80; display: flex; align-items: center; gap: 11px; margin-bottom: 12px; padding: 9px 15px; border-radius: 100px; border: 0.5px solid var(--border); background: rgba(var(--veil), 0.9); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
+		/* 价格条用绿色系——和报价单面板同一家族。全页其余部分是中性灰，
+		   于是「绿色 = 钱」成为一条一眼能读懂的规则，不需要任何说明。 */
+		.qb-prog { position: sticky; top: var(--navh, 55px); z-index: 80; display: flex; align-items: center; gap: 11px; margin-bottom: 12px; padding: 9px 9px 9px 15px; border-radius: 100px; border: 0.5px solid var(--green-line);
+			background: linear-gradient(rgba(var(--green-ink), 0.15), rgba(var(--green-ink), 0.11)), rgba(var(--veil), 0.9);
+			box-shadow: inset 0 0.5px 0 rgba(var(--green-ink), 0.22);
+			backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); }
 		.qb-prog-bar { flex: 1; height: 3px; border-radius: 100px; background: rgba(var(--ink), 0.08); overflow: hidden; }
 		.qb-prog-fill { height: 100%; border-radius: 100px; background: var(--green-soft); transition: width 0.45s var(--ease); }
 		.qb-prog-txt { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
 		.qb-prog.done .qb-prog-txt { color: var(--green-soft); }
+		/* ── 常驻价格条（原进度条位置）：价格永远在视野里 ── */
+		/* 半透明面上文字要稍重一点、字距略开，否则会被材质吃掉（vibrancy）*/
+		.qb-prog.live .qb-prog-txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.02em; text-transform: none; font-weight: 600; color: var(--text-secondary); }
+		.qb-prog-total { font-size: 15px; font-weight: 750; letter-spacing: -0.015em; color: var(--green-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.qb-prog-jump { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex-shrink: 0; padding: 0; border-radius: 50%; border: 0.5px solid var(--green-line); background-color: var(--green-fill); cursor: pointer; font-family: var(--font); font-size: 12px; line-height: 1; color: var(--green-soft); transition: background 0.2s, transform 0.18s var(--ease); }
+		.qb-prog-jump:hover { background-color: var(--green-fill-hi); }
+		.qb-prog-jump:active { transform: scale(0.9); }
+		/* ── 套餐卡 ── */
+		.qb-preset { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+		.qb-preset-card { display: flex; flex-direction: column; gap: 7px; text-align: left; background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 12px; padding: 15px 14px 14px; cursor: pointer; font-family: var(--font); transition: border-color 0.25s, background 0.25s, transform 0.3s var(--ease); }
+		.qb-preset-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+		.qb-preset-card.active { border-color: var(--green-line); background: rgba(var(--green-ink), 0.07); }
+		.qb-preset-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); }
+		.qb-preset-price { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+		.qb-preset-card.active .qb-preset-price { color: var(--green-soft); }
+		.qb-preset-per { font-size: 10.5px; font-weight: 500; color: var(--text-dim); letter-spacing: 0; }
+		.qb-preset-desc { font-size: 11.5px; line-height: 1.6; color: var(--text-secondary); flex-grow: 1; }
+		.qb-preset-custom { margin-top: 11px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-dim); }
+		.qb-preset-back { border: 0.5px solid var(--border); background: none; border-radius: 100px; padding: 5px 12px; cursor: pointer; font-family: var(--font); font-size: 11px; color: var(--text-secondary); }
+		.qb-preset-back:hover { border-color: var(--border-hover); color: var(--text-primary); }
+		/* ── 「按需微调」分组标题 ── */
+		.qb-group { margin: 30px 0 20px; padding-top: 20px; border-top: 0.5px solid var(--border); }
+		.qb-group-t { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); margin-bottom: 5px; }
+		.qb-group-s { font-size: 11.5px; line-height: 1.6; color: var(--text-dim); }
 		/* 课程：阶段卡（STAGE 01 可报名 / STAGE 02 预告） */
 		.course-stage { border: 0.5px solid var(--border); border-radius: var(--r); padding: 26px; background: var(--surface); }
 		/* 诊断课是入口不是阶段：绿底区分开，价格只有一档所以不分栏 */
@@ -655,6 +739,34 @@
 			.qb-seg.four { grid-template-columns: 1fr; }
 			.qb-seg.four .qb-seg-btn { flex-direction: row; align-items: baseline; justify-content: space-between; min-height: 0; padding: 13px 14px; }
 			.qb-seg-btn { padding: 12px; min-height: 58px; }
+			/* 价格条在手机上浮到底部拇指区：顶部已经有 sec-nav 吸着，
+			   375px 的屏再叠一条就吃掉太多高度。进出都走同一条路径（从下方来，回下方去）。 */
+			.qb-prog { position: fixed; top: auto; left: 12px; right: 12px; z-index: 100;
+				bottom: calc(16px + env(safe-area-inset-bottom)); margin: 0; padding: 11px 11px 11px 17px;
+				border-color: rgba(var(--green-ink), 0.42);
+				background: linear-gradient(rgba(var(--green-ink), 0.22), rgba(var(--green-ink), 0.16)), rgba(var(--veil), 0.94);
+				box-shadow: inset 0 0.5px 0 rgba(var(--green-ink), 0.3), 0 10px 34px rgba(0, 0, 0, 0.34); gap: 10px;
+				opacity: 0; transform: translateY(16px); pointer-events: none;
+				transition: opacity 0.32s var(--ease), transform 0.32s var(--ease); }
+			body.qb-bar-on .qb-prog { opacity: 1; transform: none; pointer-events: auto; }
+			/* 同一时间只留一个主行动：在报价器里就是价格条，离开了才把「联系我们」还回来 */
+			.floating-cta { transition: opacity 0.3s var(--ease), transform 0.3s var(--ease); }
+			body.qb-bar-on .floating-cta { opacity: 0; transform: translate(-50%, 16px); pointer-events: none; }
+			.qb-prog.live .qb-prog-txt { font-size: 11.5px; }
+			:root[data-theme="light"] .qb-prog {
+				background: linear-gradient(rgba(var(--green-ink), 0.13), rgba(var(--green-ink), 0.11)), rgba(var(--veil), 0.95);
+				border-color: rgba(var(--green-ink), 0.34);
+				box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.6), 0 8px 26px rgba(var(--ink), 0.12);
+			}
+			.qb-prog-total { font-size: 17px; }
+			.qb-prog-jump { width: 32px; height: 32px; font-size: 13px; }
+			.quote-builder { padding-bottom: 78px; } /* 给底部条让位，最后一行不被压住 */
+			.qb-preset { grid-template-columns: 1fr; gap: 8px; }
+			.qb-preset-card { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 4px 10px; padding: 13px 14px; }
+			.qb-preset-name { flex: 1; font-size: 14.5px; }
+			.qb-preset-price { font-size: 16px; }
+			.qb-preset-desc { flex-basis: 100%; font-size: 11px; }
+			.qb-group { margin: 24px 0 16px; padding-top: 16px; }
 			.qb-seg-name { font-size: 13.5px; }
 			.qb-seg-price { font-size: 12.5px; }
 			.qb-tier-desc { font-size: 12.5px; margin-top: 9px; }
@@ -1126,15 +1238,36 @@ var I18N = {
 			modeLabel: "混音类型",
 			modeVocal: "贴唱混音", modeStems: "分轨混音",
 			// 每一步的引导语：只在该步「待作答」时出现，选完即隐去，让提示文本分批登场
+			// 每一步只有一句副标，说清「这一步在决定什么」——Apple 的「芯片：强大配置任你选。」句式
 			hints: {
-				mode: "先告诉我素材形态——只有干声加一条伴奏，还是一整套分轨工程？",
-				stems: "工程越大，要处理的轨道数与空间关系越多。",
-				prod: "这一步决定我参与创作的深度：只做混音，还是一起把人声做出角色感。拿不准就选中间档。",
-				harmony: "和声铺得越满，要摆平的层次与空间就越多。按你歌里的和声密度选，不用数轨道。",
-				count: "每多一位主唱，就多一层平衡与空间关系要安排。",
-				edit: "节奏与音准修到什么程度，可以为每位主唱单独决定。",
-				lane: "选标准就排正常队列；要更快就指定交付日期，按紧急度自动算加急费。"
+				mode: "决定我拿到的是干声＋一条伴奏，还是一整套分轨工程。",
+				stems: "决定工程规模——轨道越多，要摆平的关系越多。",
+				preset: "先挑一份成品配置，价格立刻出来。下面每一项都还能单独改。",
+				prod: "决定我参与创作的深度：只混音，还是一起把人声做出角色感。每位主唱单独选。",
+				harmony: "算的是你已经录好的和声轨有多少——不含我替你编写或录制。",
+				count: "每多一位主唱，就多一层平衡与空间要安排。每位 +¥100。",
+				edit: "决定音准与节奏修到什么程度。每位主唱单独选。",
+				lane: "标准排正常队列；要更快就指定交付日期，按紧急度自动算加急费。"
 			},
+			// 帮助卡：整行、提问式标题 + 一句承诺。Apple 从不用图标当帮助入口。
+			assist: {
+				preset: { t: "三份套餐分别包含什么？", d: "逐项对照三档的人声制作、音频编辑与和声。" },
+				prod: { t: "我需要人声制作吗？", d: "看执行向和创意向分别替你做了哪些事。" },
+				edit: { t: "我该修到什么程度？", d: "按你平时录音的稳定度对号入座。" },
+				harmony: { t: "和声这一档到底算什么？", d: "什么算适量、什么算铺满，以及我做不做和声。" },
+				lane: { t: "交付日期是怎么算出来的？", d: "标准队列、加急费与会员提速的规则。" }
+			},
+			// 客户问得最多的一句：你到底做不做和声。写死在帮助卡最上面。
+			harmonyScope: "<strong>这一档只算「处理」，不含「创作」。</strong>我按你已经录好的和声／叠唱轨去做平衡、音色与空间——不替你编写和声编排，也不替你录制和声。<br><br>需要有人替你写、替你录？走 <strong>录音</strong>（棚内录制，含监制指导），或 <strong>创意向人声制作</strong>（用你的主唱轨，由我决定哪句叠、怎么叠）。",
+			harmonyGuideTitle: "我该选哪一档？",
+			harmonyGuide: [
+				{ t: "主副歌各叠一层，常规铺陈", i: 0 },
+				{ t: "多段 double，和声层次明显", i: 1 },
+				{ t: "大量叠唱 ＋ 效果和声", i: 2 },
+				{ t: "几乎每句都有，人声当乐器铺", i: 3 }
+			],
+			presetGuideTitle: "三档分别包含什么？",
+			presetCols: ["套餐", "人声制作", "音频编辑", "和声"],
 			cur: "¥",
 			baseLabel: "基础混音 · 1 位主唱（含简易母带）", base: 200,
 			stemsLabel: "工程规模（含母带 · 1 位主唱起）",
@@ -1143,14 +1276,14 @@ var I18N = {
 				{ name: "标准分轨", price: 1800, from: true, desc: "Urban / 流行说唱常规商业规格，完整动态与空间处理。" },
 				{ name: "复杂分轨", price: 3000, from: true, desc: "60–100+ 轨大型工程，电影感音效设计。预估 ¥3,000–5,000，看完工程按复杂度与你确认最终价——按项目，不按工时。" }
 			],
-			harmonyLabel: "和声 / 叠唱密度",
+			harmonyLabel: "和声 / 叠唱",
 			harmonies: [
 				{ name: "适量", price: 0, desc: "主副歌基本叠唱，常规铺陈。" },
 				{ name: "丰富", price: 200, desc: "流行常见的和声层次，多段 double 与叠唱。" },
 				{ name: "密集", price: 400, desc: "大量叠唱与效果和声，层层堆叠。" },
 				{ name: "铺满", price: 600, desc: "和声墙——几乎每句都有，人声当乐器铺。" }
 			],
-			prodLabel: "人声制作 · 每位主唱单独选", allLabel: "全部设为",
+			prodLabel: "人声制作", allLabel: "全部设为",
 			prodNote: "<strong>执行向动作：</strong>升降调、stutter、反转、电话音 / 失真、加宽、ad-lib 摆位、double 对齐、特定词效果。<br><strong>创意向</strong>＝以上全部 ＋ 做不做、做在哪由我决定。",
 			editGuideTitle: "我该选哪一档？",
 			editGuide: [
@@ -1175,7 +1308,7 @@ var I18N = {
 			countLabel: "主唱人数", perHead: 100, perHeadLabel: "每多 1 位 +¥100（混音）", countMax: 8,
 			countUnit: " 位", countMore: "4 位以上",
 			countMoreNote: "更大规模的 cypher，请私信另议",
-			editLabel: "音频编辑 · 每位主唱单独选", vocalistLabel: "主唱",
+			editLabel: "音频编辑", vocalistLabel: "主唱",
 			editNote: "<strong>基础编辑</strong>＝音准与节奏二选一，只处理其中一项。<br><strong>标准编辑</strong>＝节奏对齐 ＋ 音准修正，适合唱得稳的素材。<br><strong>深度编辑</strong>＝在标准之上做大量精细修整，用于跑调多、破音、气声不稳的素材。",
 			edits: [
 				{ name: "不需要", price: 0 },
@@ -1247,6 +1380,17 @@ var I18N = {
 			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
+			presetLabel: "套餐",
+			presetHint: "先挑一个成品套餐，价格立刻出来。下面每一项都还能单独改。",
+			presets: [
+				{ name: "基础", desc: "只把歌混干净：音色、动态、空间，外加基础的音准或节奏修整。" },
+				{ name: "标准", desc: "大部分人选这个。在基础之上加执行向人声制作与标准音编，接近发行水准。" },
+				{ name: "完整", desc: "交给我全权处理：创意向人声制作、深度音编、更满的和声铺陈。" }
+			],
+			presetCustom: "自定义", presetCustomDesc: "你已经改过下面的选项，当前是自己的配置。",
+			presetPer: "／人",
+			tuneTitle: "按需微调",
+			tuneSub: "以下保持不动也可以，直接照套餐下单。想改哪一项就改哪一项。",
 			brand: "刀大厨 ChefDao", copyTitle: "报价单", fastTag: "会员加速", lastLabel: "上次报价", perHeadTotal: "人均", laneRelaxed: "宽松交付",
 			capTitleBusy: "排期较满", capTitleFull: "档期已满",
 			capBodyBusy: "交付日期已顺延，比平时多{w}。",
@@ -1603,14 +1747,32 @@ var I18N = {
 			modeLabel: "Mix type",
 			modeVocal: "Vocal Mix", modeStems: "Multitrack Mix",
 			hints: {
-				mode: "First, what are you sending — a vocal over one beat, or a full multitrack session?",
-				stems: "The bigger the session, the more tracks and spatial relationships to resolve.",
-				prod: "This sets how deep I go creatively: a pure mix, or shaping the vocal's character with you. Not sure? Take the middle tier.",
-				harmony: "The denser the harmonies, the more layers and space to balance. Pick by how stacked your song feels — no track-counting.",
-				count: "Every extra vocalist adds another layer of balance and space to arrange.",
-				edit: "How far timing and pitch get corrected — decided separately for each vocalist.",
-				lane: "Standard goes in the normal queue. Want it faster? Pick a delivery date and the rush fee is calculated by urgency."
+				mode: "Tells me whether I get a dry vocal plus one beat, or a full multitrack session.",
+				stems: "Sets the session size — more tracks, more relationships to resolve.",
+				preset: "Pick a ready-made configuration and the price appears. Every line below stays changeable.",
+				prod: "Sets how deep I go creatively: a pure mix, or shaping the vocal's character. Chosen per vocalist.",
+				harmony: "Counts the harmony tracks you have already recorded — writing and tracking them is not included.",
+				count: "Each extra vocalist is another layer of balance to arrange. +$15 each.",
+				edit: "Sets how far pitch and timing get corrected. Chosen per vocalist.",
+				lane: "Standard joins the normal queue. Want it faster? Pick a date and the rush fee follows from the urgency."
 			},
+			assist: {
+				preset: { t: "What is in each package?", d: "Compare vocal production, editing and harmony tier side by side." },
+				prod: { t: "Do I need vocal production?", d: "See exactly what Execution and Creative each do for you." },
+				edit: { t: "How far should I correct?", d: "Match it to how steady your takes usually are." },
+				harmony: { t: "What does this tier actually cover?", d: "What counts as Light vs Wall — and whether I write harmonies." },
+				lane: { t: "How is the date calculated?", d: "The standard queue, rush fees, and the member speed-up." }
+			},
+			harmonyScope: "<strong>This tier covers treatment, not creation.</strong> I balance, shape and place the harmony/stack tracks you have already recorded — I do not write harmony arrangements for you, and I do not track them for you.<br><br>Need someone to write and record them? Use <strong>Recording</strong> (in-studio session with direction), or <strong>Creative vocal production</strong> (I decide what gets stacked and how, using your lead takes).",
+			harmonyGuideTitle: "Which tier is mine?",
+			harmonyGuide: [
+				{ t: "One stack layer on hook and verse, standard", i: 0 },
+				{ t: "Several doubles, clearly layered harmonies", i: 1 },
+				{ t: "Heavy stacking plus FX harmonies", i: 2 },
+				{ t: "On nearly every line, vocals used as texture", i: 3 }
+			],
+			presetGuideTitle: "What is in each tier?",
+			presetCols: ["Package", "Vocal production", "Audio editing", "Harmony"],
 			cur: "$",
 			baseLabel: "Basic Mix · 1 vocalist (light mastering incl.)", base: 30,
 			stemsLabel: "Project scale (mastering incl. · from 1 vocalist)",
@@ -1619,14 +1781,14 @@ var I18N = {
 				{ name: "Standard Multitrack", price: 270, from: true, desc: "Urban / pop-rap commercial spec, full dynamic and spatial work." },
 				{ name: "Complex Multitrack", price: 450, from: true, desc: "60–100+ track projects with cinematic sound design. Estimate $450–750 — final quote confirmed per project after I review it, by scope, not by the hour." }
 			],
-			harmonyLabel: "Harmony / stacking density",
+			harmonyLabel: "Harmony / stacking",
 			harmonies: [
 				{ name: "Light", price: 0, desc: "Basic hook/verse stacks, standard layering." },
 				{ name: "Rich", price: 30, desc: "Common pop harmony layers, multiple doubles and stacks." },
 				{ name: "Dense", price: 60, desc: "Heavy stacking and FX harmonies, layer on layer." },
 				{ name: "Wall", price: 90, desc: "A wall of harmony — on nearly every line, vocals as texture." }
 			],
-			prodLabel: "Vocal Production · per vocalist", allLabel: "Set all",
+			prodLabel: "Vocal Production", allLabel: "Set all",
 			prodNote: "<strong>Execution covers:</strong> pitch shifts, stutter, reverse, telephone / distortion, widening, ad-lib placement, double alignment, word-level FX.<br><strong>Creative</strong> = all of it, plus I decide whether and where.",
 			editGuideTitle: "Which tier is mine?",
 			editGuide: [
@@ -1651,7 +1813,7 @@ var I18N = {
 			countLabel: "Vocalists", perHead: 15, perHeadLabel: "+$15 each (mix)", countMax: 8,
 			countUnit: "", countMore: "4 or more",
 			countMoreNote: "Larger cyphers — DM to discuss",
-			editLabel: "Audio Editing · per vocalist", vocalistLabel: "Vocalist",
+			editLabel: "Audio Editing", vocalistLabel: "Vocalist",
 			editNote: "<strong>Basic</strong> = pitch or timing, one of the two only.<br><strong>Standard</strong> = timing alignment plus pitch correction, for takes that are already steady.<br><strong>Deep</strong> = everything in Standard plus heavy fine correction, for pitchy, cracking or unstable takes.",
 			edits: [
 				{ name: "Not needed", price: 0 },
@@ -1723,6 +1885,17 @@ var I18N = {
 			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
+			presetLabel: "Package",
+			presetHint: "Pick a ready-made package and see the price instantly. Every line below stays adjustable.",
+			presets: [
+				{ name: "Basic", desc: "Just a clean mix: tone, dynamics, space, plus basic pitch or timing repair." },
+				{ name: "Standard", desc: "What most people pick. Adds directed vocal production and standard editing — release-ready." },
+				{ name: "Full", desc: "Hand it over: creative vocal production, deep editing, richer harmony layering." }
+			],
+			presetCustom: "Custom", presetCustomDesc: "You have changed the options below — this is your own configuration.",
+			presetPer: " / vocalist",
+			tuneTitle: "Fine-tune",
+			tuneSub: "You can leave everything below as it is and order the package straight up. Change only what you want.",
 			brand: "ChefDao 刀大厨", copyTitle: "Quote", fastTag: "Fast lane", lastLabel: "Last quote", perHeadTotal: "Per person", laneRelaxed: "Relaxed",
 			capTitleBusy: "Filling up", capTitleFull: "Fully booked",
 			capBodyBusy: "Delivery dates have moved back — about {w} longer than usual.",
@@ -2074,14 +2247,32 @@ var I18N = {
 			modeLabel: "믹스 유형",
 			modeVocal: "보컬 믹스", modeStems: "멀티트랙 믹스",
 			hints: {
-				mode: "먼저 소재 형태를 알려주세요 — 보컬과 비트 한 장인가요, 아니면 멀티트랙 세션 전체인가요?",
-				stems: "프로젝트가 클수록 다뤄야 할 트랙 수와 공간 관계가 많아집니다.",
-				prod: "제가 창작에 얼마나 깊이 관여할지 정합니다: 순수 믹스인지, 보컬의 캐릭터까지 함께 만들지. 고민되면 가운데를 고르세요.",
-				harmony: "화음이 촘촘할수록 정리할 레이어와 공간이 많아집니다. 트랙 수 세지 말고, 곡의 화음 밀도로 고르세요.",
-				count: "보컬이 한 명 늘 때마다 조율해야 할 밸런스와 공간의 층이 하나씩 늘어납니다.",
-				edit: "타이밍과 피치를 어디까지 다듬을지, 보컬마다 따로 정합니다.",
-				lane: "표준은 정상 대기열. 더 빠르게 원하면 납품일을 지정하세요 — 긴급도에 따라 요금이 자동 계산됩니다."
+				mode: "드라이 보컬 + 비트 한 장인지, 멀티트랙 세션 전체인지를 정합니다.",
+				stems: "프로젝트 규모를 정합니다 — 트랙이 많을수록 정리할 관계가 많아집니다.",
+				preset: "완성된 구성을 먼저 고르면 가격이 바로 나옵니다. 아래 항목은 모두 변경 가능합니다.",
+				prod: "제가 창작에 얼마나 깊이 관여할지 정합니다. 순수 믹스인지, 캐릭터까지 만들지. 보컬별 선택.",
+				harmony: "이미 녹음해 오신 화음 트랙의 양을 계산합니다 — 작성·녹음 대행은 포함되지 않습니다.",
+				count: "보컬이 늘 때마다 조율할 밸런스가 한 층씩 늘어납니다. 1인당 +₩20,000.",
+				edit: "음정과 타이밍을 어디까지 다듬을지 정합니다. 보컬별 선택.",
+				lane: "표준은 정상 대기열. 더 빠르게 원하면 날짜를 지정하세요 — 긴급도에 따라 요금이 붙습니다."
 			},
+			assist: {
+				preset: { t: "각 패키지에 무엇이 들어 있나요?", d: "세 등급의 보컬 프로덕션·편집·화음을 나란히 비교합니다." },
+				prod: { t: "보컬 프로덕션이 필요한가요?", d: "실행형과 크리에이티브가 각각 무엇을 하는지 봅니다." },
+				edit: { t: "어디까지 보정해야 하나요?", d: "평소 녹음의 안정도에 맞춰 고르세요." },
+				harmony: { t: "이 등급은 정확히 무엇을 다루나요?", d: "적당과 가득의 기준, 그리고 화음 작성 여부." },
+				lane: { t: "날짜는 어떻게 계산되나요?", d: "표준 대기열, 긴급 요금, 회원 단축 규칙." }
+			},
+			harmonyScope: "<strong>이 등급은 '처리'만 포함하며 '창작'은 포함하지 않습니다.</strong> 이미 녹음해 오신 화음·겹보컬 트랙의 밸런스·음색·공간을 다듬습니다 — 화음 편곡을 대신 써 드리거나 대신 녹음해 드리지는 않습니다.<br><br>대신 써 주고 녹음해 줄 사람이 필요하다면 <strong>레코딩</strong>(디렉션 포함 스튜디오 녹음) 또는 <strong>크리에이티브 보컬 프로덕션</strong>(리드 테이크로 제가 겹보컬 구성을 결정)을 이용하세요.",
+			harmonyGuideTitle: "저는 어느 등급인가요?",
+			harmonyGuide: [
+				{ t: "훅·벌스에 한 겹씩, 일반적인 구성", i: 0 },
+				{ t: "여러 구간 더블, 화음 레이어가 뚜렷", i: 1 },
+				{ t: "대량의 겹보컬 ＋ 효과 화음", i: 2 },
+				{ t: "거의 모든 라인에, 보컬을 텍스처처럼", i: 3 }
+			],
+			presetGuideTitle: "각 등급에 무엇이 들어 있나요?",
+			presetCols: ["패키지", "보컬 프로덕션", "오디오 편집", "화음"],
 			cur: "₩",
 			baseLabel: "베이직 믹스 · 보컬 1인 (간편 마스터링 포함)", base: 40000,
 			stemsLabel: "프로젝트 규모 (마스터링 포함 · 보컬 1인 기준)",
@@ -2090,14 +2281,14 @@ var I18N = {
 				{ name: "스탠다드 멀티트랙", price: 360000, from: true, desc: "Urban / 팝 랩 상업 규격, 완전한 다이나믹·공간 처리." },
 				{ name: "컴플렉스 멀티트랙", price: 600000, from: true, desc: "60–100+ 트랙 대형 프로젝트, 영화적 사운드 디자인. 예상 ₩600,000–1,000,000, 프로젝트 확인 후 복잡도에 따라 최종 견적 — 시간이 아니라 규모 기준." }
 			],
-			harmonyLabel: "화음 / 겹보컬 밀도",
+			harmonyLabel: "화음 / 겹보컬",
 			harmonies: [
 				{ name: "적당", price: 0, desc: "훅·벌스 기본 겹보컬, 일반적인 레이어링." },
 				{ name: "풍부", price: 40000, desc: "팝에서 흔한 화음 레이어, 다수의 더블과 스택." },
 				{ name: "촘촘", price: 80000, desc: "대량의 겹보컬과 효과 화음, 레이어 위에 레이어." },
 				{ name: "가득", price: 120000, desc: "화음의 벽 — 거의 모든 라인에, 보컬을 텍스처처럼." }
 			],
-			prodLabel: "보컬 프로덕션 · 보컬별 선택", allLabel: "전체 설정",
+			prodLabel: "보컬 프로덕션", allLabel: "전체 설정",
 			prodNote: "<strong>실행형 작업:</strong> 피치 조정, 스터터, 리버스, 텔레폰 / 디스토션, 와이드닝, 애드립 배치, 더블 정렬, 단어 단위 FX.<br><strong>크리에이티브</strong> = 위 전부 ＋ 할지·어디에 할지를 제가 결정.",
 			editGuideTitle: "저는 어느 등급인가요?",
 			editGuide: [
@@ -2122,7 +2313,7 @@ var I18N = {
 			countLabel: "보컬 인원", perHead: 20000, perHeadLabel: "1인당 +₩20,000 (믹스)", countMax: 8,
 			countUnit: "인", countMore: "4인 이상",
 			countMoreNote: "대규모 사이퍼는 DM으로 문의",
-			editLabel: "오디오 편집 · 보컬별 선택", vocalistLabel: "보컬",
+			editLabel: "오디오 편집", vocalistLabel: "보컬",
 			editNote: "<strong>기본 편집</strong> = 음정과 타이밍 중 하나만 처리.<br><strong>표준 편집</strong> = 타이밍 정렬 + 음정 보정, 안정적인 테이크용.<br><strong>정밀 편집</strong> = 표준에 더해 대량의 정밀 보정, 음이탈·삑사리·불안정한 테이크용.",
 			edits: [
 				{ name: "필요 없음", price: 0 },
@@ -2194,6 +2385,17 @@ var I18N = {
 			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
+			presetLabel: "패키지",
+			presetHint: "완성된 패키지를 먼저 고르면 가격이 바로 나옵니다. 아래 항목은 모두 개별 변경 가능합니다.",
+			presets: [
+				{ name: "베이직", desc: "깔끔한 믹스만: 음색·다이나믹·공간, 그리고 기본 음정 또는 타이밍 보정." },
+				{ name: "스탠다드", desc: "가장 많이 선택합니다. 지시형 보컬 프로덕션과 표준 편집을 더해 발매 수준에 근접합니다." },
+				{ name: "풀", desc: "전부 맡기기: 크리에이티브 보컬 프로덕션, 딥 편집, 더 두터운 하모니." }
+			],
+			presetCustom: "커스텀", presetCustomDesc: "아래 옵션을 직접 변경하셨습니다 — 현재는 커스텀 구성입니다.",
+			presetPer: " / 인",
+			tuneTitle: "세부 조정",
+			tuneSub: "아래는 그대로 두고 패키지 그대로 주문하셔도 됩니다. 원하는 항목만 바꾸세요.",
 			brand: "刀大厨 ChefDao", copyTitle: "견적서", fastTag: "패스트 레인", lastLabel: "지난 견적", perHeadTotal: "1인당", laneRelaxed: "여유 납품",
 			capTitleBusy: "일정 혼잡", capTitleFull: "일정 마감",
 			capBodyBusy: "납품일이 순연되어 평소보다 약 {w} 더 걸립니다.",
@@ -2531,7 +2733,24 @@ var I18N = {
 // edits 索引：0 = 不需要，1 = 基础编辑（音准/节奏二选一），2 = 标准编辑（节奏+音准），3 = 深度编辑（每位主唱各选一档）
 // 纯混音（全员 prods=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
 // null = 尚未作答。逐步揭示：一步作答后下一步才挂载，引导文案随之分批出现。
-var qbState = { mode: null, stems: null, prods: [], harmony: null, count: null, edits: [], mem: [], producer: false, lane: null, targetDate: null, moreCount: false, aaOpen: false, fineOpen: false, aaCopy: true, newbie: false, help: {} };
+// 三个标准套餐：每一档就是一整套「人声制作 + 音频编辑 + 和声密度」的组合。
+// Apple 的做法——先给一份完整、可直接下单的配置，客户只需要改想改的，
+// 而不是从零把七道题答完。改档位内容只动这张表。
+var QB_PRESETS = [
+	{ prod: 0, edit: 1, harmony: 0 }, // 基础
+	{ prod: 1, edit: 2, harmony: 0 }, // 标准（推荐）
+	{ prod: 2, edit: 3, harmony: 1 }  // 完整
+];
+var QB_PRESET_DEFAULT = 1;
+// 进页面即是一份完整配置：贴唱 · 标准套餐 · 1 位主唱 · 标准交付。
+// preset = 套餐索引，改动下面任何一项后由 qbSyncPreset() 自动落到 null（自定义）。
+function qbDefaultState() {
+	var p = QB_PRESETS[QB_PRESET_DEFAULT];
+	return { mode: "vocal", stems: 1, preset: QB_PRESET_DEFAULT, prods: [p.prod], harmony: p.harmony,
+		count: 1, edits: [p.edit], mem: [0], producer: false, lane: 0, targetDate: null,
+		moreCount: false, aaOpen: false, fineOpen: false, aaCopy: true, newbie: false, help: {} };
+}
+var qbState = qbDefaultState();
 // 制作人附加服务：按混音/制作小计加收的百分比（改这一个数就调价）
 var PRODUCER_RATE = 0.5;
 // 刀门会员折扣率（8 折 = 省 20%），按主唱逐位计算：只有会员/本单加入的那份享折扣
@@ -2597,8 +2816,9 @@ function qbArchiveOrder(q, c) {
 function qbLoadOrder() {
 	var o = qbOrders()[0];
 	if (!o || !o.s) return;
-	for (var k in qbState) if (o.s.hasOwnProperty(k)) qbState[k] = o.s[k];
+	for (var k in qbState) if (o.s.hasOwnProperty(k) && o.s[k] !== null) qbState[k] = o.s[k];
 	qbState.help = {};
+	qbNormalizeState();
 	renderQuoteBuilder();
 	qbScrollTo("svc-mixing");
 }
@@ -2614,8 +2834,9 @@ function qbDecodeState(str) {
 		var pad = str.length % 4 ? str + "====".slice(str.length % 4) : str;
 		var o = JSON.parse(decodeURIComponent(escape(atob(pad))));
 		if (!o || o.v !== 1 || !o.s) return false;
-		for (var k in qbState) if (o.s.hasOwnProperty(k)) qbState[k] = o.s[k];
+		for (var k in qbState) if (o.s.hasOwnProperty(k) && o.s[k] !== null) qbState[k] = o.s[k];
 		qbState.help = {};
+		qbNormalizeState();
 		return true;
 	} catch (e) { return false; }
 }
@@ -2630,6 +2851,27 @@ function qbShareLink() {
 	};
 	navigator.clipboard.writeText(url).then(done).catch(done);
 }
+function qbNormalizeState() {
+	var d = qbDefaultState();
+	if (qbState.mode !== "vocal" && qbState.mode !== "stems") qbState.mode = d.mode;
+	if (qbState.stems === null || qbState.stems === undefined) qbState.stems = d.stems;
+	if (qbState.lane === null || qbState.lane === undefined) qbState.lane = d.lane;
+	if (qbState.harmony === null || qbState.harmony === undefined) qbState.harmony = d.harmony;
+	if (!qbState.count || qbState.count < 1) qbState.count = 1;
+	var pre = QB_PRESETS[QB_PRESET_DEFAULT];
+	if (!qbState.prods) qbState.prods = [];
+	if (!qbState.edits) qbState.edits = [];
+	if (!qbState.mem) qbState.mem = [];
+	for (var i = 0; i < qbState.count; i++) {
+		if (qbState.prods[i] === null || qbState.prods[i] === undefined) qbState.prods[i] = pre.prod;
+		if (qbState.edits[i] === null || qbState.edits[i] === undefined) qbState.edits[i] = pre.edit;
+		if (qbState.mem[i] === null || qbState.mem[i] === undefined) qbState.mem[i] = 0;
+	}
+	qbState.prods.length = qbState.count;
+	qbState.edits.length = qbState.count;
+	qbState.mem.length = qbState.count;
+	if (qbState.lane === 1 && !qbState.targetDate) qbState.lane = 0; // 选了加急却没定日期，退回标准
+}
 function qbSaveState() {
 	qbLsSet(LS_STATE, JSON.stringify({ v: 1, t: Date.now(), s: qbState }));
 }
@@ -2640,10 +2882,48 @@ function qbRestoreState() {
 		var o = JSON.parse(raw);
 		if (!o || o.v !== 1 || !o.s || Date.now() - o.t > LS_MAX_AGE) return false;
 		var k, src = o.s;
-		for (k in qbState) if (src.hasOwnProperty(k)) qbState[k] = src[k];
+		for (k in qbState) if (src.hasOwnProperty(k) && src[k] !== null) qbState[k] = src[k];
 		qbState.help = {};
+		qbNormalizeState();
 		return true;
 	} catch (e) { return false; }
+}
+// ── 价格弹簧：报价单总价与顶部常驻条共用一份状态 ──────────────
+// 关键在「从当前屏幕上显示的数字出发」：连点几下档位时，数字顺着当前速度拐向新价，
+// 而不是每次都跳回上一个价重放一遍。
+var qbPriceSt = { x: 0, v: 0, target: 0, last: 0, on: false, init: false, sfx: "", from: false, cur: "¥" };
+function qbPricePaint(v) {
+	var q = I18N[currentLang].quote, txt = qbFmt(q, Math.round(v));
+	var a = document.querySelector(".qb-total");
+	if (a) a.innerHTML = txt + qbPriceSt.sfx;
+	var b = document.querySelector(".qb-prog-total");
+	if (b) b.textContent = txt + (qbPriceSt.from ? "+" : "");
+}
+function qbPriceFrame(ts) {
+	var st = qbPriceSt;
+	if (!st.last) st.last = ts;
+	var dt = Math.min(0.032, (ts - st.last) / 1000); st.last = ts;
+	qbSpring(st, st.target, 0.42, dt);
+	if (Math.abs(st.x - st.target) < 0.5 && Math.abs(st.v) < 4) {
+		st.x = st.target; st.on = false; st.last = 0; qbPricePaint(st.x); return;
+	}
+	qbPricePaint(st.x);
+	requestAnimationFrame(qbPriceFrame);
+}
+// 每次重渲染后调用：total 为 null（加急未定日期）时不动画，直接留 dash
+function qbPriceSync(total, sfx, from) {
+	var st = qbPriceSt;
+	st.sfx = sfx || ""; st.from = !!from;
+	if (total === null) { st.init = false; st.on = false; st.v = 0; return; }
+	// 页面不可见时 rAF 会被暂停——直接落到终值，避免价格停在半路
+	if (!st.init || qbReduceMotion() || document.hidden) {
+		st.init = true; st.on = false; st.v = 0; st.x = st.target = total; qbPricePaint(total); return;
+	}
+	st.target = total;
+	qbPricePaint(st.x); // 重渲染刚写进去的是最终值，先按当前动画值覆盖回来，避免闪一下
+	if (st.on) return;  // 飞行中只换目标
+	st.on = true; st.last = 0;
+	requestAnimationFrame(qbPriceFrame);
 }
 function qbBadge(text) { return '<span class="qb-badge">' + text + '</span>'; }
 // 一行结论常驻，长解释收进折叠——屏幕上永远是「选项」多过「说明」
@@ -2675,26 +2955,50 @@ function qbNextUnanswered() {
 // 从日历滑到报价单要走 1300px，挤进那点时间里中段一帧要走 100px 以上，看着就是一窜。
 // 这里让时长跟距离走，并且用户一动手就立刻让位。
 var qbScrollRAF = 0;
-function qbScrollCancel() { if (qbScrollRAF) { cancelAnimationFrame(qbScrollRAF); qbScrollRAF = 0; } }
+// ── 临界阻尼弹簧的一步积分（半隐式欧拉）────────────────────
+// damping ratio = 1（不过冲），response = 到达目标的快慢（秒）。
+// 弹簧的好处：改目标不需要重启动画，速度自然延续下去——这正是「可中断」的定义。
+function qbSpring(st, target, response, dt) {
+	var w = 2 * Math.PI / response;
+	st.v += (-w * w * (st.x - target) - 2 * w * st.v) * dt;
+	st.x += st.v * dt;
+}
+var qbScrollSt = { x: 0, v: 0, target: 0, last: 0, on: false, wrote: null, t0: 0 };
+function qbScrollCancel() {
+	if (qbScrollRAF) { cancelAnimationFrame(qbScrollRAF); qbScrollRAF = 0; }
+	qbScrollSt.on = false; qbScrollSt.v = 0; qbScrollSt.last = 0; qbScrollSt.wrote = null;
+}
 ["wheel", "touchstart", "keydown"].forEach(function (ev) {
 	window.addEventListener(ev, qbScrollCancel, { passive: true });
 });
+function qbScrollFrame(ts) {
+	var st = qbScrollSt;
+	if (!st.last) { st.last = ts; st.t0 = ts; }
+	var dt = Math.min(0.032, (ts - st.last) / 1000); st.last = ts;
+	var real = window.pageYOffset || document.documentElement.scrollTop;
+	// 实际位置和我们上一帧写进去的对不上 = 用户自己滚了，或已经到底：让开，别跟他抢
+	if (st.wrote !== null && Math.abs(real - st.wrote) > 3) { qbScrollCancel(); return; }
+	// st.x 是我们自己持有的浮点位置。不能每帧从 pageYOffset 读回来——
+	// 浏览器把 scrollTop 取整，末段每帧不足 1px 的推进会被抹掉，弹簧永远收不了尾。
+	qbSpring(st, st.target, 0.5, dt);
+	if ((Math.abs(st.x - st.target) < 0.5 && Math.abs(st.v) < 10) || ts - st.t0 > 2500) {
+		window.scrollTo({ top: Math.max(0, st.target), behavior: "instant" });
+		qbScrollCancel(); return;
+	}
+	st.wrote = Math.round(Math.max(0, st.x));
+	window.scrollTo({ top: st.wrote, behavior: "instant" });
+	qbScrollRAF = requestAnimationFrame(qbScrollFrame);
+}
 function qbSmoothTo(y) {
 	y = Math.max(0, y);
-	if (qbReduceMotion()) { window.scrollTo({ top: y, behavior: "instant" }); return; }
-	var start = window.pageYOffset || document.documentElement.scrollTop;
-	var dist = y - start;
-	if (Math.abs(dist) < 2) return;
-	qbScrollCancel();
-	var dur = Math.min(950, Math.max(340, Math.abs(dist) * 0.55)), t0 = null;
-	function step(ts) {
-		if (t0 === null) t0 = ts;
-		var p = Math.min(1, (ts - t0) / dur);
-		var e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // easeInOutCubic
-		window.scrollTo({ top: start + dist * e, behavior: "instant" });
-		qbScrollRAF = p < 1 ? requestAnimationFrame(step) : 0;
-	}
-	qbScrollRAF = requestAnimationFrame(step);
+	if (qbReduceMotion() || document.hidden) { qbScrollCancel(); window.scrollTo({ top: y, behavior: "instant" }); return; }
+	var cur = window.pageYOffset || document.documentElement.scrollTop;
+	if (!qbScrollSt.on && Math.abs(y - cur) < 2) return;
+	qbScrollSt.target = y;
+	// 已在飞行中：只换目标，速度继续带着走，不重启动画（避免连点两个档位时的「撞墙」）
+	if (qbScrollSt.on) return;
+	qbScrollSt.on = true; qbScrollSt.x = cur; qbScrollSt.v = 0; qbScrollSt.last = 0; qbScrollSt.wrote = null;
+	qbScrollRAF = requestAnimationFrame(qbScrollFrame);
 }
 function qbScrollStep(key) {
 	var el = document.querySelector('[data-qstep="' + (key || "summary") + '"]');
@@ -2797,17 +3101,8 @@ function qbJoinAnimate(fromTotal) {
 		blk.classList.remove("qb-rise"); void blk.offsetWidth; blk.classList.add("qb-rise");
 		setTimeout(function () { blk.classList.remove("qb-rise"); }, 700);
 	}
-	var to = qbCompute(q).total;
-	if (fromTotal === to || qbReduceMotion()) return;
-	var sfxEl = el.querySelector(".qb-from"), sfx = sfxEl ? sfxEl.outerHTML : "";
-	var t0 = 0, dur = 850;
-	function tick(now) {
-		if (!t0) t0 = now;
-		var pr = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - pr, 3);
-		el.innerHTML = qbFmt(q, Math.round(fromTotal + (to - fromTotal) * e)) + sfx;
-		if (pr < 1) requestAnimationFrame(tick);
-	}
-	requestAnimationFrame(tick);
+	// 数字本身由 qbPriceSync 的共享弹簧负责（每次改价都动，不只是入会时），
+	// 这里只保留一次性的光扫、上浮与触感反馈。
 }
 // 新客首单优惠：立减 ¥50，仅限单人单、仅限首单。
 // 12.5% < 会员的 20%，不抢刀门的戏；可与会员折扣叠加，正好把入会做成第二笔看得见的钱。
@@ -2843,9 +3138,14 @@ function qbAllSame(arr, n) {
 // 改人数时保留已选的人声制作/音编档位，新增的主唱留空（null）等待作答
 function qbResizeEdits(n) {
 	var nextE = [], nextP = [], nextM = [];
+	// 新增的主唱直接继承当前套餐档（自定义时继承第 1 位），永远不留 null——
+	// 配置任何时刻都是完整可下单的
+	var pre = QB_PRESETS[qbState.preset === null || qbState.preset === undefined ? QB_PRESET_DEFAULT : qbState.preset];
+	var dfE = qbState.preset === null && qbState.edits.length ? qbState.edits[0] : pre.edit;
+	var dfP = qbState.preset === null && qbState.prods.length ? qbState.prods[0] : pre.prod;
 	for (var i = 0; i < n; i++) {
-		nextE.push(i < qbState.edits.length ? qbState.edits[i] : null);
-		nextP.push(i < qbState.prods.length ? qbState.prods[i] : QB_PROD_DEFAULT);
+		nextE.push(i < qbState.edits.length ? qbState.edits[i] : dfE);
+		nextP.push(i < qbState.prods.length ? qbState.prods[i] : dfP);
 		nextM.push(i < qbState.mem.length ? qbState.mem[i] : (i === 0 && qbIsRemembered() ? 1 : 0));
 	}
 	qbState.edits = nextE;
@@ -2869,9 +3169,9 @@ function qbCountMore() {
 }
 function qbStep(delta) { qbSetCount((qbState.count || 1) + delta); }
 function qbReset() {
-	qbState.mode = null; qbState.stems = null; qbState.prods = []; qbState.harmony = null;
-	qbState.count = null; qbState.edits = []; qbState.lane = null; qbState.targetDate = null;
-	qbState.moreCount = false; qbState.mem = []; qbState.producer = false; qbState.help = {}; qbState.aaCopy = true; qbState.newbie = false;
+	var wasMem = qbIsRemembered();
+	qbState = qbDefaultState(); // 回到标准套餐，而不是回到空白
+	if (wasMem) qbState.mem[0] = 1;
 	qbLsSet(LS_STATE, null); // 会员身份单独保存，不随重置清掉
 	qbMounted = {};
 	renderQuoteBuilder();
@@ -2881,8 +3181,31 @@ function qbReset() {
 // ── Step sequence ───────────────────────────────────────────
 // 分轨模式多一步「工程规模」。一个步骤作答完毕，下一步才渲染出来。
 // 人声制作与音编都按主唱逐位选，排在人数之后
-function qbSteps() { return qbState.mode === "stems" ? ["mode", "stems", "count", "prod", "edit", "harmony", "lane"] : ["mode", "count", "prod", "edit", "harmony", "lane"]; }
+function qbSteps() { return qbState.mode === "stems" ? ["mode", "stems", "preset", "count", "prod", "edit", "harmony", "lane"] : ["mode", "preset", "count", "prod", "edit", "harmony", "lane"]; }
+// 「按需微调」分组从这一步开始——它上面是套餐，下面全是可选调整
+var QB_TUNE_FROM = "count";
+// 当前的人声制作/音编/和声组合正好等于某个套餐 → 高亮那张卡；否则落到「自定义」
+function qbSyncPreset() {
+	for (var i = 0; i < QB_PRESETS.length; i++) {
+		var p = QB_PRESETS[i], ok = qbState.harmony === p.harmony;
+		for (var v = 0; ok && v < qbState.count; v++) {
+			if (qbState.prods[v] !== p.prod || qbState.edits[v] !== p.edit) ok = false;
+		}
+		if (ok) { qbState.preset = i; return; }
+	}
+	qbState.preset = null;
+}
+// 选套餐 = 一次填满全部档位。新手点一下就有完整报价，不用再往下答。
+function qbSetPreset(i) {
+	var p = QB_PRESETS[i];
+	qbState.preset = i;
+	qbState.harmony = p.harmony;
+	for (var v = 0; v < qbState.count; v++) { qbState.prods[v] = p.prod; qbState.edits[v] = p.edit; }
+	renderQuoteBuilder();
+	requestAnimationFrame(function () { requestAnimationFrame(function () { qbScrollStep("summary"); }); });
+}
 function qbAnswered(k) {
+	if (k === "preset") return true; // 永远有一份配置在手，套餐这一步不会「未作答」
 	if (k === "mode") return qbState.mode !== null;
 	if (k === "stems") return qbState.stems !== null;
 	if (k === "harmony") return qbState.harmony !== null;
@@ -2905,11 +3228,9 @@ function qbAnswered(k) {
 	return false;
 }
 // 可见的步骤数 = 已作答的连续前缀 + 当前这一步
-function qbVisible() {
-	var s = qbSteps();
-	for (var i = 0; i < s.length; i++) if (!qbAnswered(s[i])) return i + 1;
-	return s.length;
-}
+// 全部步骤一次性挂出来（Apple 式）。客户一眼看到总共要做几个决定，
+// 而不是答一步冒一步——后者对没经验的人反而是阻力。
+function qbVisible() { return qbSteps().length; }
 function qbComplete() { var s = qbSteps(); for (var i = 0; i < s.length; i++) if (!qbAnswered(s[i])) return false; return true; }
 function qbCompute(q) {
 	qbSyncPricing(); // 会员与否决定用哪套价
@@ -3023,17 +3344,42 @@ function qbEnforceFloor(q) {
 }
 // 一个步骤的外壳：编号 + 标题 + 内容；未作答时挂 .active 并显示引导语
 function qbToggleHelp(key) { qbState.help[key] = !qbState.help[key]; renderQuoteBuilder(); }
+// 一行的固定骨架：编号+标题 → 一句副标 → 选项 → 所选档描述 → 帮助卡 → 帮助面板。
+// 每一行都长得一样，所以整页只有两种视觉重量：可点的选项，和比它轻一级的帮助。
 function qbRow(key, idx, label, body, note, hint, help) {
 	var num = (idx < 10 ? "0" : "") + idx;
-	var active = !qbAnswered(key);
 	var hOpen = !!qbState.help[key];
-	var qBtn = help ? '<button class="qb-q' + (hOpen ? " on" : "") + '" onclick="qbToggleHelp(\'' + key + '\')" aria-expanded="' + hOpen + '" title="?">?</button>' : "";
+	var a = (I18N[currentLang].quote.assist || {})[key];
+	var card = (help && a) ? '<button class="qb-assist' + (hOpen ? " on" : "") + '" onclick="qbToggleHelp(\'' + key + '\')" aria-expanded="' + hOpen + '">'
+		+ '<span class="qb-assist-txt"><span class="qb-assist-t">' + a.t + '</span><span class="qb-assist-d">' + a.d + '</span></span>'
+		+ '<span class="qb-assist-ico">' + (hOpen ? "\u2212" : "+") + '</span></button>' : "";
 	var hPanel = (help && hOpen) ? '<div class="qb-help-panel">' + help + '</div>' : "";
-	return '<div class="qb-row qb-step' + (active ? " active" : "") + '" data-qstep="' + key + '">'
-		+ '<div class="qb-label"><span class="qb-step-idx">' + num + '</span>' + label + qBtn + '</div>'
-		+ body + hPanel
-		+ (active ? '<div class="qb-hint">' + hint + '</div>' : (note ? '<div class="qb-tier-desc">' + note + '</div>' : ''))
+	return '<div class="qb-row qb-step" data-qstep="' + key + '">'
+		+ '<div class="qb-label"><span class="qb-step-idx">' + num + '</span>' + label + '</div>'
+		+ (hint ? '<div class="qb-sub">' + hint + '</div>' : '')
+		+ body
+		+ (note ? '<div class="qb-tier-desc">' + note + '</div>' : '')
+		+ card + hPanel
 		+ '</div>';
+}
+// 套餐卡上的价格是真实试算值：临时套上这个组合算一遍，再还原。
+// 会员/加急/人数都会实时反映进去——Apple 卡片上的价格也是这么来的。
+function qbPresetTotal(q, i) {
+	var p = QB_PRESETS[i];
+	var sp = qbState.prods, se = qbState.edits, sh = qbState.harmony;
+	var np = [], ne = [], v;
+	for (v = 0; v < qbState.count; v++) { np.push(p.prod); ne.push(p.edit); }
+	qbState.prods = np; qbState.edits = ne; qbState.harmony = p.harmony;
+	var c = null;
+	try { c = qbCompute(q); } catch (e) { c = null; }
+	qbState.prods = sp; qbState.edits = se; qbState.harmony = sh;
+	return c;
+}
+// 一个键都没动过 → 才把「上次的报价」摆出来，否则会盖在客户正在改的配置上
+function qbIsPristine() {
+	var d = qbDefaultState(), keys = ["mode", "stems", "preset", "harmony", "count", "lane", "producer", "newbie"];
+	for (var i = 0; i < keys.length; i++) if (qbState[keys[i]] !== d[keys[i]]) return false;
+	return qbState.prods.join() === d.prods.join() && qbState.edits.join() === d.edits.join();
 }
 function renderQuoteBuilder() {
 	qbSyncPricing();
@@ -3075,6 +3421,38 @@ function renderQuoteBuilder() {
 		html += qbRow("stems", idx.stems, q.stemsLabel, '<div class="qb-seg">' + stemBtns + '</div>',
 			qbState.stems !== null ? q.stems[qbState.stems].desc : "", q.hints.stems);
 	}
+
+	// 套餐：选完素材形态后立刻给三份成品配置，点一下就是完整报价。
+	// 没经验的客户在这里就可以结束，后面全是「想改再改」。
+	if (shown >= idx.preset) {
+		qbSyncPreset();
+		var preCards = "";
+		for (var pk = 0; pk < QB_PRESETS.length; pk++) {
+			var pc = qbPresetTotal(q, pk), pTotal = pc ? qbFmt(q, pc.total) + (pc.from ? "+" : "") : "—";
+			preCards += '<button class="qb-preset-card' + (qbState.preset === pk ? " active" : "") + '" onclick="qbSetPreset(' + pk + ')">'
+				+ '<span class="qb-preset-name">' + q.presets[pk].name + (pk === QB_PRESET_DEFAULT ? qbBadge(q.recMost) : "") + '</span>'
+				+ '<span class="qb-preset-price">' + pTotal + (qbState.count > 1 ? '<span class="qb-preset-per"> · ' + qbFmt(q, Math.round((pc ? pc.total : 0) / qbState.count)) + q.presetPer + '</span>' : '') + '</span>'
+				+ '<span class="qb-preset-desc">' + q.presets[pk].desc + '</span></button>';
+		}
+		var preBody = '<div class="qb-preset">' + preCards + '</div>';
+		if (qbState.preset === null) {
+			preBody += '<div class="qb-preset-custom"><strong>' + q.presetCustom + '</strong><span>' + q.presetCustomDesc + '</span>'
+				+ '<button class="qb-preset-back" onclick="qbSetPreset(' + QB_PRESET_DEFAULT + ')">' + q.presets[QB_PRESET_DEFAULT].name + '</button></div>';
+		}
+		// 三档包含什么：直接从 QB_PRESETS 现算，改档位内容不用动文案
+		var preRows = '<tr><th>' + q.presetCols[0] + '</th><th>' + q.presetCols[1] + '</th><th>' + q.presetCols[2] + '</th><th>' + q.presetCols[3] + '</th></tr>';
+		for (var pg2 = 0; pg2 < QB_PRESETS.length; pg2++) {
+			var pp = QB_PRESETS[pg2];
+			preRows += '<tr><td>' + q.presets[pg2].name + '</td><td>' + q.prods[pp.prod].name
+				+ '</td><td>' + q.edits[pp.edit].name + '</td><td>' + q.harmonies[pp.harmony].name + '</td></tr>';
+		}
+		var preHelp = '<div class="qb-guide-t">' + q.presetGuideTitle + '</div>'
+			+ '<div class="qb-guide-scroll"><table class="qb-guide cols"><tbody>' + preRows + '</tbody></table></div>';
+		html += qbRow("preset", idx.preset, q.presetLabel, preBody, "", q.hints.preset, preHelp);
+	}
+
+	// 以下全是可选调整——先立一道分界，告诉客户「不改也能下单」
+	html += '<div class="qb-group"><div class="qb-group-t">' + q.tuneTitle + '</div><div class="qb-group-s">' + q.tuneSub + '</div></div>';
 
 	// 主唱人数：1–3 直接点选，4 位以上切换成步进器（编号随模式自动排）
 	if (shown >= idx.count) {
@@ -3224,8 +3602,18 @@ function renderQuoteBuilder() {
 				+ '<span class="qb-seg-name">' + q.harmonies[hh].name + (hh === QB_REC.harmony ? qbBadge(q.recPick) : "") + '</span>'
 				+ '<span class="qb-seg-price">' + hp + '</span></button>';
 		}
+		// 「你到底做不做和声」是问得最多的一句——分工声明排在表格前面
+		var hGuideRows = "";
+		for (var hg = 0; hg < (q.harmonyGuide || []).length; hg++) {
+			var hRow = q.harmonyGuide[hg], hTier = q.harmonies[hRow.i];
+			hGuideRows += '<tr><td>' + hRow.t + '</td><td>' + hTier.name
+				+ (hTier.price ? " +" + qbFmt(q, hTier.price) : "") + '</td></tr>';
+		}
+		var harmHelp = '<div class="qb-scope">' + q.harmonyScope + '</div>'
+			+ '<div class="qb-guide-t">' + q.harmonyGuideTitle + '</div>'
+			+ '<table class="qb-guide"><tbody>' + hGuideRows + '</tbody></table>';
 		html += qbRow("harmony", idx.harmony, q.harmonyLabel, '<div class="qb-seg four">' + harmBtns + '</div>',
-			qbState.harmony !== null ? q.harmonies[qbState.harmony].desc : "", q.hints.harmony);
+			qbState.harmony !== null ? q.harmonies[qbState.harmony].desc : "", q.hints.harmony, harmHelp);
 	}
 
 	// 交付日期：标准 stdMin–stdMax 工作日（跳周日）+积压；加急 rushMin–rushMax 自然日（含周日）
@@ -3448,17 +3836,17 @@ function renderQuoteBuilder() {
 		+ '<span class="qb-sched-sep">·</span>'
 		+ '<span class="qb-sched-item">' + tt.schedRush.replace("{r}", rushRange) + '</span></div>';
 
-	// 进度：已答步数 / 总步数——逐步展开时客户看不到还剩几步
-	var progDone = 0;
-	for (var pg = 0; pg < steps.length; pg++) if (qbAnswered(steps[pg])) progDone++;
-	var progPct = Math.round(progDone / steps.length * 100);
-	var progTxt = done ? q.progDone : q.progStep.replace("{n}", Math.min(progDone + 1, steps.length)).replace("{m}", steps.length);
-	var progHtml = '<div class="qb-prog' + (done ? " done" : "") + '">'
-		+ '<div class="qb-prog-bar"><div class="qb-prog-fill" style="width:' + progPct + '%"></div></div>'
-		+ '<span class="qb-prog-txt">' + progTxt + '</span></div>';
+	// 常驻价格条：滚到哪里，当前配置与总价都跟着。价格离开视野是最大的犹豫来源。
+	var barName = (qbState.preset === null ? q.presetCustom : q.presets[qbState.preset].name);
+	var barTxt = (stems ? q.modeStems : q.modeVocal) + " · " + barName + " · " + qbState.count + q.countUnit;
+	var barVal = done ? qbFmt(q, c.total) + (c.from ? "+" : "") : "—";
+	var progHtml = '<div class="qb-prog live' + (done ? " done" : "") + '">'
+		+ '<span class="qb-prog-txt">' + barTxt + '</span>'
+		+ '<span class="qb-prog-total">' + barVal + '</span>'
+		+ '<button class="qb-prog-jump" onclick="qbScrollStep(\'summary\')" aria-label="' + q.totalLabel + '">↓</button></div>';
 	// 还没开始选时，把上次的报价亮出来——回访客户不用从头再点一遍
 	var lastHtml = "";
-	if (qbState.mode === null) {
+	if (qbIsPristine()) {
 		var od = qbOrders();
 		if (od.length) {
 			lastHtml = '<div class="qb-last"><span class="qb-last-l">' + q.lastLabel + ' · ' + od[0].dateTxt
@@ -3481,6 +3869,7 @@ function renderQuoteBuilder() {
 	}
 	// 被收回的步骤（改了前面的选择）忘掉它，下次再露面时重新淡入
 	for (var k in qbMounted) { if (!present[k]) delete qbMounted[k]; }
+	qbPriceSync(done ? c.total : null, done && c.from ? '<span class="qb-from">' + q.fromSuffix + '</span>' : "", done && c.from);
 	qbSaveState();
 }
 function qbFadeIn(el) {
@@ -3853,6 +4242,21 @@ function renderGate(t) {
 	document.getElementById("gate-grid").innerHTML = html;
 }
 
+// ── 底部价格条的出场时机（仅手机）────────────────────────────
+// 报价器在视野里 → 亮出价格条并收起「联系我们」；离开 → 反过来。
+// 不加这个判断，价格条会浮在录音、母带、FAQ 区上面，那里它毫无意义。
+var qbBarIO = null;
+function qbSetupBar() {
+	var m = document.getElementById("qb-mount");
+	if (!m) return;
+	if (!("IntersectionObserver" in window)) { document.body.classList.add("qb-bar-on"); return; }
+	if (qbBarIO) qbBarIO.disconnect();
+	qbBarIO = new IntersectionObserver(function (es) {
+		document.body.classList.toggle("qb-bar-on", es[0].isIntersecting);
+	}, { rootMargin: "-8% 0px -22% 0px" });
+	qbBarIO.observe(m);
+}
+
 // ── Reveal-on-scroll ────────────────────────────────────────
 function setupReveal() {
 	var els = document.querySelectorAll(".reveal");
@@ -3949,6 +4353,7 @@ function render(lang) {
 	renderSecNav(t);
 	renderQuoteBuilder();
 	setupReveal();
+	qbSetupBar();
 }
 function switchLang(lang) {
 	if (lang === currentLang) return;
@@ -3984,6 +4389,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	// 链接里带配置优先（别人分享过来的），否则恢复本机上次的
 	var hq = (location.hash || "").match(/[#&]q=([^&]+)/);
 	if (!(hq && qbDecodeState(hq[1]))) qbRestoreState();
+	if (qbIsRemembered() && !qbState.mem[0]) qbState.mem[0] = 1; // 老客户不用每次重选身份
 	render("zh");
 });
 </script>
