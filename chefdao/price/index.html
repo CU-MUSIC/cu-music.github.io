@@ -386,6 +386,9 @@
 		.qb-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--cta-bg); transition: transform 0.25s var(--ease); }
 		.qb-member.on .qb-switch { background: var(--green-soft); }
 		.qb-member.on .qb-switch::after { transform: translateX(14px); background: var(--green-deep); }
+		/* 入会通道关闭：这一行不是「可以点的选项」，压成纯说明 */
+		.mj-row.closed { opacity: 0.72; }
+		.mj-row.closed .mj-main { text-decoration: line-through; text-decoration-thickness: 1px; }
 		.qb-newbie.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.07); }
 		.qb-newbie.on .qb-switch { background: var(--green-soft); }
 		.qb-newbie.on .qb-switch::after { transform: translateX(14px); background: var(--green-deep); }
@@ -1000,6 +1003,11 @@ var PRICING = {
 	newFrom: "2026-11-01",
 	// 刀门会员延后两个月：这是会员福利，不是两套价格
 	memberFrom: "2027-01-01",
+	// ¥99 入会通道关闭日。已入会的终身 8 折照常兑现，只是不再新增。
+	// 决策依据：会员 100% 来自报价页的「本单加入」，¥5,000 门槛从未触发过一次；
+	// 于是「会员价」实际就是唯一被支付的价目表，8 折只是在给每一位客户永久降价 20%。
+	// 见 _internal-pricing.md〈2026-09-01 关闭入会通道〉
+	joinUntil: "2027-01-01",
 	plan: "D",
 	plans: {
 		A: {
@@ -1081,6 +1089,8 @@ function qbAllMember() {
 	return true;
 }
 // 刀门会员福利：调价对会员延后一个月。
+// ¥99 入会通道是否仍开放。关闭后只剩「非会员 / 创始会员」两种身份。
+function qbJoinOpen() { return new Date() < new Date(PRICING.joinUntil + "T00:00:00"); }
 // 非会员 newFrom 起用新价，全员会员 memberFrom 起才用。
 function qbNewPriceOn() {
 	var iso = qbAllMember() ? PRICING.memberFrom : PRICING.newFrom;
@@ -1359,9 +1369,10 @@ var I18N = {
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
 			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音与制作人费 8 折 · 加速通道 · 终身有效", memberLine: "刀门会员 · 8 折",
 			memberFee: 99, memOnLine: "刀门会员已启用 · 混音 8 折 · {d}交付",
-			memOff: "我不是会员 ›", memAlready: "我已经是会员 ›",
+			memOff: "我不是会员 ›", memAlready: "我是创始会员 ›",
 			memberPerNote: "折扣按主唱逐位算，非会员不受影响。",
-			mState0: "非会员", mState1: "已是会员", mState2: "本单加入", joinLine: "加入刀门",
+			mState0: "非会员", mState1: "创始会员", mState2: "本单加入", joinLine: "加入刀门",
+			memClosedNote: "刀门入会通道已关闭。已加入的创始会员，混音 8 折与加速通道终身有效，照常兑现。",
 			pbYesMain: "加入刀门 {fee}，本单立省 {save}",
 			pbYesSub: "净赚 {net} · <span class=\"qb-hl\">交付快{fast}</span> · 点此加入 ›",
 			pbNoMain: "加入刀门 {fee}，<span class=\"qb-hl\">交付快{fast}</span>",
@@ -1399,7 +1410,7 @@ var I18N = {
 			capBusy: "排期较满 · 交付顺延{w}",
 			capFull: "档期已满 · 交付顺延{w}，日期仍然明确",
 			newbieOff: 50, newbieLine: "新客首单立减",
-			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50 · 本单加入刀门可叠加", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
+			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
 				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
@@ -1506,15 +1517,17 @@ var I18N = {
 			{
 				id: "daomen", type: "membership", step: "C / U Music", title: "刀门 Daomen", groupHead: "会员 Membership",
 				intro: "它<strong>不是一个粉丝群</strong>，而是认真做音乐的人彼此成就的地方。加入刀门，你的问题会被认真对待——录音、混音、母带、职业方向，长期而稳定的陪伴与指导。",
-				joinLabel: "加入方式 · 任选其一",
+				joinLabel: "加入方式",
 				joins: [
-					{ num: "01", main: "¥99 / 人", sub: "加入刀门" },
-					{ num: "02", main: "消费累计满 ¥5,000", sub: "自动升级为永久会员" }
+					{ num: "01", main: "¥99 / 人", sub: "加入刀门" }
 				],
-				perksLabel: "会员权益",
+				joinClosedLabel: "入会通道",
+				joinClosedMain: "已关闭",
+				joinClosedSub: "刀门不再接受新成员。已加入的创始会员，全部权益终身有效。",
+				perksLabel: "创始会员权益",
 				perks: [
-					{ t: "混音终身 8 折", d: "混音标准交付价与制作人费终身 8 折（不含录音；加急附加费不在折扣范围）。在上方报价计算器把自己标成会员即可预览。" },
-					{ t: "加速通道", d: "标准 10–12 工作日 → 会员 <strong>6–9 工作日</strong>，最快一周交付。同一单里只要有一位是会员，整单都走加速。" },
+					{ t: "加速通道", d: "标准 10–12 工作日 → 创始会员 <strong>6–9 工作日</strong>，最快一周交付。同一单里只要有一位是创始会员，整单都走加速。" },
+					{ t: "混音终身 8 折", d: "混音标准交付价与制作人费终身 8 折（不含录音；加急附加费不在折扣范围）。在上方报价计算器把自己标成创始会员即可预览。" },
 					{ t: "持续输出", d: "前沿录音混音技术、工程思路、实战经验，定期更新。" },
 					{ t: "每周作品点评", d: "每周一次，不间断。练习作品、demo、已发布单曲、商业项目均可交流。" }
 				]
@@ -1864,9 +1877,10 @@ var I18N = {
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
 			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off mixing & producer fee · fast lane · for life", memberLine: "Daomen member · 20% off",
 			memberFee: 15, memOnLine: "Daomen member active · 20% off · delivery in {d}",
-			memOff: "I'm not a member ›", memAlready: "I'm already a member ›",
+			memOff: "I'm not a member ›", memAlready: "I'm a founding member ›",
 			memberPerNote: "The discount applies per vocalist; non-members are unaffected.",
-			mState0: "Not a member", mState1: "Member", mState2: "Join now", joinLine: "Join Daomen",
+			mState0: "Not a member", mState1: "Founding member", mState2: "Join now", joinLine: "Join Daomen",
+			memClosedNote: "Daomen is closed to new members. Founding members keep 20% off mixing and the fast lane for life.",
 			pbYesMain: "Join Daomen for {fee}, save {save} on this order",
 			pbYesSub: "{net} ahead · <span class=\"qb-hl\">{fast} faster</span> · tap to join ›",
 			pbNoMain: "Join Daomen for {fee}, <span class=\"qb-hl\">{fast} faster</span>",
@@ -1904,7 +1918,7 @@ var I18N = {
 			capBusy: "Filling up · delivery pushed back {w}",
 			capFull: "Fully booked · delivery pushed back {w}, dates still firm",
 			newbieOff: 8, newbieLine: "First-order discount",
-			newbieTitle: "First-order discount", newbieSub: "$8 off your first single-vocalist order · stacks if you join Daomen with it", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
+			newbieTitle: "First-order discount", newbieSub: "$8 off your first single-vocalist order", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
 			copyTerms: "Working terms", copyMore: "Full details",
 			copyTermsList: [
 				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before I start",
@@ -2011,15 +2025,17 @@ var I18N = {
 			{
 				id: "daomen", type: "membership", step: "C / U Music", title: "Daomen Membership", groupHead: "Membership",
 				intro: "It's <strong>not a fan club</strong> — it's where people serious about music help each other level up. Join Daomen and your questions get real answers: recording, mixing, mastering, career direction, with long-term, steady guidance.",
-				joinLabel: "How to join · either one",
+				joinLabel: "How to join",
 				joins: [
-					{ num: "01", main: "$15 / person", sub: "Join Daomen" },
-					{ num: "02", main: "Spend $700 total", sub: "Auto-upgrade to lifetime member" }
+					{ num: "01", main: "$15 / person", sub: "Join Daomen" }
 				],
-				perksLabel: "Member benefits",
+				joinClosedLabel: "Membership",
+				joinClosedMain: "Closed",
+				joinClosedSub: "Daomen is no longer accepting new members. Founding members keep every benefit for life.",
+				perksLabel: "Founding member benefits",
 				perks: [
-					{ t: "20% off mixing, for life", d: "20% off the standard mixing price and the producer fee for as long as you're a member (recording excluded; rush fee not discounted). Mark yourself as a member in the quote builder above to preview." },
-					{ t: "Fast lane", d: "Standard 10–12 working days becomes <strong>6–9</strong> for members — as fast as one week. One member on the order moves the whole order up." },
+					{ t: "Fast lane", d: "Standard 10–12 working days becomes <strong>6–9</strong> for founding members — as fast as one week. One founding member on the order moves the whole order up." },
+					{ t: "20% off mixing, for life", d: "20% off the standard mixing price and the producer fee, for life (recording excluded; rush fee not discounted). Mark yourself as a founding member in the quote builder above to preview." },
 					{ t: "Ongoing insights", d: "Recording and mixing techniques, engineering approaches, and hands-on experience, updated regularly." },
 					{ t: "Weekly feedback", d: "Once a week, every week. Practice tracks, demos, released singles, and commercial projects all welcome." }
 				]
@@ -2364,9 +2380,10 @@ var I18N = {
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
 			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱·프로듀서 20% 할인 · 패스트 레인 · 평생", memberLine: "刀门 회원 · 20% 할인",
 			memberFee: 20000, memOnLine: "刀门 회원 적용 중 · 20% 할인 · {d} 납품",
-			memOff: "회원이 아닙니다 ›", memAlready: "이미 회원입니다 ›",
+			memOff: "회원이 아닙니다 ›", memAlready: "저는 창립 회원입니다 ›",
 			memberPerNote: "할인은 보컬별로 적용되며 비회원에게는 영향이 없습니다.",
-			mState0: "비회원", mState1: "회원", mState2: "지금 가입", joinLine: "刀门 가입",
+			mState0: "비회원", mState1: "창립 회원", mState2: "지금 가입", joinLine: "刀门 가입",
+			memClosedNote: "刀门 가입이 마감되었습니다. 이미 가입하신 창립 회원은 믹싱 20% 할인과 패스트 레인이 평생 유지됩니다.",
 			pbYesMain: "{fee} 가입, 이번 주문에서 {save} 절약",
 			pbYesSub: "순 {net} 이득 · <span class=\"qb-hl\">납품 {fast} 단축</span> · 탭하여 가입 ›",
 			pbNoMain: "{fee} 가입, <span class=\"qb-hl\">납품 {fast} 단축</span>",
@@ -2404,7 +2421,7 @@ var I18N = {
 			capBusy: "일정 혼잡 · 납품 {w} 순연",
 			capFull: "일정 마감 · 납품 {w} 순연, 날짜는 명확합니다",
 			newbieOff: 10000, newbieLine: "첫 주문 할인",
-			newbieTitle: "첫 주문 할인", newbieSub: "첫 협업, 보컬 1인 주문 ₩10,000 할인 · 이번에 가입 시 중복 적용", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
+			newbieTitle: "첫 주문 할인", newbieSub: "첫 협업, 보컬 1인 주문 ₩10,000 할인", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
 			copyTerms: "협업 요점", copyMore: "전체 안내",
 			copyTermsList: [
 				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
@@ -2511,15 +2528,17 @@ var I18N = {
 			{
 				id: "daomen", type: "membership", step: "C / U Music", title: "刀门 Daomen 멤버십", groupHead: "멤버십 Membership",
 				intro: "<strong>팬클럽이 아닙니다</strong> — 진지하게 음악을 만드는 사람들이 서로 성장하는 곳입니다. 刀门에 가입하면 레코딩, 믹싱, 마스터링, 커리어 방향까지 장기적이고 안정적인 가이드를 받을 수 있습니다.",
-				joinLabel: "가입 방법 · 택 1",
+				joinLabel: "가입 방법",
 				joins: [
-					{ num: "01", main: "₩20,000 / 1인", sub: "刀门 가입" },
-					{ num: "02", main: "누적 결제 ₩1,000,000", sub: "평생 회원 자동 승급" }
+					{ num: "01", main: "₩20,000 / 1인", sub: "刀门 가입" }
 				],
-				perksLabel: "회원 혜택",
+				joinClosedLabel: "가입",
+				joinClosedMain: "마감",
+				joinClosedSub: "刀门은 더 이상 신규 회원을 받지 않습니다. 창립 회원의 모든 혜택은 평생 유지됩니다.",
+				perksLabel: "창립 회원 혜택",
 				perks: [
-					{ t: "믹싱 평생 20% 할인", d: "믹싱 표준 납품가에 평생 20% 할인 (레코딩 제외; 긴급 요금은 할인 미적용). 위 견적 계산기에서 「刀门 회원가」를 켜면 미리 볼 수 있습니다." },
-					{ t: "패스트 레인", d: "표준 10–12 영업일 → 회원 <strong>6–9 영업일</strong>, 최단 일주일. 한 주문에 회원이 한 명만 있어도 전체가 빨라집니다." },
+					{ t: "패스트 레인", d: "표준 10–12 영업일 → 창립 회원 <strong>6–9 영업일</strong>, 최단 일주일. 한 주문에 창립 회원이 한 명만 있어도 전체가 빨라집니다." },
+					{ t: "믹싱 평생 20% 할인", d: "믹싱 표준 납품가와 프로듀서 비용에 평생 20% 할인 (레코딩 제외; 긴급 요금은 할인 미적용). 위 견적 계산기에서 창립 회원으로 표시하면 미리 볼 수 있습니다." },
 					{ t: "지속적인 인사이트", d: "최신 레코딩·믹싱 테크닉, 엔지니어링 사고방식, 실전 경험을 정기 업데이트." },
 					{ t: "주간 작품 피드백", d: "매주 1회, 빠짐없이. 연습 작품, 데모, 발매 싱글, 커머셜 프로젝트 모두 환영." }
 				]
@@ -2870,6 +2889,8 @@ function qbNormalizeState() {
 	qbState.prods.length = qbState.count;
 	qbState.edits.length = qbState.count;
 	qbState.mem.length = qbState.count;
+	// 通道关闭后，旧配置里残留的「本单加入」退回非会员——不能凭一份缓存白送终身权益
+	if (!qbJoinOpen()) { for (var mi = 0; mi < qbState.count; mi++) if (qbState.mem[mi] === 2) qbState.mem[mi] = 0; }
 	if (qbState.lane === 1 && !qbState.targetDate) qbState.lane = 0; // 选了加急却没定日期，退回标准
 }
 function qbSaveState() {
@@ -3052,6 +3073,7 @@ function qbPickDate(v) {
 // 选中的这天要加急费，但换成会员就不用（或者便宜一档）——这时候入会几乎一定更划算。
 // 不在这里说，客户就得自己在日历和会员区之间来回换算，多半算不出来，直接付了加急费。
 function qbJoinBeatsRush(q) {
+	if (!qbJoinOpen()) return null;
 	if (qbHasMember()) return null;
 	if (qbState.lane !== 1 || !qbState.targetDate) return null;
 	var days = qbDaysUntil(qbState.targetDate) - qbCutoff();
@@ -3114,6 +3136,7 @@ function qbNewbieOk() { return qbState.count === 1 && !qbNewbieUsed() && qbMemSt
 function qbToggleNewbie() { qbState.newbie = !qbState.newbie; renderQuoteBuilder(); }
 function qbToggleAaCopy() { qbState.aaCopy = !(qbState.aaCopy !== false); renderQuoteBuilder(); }
 function qbSetMem(i, val) {
+	if (val === 2 && !qbJoinOpen()) return; // 通道已关，别再新增终身会员
 	var before = qbComplete() ? qbCompute(I18N[currentLang].quote).total : null;
 	qbState.mem[i] = val;
 	if (i === 0) qbRememberMember(val > 0); // 主唱 1 视为下单本人
@@ -3740,18 +3763,20 @@ function renderQuoteBuilder() {
 			+ '<div class="qb-split-note">' + q.depositNote + '</div>'
 			+ '</div>';
 		// 刀门会员：逐位选（非会员 / 已是会员 / 本单加入），只有会员那份享 8 折
-		var memStates = [q.mState0, q.mState1, q.mState2 + " +" + qbFmt(q, q.memberFee)];
+		// 通道关闭后只剩两种身份，「本单加入」整列消失
+		var joinOn = qbJoinOpen();
+		var memStates = joinOn ? [q.mState0, q.mState1, q.mState2 + " +" + qbFmt(q, q.memberFee)] : [q.mState0, q.mState1];
 		var memRows = "";
 		if (c.count > 1) {
 			var mSame = qbAllSame(qbState.mem, c.count), mAllBtns = "";
-			for (var mab = 0; mab < 3; mab++) {
+			for (var mab = 0; mab < memStates.length; mab++) {
 				mAllBtns += '<button class="qb-mini-btn' + (mab === mSame ? " active" : "") + '" onclick="qbSetAllMem(' + mab + ')">' + memStates[mab] + '</button>';
 			}
 			memRows += '<div class="qb-voc-row qb-all-row"><span class="qb-voc-name">' + q.allLabel + '</span><div class="qb-mini-seg">' + mAllBtns + '</div></div>';
 		}
 		for (var mv = 0; mv < c.count; mv++) {
 			var mchips = "";
-			for (var ms = 0; ms < 3; ms++) {
+			for (var ms = 0; ms < memStates.length; ms++) {
 				mchips += '<button class="qb-mini-btn' + (qbMemState(mv) === ms ? " active" : "") + '" onclick="qbSetMem(' + mv + ',' + ms + ')">' + memStates[ms] + '</button>';
 			}
 			memRows += '<div class="qb-voc-row">' + (c.count > 1 ? '<span class="qb-voc-name">' + q.vocalistLabel + ' ' + (mv + 1) + '</span>' : "")
@@ -3765,7 +3790,7 @@ function renderQuoteBuilder() {
 			if (sv > pbSave) { pbSave = sv; pbIdx = pb; }
 		}
 		var pbHtml = "";
-		if (pbIdx >= 0) {
+		if (pbIdx >= 0 && joinOn) {
 			var pbNet = pbSave - q.memberFee, pbGood = pbNet > 0;
 			var fill = function (t) {
 				return t.replace("{fee}", qbFmt(q, q.memberFee)).replace("{save}", qbFmt(q, pbSave))
@@ -3799,6 +3824,8 @@ function renderQuoteBuilder() {
 				+ '<span class="qb-member-sub">' + q.newbieSub + '</span></span>'
 				+ '<span class="qb-switch"></span></button>';
 		}
+		// 通道关闭后补一句说明：既解释为什么没有加入按钮，也向创始会员保证权益照兑现
+		if (!joinOn) memBody += '<div class="qb-member-sub" style="margin-top:10px">' + q.memClosedNote + '</div>';
 		var memberHtml = '<div class="qb-memblock' + (c.discount > 0 ? " on" : "") + '">'
 			+ '<span class="qb-member-label">' + q.memberTitle
 			+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="qbScrollTo(\'svc-daomen\')">?</span></span>'
@@ -4040,10 +4067,16 @@ function renderProjectLead(svc) {
 		+ '</div></div>';
 }
 function renderMembership(svc) {
-	var joins = "";
-	for (var j = 0; j < svc.joins.length; j++) {
-		joins += '<div class="mj-row"><span class="mj-num">' + svc.joins[j].num + '</span>'
-			+ '<span><span class="mj-main">' + svc.joins[j].main + '</span><span class="mj-sub">' + svc.joins[j].sub + '</span></span></div>';
+	// 通道关闭后不再展示入会方式，换成一行「已关闭」——不留任何看起来还能加入的入口
+	var open = qbJoinOpen(), joins = "", label = open ? svc.joinLabel : svc.joinClosedLabel;
+	if (open) {
+		for (var j = 0; j < svc.joins.length; j++) {
+			joins += '<div class="mj-row"><span class="mj-num">' + svc.joins[j].num + '</span>'
+				+ '<span><span class="mj-main">' + svc.joins[j].main + '</span><span class="mj-sub">' + svc.joins[j].sub + '</span></span></div>';
+		}
+	} else {
+		joins = '<div class="mj-row closed"><span class="mj-num">—</span>'
+			+ '<span><span class="mj-main">' + svc.joinClosedMain + '</span><span class="mj-sub">' + svc.joinClosedSub + '</span></span></div>';
 	}
 	var perks = "";
 	for (var p = 0; p < svc.perks.length; p++) {
@@ -4051,7 +4084,7 @@ function renderMembership(svc) {
 	}
 	return '<div class="member-card">'
 		+ '<div class="member-intro">' + svc.intro + '</div>'
-		+ '<div class="mj-label">' + svc.joinLabel + '</div>' + joins
+		+ '<div class="mj-label">' + label + '</div>' + joins
 		+ '<div class="mj-label" style="margin-top:26px">' + svc.perksLabel + '</div>'
 		+ '<div class="perk-list">' + perks + '</div>'
 		+ '</div>';
