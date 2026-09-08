@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BounceTimer · 免费 Logic 并轨计时插件 | ChefDao</title>
+<meta name="description" content="给 Logic Pro 用的免费并轨计时插件：还剩多久、渲染倍速、全屏专注、历史记录。一个 ADHD 混音师给自己做的工具。AU 格式，Intel / Apple Silicon 通用，开源免费。">
+<meta name="theme-color" content="#080808">
+<link rel="icon" href="shots/icon.png">
+
+<meta property="og:title" content="BounceTimer · 免费 Logic 并轨计时插件">
+<meta property="og:description" content="并轨还要多久？挂上就知道。免费、开源、Intel / Apple Silicon 通用。">
+<meta property="og:image" content="https://cumusic.work/chefdao/plugin/shots/zh-bouncing.webp">
+<meta property="og:url" content="https://cumusic.work/chefdao/plugin">
+<meta property="og:type" content="website">
+
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<style>
+/* ── 与 /chefdao/price 同一套设计令牌：黑白极简 + 墨绿呼应 ChefDao 绿标 ── */
+:root {
+	color-scheme: dark;
+	--ink: 255, 255, 255;
+	--veil: 8, 8, 8;
+	--amber: 232, 201, 138;
+	--amber-t: #e8c98a;
+	--green-ink: 96, 176, 134;
+	--bg: #080808;
+	--surface: #111111;
+	--surface-hover: #161616;
+	--text-primary: #f0f0f0;
+	--text-secondary: #9a9a9a;
+	--text-dim: #7d7d7d;
+	--green-line: rgba(var(--green-ink), 0.25);
+	--green-soft: #8fc3a9;
+	--border: rgba(var(--ink), 0.08);
+	--border-hover: rgba(var(--ink), 0.2);
+	--cta-bg: #f0f0f0;
+	--cta-fg: #0a0a0a;
+	--pill-bg: rgba(17, 17, 17, 0.85);
+	--font: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+	--mono: "SF Mono", ui-monospace, Menlo, monospace;
+	--ease: cubic-bezier(0.16, 1, 0.3, 1);
+	--r: 14px;
+}
+:root[data-theme="light"] {
+	color-scheme: light;
+	--ink: 22, 27, 24;
+	--veil: 236, 238, 236;
+	--amber: 138, 106, 26;
+	--amber-t: #7a5d13;
+	--green-ink: 31, 107, 74;
+	--bg: #eceeec;
+	--surface: #f6f7f5;
+	--surface-hover: #e6e9e6;
+	--text-primary: #141816;
+	--text-secondary: #4f5653;
+	--text-dim: #656c68;
+	--green-line: rgba(var(--green-ink), 0.3);
+	--green-soft: #1f6b4a;
+	--cta-bg: #1a1e1c;
+	--cta-fg: #f4f6f4;
+	--pill-bg: rgba(252, 253, 252, 0.9);
+}
+:root[data-theme="light"] .hero h1 { text-shadow: 1px 2px 0 rgba(var(--green-ink), 0.14); }
+:root[data-theme="light"] .dl-btn { box-shadow: 0 6px 24px rgba(var(--green-ink), 0.22); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body {
+	background: var(--bg); color: var(--text-primary); font-family: var(--font);
+	-webkit-font-smoothing: antialiased; line-height: 1.6;
+	transition: background .3s var(--ease), color .3s var(--ease);
+}
+a { color: inherit; }
+.container { max-width: 900px; margin: 0 auto; padding: 64px 24px 40px; }
+
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+	html { scroll-behavior: auto; }
+	.reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ── 顶栏 ────────────────────────────────────────────── */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 54px; }
+.back { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--text-secondary); text-decoration: none; transition: color .2s; }
+.back:hover { color: var(--text-primary); }
+.top-right { display: flex; align-items: center; gap: 8px; }
+.theme-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 100px; border: .5px solid var(--border); background: var(--surface); color: var(--text-secondary); font-size: 14px; line-height: 1; cursor: pointer; transition: color .2s, border-color .2s; }
+.theme-btn:hover { color: var(--text-primary); border-color: var(--border-hover); }
+
+/* ── Hero ────────────────────────────────────────────── */
+.hero { display: grid; grid-template-columns: 1fr 300px; gap: 44px; align-items: center; margin-bottom: 68px; }
+.hero-icon { width: 86px; height: 86px; object-fit: contain; border-radius: 20px; margin-bottom: 22px; display: block; box-shadow: 0 10px 40px rgba(var(--green-ink), .22); }
+.kicker { display: inline-flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--green-soft); margin-bottom: 14px; }
+.kicker::before { content: ""; width: 18px; height: 1px; background: currentColor; opacity: .6; }
+.hero h1 {
+	font-size: clamp(38px, 9vw, 66px); font-weight: 700; letter-spacing: -.035em; line-height: 1.03;
+	margin-bottom: 14px;
+	text-shadow: 2px 3px 0 rgba(var(--green-ink), .16), 0 0 70px rgba(var(--green-ink), .13);
+}
+.hero-sub { color: var(--text-secondary); font-size: 15.5px; max-width: 460px; line-height: 1.75; }
+.hero-shot { width: 100%; height: auto; border-radius: 18px; border: .5px solid var(--border); display: block; box-shadow: 0 20px 60px rgba(0, 0, 0, .45); }
+@media (max-width: 760px) {
+	.hero { grid-template-columns: 1fr; gap: 32px; margin-bottom: 52px; }
+	.hero-shot { max-width: 280px; margin: 0 auto; }
+}
+
+/* ── 下载区 ──────────────────────────────────────────── */
+.dl { background: var(--surface); border: .5px solid var(--green-line); border-radius: 20px; padding: 30px 30px 26px; margin-bottom: 16px; }
+.dl-btn {
+	display: flex; align-items: center; justify-content: center; gap: 11px;
+	width: 100%; padding: 19px 28px; border-radius: 100px;
+	background: var(--green-soft); color: var(--cta-fg);
+	font-family: var(--font); font-size: 15px; font-weight: 700; letter-spacing: .01em;
+	text-decoration: none; border: none; cursor: pointer;
+	transition: transform .15s var(--ease), filter .2s;
+	box-shadow: 0 8px 30px rgba(var(--green-ink), .3);
+}
+:root:not([data-theme="light"]) .dl-btn { color: #0a1410; }
+.dl-btn:hover { filter: brightness(1.08); }
+.dl-btn:active { transform: scale(.985); }
+.dl-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin-top: 15px; font-size: 12px; color: var(--text-dim); }
+.dl-meta span { display: inline-flex; align-items: center; gap: 6px; }
+.dl-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green-soft); flex-shrink: 0; }
+
+/* ── 作者自白（这插件为什么存在）───────────────────── */
+.note { background: var(--surface); border: .5px solid var(--border); border-left: 3px solid var(--green-soft); border-radius: var(--r); padding: 30px 32px; margin-bottom: 64px; }
+.note-who { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--green-soft); margin-bottom: 16px; }
+.note-who::before { content: ""; width: 16px; height: 1px; background: currentColor; opacity: .6; }
+.note p { font-size: 14.5px; line-height: 1.85; color: var(--text-secondary); }
+.note p + p { margin-top: 13px; }
+.note strong { color: var(--text-primary); font-weight: 600; }
+@media (max-width: 640px) { .note { padding: 24px 22px; } .note p { font-size: 14px; } }
+
+/* ── 步骤 ────────────────────────────────────────────── */
+.section { margin-bottom: 64px; scroll-margin-top: 24px; }
+.section-head { margin-bottom: 26px; }
+.step-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; }
+.step-tag::before { content: ""; width: 18px; height: 1px; background: currentColor; opacity: .6; }
+.section-head h2 { font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: -.02em; }
+.section-head .sub { display: block; font-size: 12.5px; color: var(--text-dim); margin-top: 8px; max-width: 560px; line-height: 1.65; }
+
+.steps { display: flex; flex-direction: column; gap: 12px; counter-reset: s; }
+.step { display: grid; grid-template-columns: 34px 1fr; gap: 16px; background: var(--surface); border: .5px solid var(--border); border-radius: var(--r); padding: 22px 24px; transition: border-color .3s var(--ease), background .3s var(--ease); }
+.step:hover { border-color: var(--border-hover); background: var(--surface-hover); }
+.step-n { counter-increment: s; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--green-line); background: rgba(var(--green-ink), .1); color: var(--green-soft); font-size: 14px; font-weight: 700; }
+.step-n::before { content: counter(s); }
+.step h3 { font-size: 16px; font-weight: 650; letter-spacing: -.01em; margin-bottom: 6px; }
+.step p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.7; }
+.step p + p { margin-top: 8px; }
+.step em { font-style: normal; color: var(--text-primary); font-weight: 600; }
+
+/* 必做那一步：琥珀色，跟其他步骤区分开 */
+.step.must { border-color: rgba(var(--amber), .45); background: rgba(var(--amber), .07); }
+.step.must:hover { background: rgba(var(--amber), .1); }
+.step.must .step-n { border-color: rgba(var(--amber), .5); background: rgba(var(--amber), .14); color: var(--amber-t); }
+.step.must h3 { color: var(--amber-t); }
+
+.cmd { position: relative; margin-top: 12px; }
+.cmd code {
+	display: block; font-family: var(--mono); font-size: 11.5px; line-height: 1.7;
+	background: rgba(var(--veil), .6); border: .5px solid var(--border);
+	border-radius: 10px; padding: 14px 92px 14px 15px; color: var(--text-primary);
+	overflow-x: auto; white-space: pre; -webkit-overflow-scrolling: touch;
+}
+.copy {
+	position: absolute; top: 8px; right: 8px; padding: 7px 13px; border-radius: 8px;
+	border: .5px solid var(--border-hover); background: var(--surface);
+	color: var(--text-secondary); font-family: var(--font); font-size: 11.5px; font-weight: 650;
+	cursor: pointer; transition: color .2s, border-color .2s, background .2s;
+}
+.copy:hover { color: var(--text-primary); border-color: var(--green-line); }
+.copy.done { color: var(--green-soft); border-color: var(--green-line); background: rgba(var(--green-ink), .12); }
+
+.why { margin-top: 11px; font-size: 12.5px; line-height: 1.7; color: var(--text-dim); padding-left: 12px; border-left: 2px solid var(--border); }
+
+/* ── 功能卡 ──────────────────────────────────────────── */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: .5px solid var(--border); border-radius: var(--r); padding: 24px; transition: border-color .3s var(--ease), background .3s var(--ease), transform .3s var(--ease); }
+.card:hover { border-color: var(--border-hover); background: var(--surface-hover); transform: translateY(-3px); }
+.card h3 { font-size: 15px; font-weight: 650; margin-bottom: 7px; }
+.card p { font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+
+/* ── 截图带 ──────────────────────────────────────────── */
+.shots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.shots img { width: 100%; height: auto; border-radius: 12px; border: .5px solid var(--border); display: block; }
+@media (max-width: 700px) { .shots { grid-template-columns: repeat(2, 1fr); } }
+.shots-cap { margin-top: 12px; font-size: 12px; color: var(--text-dim); text-align: center; }
+
+/* ── FAQ ─────────────────────────────────────────────── */
+.faq { border-top: .5px solid var(--border); }
+.faq details { border-bottom: .5px solid var(--border); }
+.faq summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 2px; font-size: 14.5px; font-weight: 600; cursor: pointer; list-style: none; transition: color .2s; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-size: 18px; font-weight: 400; color: var(--text-dim); transition: transform .3s var(--ease); }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq summary:hover { color: var(--green-soft); }
+.faq .a { padding: 0 2px 20px; font-size: 13.5px; color: var(--text-secondary); line-height: 1.75; max-width: 640px; }
+.faq .a code { font-family: var(--mono); font-size: 12px; background: rgba(var(--ink), .06); padding: 2px 6px; border-radius: 5px; }
+
+/* ── 底部 ────────────────────────────────────────────── */
+.foot-cta { background: var(--surface); border: .5px solid var(--border); border-radius: 20px; padding: 34px 30px; text-align: center; margin-bottom: 44px; }
+.foot-cta h2 { font-size: clamp(20px, 4.5vw, 26px); font-weight: 700; letter-spacing: -.02em; margin-bottom: 10px; }
+.foot-cta p { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 22px; }
+footer { text-align: center; color: var(--text-dim); font-size: 11px; letter-spacing: .06em; line-height: 2; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+footer a { color: var(--text-secondary); text-decoration: none; }
+footer a:hover { color: var(--text-primary); }
+.foot-mark { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.foot-mark img { height: 13px; width: auto; opacity: .75; }
+
+/* ── 吸底下载条（滚过 hero 才出现）───────────────────── */
+.sticky { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 130%); z-index: 90; transition: transform .45s var(--ease); }
+.sticky.on { transform: translate(-50%, 0); }
+.sticky a {
+	display: flex; align-items: center; gap: 10px; padding: 14px 26px; border-radius: 100px;
+	background: var(--pill-bg); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+	border: .5px solid var(--border-hover); color: var(--text-primary);
+	font-size: 12.5px; font-weight: 650; letter-spacing: .04em; text-decoration: none;
+	box-shadow: 0 8px 30px rgba(0, 0, 0, .35); transition: background .2s, color .2s, border-color .2s;
+	white-space: nowrap;
+}
+.sticky a:hover { background: var(--cta-bg); color: var(--cta-fg); border-color: var(--cta-bg); }
+@media (max-width: 480px) { .sticky { left: 16px; right: 16px; transform: translateY(130%); } .sticky.on { transform: translateY(0); } .sticky a { justify-content: center; } }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+	<div class="top">
+		<a class="back" href="/chefdao/">← 刀大厨 ChefDao</a>
+		<div class="top-right">
+			<button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Light">◒</button>
+		</div>
+	</div>
+
+	<!-- ── Hero ── -->
+	<div class="hero reveal">
+		<div>
+			<img class="hero-icon" src="shots/icon.png" alt="BounceTimer" width="86" height="86">
+			<div class="kicker">Free · Open Source · Logic Pro</div>
+			<h1>BounceTimer</h1>
+			<p class="hero-sub">
+				并轨还要多久？挂上就知道。<br>
+				一个给 Logic Pro 用的免费并轨计时插件 —— 实时显示已用时间、剩余时间、渲染倍速，
+				还能在并轨时把整个屏幕暗下来，只留一个进度环。
+			</p>
+		</div>
+		<img class="hero-shot" src="shots/zh-bouncing.webp" alt="BounceTimer 并轨中界面" width="720" height="1020" loading="eager">
+	</div>
+
+	<!-- ── 下载 ── -->
+	<div class="dl reveal" id="download">
+		<a class="dl-btn" href="BounceTimer-1.0.0.dmg" download>
+			下载 BounceTimer 1.0.0（macOS）
+		</a>
+		<div class="dl-meta">
+			<span><i class="dl-dot"></i>AU 格式 · Logic Pro / GarageBand</span>
+			<span><i class="dl-dot"></i>Intel + Apple Silicon 通用</span>
+			<span><i class="dl-dot"></i>macOS 11 以上 · 3.7 MB</span>
+			<span><i class="dl-dot"></i>完全免费 · 无内购</span>
+		</div>
+	</div>
+
+	<!-- ── 作者自白 ── -->
+	<div class="note reveal">
+		<div class="note-who">为什么会有这个插件</div>
+		<p>先说客观原因：Logic 只告诉你「在跑」，不告诉你还剩多久。同样 4 分钟的歌，插件少的时候 40 秒完事，堆满模拟建模和卷积混响能磨五分钟 —— 歌的长度根本预测不了并轨的长度。</p>
+		<p>再说真实原因。<strong>我有 ADHD，并轨的时候我基本是盯着屏幕看到它结束。</strong>不是我需要盯，是一走开就开始不确定：它还在跑吗？会不会中途报错？我会不会干着干着就忘了回来？</p>
+		<p>最耗注意力的从来不是等待本身，是这种不确定 —— 那件没做完的事会一直占着一块脑子，干什么都干不进去，所以干脆什么都不干，就在这儿守着。</p>
+		<p>我需要的不是「耐心一点」，是一个明确的数字。<strong>「还剩 24 秒」比任何时间管理技巧都管用，因为它把不确定直接消掉了。</strong>全屏专注那个功能就是顺着这个想法做的：把进度变成一个环，剩下的屏幕全关掉，然后你就敢走开了。</p>
+		<p>这插件是先给我自己做的。如果你也是那种不敢走开的人，它可能不只是帮你省时间。</p>
+	</div>
+
+	<!-- ── 安装 ── -->
+	<div class="section reveal">
+		<div class="section-head">
+			<div class="step-tag">Install</div>
+			<h2>三步装好</h2>
+			<span class="sub">第 2 步不能跳过 —— 这个插件没有花钱做 Apple 签名，不做这一步 Logic 会认为插件已损坏。</span>
+		</div>
+
+		<div class="steps">
+			<div class="step">
+				<div class="step-n"></div>
+				<div>
+					<h3>把插件拖进 Components 文件夹</h3>
+					<p>双击下载好的 <em>BounceTimer-1.0.0.dmg</em>，把左边的插件图标拖到右边的 Components 文件夹上。</p>
+					<p>系统会要求输入开机密码 —— 因为要写进系统目录，正常现象。</p>
+				</div>
+			</div>
+
+			<div class="step must">
+				<div class="step-n"></div>
+				<div>
+					<h3>去掉隔离标记（必做）</h3>
+					<p>打开「终端」App（聚焦搜索 <em>Terminal</em>），把下面这一整行粘贴进去，回车。<strong>没有任何输出就是成功了。</strong></p>
+					<div class="cmd">
+						<code id="cmd">xattr -dr com.apple.quarantine /Library/Audio/Plug-Ins/Components/BounceTimer.component</code>
+						<button class="copy" id="copy-btn" onclick="copyCmd()">复制</button>
+					</div>
+					<p class="why">
+						macOS 会给所有从网上下载的文件盖一个「隔离」标记。做了 Apple 付费签名（99 美元一年）的插件可以免这一步，
+						这个插件是免费开源的，所以要你自己动一下手。<br>
+						这行命令只是把那个标记删掉，不会改动插件本身。
+					</p>
+				</div>
+			</div>
+
+			<div class="step">
+				<div class="step-n"></div>
+				<div>
+					<h3>完全退出 Logic Pro，再重新打开</h3>
+					<p>Logic 会重新扫描插件，第一次可能要等十几秒。</p>
+					<p>然后把 <em>BounceTimer</em> 挂在「立体声输出 / Stereo Out」通道条的音频 FX 上，放最后一格最省事。</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ── 怎么用 ── -->
+	<div class="section reveal">
+		<div class="section-head">
+			<div class="step-tag">Usage</div>
+			<h2>怎么用</h2>
+			<span class="sub">Logic 不会把工程总长度告诉插件，所以要手动填一次。填过之后会跟工程一起保存。</span>
+		</div>
+
+		<div class="grid">
+			<div class="card">
+				<h3>① 填一次歌曲长度</h3>
+				<p>知道分秒就填「分 / 秒」；只知道速度和小节，就填「BPM / 小节」。工程长度在 Logic 的：文件 › 工程设置 › 通用 › 工程结束。</p>
+			</div>
+			<div class="card">
+				<h3>② 正常并轨 ⌘B</h3>
+				<p>插件会实时显示已用时间、剩余时间、渲染倍速，和当前渲染到哪一秒。</p>
+			</div>
+			<div class="card">
+				<h3>③ 走开去干别的</h3>
+				<p>打开「全屏专注」，并轨时整个屏幕会暗下来只留一个进度环。点一下可以隐藏，鼠标静止 10 秒会自动淡回来，并轨全程不受影响。</p>
+			</div>
+			<div class="card">
+				<h3>④ 完事有提示音</h3>
+				<p>并轨结束会响一声。历史记录页会记下每一次并轨的时间和时长，还能加备注。</p>
+			</div>
+		</div>
+	</div>
+
+	<!-- ── 截图 ── -->
+	<div class="section reveal">
+		<div class="section-head">
+			<div class="step-tag">Look</div>
+			<h2>8 套主题配色</h2>
+			<span class="sub">中英双语，跟随系统或手动切换。</span>
+		</div>
+		<div class="shots">
+			<img src="shots/theme-1-chefdao.webp" alt="刀大厨主题" width="720" height="1020" loading="lazy">
+			<img src="shots/theme-2-azure.webp" alt="湛蓝主题" width="720" height="1020" loading="lazy">
+			<img src="shots/theme-4-rose.webp" alt="蔷薇主题" width="720" height="1020" loading="lazy">
+			<img src="shots/zh-history.webp" alt="并轨历史记录" width="720" height="1020" loading="lazy">
+		</div>
+		<p class="shots-cap">刀大厨 · 湛蓝 · 蔷薇 · 历史记录页（另有石墨、紫罗兰、落日、青柠、湖蓝）</p>
+	</div>
+
+	<!-- ── FAQ ── -->
+	<div class="section reveal">
+		<div class="section-head">
+			<div class="step-tag">FAQ</div>
+			<h2>常见问题</h2>
+		</div>
+		<div class="faq">
+			<details>
+				<summary>装完了，Logic 里找不到这个插件</summary>
+				<div class="a">九成是第 2 步没做。先执行那行 <code>xattr</code> 命令，再<strong>完全退出</strong> Logic 重开。<br>
+					还是不行的话，在终端跑 <code>auval -v aufx Bntm Chef</code>，最后显示 AU VALIDATION SUCCEEDED 就说明插件本身没问题，那就是 Logic 的插件缓存问题，重启一次电脑。</div>
+			</details>
+			<details>
+				<summary>提示「已损坏，应将其移到废纸篓」</summary>
+				<div class="a">同样是隔离标记的问题，执行第 2 步那行命令就好。插件本身没有任何问题 —— 这是 macOS 对所有未付费签名软件的默认待遇。</div>
+			</details>
+			<details>
+				<summary>剩余时间一直显示「请先设置项目时长」</summary>
+				<div class="a">Logic 不会把工程总长度告诉插件，需要你在「项目时长」里手动填一次。填完就能算剩余时间了，而且会跟工程一起保存，同一个工程下次打开还在。</div>
+			</details>
+			<details>
+				<summary>有 VST3 版本吗？Studio One / Cubase 能用吗？</summary>
+				<div class="a">当前只编了 AU 格式，也就是 Logic Pro 和 GarageBand。源码是开源的，加 VST3 只要改一行构建配置，有需要可以在小红书私信我。</div>
+			</details>
+			<details>
+				<summary>真的免费吗？会不会以后收费</summary>
+				<div class="a">免费，而且是 GPLv3 开源 —— 因为用了 JUCE 框架，它的免费授权本来就要求开源。所以就算我哪天想收费也收不了，源码谁都能拿去自己编。</div>
+			</details>
+			<details>
+				<summary>会不会影响音质 / 拖慢并轨速度</summary>
+				<div class="a">不会。这个插件在音频链路上不做任何处理，音频进什么样出什么样，它只是读时间戳来算进度。</div>
+			</details>
+		</div>
+	</div>
+
+	<!-- ── 底部 CTA ── -->
+	<div class="foot-cta reveal">
+		<h2>拿去用吧</h2>
+		<p>免费、开源、没有任何附加条件。</p>
+		<a class="dl-btn" href="BounceTimer-1.0.0.dmg" download style="max-width:380px;margin:0 auto;">下载 BounceTimer 1.0.0</a>
+	</div>
+
+	<footer>
+		<div class="foot-mark">
+			<img src="shots/chefdao_wordmark.png" alt="ChefDao">
+			<span style="opacity:.6">Audio</span>
+		</div><br>
+		BounceTimer 1.0.0 · GPLv3 开源 · 基于 JUCE<br>
+		<a href="/chefdao/">刀大厨 ChefDao</a> ·
+		<a href="/chefdao/price/">混音母带报价</a>
+	</footer>
+
+</div>
+
+<div class="sticky" id="sticky"><a href="#download">↓ 下载 BounceTimer · 免费</a></div>
+
+<script>
+// ── 深/浅色：首次跟随深色，之后记住选择（与 /chefdao/price 一致）──
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k,v){ try { v===null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch(e){} }
+function applyTheme(t){
+	document.documentElement.setAttribute("data-theme", t);
+	var b = document.getElementById("theme-btn");
+	if (b) { b.textContent = t === "light" ? "◓" : "◒"; b.title = t === "light" ? "Dark" : "Light"; }
+	var m = document.querySelector('meta[name="theme-color"]');
+	if (m) m.setAttribute("content", t === "light" ? "#eceeec" : "#080808");
+}
+function toggleTheme(){
+	var next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+	lsSet("cd_theme", next); applyTheme(next);
+}
+applyTheme(lsGet("cd_theme") === "light" ? "light" : "dark");
+
+// ── 复制那行命令 ──
+function copyCmd(){
+	var txt = document.getElementById("cmd").textContent.trim();
+	var btn = document.getElementById("copy-btn");
+	function done(){ btn.textContent = "已复制"; btn.classList.add("done");
+		setTimeout(function(){ btn.textContent = "复制"; btn.classList.remove("done"); }, 1800); }
+	if (navigator.clipboard && navigator.clipboard.writeText) {
+		navigator.clipboard.writeText(txt).then(done, fallback);
+	} else { fallback(); }
+	function fallback(){
+		var ta = document.createElement("textarea");
+		ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+		document.body.appendChild(ta); ta.select();
+		try { document.execCommand("copy"); done(); } catch(e){}
+		document.body.removeChild(ta);
+	}
+}
+
+// ── 入场动画 ──
+// 双保险：IntersectionObserver 之外再挂一个滚动检查。这页唯一的作用是让人下载，
+// 万一 IO 不触发导致整页空白，那就是彻底废了。
+var revealEls = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
+function revealCheck(){
+	for (var i = revealEls.length - 1; i >= 0; i--) {
+		var el = revealEls[i];
+		if (el.getBoundingClientRect().top < window.innerHeight - 40) {
+			el.classList.add("in"); revealEls.splice(i, 1);
+		}
+	}
+}
+if ("IntersectionObserver" in window) {
+	var io = new IntersectionObserver(function(es){
+		es.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+	}, { threshold: 0.08, rootMargin: "0px 0px -40px" });
+	revealEls.forEach(function(el){ io.observe(el); });
+} else {
+	revealEls.forEach(function(el){ el.classList.add("in"); });
+	revealEls = [];
+}
+window.addEventListener("scroll", revealCheck, { passive: true });
+window.addEventListener("resize", revealCheck);
+revealCheck();
+// 最后一道保险：不管发生什么，5 秒后全部显示出来
+setTimeout(function(){ document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); }); }, 5000);
+
+// ── 吸底下载条：滚过下载区之后才出现，滚到底部收起 ──
+var sticky = document.getElementById("sticky"), dl = document.getElementById("download");
+function onScroll(){
+	var past = dl.getBoundingClientRect().bottom < 0;
+	var atEnd = (window.innerHeight + window.scrollY) > (document.body.offsetHeight - 340);
+	sticky.classList.toggle("on", past && !atEnd);
+}
+window.addEventListener("scroll", onScroll, { passive: true });
+onScroll();
+</script>
+
+</body>
+</html>
