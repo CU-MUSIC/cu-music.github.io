@@ -540,6 +540,18 @@
 		.loc-rate:last-child { border-bottom: none; }
 		.loc-rate-label { font-size: 12.5px; color: var(--text-secondary); }
 		.loc-rate-price { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+		.loc-rates-note { font-size: 11.5px; color: var(--text-dim); line-height: 1.6; margin-top: -2px; }
+		.loc-rates-note strong { color: var(--text-secondary); font-weight: 600; }
+		.loc-packs { border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.06); border-radius: calc(var(--r) - 6px); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+		.loc-pack-head { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green-soft); }
+		.loc-pack { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+		.loc-pack-label { font-size: 12.5px; color: var(--text-secondary); }
+		.loc-pack-right { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+		.loc-pack-was { font-size: 11.5px; color: var(--text-dim); text-decoration: line-through; }
+		.loc-pack-price { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--green-soft); }
+		.loc-pack-over { font-size: 11.5px; color: var(--text-secondary); line-height: 1.65; padding-top: 8px; border-top: 0.5px solid var(--green-line); }
+		.loc-pack-over strong { color: var(--green-soft); font-weight: 700; }
+		.loc-pack-note { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
 		.loc-meta { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
 		.loc-meta strong { color: var(--text-secondary); font-weight: 600; }
 		.loc-map { color: var(--green-soft); text-decoration: none; border-bottom: 0.5px solid var(--green-line); padding-bottom: 1px; }
@@ -1428,21 +1440,38 @@ var I18N = {
 						city: "上海 Shanghai", engineer: "录音师 Tior",
 						rates: [
 							{ label: "棚内录制", price: "¥300/hr" },
-							{ label: "刀大厨线上监制（含录音）", price: "¥450/hr" }
+							{ label: "监制 · 线上（含录音）", price: "¥450/hr" },
+							{ label: "监制 · 线下（含录音）", price: "¥450/hr" }
 						],
+						ratesNote: "监制人可选 刀大厨 或 Tior，两种方式同价。",
+						packHead: "3H SESSION",
+						packs: [
+							{ label: "棚内录制 · 3H", was: "¥900", price: "¥800" },
+							{ label: "监制 · 3H", was: "¥1,350", price: "¥1,200" }
+						],
+						overtime: "<strong>超时</strong>：超出 3H 的部分按原价逐半小时计——棚内 ¥150 / 半小时，监制 ¥225 / 半小时。不足半小时按半小时算，现场先确认再继续；能否延长还要看当天棚的档期。",
+						packNote: "需一次性付清，当次连续使用，不可拆分或跨日结转。",
 						venue: "Bimental Studio 录音棚", address: "虹漕路 443 号虹漕园 61 号楼 4 楼", mapUrl: "https://surl.amap.com/pptXUKJfY5",
 						gear: ["U87", "HA73", "1176", "Genelec 8030"]
 					},
 					{
 						city: "首尔 Seoul", engineer: "录音师 ChefDao",
 						rates: [
-							{ label: "含场地设备", price: "¥300/hr" },
-							{ label: "客户自备场地设备", price: "¥200/hr" }
+							{ label: "棚内录制 · 含场地与设备", price: "¥300/hr" },
+							{ label: "外派录制 · 客户自备场地与设备", price: "¥200/hr" }
 						],
-						venue: "弘益大学 대학로 / 世宗大学 一带", address: "", mapUrl: ""
+						ratesNote: "外派录制<strong>仅含人工</strong>：刀大厨默认只带录音用电脑，话筒、声卡、监听等设备由你方准备；需要我方带设备请提前说，价格另议。",
+						packHead: "3H SESSION",
+						packs: [
+							{ label: "棚内录制 · 3H", was: "¥900", price: "¥800" },
+							{ label: "外派录制 · 3H", was: "¥600", price: "¥550" }
+						],
+						overtime: "<strong>超时</strong>：超出 3H 的部分按原价逐半小时计——棚内 ¥150 / 半小时，外派 ¥100 / 半小时。不足半小时按半小时算，现场先确认再继续。",
+						packNote: "需一次性付清，当次连续使用，不可拆分或跨日结转。",
+						venue: "可选场地：世宗大学 / 弘益大学 / 往十里 录音室", address: "", mapUrl: ""
 					}
 				],
-				note: "均 2 小时起约，请提前确认档期。录音不参与刀门会员折扣。"
+				note: "均 2 小时起约，请提前确认档期。3H SESSION 需一次性付清，不与其他优惠叠加。录音不参与刀门会员折扣。"
 			},
 			{
 				id: "mixing", step: "Step 02", title: "混音 Mixing", builder: true,
@@ -1936,21 +1965,38 @@ var I18N = {
 						city: "Shanghai", engineer: "Engineer: Tior",
 						rates: [
 							{ label: "Studio session", price: "$50/hr" },
-							{ label: "ChefDao remote direction (recording incl.)", price: "$75/hr" }
+							{ label: "Direction · remote (recording incl.)", price: "$75/hr" },
+							{ label: "Direction · in the room (recording incl.)", price: "$75/hr" }
 						],
+						ratesNote: "Direction by ChefDao or Tior, your pick. Both modes are the same rate.",
+						packHead: "3H SESSION",
+						packs: [
+							{ label: "Studio session · 3H", was: "$150", price: "$130" },
+							{ label: "Direction · 3H", was: "$225", price: "$200" }
+						],
+						overtime: "<strong>Overtime</strong>: anything past 3H bills at the standard rate in half-hour steps — studio $25 / 30 min, direction $38 / 30 min. Part of a half-hour counts as a full one. We confirm on the spot before continuing, and the room has to be free.",
+						packNote: "Paid in full up front, used in one continuous session. Not splittable or carried to another day.",
 						venue: "Bimental Studio", address: "4F, Bldg 61, Hongcao Garden, 443 Hongcao Rd", mapUrl: "https://surl.amap.com/pptXUKJfY5",
 						gear: ["U87", "HA73", "1176", "Genelec 8030"]
 					},
 					{
 						city: "Seoul", engineer: "Engineer: ChefDao",
 						rates: [
-							{ label: "Venue & gear included", price: "$50/hr" },
-							{ label: "Client provides venue & gear", price: "$35/hr" }
+							{ label: "Studio session · venue & gear included", price: "$50/hr" },
+							{ label: "On-location · client provides room & gear", price: "$35/hr" }
 						],
-						venue: "Hongik Univ. (Daehak-ro) / Sejong Univ. area", address: "", mapUrl: ""
+						ratesNote: "On-location is <strong>labour only</strong>: ChefDao brings the recording laptop and nothing else. Mic, interface and monitoring are on you. Need gear brought in? Ask ahead, quoted separately.",
+						packHead: "3H SESSION",
+						packs: [
+							{ label: "Studio session · 3H", was: "$150", price: "$130" },
+							{ label: "On-location · 3H", was: "$105", price: "$90" }
+						],
+						overtime: "<strong>Overtime</strong>: anything past 3H bills at the standard rate in half-hour steps — studio $25 / 30 min, on-location $18 / 30 min. Part of a half-hour counts as a full one. We confirm on the spot before continuing.",
+						packNote: "Paid in full up front, used in one continuous session. Not splittable or carried to another day.",
+						venue: "Rooms available: Sejong Univ. / Hongik Univ. / Wangsimni", address: "", mapUrl: ""
 					}
 				],
-				note: "2-hour minimum, please confirm availability in advance. Recording is excluded from the Daomen discount."
+				note: "2-hour minimum, please confirm availability in advance. The 3H SESSION rate requires payment in full up front and does not stack with other discounts. Recording is excluded from the Daomen discount."
 			},
 			{
 				id: "mixing", step: "Step 02", title: "Mixing", builder: true,
@@ -2439,21 +2485,38 @@ var I18N = {
 						city: "상하이 Shanghai", engineer: "엔지니어: Tior",
 						rates: [
 							{ label: "스튜디오 녹음", price: "₩60,000/hr" },
-							{ label: "ChefDao 온라인 디렉팅 (녹음 포함)", price: "₩90,000/hr" }
+							{ label: "디렉팅 · 온라인 (녹음 포함)", price: "₩90,000/hr" },
+							{ label: "디렉팅 · 현장 (녹음 포함)", price: "₩90,000/hr" }
 						],
+						ratesNote: "디렉터는 ChefDao 또는 Tior 중 선택, 두 방식 모두 같은 요금입니다.",
+						packHead: "3H SESSION",
+						packs: [
+							{ label: "스튜디오 녹음 · 3H", was: "₩180,000", price: "₩160,000" },
+							{ label: "디렉팅 · 3H", was: "₩270,000", price: "₩240,000" }
+						],
+						overtime: "<strong>초과 시간</strong>: 3H를 넘는 부분은 정가 기준 30분 단위로 계산합니다 — 스튜디오 ₩30,000 / 30분, 디렉팅 ₩45,000 / 30분. 30분 미만도 30분으로 계산하며, 현장에서 확인 후 진행합니다. 스튜디오 예약 상황에 따라 연장이 불가할 수 있습니다.",
+						packNote: "일시불 결제, 당일 연속 사용 기준. 분할 사용이나 다른 날로 이월은 불가합니다.",
 						venue: "Bimental Studio", address: "훙차오로 443, 훙차오위안 61동 4층", mapUrl: "https://surl.amap.com/pptXUKJfY5",
 						gear: ["U87", "HA73", "1176", "Genelec 8030"]
 					},
 					{
 						city: "서울 Seoul", engineer: "엔지니어: ChefDao",
 						rates: [
-							{ label: "장소·장비 포함", price: "₩60,000/hr" },
-							{ label: "고객 장소·장비 제공 시", price: "₩40,000/hr" }
+							{ label: "스튜디오 녹음 · 장소·장비 포함", price: "₩60,000/hr" },
+							{ label: "출장 녹음 · 고객 장소·장비 제공", price: "₩40,000/hr" }
 						],
-						venue: "홍익대 대학로 / 세종대 인근", address: "", mapUrl: ""
+						ratesNote: "출장 녹음은 <strong>인건비만 포함</strong>됩니다. ChefDao는 녹음용 노트북만 지참하며 마이크·오디오 인터페이스·모니터링은 고객이 준비합니다. 장비 지참이 필요하면 사전에 문의해 주세요, 별도 견적입니다.",
+						packHead: "3H SESSION",
+						packs: [
+							{ label: "스튜디오 녹음 · 3H", was: "₩180,000", price: "₩160,000" },
+							{ label: "출장 녹음 · 3H", was: "₩120,000", price: "₩110,000" }
+						],
+						overtime: "<strong>초과 시간</strong>: 3H를 넘는 부분은 정가 기준 30분 단위로 계산합니다 — 스튜디오 ₩30,000 / 30분, 출장 ₩20,000 / 30분. 30분 미만도 30분으로 계산하며, 현장에서 확인 후 진행합니다.",
+						packNote: "일시불 결제, 당일 연속 사용 기준. 분할 사용이나 다른 날로 이월은 불가합니다.",
+						venue: "선택 가능 장소: 세종대 / 홍익대 / 왕십리 녹음실", address: "", mapUrl: ""
 					}
 				],
-				note: "최소 2시간 예약, 사전에 스케줄을 확인해 주세요. 레코딩은 刀门 회원 할인 대상이 아닙니다."
+				note: "최소 2시간 예약, 사전에 스케줄을 확인해 주세요. 3H SESSION은 일시불 결제이며 다른 할인과 중복 적용되지 않습니다. 레코딩은 刀门 회원 할인 대상이 아닙니다."
 			},
 			{
 				id: "mixing", step: "Step 02", title: "믹싱 Mixing", builder: true,
@@ -4097,6 +4160,20 @@ function renderRecording(svc) {
 		for (var r = 0; r < loc.rates.length; r++) {
 			rates += '<div class="loc-rate"><span class="loc-rate-label">' + loc.rates[r].label + '</span><span class="loc-rate-price">' + loc.rates[r].price + '</span></div>';
 		}
+		var ratesNote = loc.ratesNote ? '<div class="loc-rates-note">' + loc.ratesNote + '</div>' : "";
+		var packs = "";
+		if (loc.packs && loc.packs.length) {
+			for (var p = 0; p < loc.packs.length; p++) {
+				packs += '<div class="loc-pack">'
+					+ '<span class="loc-pack-label">' + loc.packs[p].label + '</span>'
+					+ '<span class="loc-pack-right"><span class="loc-pack-was">' + loc.packs[p].was + '</span>'
+					+ '<span class="loc-pack-price">' + loc.packs[p].price + '</span></span></div>';
+			}
+			packs = '<div class="loc-packs">'
+				+ '<div class="loc-pack-head">' + (loc.packHead || "") + '</div>' + packs
+				+ (loc.overtime ? '<div class="loc-pack-over">' + loc.overtime + '</div>' : "")
+				+ (loc.packNote ? '<div class="loc-pack-note">' + loc.packNote + '</div>' : "") + '</div>';
+		}
 		var venue = "";
 		if (loc.venue) {
 			venue = '<div class="loc-meta"><strong>' + loc.venue + '</strong>'
@@ -4110,8 +4187,8 @@ function renderRecording(svc) {
 		}
 		cards += '<div class="loc-card">'
 			+ '<div class="loc-head"><span class="loc-city">' + loc.city + '</span><span class="loc-engineer">' + loc.engineer + '</span></div>'
-			+ '<div class="loc-rates">' + rates + '</div>'
-			+ venue + gear + '</div>';
+			+ '<div class="loc-rates">' + rates + '</div>' + ratesNote
+			+ packs + venue + gear + '</div>';
 	}
 	return '<div class="loc-grid">' + cards + '</div>' + (svc.note ? '<div class="qb-addon-note">' + svc.note + '</div>' : "");
 }
