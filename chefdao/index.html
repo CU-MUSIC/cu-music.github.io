@@ -4,6 +4,32 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+
+<!-- ===== Favicon / App icon ===== -->
+<link rel="icon" href="/chefdao/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/chefdao-logo-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/chefdao/assets/chefdao-logo-192.png">
+<link rel="apple-touch-icon" href="/chefdao/assets/chefdao-logo-180.png">
+
+<!-- ===== Share card (抖音 / 微信 / 微博 等) ===== -->
+<meta name="description" content="刀大厨 ChefDao — 混音 / 母带 / 制作，CU MUSIC，首尔。">
+<link rel="canonical" href="https://cumusic.work/chefdao/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CU MUSIC">
+<meta property="og:title" content="刀大厨 ChefDao">
+<meta property="og:description" content="混音 / 母带 / 制作，CU MUSIC，首尔。">
+<meta property="og:url" content="https://cumusic.work/chefdao/">
+<meta property="og:image" content="https://cumusic.work/chefdao/assets/og-chefdao.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ChefDao logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="刀大厨 ChefDao">
+<meta name="twitter:description" content="混音 / 母带 / 制作，CU MUSIC，首尔。">
+<meta name="twitter:image" content="https://cumusic.work/chefdao/assets/og-chefdao.png">
+<!-- 部分国内平台偏好 1:1 缩略图 -->
+<link rel="image_src" href="https://cumusic.work/chefdao/assets/og-chefdao-square.png">
+<meta itemprop="image" content="https://cumusic.work/chefdao/assets/og-chefdao-square.png">
 <title>刀大厨 ChefDao</title>
 <link rel="preconnect" href="https://p1.music.126.net" crossorigin>
 <link rel="preconnect" href="https://p2.music.126.net" crossorigin>
@@ -1087,7 +1113,7 @@ function revealContent() {
   initExpand();
   initTilt();
   initScrollLight();
-  localStorage.setItem('chefdao_visited', '1');
+  try { localStorage.setItem('chefdao_visited', '1'); } catch (e) {}
 }
 
 /* ========= Intro Animation ========= */
@@ -1114,6 +1140,8 @@ async function initHybridAnimation() {
   const cells = document.querySelectorAll('.grid-cell');
   const isMobile = window.innerWidth < 768;
   const maxFlying = isMobile ? 30 : 50;
+  const flyingCount = Math.min(maxFlying, cells.length);
+  let settledCount = 0;
 
   await preloadImages(displayPool.slice(0, maxFlying).map(item => thumbUrl(item.image)));
 
@@ -1138,9 +1166,18 @@ async function initHybridAnimation() {
     fly.style.transform = `translate(${startX}px, ${startY}px) scale(0.5)`;
     document.body.appendChild(fly);
 
+    // Shared between both timeouts below — the old code re-rolled this
+    // random duration a second time instead of reusing it, and cleaned the
+    // flying element up on a fixed 2200ms clock that had nothing to do with
+    // the actual (1.5–2.5s) duration. Whenever the roll landed above ~2.2s
+    // the cleanup fired mid-flight: the flying image got yanked and the
+    // static grid image snapped straight to opacity 1 with no transition —
+    // exactly the "cover just appears, no animation" bug on mobile.
+    const flyMs = (1.5 + Math.random()) * 1000;
+
     setTimeout(() => {
       requestAnimationFrame(() => {
-        fly.style.transition = `transform ${1.5 + Math.random()}s var(--easing), opacity 0.5s ease`;
+        fly.style.transition = `transform ${flyMs / 1000}s var(--easing), opacity 0.5s ease`;
         fly.style.opacity = '1';
         fly.style.transform = `translate(${rect.left}px, ${rect.top}px) scale(1)`;
       });
@@ -1149,11 +1186,12 @@ async function initHybridAnimation() {
     setTimeout(() => {
       if (targetImg) targetImg.style.opacity = 1;
       fly.remove();
-      if (i === maxFlying - 1 || i === cells.length - 1) {
+      settledCount++;
+      if (settledCount === flyingCount) {
         grid.classList.add('dimmed');
         document.getElementById('intro-ui').classList.add('visible');
       }
-    }, 2200 + i * 30);
+    }, i * 30 + flyMs + 60);
   });
 }
 
@@ -1169,11 +1207,18 @@ function enterSite() {
 }
 
 /* ========= Init ========= */
+// Private browsing (notably iOS Safari) can throw on localStorage access
+// instead of just returning null — guard it so a blocked visitor still
+// gets the intro animation instead of a dead page.
+function hasVisited() {
+  try { return !!localStorage.getItem('chefdao_visited'); } catch (e) { return false; }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   generateContent();
 
   // Returning visitor: skip intro
-  if (localStorage.getItem('chefdao_visited')) {
+  if (hasVisited()) {
     document.getElementById('intro-overlay').remove();
     revealContent();
     return;
