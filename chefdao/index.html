@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -30,6 +31,49 @@
 <!-- 部分国内平台偏好 1:1 缩略图 -->
 <link rel="image_src" href="https://cumusic.work/chefdao/assets/og-chefdao-square.png">
 <meta itemprop="image" content="https://cumusic.work/chefdao/assets/og-chefdao-square.png">
+
+<!-- 结构化数据：让搜索引擎把这页识别成「一个人」而不是一个普通网页。
+     内容全部取自本页 About 区，改简介时记得同步改这里。
+     精选作品的 MusicAlbum 列表由页面脚本按 albums.js 动态注入，见 injectWorksSchema()。 -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  "url": "https://cumusic.work/chefdao/",
+  "inLanguage": ["zh-CN", "en", "ko"],
+  "mainEntity": {
+    "@type": "Person",
+    "@id": "https://cumusic.work/chefdao/#chefdao",
+    "name": "\u5200\u5927\u53a8",
+    "alternateName": ["ChefDao", "Cookdao"],
+    "jobTitle": "\u97f3\u9891\u5de5\u7a0b\u5e08 & \u5236\u4f5c\u4eba",
+    "description": "\u73b0\u5c45\u97e9\u56fd\u9996\u5c14\u7684\u97f3\u9891\u5de5\u7a0b\u5e08\u4e0e\u5236\u4f5c\u4eba\uff0c\u4e0e\u5236\u4f5c\u4eba\u3001\u8bcd\u66f2\u4f5c\u8005 Uin \u5171\u540c\u521b\u7acb C/U Music Studio\u3002\u81ea 2022 \u5e74\u8d77\u6a2a\u8de8 Hip-Hop\u3001R&B\u3001\u6d41\u884c\u7b49\u591a\u79cd\u66f2\u98ce\uff0c\u5df2\u53c2\u4e0e\u5236\u4f5c\u903e\u767e\u9996\u4f5c\u54c1\u3002",
+    "url": "https://cumusic.work/chefdao/",
+    "image": "https://cumusic.work/chefdao/assets/og-chefdao-square.png",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "CU MUSIC",
+      "alternateName": "C/U Music Studio",
+      "url": "https://cumusic.work/"
+    },
+    "homeLocation": {
+      "@type": "Place",
+      "address": { "@type": "PostalAddress", "addressLocality": "Seoul", "addressCountry": "KR" }
+    },
+    "hasOccupation": {
+      "@type": "Occupation",
+      "name": "Audio Engineer & Producer",
+      "occupationLocation": { "@type": "City", "name": "Seoul" }
+    },
+    "knowsLanguage": ["zh-CN", "en", "ko"],
+    "award": [
+      "2025 CHMA \u4e2d\u6587\u8bf4\u5531\u97f3\u4e50\u5956 \u6700\u4f73\u6d41\u884c\u8bf4\u5531\u4e13\u8f91\u63d0\u540d \u2014 IMGOOD\u522b\u62c5\u5fc3\u6211 (Rapeter)",
+      "2025 CHMA \u4e2d\u6587\u8bf4\u5531\u97f3\u4e50\u5956 \u6700\u4f73\u9677\u9631\u8bf4\u5531\u4e13\u8f91\u63d0\u540d \u2014 \u5feb\u4eba\u4e00\u6b65 (YOUNGLEGO)",
+      "2025 CHMA \u4e2d\u6587\u8bf4\u5531\u97f3\u4e50\u5956 \u5e74\u5ea6\u5355\u66f2\u63d0\u540d \u2014 NO HOOK FREESTYLE Pt.4 (Rapeter)"
+    ]
+  }
+}
+</script>
 <title>刀大厨 ChefDao</title>
 <link rel="preconnect" href="https://p1.music.126.net" crossorigin>
 <link rel="preconnect" href="https://p2.music.126.net" crossorigin>
@@ -339,7 +383,26 @@ body {
   max-width:1100px; margin:0 auto; padding:0 40px 80px;
   display:none;
 }
-#albums-all.open { display:grid; grid-template-columns:repeat(4,1fr); gap:24px 20px; }
+#albums-all.open { display:block; }
+
+/* ---- 年份分段：展开的网格按年切块，每块一个年份小标题 ---- */
+.year-block { margin-bottom:52px; }
+.year-block:last-child { margin-bottom:0; }
+.year-block.is-empty { display:none; }
+.year-head {
+  display:flex; align-items:center; gap:14px; margin-bottom:20px;
+}
+.year-head-num {
+  font-family:var(--font-pro); font-size:13px; font-weight:600;
+  letter-spacing:0.22em; color:rgba(255,255,255,0.75);
+}
+.year-head-count {
+  font-family:var(--font-pro); font-size:10px; letter-spacing:0.14em;
+  color:rgba(255,255,255,0.3);
+}
+.year-head-line { flex:1; height:1px; background:rgba(255,255,255,0.1); }
+.year-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:24px 20px; }
+
 .album-compact {
   opacity:0; transform:translateY(24px); transition:all 0.8s var(--easing);
   cursor:pointer;
@@ -360,8 +423,12 @@ body {
 .album-compact-year { font-size:11px; color:rgba(255,255,255,0.35); margin-bottom:2px; }
 .album-compact-artist { font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:5px; }
 .album-compact-title { font-size:14px; font-weight:600; line-height:1.3; }
-@media (max-width:900px){ #albums-all.open { grid-template-columns:repeat(3,1fr); } }
-@media (max-width:600px){ #albums-all.open { grid-template-columns:repeat(2,1fr); gap:16px 12px; } #albums-all { padding:0 24px 60px; } }
+@media (max-width:900px){ .year-grid { grid-template-columns:repeat(3,1fr); } }
+@media (max-width:600px){
+  .year-grid { grid-template-columns:repeat(2,1fr); gap:16px 12px; }
+  #albums-all { padding:0 24px 60px; }
+  .year-block { margin-bottom:38px; }
+}
 
 /* ================= About Section ================= */
 #about-section {
@@ -549,18 +616,29 @@ body {
 }
 #wechat-toast.show { opacity:1; transform:translateY(0); }
 
+/* 只给读屏软件和搜索引擎的文本：不能用 display:none 或 visibility:hidden，
+   那样读屏软件也会跳过。标准做法是裁成 1px 挪出视口。 */
+.sr-only {
+  position:absolute; width:1px; height:1px; margin:-1px; padding:0;
+  overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0;
+}
+
 /* ================= Mobile ================= */
 @media (max-width:768px) {
-  #albums-container { padding:100px 24px 40px; }
+  #albums-container { padding:72px 24px 32px; }
   #albums-all { padding:0 24px; }
-  .album-row { flex-direction:column !important; align-items:flex-start; gap:32px; margin-bottom:140px; }
-  .album-cover-wrapper { width:100%; box-shadow:0 10px 40px -10px rgba(0,0,0,0.8); }
+  /* Featured 在手机上原本 9 张 × 约 630px = 7 屏，滑到第 3 张就没人了。
+     封面不再满幅、行距和标题各收一档，整条 rail 短掉约四分之一。 */
+  .album-row { flex-direction:column !important; align-items:flex-start; gap:20px; margin-bottom:88px; }
+  .album-cover-wrapper { width:86%; box-shadow:0 10px 40px -10px rgba(0,0,0,0.8); }
   .album-info { width:100%; text-align:left !important; padding-left:4px; }
   .album-row.reverse .highlight-wrapper { justify-content:flex-start; }
+  .highlight-wrapper { margin-bottom:16px; gap:8px; }
   .highlight-badge { font-size:10px; padding:5px 14px; }
+  .meta-group { margin-bottom:10px; }
   .year { font-size:14px; margin-bottom:2px; }
-  .artist { font-size:14px; margin-bottom:12px; }
-  .title { font-size:38px; }
+  .artist { font-size:14px; }
+  .title { font-size:32px; }
 
   #float-contact { left:50%; right:auto; transform:translateX(-50%); bottom:28px; }
   /* 源图是 2808×4992 竖构图，别再压成 4/3 横幅（会把脸裁掉，只剩顶部墙面） */
@@ -601,6 +679,10 @@ body {
 </head>
 
 <body>
+
+<!-- 页面真实标题。视觉上不出现（Hero 是封面墙 + ENTER，没有放标题的位置），
+     但搜索引擎和读屏软件需要一个 h1 来判断这页讲的是谁。 -->
+<h1 class="sr-only">刀大厨 ChefDao — 音频工程师 &amp; 制作人 · 混音 / 母带 / 制作 · CU MUSIC · 首尔</h1>
 
 <!-- Intro -->
 <div id="intro-overlay">
@@ -736,8 +818,27 @@ const works = albums.filter(a => a.credits.includes('cookdao'));
 /* ========= Utils ========= */
 function shuffle(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
 
-function thumbUrl(url) {
-  if (url && url.includes('music.126.net')) return url + '?param=200y200';
+/* 专辑名里有引号和 & 的（《小巴辣子（Single）》之类还好，但不保证），
+   塞进 alt="" 之前得转义，否则属性会被提前截断。 */
+function esc(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* 网易云图床支持 ?param=WxH 服务端缩放。原图是 2048px，作品网格只渲染
+   198px —— 不缩放等于让手机白下几十 MB。size 按渲染宽度的 2 倍给（retina），
+   非 126.net 的图（本地 pics/ 之类）原样返回。 */
+function thumbUrl(url, size = 200) {
+  if (!url) return url;
+  if (url.includes('music.126.net')) return `${url}?param=${size}y${size}`;
+  /* QQ 音乐图床把尺寸编在路径里（T002R800x800M000...）。实测只有
+     90 / 150 / 300 / 800 四档能取到，500 和 640 都是 404，所以不做阶梯匹配，
+     网格档直接给 300（渲染 198px，1.5 倍够清晰，23KB vs 170KB）。 */
+  if (url.includes('y.qq.com')) {
+    const step = size <= 400 ? 300 : 800;
+    return url.replace(/R\d+x\d+M/, `R${step}x${step}M`);
+  }
   return url;
 }
 
@@ -756,8 +857,8 @@ const LIGHT = `<div class="tilt-light"></div>`;
 
 /* cover surface. asLink=false when an outer <a> already wraps the card
    (nested anchors are invalid HTML) */
-function coverSurface(a, asLink = true) {
-  const img = `<img class="cover-img" src="${a.image}" loading="lazy">`;
+function coverSurface(a, asLink = true, size = 800) {
+  const img = `<img class="cover-img" src="${thumbUrl(a.image, size)}" loading="lazy" alt="${esc(a.artist)} - ${esc(a.title)} 专辑封面">`;
   if (!a.link) return `<div class="tilt">${img}${LIGHT}</div>`;
   const body = `${img}${LIGHT}${SHEEN}${LISTEN_VEIL}`;
   return asLink
@@ -789,7 +890,7 @@ function buildRow(a, i, isFeatured) {
 /* ========= Build compact card (rest albums) ========= */
 function buildCompactCard(a) {
   const inner = `
-      <div class="album-compact-cover">${coverSurface(a, false)}</div>
+      <div class="album-compact-cover">${coverSurface(a, false, 400)}</div>
       <div class="album-compact-year">${a.year} · ${a.artist}</div>
       <div class="album-compact-title">${a.title}</div>`;
   return `
@@ -798,6 +899,34 @@ function buildCompactCard(a) {
       ? `<a href="${a.link}" target="_blank" style="text-decoration:none;color:inherit">${inner}</a>`
       : `<div style="color:inherit">${inner}</div>`}
   </div>`;
+}
+
+/* 精选作品的结构化数据。写死在 HTML 里会和 albums.js 脱节（改 highlighted
+   就得手动同步），所以按同一份数据生成后注入 —— Google 会执行 JS 再抓。 */
+function injectWorksSchema(featured) {
+  const items = featured.map((a, i) => {
+    const album = {
+      '@type': 'MusicAlbum',
+      name: a.title,
+      byArtist: { '@type': 'MusicGroup', name: a.artist },
+      image: a.image,
+      producer: { '@id': 'https://cumusic.work/chefdao/#chefdao' }
+    };
+    if (a.link) album.url = a.link;
+    if (a.date) album.datePublished = a.date;
+    if (a.trackCount) album.numTracks = a.trackCount;
+    return { '@type': 'ListItem', position: i + 1, item: album };
+  });
+
+  const el = document.createElement('script');
+  el.type = 'application/ld+json';
+  el.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'ChefDao — Featured Works',
+    itemListElement: items
+  });
+  document.head.appendChild(el);
 }
 
 /* ========= Generate content ========= */
@@ -815,11 +944,31 @@ function generateContent() {
   document.getElementById('albums-container').innerHTML =
     featured.map((a, i) => buildRow(a, i, true)).join('');
 
+  injectWorksSchema(featured);
+
   if (rest.length) {
-    document.getElementById('albums-all').innerHTML =
-      rest.map(a => buildCompactCard(a)).join('');
+    /* 按年份切块，年份倒序；块内保持 albums.js 的人工顺序 */
+    const byYear = new Map();
+    rest.forEach(a => {
+      const y = a.year || '—';
+      if (!byYear.has(y)) byYear.set(y, []);
+      byYear.get(y).push(a);
+    });
+    const years = [...byYear.keys()].sort((x, y) => (y + '').localeCompare(x + ''));
+
+    document.getElementById('albums-all').innerHTML = years.map(y => `
+      <div class="year-block" data-year="${y}">
+        <div class="year-head">
+          <span class="year-head-num">${y}</span>
+          <span class="year-head-count">${byYear.get(y).length} ${byYear.get(y).length > 1 ? 'releases' : 'release'}</span>
+          <span class="year-head-line"></span>
+        </div>
+        <div class="year-grid">${byYear.get(y).map(a => buildCompactCard(a)).join('')}</div>
+      </div>`).join('');
+
     const btn = document.getElementById('expand-btn');
-    btn.textContent = `View All Works · ${rest.length} more`;
+    /* 三位数读起来像库存清单，99+ 反而更像「还有很多」 */
+    btn.textContent = `View All Works · ${rest.length > 99 ? '99+' : rest.length} more`;
     document.getElementById('expand-wrap').classList.add('visible');
   }
 
@@ -1008,7 +1157,7 @@ function initNav() {
           grid.dataset.built = '1';
           const aboutPhotos = []; // 在这里添加照片文件名，例如: ['about/1.jpg','about/2.jpg']
           grid.innerHTML = aboutPhotos.map(p =>
-            `<div class="about-photo"><img src="${p}" loading="lazy"></div>`
+            `<div class="about-photo"><img src="${p}" loading="lazy" alt="ChefDao 工作现场"></div>`
           ).join('') || '';
         }
         initAboutReveal();
@@ -1133,7 +1282,7 @@ async function initHybridAnimation() {
   for (let i = 0; i < totalCells; i++) displayPool.push(combined[i % combined.length]);
 
   grid.innerHTML = displayPool.map(item =>
-    `<div class="grid-cell"><img src="${thumbUrl(item.image)}" style="opacity:0"></div>`
+    `<div class="grid-cell"><img src="${thumbUrl(item.image)}" style="opacity:0" alt="" aria-hidden="true"></div>`
   ).join('');
   grid.style.visibility = 'visible';
 
