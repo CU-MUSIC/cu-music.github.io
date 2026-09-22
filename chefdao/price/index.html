@@ -4,6 +4,9 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="icon" href="/chefdao/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/chefdao-logo-32.png">
+<link rel="apple-touch-icon" href="/chefdao/assets/chefdao-logo-180.png">
 	<title>Rates | ChefDao</title>
 	<style>
 		/* ── Dark canvas · 黑白极简 + 墨绿只做面（呼应 ChefDao 绿标）── */
@@ -641,6 +644,11 @@
 		.qb-preset-card.active .qb-preset-price { color: var(--green-soft); }
 		.qb-preset-per { font-size: 10.5px; font-weight: 500; color: var(--text-dim); letter-spacing: 0; }
 		.qb-preset-desc { font-size: 11.5px; line-height: 1.6; color: var(--text-secondary); flex-grow: 1; }
+		.qb-preset-diy { margin-top: 10px; width: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; text-align: left; background: none; border: 0.5px dashed var(--border-hover); border-radius: 12px; padding: 13px 14px; cursor: pointer; font-family: var(--font); transition: border-color 0.25s, background 0.25s; }
+		.qb-preset-diy:hover { border-color: var(--text-secondary); }
+		.qb-preset-diy.active { border-style: solid; border-color: var(--green-line); background: rgba(var(--green-ink), 0.07); }
+		.qb-preset-diy .qb-preset-desc { flex: 1 1 220px; }
+		.qb-diy-go { font-size: 11.5px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
 		.qb-preset-custom { margin-top: 11px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-dim); }
 		.qb-preset-back { border: 0.5px solid var(--border); background: none; border-radius: 100px; padding: 5px 12px; cursor: pointer; font-family: var(--font); font-size: 11px; color: var(--text-secondary); }
 		.qb-preset-back:hover { border-color: var(--border-hover); color: var(--text-primary); }
@@ -811,7 +819,9 @@
 			.card-grid { grid-template-columns: repeat(2, 1fr); }
 			.card-grid.solo { max-width: 380px; }
 		}
-	</style>
+	.card-points{margin:0;padding-left:1.1em}.card-points li{margin:.2em 0}
+.qb-badge.svc-new{font-size:11px;padding:3px 9px;margin-left:12px;vertical-align:0.35em}
+</style>
 </head>
 <body>
 
@@ -1269,8 +1279,13 @@ var I18N = {
 				harmony: "算的是你已经录好的和声轨有多少——不含我替你编写或录制。",
 				count: "每多一位主唱，就多一层平衡与空间要安排。每位 +¥100。",
 				edit: "决定音准与节奏修到什么程度。每位主唱单独选。",
-				lane: "标准排正常队列；要更快就指定交付日期，按紧急度自动算加急费。"
+				lane: "标准排正常队列；要更快就指定交付日期，按紧急度自动算加急费。",
+				extra: "可选。想让我从创意层面主导整首歌，就打开。",
+				perks: "可选。符合哪项就打开哪项，价格和交付日期会跟着变。"
 			},
+			extraLabel: "附加服务", perksLabel: "优惠",
+			memSelfTitle: "我是刀门会员", memSelfSub: "混音与制作人费 8 折 · 交付快一周",
+			joinOnTitle: "本单加入刀门", joinOnSub: "入会费 {fee} 已计入 · 本单起 8 折 · 交付快一周",
 			// 帮助卡：整行、提问式标题 + 一句承诺。Apple 从不用图标当帮助入口。
 			assist: {
 				preset: { t: "三份套餐分别包含什么？", d: "逐项对照三档的人声制作、音频编辑与和声。" },
@@ -1309,7 +1324,7 @@ var I18N = {
 			prodNote: "<strong>执行向动作：</strong>升降调、stutter、反转、电话音 / 失真、加宽、ad-lib 摆位、double 对齐、特定词效果。<br><strong>创意向</strong>＝以上全部 ＋ 做不做、做在哪由我决定。",
 			editGuideTitle: "我该选哪一档？",
 			editGuide: [
-				{ t: "只修音准，或只修节奏", i: 1 },
+				{ t: "只修音准（不含节奏对齐），或只修节奏；叠唱不超过 2 条", i: 1 },
 				{ t: "音准和节奏都要修", i: 2 },
 				{ t: "跑调多、有破音、气声不稳", i: 3 },
 				{ t: "已经修好了，或不用修", i: 0 }
@@ -1331,7 +1346,7 @@ var I18N = {
 			countUnit: " 位", countMore: "4 位以上",
 			countMoreNote: "更大规模的 cypher，请私信另议",
 			editLabel: "音频编辑", vocalistLabel: "主唱",
-			editNote: "<strong>基础编辑</strong>＝音准与节奏二选一，只处理其中一项。<br><strong>标准编辑</strong>＝节奏对齐 ＋ 音准修正，适合唱得稳的素材。<br><strong>深度编辑</strong>＝在标准之上做大量精细修整，用于跑调多、破音、气声不稳的素材。",
+			editNote: "<strong>基础编辑</strong>＝音准与节奏二选一，只处理其中一项。选「仅修音」时<strong>不含节奏对齐</strong>。叠唱超过 2 条，需选标准编辑或以上。<br><strong>标准编辑</strong>＝节奏对齐 ＋ 音准修正，适合唱得稳的素材。<br><strong>深度编辑</strong>＝在标准之上做大量精细修整，用于跑调多、破音、气声不稳的素材。",
 			edits: [
 				{ name: "不需要", price: 0 },
 				{ name: "基础编辑", price: 100 },
@@ -1378,6 +1393,7 @@ var I18N = {
 			laneDatePick: "选择你的期望交付日期", laneDateCta: "选择", laneDateChange: "更改",
 			depositLabel: "定金（开工）", balanceLabel: "尾款（交付）",
 			depositNote: "半半模式：定金开工，成品交付时补齐尾款。",
+			depositNoteNew: "新客首单 7:3：用了立减优惠，定金 70% 开工，交付时补齐 30% 尾款。",
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
 			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音与制作人费 8 折 · 加速通道 · 终身有效", memberLine: "刀门会员 · 8 折",
 			memberFee: 99, memOnLine: "刀门会员已启用 · 混音 8 折 · {d}交付",
@@ -1386,7 +1402,7 @@ var I18N = {
 			mState0: "非会员", mState1: "创始会员", mState2: "本单加入", joinLine: "加入刀门",
 			memClosedNote: "刀门入会通道已关闭。已加入的创始会员，混音 8 折与加速通道终身有效，照常兑现。",
 			pbYesMain: "加入刀门 {fee}，本单立省 {save}",
-			pbYesSub: "净赚 {net} · <span class=\"qb-hl\">交付快{fast}</span> · 点此加入 ›",
+			pbYesSub: "8 折终身有效 · <span class=\"qb-hl\">交付快{fast}</span> · 点此加入 ›",
 			pbNoMain: "加入刀门 {fee}，<span class=\"qb-hl\">交付快{fast}</span>",
 			pbNoSub: "本单省 {save} · 权益终身有效 · 点此加入 ›",
 			producerTitle: "让我担任制作人", producerSub: "我主导这首歌的创意与完成度 · 署名 Produced by ChefDao", producerLine: "制作人费",
@@ -1410,6 +1426,7 @@ var I18N = {
 				{ name: "标准", desc: "大部分人选这个。在基础之上加执行向人声制作与标准音编，接近发行水准。" },
 				{ name: "完整", desc: "交给我全权处理：创意向人声制作、深度音编、更满的和声铺陈。" }
 			],
+			diyName: "个性化定制", diyDesc: "三档都不合适？下面每一项自己选，价格实时变。", diyDescOn: "你已按自己的需求改过配置，当前就是你的定制方案。", diyGo: "开始定制 ↓",
 			presetCustom: "自定义", presetCustomDesc: "你已经改过下面的选项，当前是自己的配置。",
 			presetPer: "／人",
 			tuneTitle: "按需微调",
@@ -1422,15 +1439,18 @@ var I18N = {
 			capBusy: "排期较满 · 交付顺延{w}",
 			capFull: "档期已满 · 交付顺延{w}，日期仍然明确",
 			newbieOff: 50, newbieLine: "新客首单立减",
-			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
+			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50 · 定金改为 70%", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
 				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
-				"意见请听完整首、攒成一条发我；交付后 7 日内提出",
-				"方向确认版之前可全额退定金，之后定金不退",
-				"默认交付成品母带 ×1；TV Mix / 纯伴奏提前说可一起给"
+				"每版交付后 24 小时内反馈，意见听完整首攒成一条；我收到后 24 小时内出修改版",
+				"方向确认版不符可退一半定金，之后定金不退",
+				"默认交付成品母带 ×1；TV Mix / 纯伴奏提前说可一起给",
+				"开工前换档只补差价；方向确认版之后再升级，差价 + 重混费 ¥100 / 次"
 			],
-			ctaNote: "复制的报价单里附了合作要点，请连同报价一起发给我。", catProd: "人声制作", catEdit: "音频编辑", copyMix: "混音", copyDeliver: "预计交付", copyWeChat: "微信预约"
+			copyNoEdit: "音频编辑选了「不需要」：干声须已修好音准与节奏，未修好的素材不接",
+			noEditLine: "选「不需要」＝干声已修好音准与节奏。没修好的素材不接，请至少选「基础编辑」。",
+			ctaNote: "修改流程与退款明细见下方「常见问题」，下单即视为同意。", catProd: "人声制作", catEdit: "音频编辑", copyMix: "混音", copyDeliver: "预计交付", copyWeChat: "微信预约"
 		},
 		services: [
 			{
@@ -1460,7 +1480,7 @@ var I18N = {
 							{ label: "棚内录制 · 含场地与设备", price: "¥300/hr" },
 							{ label: "外派录制 · 客户自备场地与设备", price: "¥200/hr" }
 						],
-						ratesNote: "外派录制<strong>仅含人工</strong>：刀大厨默认只带录音用电脑，话筒、声卡、监听等设备由你方准备；需要我方带设备请提前说，价格另议。",
+						ratesNote: "外派录制<strong>仅含人工</strong>：刀大厨默认只带录音用电脑，话筒、声卡、监听等设备由你方准备；需要我方带设备请提前说，价格另议。<br><strong>录音送混音优惠</strong>：在首尔找刀大厨录的歌，同一首做混音立减 ¥100（棚内、外派、3H SESSION 均适用）。不与刀门会员 8 折叠加，按更优惠的一项算。",
 						packHead: "3H SESSION",
 						packs: [
 							{ label: "棚内录制 · 3H", was: "¥900", price: "¥800" },
@@ -1471,7 +1491,7 @@ var I18N = {
 						venue: "可选场地：世宗大学 / 弘益大学 / 往十里 录音室", address: "", mapUrl: ""
 					}
 				],
-				note: "均 2 小时起约，请提前确认档期。3H SESSION 需一次性付清，不与其他优惠叠加。录音不参与刀门会员折扣。"
+				note: "均 2 小时起约，请提前确认档期。3H SESSION 需一次性付清，不与其他优惠叠加（录音送混音优惠除外）。录音不参与刀门会员折扣。"
 			},
 			{
 				id: "mixing", step: "Step 02", title: "混音 Mixing", builder: true,
@@ -1490,6 +1510,14 @@ var I18N = {
 				items: [
 					{ title: "定制编曲 Arrangement", price: "¥3,000", unit: "+", desc: "根据歌手音色量身打造，100% 独家授权。适合已有词曲、需要专业配器的项目。", tags: ["独家授权"] },
 					{ title: "词曲全包创作", price: "¥5,000", unit: "+", desc: "专业词曲作者助力，从概念到完整词曲方案，提供商业级旋律与文案。", tags: ["全案策划"] }
+				]
+			},
+			{
+				id: "direction", step: "只给方向", title: "项目制作人 Direction", isNew: true,
+				sub: "我不动手做任何制作，只负责给方向和把关——录音、编曲、混音由你或你的团队完成。和报价器里「让我担任制作人」（我亲自主导并动手）、下方「项目负责人」（全案深度参与）都不同，这一档是纯顾问制。",
+				items: [
+					{ title: "单曲项目制作人", isNew: true, price: "¥300", unit: "/首", desc: "整首歌的判断把关：方向、氛围走向、逐段意见。含 1 次整体诊断 + 2 轮跟进意见，超出按轮另计。固定项目费，不按小时。", tags: ["只给方向", "含 2 轮意见"] },
+					{ title: "专辑项目制作人", isNew: true, price: "详谈", unit: "", desc: "<ul class=\"card-points\"><li>整张的声音定位与参考方向</li><li>曲目之间的一致性把关</li><li>曲序与选曲建议</li><li>每首 1 次诊断 + 跟进意见</li><li>按专辑规模私信报价</li></ul>", tags: ["EP / 专辑", "只给方向", "监制"] }
 				]
 			},
 			{
@@ -1567,7 +1595,7 @@ var I18N = {
 				steps: [
 					{ t: "方向对齐", d: "确认风格方向、参考作品与期望交付日期。" },
 					{ t: "定金与素材", d: "支付 50% 定金后锁定档期与报价。请提供未经效果处理的干声与伴奏，24-bit / 48kHz 或更高。" },
-					{ t: "方向确认版", d: "交付 30–60 秒试听片段用于确认整体方向（此阶段仅供方向判断，非最终质感）。如方向不符，<strong>定金全额退还</strong>，项目终止。" },
+					{ t: "方向确认版", d: "交付 30–60 秒试听片段用于确认整体方向（此阶段仅供方向判断，非最终质感）。如方向不符，<strong>退还一半定金</strong>，项目终止。" },
 					{ t: "制作与审听", d: "朝既定方向的修正<strong>不限次数</strong>。变更方向或追加创意需求视为新方案，将于执行前另行报价。审听意见通过 Samply 时间轴提交，建议完整试听后一并汇总。" },
 					{ t: "母带与交付", d: "尾款结清后交付成品母带，附制作信息（Credits）。修改意见请于交付后 <strong>7 日内</strong>提出。" }
 				]
@@ -1598,7 +1626,7 @@ var I18N = {
 				a: "不提供免费完整试混——混音本身即为高强度的创作与判断工作。如需先行评估契合度：",
 				list: [
 					"提供参考曲与一小段 demo，先行沟通方向",
-					"正式下单后设有「方向确认版」环节：交付 30–60 秒试听片段，如方向不符，定金全额退还"
+					"正式下单后设有「方向确认版」环节：交付 30–60 秒试听片段，如方向不符，退还一半定金"
 				]
 			},
 			{
@@ -1614,7 +1642,18 @@ var I18N = {
 					"新方案：尝试新的处理思路、追加创意效果或变更整体方向，属新增创作工作，另行计费",
 					"人声制作含方案数：执行向 1 版、创意向 3 版，超出部分按方案计费",
 					"执行向的需求请于开工前一次性提出；开工后追加为 50 元/次",
-					"审听意见建议完整试听后一并汇总，并于交付后 7 日内提出；涉及另行计费的工作均于执行前先行报价"
+					"审听意见请完整试听后一并汇总，于每版交付后 24 小时内提出（见下一条）；涉及另行计费的工作均于执行前先行报价"
+				]
+			},
+			{
+				q: "修改流程和时间怎么算？",
+				a: "每一版都走同一个节奏：<strong>你 24 小时内反馈，我 24 小时内改完</strong>。",
+				list: [
+					"<strong>你</strong>：每个版本交付后 24 小时内给意见，听完整首、攒成一条发我",
+					"<strong>我</strong>：收到意见后 24 小时内交付修改版（周日休息，顺延到周一）",
+					"<strong>你超过 24 小时未反馈</strong>：交付日期按超出的天数顺延；加急项目自动转为标准排期，加急费不退",
+					"<strong>超过 72 小时仍无反馈</strong>（周日不计）：视为无意见，进入母带交付流程，按成品结清尾款；之后的改动按「交付后微调」计费",
+					"<strong>加急单我超过 24 小时未交付修改版</strong>（非你方原因）：每超 1 天，尾款减 ¥50，上限为加急费"
 				]
 			},
 			{
@@ -1644,7 +1683,8 @@ var I18N = {
 					"干声：未经任何效果处理的原始录音（不含混响、Auto-Tune），建议 WAV 48kHz / 24bit",
 					"伴奏：成品 instrumental，并注明 BPM 与调性（如不确定可留空）",
 					"参考曲：1–3 首（首次制作歌曲者必需），确认后作为本项目的方向基准",
-					"多条 take 的挑选与拼合（comp）属额外服务，另行计费"
+					"多条 take 的挑选与拼合（comp）属额外服务，另行计费",
+					"音频编辑选「不需要」的：干声须已修好音准与节奏，未修好的素材不接"
 				]
 			},
 			{
@@ -1676,12 +1716,12 @@ var I18N = {
 			},
 			{
 				q: "怎么付款？定金和尾款怎么算？",
-				a: "半半模式：定金开工，成品交付时结清尾款。定金确认后进入排期，尾款结清后交付无水印成品。",
+				a: "半半模式：定金开工，成品交付时结清尾款。定金确认后进入排期，尾款结清后开放成品下载。",
 				list: [
-					"定金 50%，确认后锁定档期与当前报价",
+					"定金 50%，确认后锁定档期与当前报价；用了新客首单立减的，定金 70%、尾款 30%",
 					"定金到账后，先于音频编辑前交付 30–60 秒方向确认版",
-					"如方向不符：定金全额退还，项目终止",
-					"方向确认后正式开工；此后中途终止，定金用于已投入的创作时间，不予退还"
+					"如方向不符：退还一半定金，项目终止（另一半抵方向确认版的制作）",
+					"方向确认后正式开工；此后中途终止，按「不满意 / 中途终止，怎么退款？」逐项结算"
 				]
 			},
 			{
@@ -1699,14 +1739,17 @@ var I18N = {
 				a: "朝既定方向的修正不加价，亦不限次数。大幅变更编排、更换人声或推翻方向重做，工作量等同一首新歌，按新工时另行计费——均于执行前确认，不会先做后收。<br><br>若首版交付时双方即判断方向不符，通常说明前期沟通未能对齐，请如实反馈。确不契合则本次终止、另择时机合作，对双方都更好。"
 			},
 			{
-				q: "混得不满意，能退款吗？",
-				a: "以「方向确认版」为界，分两个阶段：",
+				q: "不满意 / 中途终止，怎么退款？",
+				a: "按环节结算，一句话：<strong>做完并交给你的，收；没开始的，不收；我的原因，退</strong>。",
 				list: [
-					"方向确认版之前：如方向不符，定金全额退还，项目终止",
-					"方向确认版之后：定金用于已投入的创作时间，不予退还",
-					"朝既定方向的修正不限次数，直至满意为止",
-					"不提供免费完整试混——方向确认版已承担该职能",
-					"若首版交付时双方即判断方向不符，请如实反馈；确不契合则本次终止，另择时机合作"
+					"<strong>方向确认版</strong>：方向不符，退还一半定金，项目终止；另一半抵方向确认版的制作",
+					"<strong>音频编辑</strong>：编辑完成后不退编辑费，修好的干声交给你带走，可拿去任何地方继续做",
+					"<strong>人声制作 · 创意向</strong>：提案都不满意、但混音满意 → 撤掉人声制作，按无人声制作版本交付，按实际工作量退部分人声制作费：做满 3 版退一半，没做满的按未做版数多退（从尾款扣，已付则退）。须在混音定稿前提出",
+					"<strong>人声制作 · 执行向</strong>：按你的指令做到位即不退——做的就是你要的；没做到位，我改到位",
+					"<strong>混音</strong>：修正不限次数；方向确认后你决定终止，定金不退、尾款不收，成品不开放下载",
+					"<strong>加急费</strong>：我没按加急日期交付，全额退；因你反馈超时导致，不退",
+					"<strong>我方原因做不下去</strong>（疾病、设备故障等超过 7 天）：退还全部已付款，已完成的编辑干声免费交给你",
+					"<strong>不退的</strong>：刀门会员费、已交付的额外导出与独立母带"
 				]
 			},
 			{
@@ -1744,6 +1787,20 @@ var I18N = {
 					"<strong>工作室侧原因</strong>：会提前告知并给出新的交付日期，不会临到期才说",
 					"<strong>特殊情况</strong>（疾病、设备故障、不可抗力）：可能超出预计日期，此情形不构成违约，但仍会第一时间同步进度",
 					"有硬性截止日（发行、比赛、影视）请在开工前说明，走加急通道并单独确认"
+				]
+			},
+			{
+				q: "选了「基础」，哪些不在范围内？",
+				a: "基础＝你给几条轨，我把这几条混干净，<strong>不新增、不设计</strong>。以下属于人声制作，不含在基础里：",
+				list: [
+					"<strong>Ad-lib 设计</strong>：副歌后面空着，不会替你决定加「yeah / skrt」；已有 ad-lib 也不做摆位、降调、电话音。你录好的 ad-lib 照常混平衡",
+					"<strong>Backup / 和声设计</strong>：只有一条主唱时，不复制成 double、不做三度和声、不挑词叠。你录好的叠唱照常混",
+					"<strong>空间设计</strong>：词尾 delay throw、段落切换时混响拉大、副歌前抽干变单声道、人声左右飞。基础只含一套统一的混响 / 延迟，让人声坐进伴奏",
+					"<strong>人声效果</strong>：stutter、反转、升降调、失真、特定词效果",
+					"<strong>段落起伏</strong>：主歌收、副歌炸的人声质感切换与自动化。基础只做整首的音量与频段平衡",
+					"想要其中一两项、自己说得清要什么 → 人声制作选「执行向」；想让我来决定 → 选「完整」",
+					"<strong>听完素材我会给「最低建议档」</strong>：比如只有一条主唱、副歌空着，做基础达不到发行水准，我会直接说。坚持做基础也可以，交付按基础范围，「为什么没有 ad-lib」不算修改",
+					"<strong>「先做基础，之后再加」</strong>：开工前换档只补差价；方向确认版之后再升级，差价 + 重混费 ¥100 / 次（加人声设计意味着整首要重新平衡）"
 				]
 			},
 			{
@@ -1796,8 +1853,13 @@ var I18N = {
 				harmony: "Counts the harmony tracks you have already recorded — writing and tracking them is not included.",
 				count: "Each extra vocalist is another layer of balance to arrange. +$15 each.",
 				edit: "Sets how far pitch and timing get corrected. Chosen per vocalist.",
-				lane: "Standard joins the normal queue. Want it faster? Pick a date and the rush fee follows from the urgency."
+				lane: "Standard joins the normal queue. Want it faster? Pick a date and the rush fee follows from the urgency.",
+				extra: "Optional. Turn it on if you want me to lead the song creatively.",
+				perks: "Optional. Switch on whatever applies — price and delivery date update with it."
 			},
+			extraLabel: "Add-on", perksLabel: "Discounts",
+			memSelfTitle: "I'm a Daomen member", memSelfSub: "20% off mixing and producer fee · delivered a week sooner",
+			joinOnTitle: "Joining Daomen with this order", joinOnSub: "{fee} membership fee included · 20% off from this order · a week sooner",
 			assist: {
 				preset: { t: "What is in each package?", d: "Compare vocal production, editing and harmony tier side by side." },
 				prod: { t: "Do I need vocal production?", d: "See exactly what Execution and Creative each do for you." },
@@ -1834,7 +1896,7 @@ var I18N = {
 			prodNote: "<strong>Execution covers:</strong> pitch shifts, stutter, reverse, telephone / distortion, widening, ad-lib placement, double alignment, word-level FX.<br><strong>Creative</strong> = all of it, plus I decide whether and where.",
 			editGuideTitle: "Which tier is mine?",
 			editGuide: [
-				{ t: "Pitch only, or timing only", i: 1 },
+				{ t: "Pitch only (no timing alignment), or timing only; 2 stacked layers max", i: 1 },
 				{ t: "Both pitch and timing", i: 2 },
 				{ t: "Pitchy, cracking, unstable breath", i: 3 },
 				{ t: "Already edited, or not needed", i: 0 }
@@ -1856,7 +1918,7 @@ var I18N = {
 			countUnit: "", countMore: "4 or more",
 			countMoreNote: "Larger cyphers — DM to discuss",
 			editLabel: "Audio Editing", vocalistLabel: "Vocalist",
-			editNote: "<strong>Basic</strong> = pitch or timing, one of the two only.<br><strong>Standard</strong> = timing alignment plus pitch correction, for takes that are already steady.<br><strong>Deep</strong> = everything in Standard plus heavy fine correction, for pitchy, cracking or unstable takes.",
+			editNote: "<strong>Basic</strong> = pitch or timing, one of the two only. Pitch-only does <strong>not</strong> include timing alignment. More than 2 stacked vocal layers requires Standard or above.<br><strong>Standard</strong> = timing alignment plus pitch correction, for takes that are already steady.<br><strong>Deep</strong> = everything in Standard plus heavy fine correction, for pitchy, cracking or unstable takes.",
 			edits: [
 				{ name: "Not needed", price: 0 },
 				{ name: "Basic", price: 15 },
@@ -1903,6 +1965,7 @@ var I18N = {
 			laneDatePick: "Pick your delivery date", laneDateCta: "Select", laneDateChange: "Change",
 			depositLabel: "Deposit (to start)", balanceLabel: "Balance (on delivery)",
 			depositNote: "50 / 50: pay the deposit to start, the balance on delivery.",
+			depositNoteNew: "First order 70 / 30: with the first-order discount, a 70% deposit starts the work and the 30% balance is due on delivery.",
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
 			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off mixing & producer fee · fast lane · for life", memberLine: "Daomen member · 20% off",
 			memberFee: 15, memOnLine: "Daomen member active · 20% off · delivery in {d}",
@@ -1911,7 +1974,7 @@ var I18N = {
 			mState0: "Not a member", mState1: "Founding member", mState2: "Join now", joinLine: "Join Daomen",
 			memClosedNote: "Daomen is closed to new members. Founding members keep 20% off mixing and the fast lane for life.",
 			pbYesMain: "Join Daomen for {fee}, save {save} on this order",
-			pbYesSub: "{net} ahead · <span class=\"qb-hl\">{fast} faster</span> · tap to join ›",
+			pbYesSub: "20% off for life · <span class=\"qb-hl\">{fast} faster</span> · tap to join ›",
 			pbNoMain: "Join Daomen for {fee}, <span class=\"qb-hl\">{fast} faster</span>",
 			pbNoSub: "Saves {save} here · membership is for life · tap to join ›",
 			producerTitle: "Add me as Producer", producerSub: "I lead this record's creative & finish · credit \"Produced by ChefDao\"", producerLine: "Producer fee",
@@ -1935,6 +1998,7 @@ var I18N = {
 				{ name: "Standard", desc: "What most people pick. Adds directed vocal production and standard editing — release-ready." },
 				{ name: "Full", desc: "Hand it over: creative vocal production, deep editing, richer harmony layering." }
 			],
+			diyName: "Custom build", diyDesc: "None of the three fit? Set every line below yourself — the price updates live.", diyDescOn: "You have changed the options below — this is your own build.", diyGo: "Build it ↓",
 			presetCustom: "Custom", presetCustomDesc: "You have changed the options below — this is your own configuration.",
 			presetPer: " / vocalist",
 			tuneTitle: "Fine-tune",
@@ -1947,15 +2011,18 @@ var I18N = {
 			capBusy: "Filling up · delivery pushed back {w}",
 			capFull: "Fully booked · delivery pushed back {w}, dates still firm",
 			newbieOff: 8, newbieLine: "First-order discount",
-			newbieTitle: "First-order discount", newbieSub: "$8 off your first single-vocalist order", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
+			newbieTitle: "First-order discount", newbieSub: "$8 off your first single-vocalist order · 70% deposit", copyFail: "Copy failed — select the text below", share: "Copy a link so everyone can set their own", shareDone: "Link copied ✓", aaCopyLabel: "Include the split in the copied quote", lastResume: "Resume", lastClear: "Clear",
 			copyTerms: "Working terms", copyMore: "Full details",
 			copyTermsList: [
 				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before I start",
 				"Listen through, then send notes in one message; within 7 days of delivery",
-				"Full deposit refund before the direction check; after that the deposit is non-refundable",
-				"Default delivery is the final master ×1; TV mix / instrumental included if you ask in advance"
+				"Direction check not right: half the deposit is refunded; after that the deposit is non-refundable",
+				"Default delivery is the final master ×1; TV mix / instrumental included if you ask in advance",
+				"Changing tier before work starts: pay the difference only. Upgrading after the direction check: difference + $15 remix fee each time"
 			],
-			ctaNote: "The copied quote includes the working terms — please send it to me as-is.", catProd: "Vocal Production", catEdit: "Audio Editing", copyMix: "Mix", copyDeliver: "Est. delivery", copyWeChat: "Book on WeChat"
+			copyNoEdit: "Audio Editing set to Not needed: vocals must arrive already pitch- and timing-corrected, otherwise the project is declined",
+			noEditLine: "Not needed = your vocals are already pitch- and timing-corrected. Uncorrected vocals are declined — pick at least Basic editing.",
+			ctaNote: "Revision process and refund terms are in the FAQ below — booking means you agree to them.", catProd: "Vocal Production", catEdit: "Audio Editing", copyMix: "Mix", copyDeliver: "Est. delivery", copyWeChat: "Book on WeChat"
 		},
 		services: [
 			{
@@ -1985,7 +2052,7 @@ var I18N = {
 							{ label: "Studio session · venue & gear included", price: "$50/hr" },
 							{ label: "On-location · client provides room & gear", price: "$35/hr" }
 						],
-						ratesNote: "On-location is <strong>labour only</strong>: ChefDao brings the recording laptop and nothing else. Mic, interface and monitoring are on you. Need gear brought in? Ask ahead, quoted separately.",
+						ratesNote: "On-location is <strong>labour only</strong>: ChefDao brings the recording laptop and nothing else. Mic, interface and monitoring are on you. Need gear brought in? Ask ahead, quoted separately.<br><strong>Record-then-mix perk</strong>: record a song with ChefDao in Seoul and its mix is $15 off (studio, on-location and 3H SESSION all count). Does not stack with the Daomen member 20% off. You get whichever saves more.",
 						packHead: "3H SESSION",
 						packs: [
 							{ label: "Studio session · 3H", was: "$150", price: "$130" },
@@ -1996,7 +2063,7 @@ var I18N = {
 						venue: "Rooms available: Sejong Univ. / Hongik Univ. / Wangsimni", address: "", mapUrl: ""
 					}
 				],
-				note: "2-hour minimum, please confirm availability in advance. The 3H SESSION rate requires payment in full up front and does not stack with other discounts. Recording is excluded from the Daomen discount."
+				note: "2-hour minimum, please confirm availability in advance. The 3H SESSION rate requires payment in full up front and does not stack with other discounts (the record-then-mix perk still applies). Recording is excluded from the Daomen discount."
 			},
 			{
 				id: "mixing", step: "Step 02", title: "Mixing", builder: true,
@@ -2015,6 +2082,14 @@ var I18N = {
 				items: [
 					{ title: "Custom Arrangement", price: "$420", unit: "+", desc: "Tailored to the artist's voice and style. 100% exclusive licensing. Best for projects with existing lyrics that need professional production.", tags: ["Exclusive"] },
 					{ title: "Full Songwriting", price: "$700", unit: "+", desc: "Professional lyricists and composers. Commercial-grade melody and lyric packages from concept to delivery.", tags: ["Full Package"] }
+				]
+			},
+			{
+				id: "direction", step: "Direction only", title: "Project Producer · Direction", isNew: true,
+				sub: "I don't touch the production — I set the direction and sign off on decisions. Recording, arrangement and mixing are done by you or your team. Different from \"Add me as Producer\" in the quote builder (hands-on) and Project Lead below (full involvement): this is advisory only.",
+				items: [
+					{ title: "Single — Project Producer", isNew: true, price: "$45", unit: "/song", desc: "Creative oversight for one song: direction, mood, section-by-section notes. Includes 1 full diagnosis + 2 follow-up rounds; extra rounds billed separately. Flat project fee, not hourly.", tags: ["Direction only", "2 rounds included"] },
+					{ title: "Album — Project Producer", isNew: true, price: "Inquire", unit: "", desc: "<ul class=\"card-points\"><li>Sonic identity and reference direction for the record</li><li>Consistency across tracks</li><li>Track selection and order</li><li>1 diagnosis + follow-up notes per song</li><li>Quoted privately by project size</li></ul>", tags: ["EP / Album", "Direction only", "Supervisor"] }
 				]
 			},
 			{
@@ -2092,7 +2167,7 @@ var I18N = {
 				steps: [
 					{ t: "Direction alignment", d: "Confirm the stylistic direction, reference tracks and target delivery date." },
 					{ t: "Deposit & material", d: "A 50% deposit secures the slot and the quote. Please supply unprocessed dry vocals and the instrumental at 24-bit / 48kHz or higher." },
-					{ t: "Direction check", d: "A 30–60 second excerpt is delivered to confirm the overall direction (indicative of direction only, not the final sound). Should the direction not be right, the <strong>deposit is refunded in full</strong> and the project ends." },
+					{ t: "Direction check", d: "A 30–60 second excerpt is delivered to confirm the overall direction (indicative of direction only, not the final sound). Should the direction not be right, <strong>half the deposit is refunded</strong> and the project ends." },
 					{ t: "Production & review", d: "Corrections toward the agreed direction are <strong>unlimited</strong>. A change of direction or additional creative requests constitute a new approach and are quoted before work begins. Notes are submitted on the Samply timeline, ideally consolidated after a full listen." },
 					{ t: "Mastering & delivery", d: "The final master is delivered with credits once the balance is settled. Revision notes are accepted <strong>within 7 days</strong> of delivery." }
 				]
@@ -2137,8 +2212,19 @@ var I18N = {
 					"Versions included: Execution = 1 (built from the notes you send before I start), Creative = 3 (I propose directions, you pick)",
 					"For Execution, send everything before I start; new ideas added after that are $8 each",
 					"<strong>Send your notes in one message</strong>: listen to the whole track, then collect them. Scattered notes get queued anyway — the same edits take half the time when they arrive together",
-					"Revision notes within 7 days of delivery; after that it counts as accepted",
+					"Send notes within 24 hours of each version (see the next question)",
 					"Anything billable is always quoted and confirmed before I start — never billed after the fact"
+				]
+			},
+			{
+				q: "How do revision timings work?",
+				a: "Every version runs on the same clock: <strong>you reply within 24 hours, I revise within 24 hours</strong>.",
+				list: [
+					"<strong>You</strong>: send notes within 24 hours of each version — listen through, one message",
+					"<strong>Me</strong>: the revised version within 24 hours of your notes (closed Sundays; rolls to Monday)",
+					"<strong>You reply after 24 hours</strong>: delivery moves back by the extra days; rush orders drop to standard scheduling, rush fee not refunded",
+					"<strong>No reply after 72 hours</strong> (Sundays not counted): taken as no further notes — the project moves to mastering and delivery, and the balance is due",
+					"<strong>Rush orders only — I'm over 24 hours on a revision</strong> (not caused by you): $8 off the balance per day, capped at the rush fee"
 				]
 			},
 			{
@@ -2162,7 +2248,8 @@ var I18N = {
 					"Dry vocals: raw recording with no effects (no reverb or autotune printed in), WAV 48kHz/24bit ideal",
 					"Instrumental: the finished beat, with BPM and key noted (no worries if you're unsure)",
 					"Reference: 1–3 tracks (required if this is your first record) — once confirmed, it's the agreed direction",
-					"Multiple takes for me to comp? Sure — that's an add-on and billed separately"
+					"Multiple takes for me to comp? Sure — that's an add-on and billed separately",
+					"Audio Editing set to Not needed? Vocals must arrive already pitch- and timing-corrected, otherwise the project is declined"
 				]
 			},
 			{
@@ -2197,12 +2284,12 @@ var I18N = {
 			},
 			{
 				q: "How does payment work? Deposit and balance?",
-				a: "50/50: pay the deposit to start, the balance on delivery. I schedule and start once the deposit is confirmed, and deliver the watermark-free final once the balance is settled. Via WeChat.",
+				a: "50/50: pay the deposit to start, the balance on delivery. I schedule and start once the deposit is confirmed, and open the final for download once the balance is settled. Via WeChat.",
 				list: [
 					"Once the deposit lands I build a 30–60 second <strong>direction check</strong> from the raw material — before any editing starts — so you can hear where I'm taking it",
-					"Not feeling it? <strong>Full deposit refund</strong>, project ends, no hard feelings — that step exists so either of us can stop early",
-					"Once the direction is signed off I start properly; cancelling after that, the deposit covers the creative time already spent",
-					"Watermark-free final is delivered when the balance clears"
+					"Not feeling it? <strong>Half the deposit is refunded</strong> and the project ends — the other half covers building the direction check",
+					"First order with the first-order discount: 70% deposit, 30% balance",
+					"Once the direction is signed off I start properly; cancelling after that is settled item by item — see the refund question below"
 				]
 			},
 			{
@@ -2220,13 +2307,17 @@ var I18N = {
 				a: "Any correction that moves the mix toward the direction we agreed on is free and uncapped. But major re-arrangement, swapping the vocal, or scrapping and redoing the direction is essentially a new song's worth of work, billed as new hours — I'll confirm with you before touching it, never bill after the fact. Also: if the first version already feels off to both of us, it usually means we're not on the same wavelength. Tell me honestly right away. If it's really not clicking, we can work together next time instead of forcing it through — better for both of us."
 			},
 			{
-				q: "What if I'm not happy with the mix — can I get a refund?",
-				a: "Two phases, and the line between them is the direction check:",
+				q: "Not happy, or stopping mid-way — how do refunds work?",
+				a: "Settled item by item: <strong>finished and handed over is charged; not started is not; my fault is refunded</strong>.",
 				list: [
-					"<strong>Before the direction check</strong>: if it isn't landing, full deposit refund and we stop — I'd rather refund you here than have us both grind out something neither of us likes",
-					"<strong>After the direction check</strong>: the deposit covers creative time already spent and isn't refundable; but any correction toward the direction we agreed on, I'll keep revising until you're happy",
-					"I don't offer a free full trial mix — mixing is high-intensity creative judgment, and the direction check already serves that purpose",
-					"If the first delivery feels off to both of us, tell me straight away. If we're genuinely not a fit we stop here and work together another time — better for both of us"
+					"<strong>Direction check</strong>: not the right direction → half the deposit is refunded and the project ends; the other half covers the direction check",
+					"<strong>Audio editing</strong>: not refunded once done — you keep the edited vocals and can take them anywhere",
+					"<strong>Vocal Production · Creative</strong>: none of the proposals work but you like the mix → I remove the vocal production, deliver without it, and refund part of the fee by work done: all 3 versions made = half back, fewer = more back. Ask before the mix is final",
+					"<strong>Vocal Production · Execution</strong>: done to your notes = not refunded; not done right = I fix it",
+					"<strong>Mix</strong>: corrections are unlimited; if you stop after the direction check, the deposit stays, no balance is due, and the final is not opened for download",
+					"<strong>Rush fee</strong>: fully refunded if I miss the rush date; not refunded if the delay came from late notes",
+					"<strong>I can't finish</strong> (illness, equipment failure over 7 days): everything you paid is refunded, and the edited vocals are yours free",
+					"<strong>Not refundable</strong>: Daomen membership, extra exports and standalone mastering already delivered"
 				]
 			},
 			{
@@ -2264,6 +2355,20 @@ var I18N = {
 					"<strong>Studio-side causes</strong>: you are told in advance and given a new date — never at the last minute",
 					"<strong>Exceptional circumstances</strong> (illness, equipment failure, force majeure): delivery may fall outside the estimate; this does not constitute a breach, and progress is still communicated immediately",
 					"Hard deadlines (release, competition, film) must be stated before work begins — those go through the rush lane and are confirmed separately"
+				]
+			},
+			{
+				q: "What is not included in Basic?",
+				a: "Basic = I mix the tracks you send, cleanly. <strong>Nothing added, nothing designed.</strong> These belong to Vocal Production:",
+				list: [
+					"<strong>Ad-lib design</strong>: an empty hook tail stays empty — I won't decide to add \"yeah / skrt\"; existing ad-libs get no panning moves, pitch-down or phone FX. Ad-libs you recorded are balanced as usual",
+					"<strong>Backup / harmony design</strong>: with one lead take, no copied doubles, no third harmonies, no word stacking. Stacks you recorded are mixed as usual",
+					"<strong>Space design</strong>: delay throws, reverb blooming at section changes, drying to mono before the hook, vocals flying left/right. Basic includes one coherent reverb / delay setup",
+					"<strong>Vocal FX</strong>: stutter, reverse, pitch shifts, distortion, word-specific effects",
+					"<strong>Section contrast</strong>: tight verses, exploding hooks — vocal character switches and automation. Basic covers overall level and frequency balance",
+					"Want one or two of these and know what you want → Vocal Production: Execution. Want me to decide → pick Full",
+					"<strong>After hearing your files I name a minimum tier</strong>: e.g. one lead take and an empty hook won't reach release quality on Basic, and I'll say so. You can still choose Basic — delivery follows Basic scope, and \"why are there no ad-libs\" is not a revision",
+					"<strong>\"Basic first, add later\"</strong>: changing tier before work starts costs the difference only; upgrading after the direction check costs the difference + a $15 remix fee each time (adding vocal design means rebalancing the whole mix)"
 				]
 			},
 			{
@@ -2316,8 +2421,13 @@ var I18N = {
 				harmony: "이미 녹음해 오신 화음 트랙의 양을 계산합니다 — 작성·녹음 대행은 포함되지 않습니다.",
 				count: "보컬이 늘 때마다 조율할 밸런스가 한 층씩 늘어납니다. 1인당 +₩20,000.",
 				edit: "음정과 타이밍을 어디까지 다듬을지 정합니다. 보컬별 선택.",
-				lane: "표준은 정상 대기열. 더 빠르게 원하면 날짜를 지정하세요 — 긴급도에 따라 요금이 붙습니다."
+				lane: "표준은 정상 대기열. 더 빠르게 원하면 날짜를 지정하세요 — 긴급도에 따라 요금이 붙습니다.",
+				extra: "선택 사항. 곡 전체를 제가 크리에이티브하게 이끌길 원하면 켜세요.",
+				perks: "선택 사항. 해당하는 항목만 켜세요. 가격과 납품일이 함께 바뀝니다."
 			},
+			extraLabel: "추가 서비스", perksLabel: "할인",
+			memSelfTitle: "刀门 회원입니다", memSelfSub: "믹싱·프로듀서 비용 20% 할인 · 납품 1주 단축",
+			joinOnTitle: "이번 주문에서 刀门 가입", joinOnSub: "가입비 {fee} 포함 · 이번 주문부터 20% 할인 · 1주 단축",
 			assist: {
 				preset: { t: "각 패키지에 무엇이 들어 있나요?", d: "세 등급의 보컬 프로덕션·편집·화음을 나란히 비교합니다." },
 				prod: { t: "보컬 프로덕션이 필요한가요?", d: "실행형과 크리에이티브가 각각 무엇을 하는지 봅니다." },
@@ -2354,7 +2464,7 @@ var I18N = {
 			prodNote: "<strong>실행형 작업:</strong> 피치 조정, 스터터, 리버스, 텔레폰 / 디스토션, 와이드닝, 애드립 배치, 더블 정렬, 단어 단위 FX.<br><strong>크리에이티브</strong> = 위 전부 ＋ 할지·어디에 할지를 제가 결정.",
 			editGuideTitle: "저는 어느 등급인가요?",
 			editGuide: [
-				{ t: "음정만, 또는 타이밍만", i: 1 },
+				{ t: "음정만(타이밍 정렬 미포함), 또는 타이밍만; 스택 2트랙 이하", i: 1 },
 				{ t: "음정과 타이밍 둘 다", i: 2 },
 				{ t: "음이탈·삑사리·호흡 불안정", i: 3 },
 				{ t: "이미 편집했거나 불필요", i: 0 }
@@ -2376,7 +2486,7 @@ var I18N = {
 			countUnit: "인", countMore: "4인 이상",
 			countMoreNote: "대규모 사이퍼는 DM으로 문의",
 			editLabel: "오디오 편집", vocalistLabel: "보컬",
-			editNote: "<strong>기본 편집</strong> = 음정과 타이밍 중 하나만 처리.<br><strong>표준 편집</strong> = 타이밍 정렬 + 음정 보정, 안정적인 테이크용.<br><strong>정밀 편집</strong> = 표준에 더해 대량의 정밀 보정, 음이탈·삑사리·불안정한 테이크용.",
+			editNote: "<strong>기본 편집</strong> = 음정과 타이밍 중 하나만 처리. 음정만 선택 시 <strong>타이밍 정렬은 포함되지 않습니다</strong>. 더블링(스택)이 2트랙을 넘으면 표준 편집 이상을 선택해야 합니다.<br><strong>표준 편집</strong> = 타이밍 정렬 + 음정 보정, 안정적인 테이크용.<br><strong>정밀 편집</strong> = 표준에 더해 대량의 정밀 보정, 음이탈·삑사리·불안정한 테이크용.",
 			edits: [
 				{ name: "필요 없음", price: 0 },
 				{ name: "기본 편집", price: 20000 },
@@ -2423,6 +2533,7 @@ var I18N = {
 			laneDatePick: "희망 납품일 선택", laneDateCta: "선택", laneDateChange: "변경",
 			depositLabel: "계약금 (착수)", balanceLabel: "잔금 (납품 시)",
 			depositNote: "반반 방식: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
+			depositNoteNew: "첫 주문 7:3: 첫 주문 할인 적용 시 계약금 70%로 착수, 납품 시 잔금 30% 결제.",
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
 			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱·프로듀서 20% 할인 · 패스트 레인 · 평생", memberLine: "刀门 회원 · 20% 할인",
 			memberFee: 20000, memOnLine: "刀门 회원 적용 중 · 20% 할인 · {d} 납품",
@@ -2431,7 +2542,7 @@ var I18N = {
 			mState0: "비회원", mState1: "창립 회원", mState2: "지금 가입", joinLine: "刀门 가입",
 			memClosedNote: "刀门 가입이 마감되었습니다. 이미 가입하신 창립 회원은 믹싱 20% 할인과 패스트 레인이 평생 유지됩니다.",
 			pbYesMain: "{fee} 가입, 이번 주문에서 {save} 절약",
-			pbYesSub: "순 {net} 이득 · <span class=\"qb-hl\">납품 {fast} 단축</span> · 탭하여 가입 ›",
+			pbYesSub: "평생 20% 할인 · <span class=\"qb-hl\">납품 {fast} 단축</span> · 탭하여 가입 ›",
 			pbNoMain: "{fee} 가입, <span class=\"qb-hl\">납품 {fast} 단축</span>",
 			pbNoSub: "이번에 {save} 절약 · 혜택은 평생 · 탭하여 가입 ›",
 			producerTitle: "프로듀서로 참여", producerSub: "이 곡의 크리에이티브와 완성도를 주도 · 크레딧 \"Produced by ChefDao\"", producerLine: "프로듀서 비용",
@@ -2455,6 +2566,7 @@ var I18N = {
 				{ name: "스탠다드", desc: "가장 많이 선택합니다. 지시형 보컬 프로덕션과 표준 편집을 더해 발매 수준에 근접합니다." },
 				{ name: "풀", desc: "전부 맡기기: 크리에이티브 보컬 프로덕션, 딥 편집, 더 두터운 하모니." }
 			],
+			diyName: "맞춤 구성", diyDesc: "세 가지 모두 맞지 않나요? 아래 항목을 직접 고르면 가격이 바로 바뀝니다.", diyDescOn: "아래 옵션을 직접 바꾸셨습니다 — 지금이 맞춤 구성입니다.", diyGo: "구성 시작 ↓",
 			presetCustom: "커스텀", presetCustomDesc: "아래 옵션을 직접 변경하셨습니다 — 현재는 커스텀 구성입니다.",
 			presetPer: " / 인",
 			tuneTitle: "세부 조정",
@@ -2467,15 +2579,18 @@ var I18N = {
 			capBusy: "일정 혼잡 · 납품 {w} 순연",
 			capFull: "일정 마감 · 납품 {w} 순연, 날짜는 명확합니다",
 			newbieOff: 10000, newbieLine: "첫 주문 할인",
-			newbieTitle: "첫 주문 할인", newbieSub: "첫 협업, 보컬 1인 주문 ₩10,000 할인", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
+			newbieTitle: "첫 주문 할인", newbieSub: "첫 협업, 보컬 1인 주문 ₩10,000 할인 · 계약금 70%", copyFail: "복사 실패 · 아래 텍스트를 선택하세요", share: "설정 링크 복사 · 각자 수정 가능", shareDone: "링크 복사됨 ✓", aaCopyLabel: "견적 복사 시 분담 내역 포함", lastResume: "이어하기", lastClear: "삭제",
 			copyTerms: "협업 요점", copyMore: "전체 안내",
 			copyTermsList: [
 				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
 				"전체를 들으신 뒤 의견을 한 번에 모아 주세요. 납품 후 7일 이내",
-				"방향 확인본 이전에는 계약금 전액 환불, 이후에는 환불되지 않습니다",
-				"기본 납품은 완성 마스터 ×1. TV 믹스 / 인스트루멘탈은 미리 말씀하시면 함께 드립니다"
+				"방향 확인본이 맞지 않으면 계약금 절반 환불, 이후에는 환불되지 않습니다",
+				"기본 납품은 완성 마스터 ×1. TV 믹스 / 인스트루멘탈은 미리 말씀하시면 함께 드립니다",
+				"착수 전 등급 변경은 차액만. 방향 확인본 이후 업그레이드는 차액 + 리믹스 비용 ₩20,000 / 회"
 			],
-			ctaNote: "복사된 견적서에 협업 요점이 포함되어 있습니다. 그대로 보내주세요.", catProd: "보컬 프로덕션", catEdit: "오디오 편집", copyMix: "믹스", copyDeliver: "예상 납품", copyWeChat: "위챗 예약"
+			copyNoEdit: "오디오 편집 「필요 없음」 선택: 보컬은 음정·타이밍 보정이 끝난 상태여야 하며, 아니면 작업을 받지 않습니다",
+			noEditLine: "「필요 없음」 = 음정·타이밍 보정이 끝난 보컬. 보정 안 된 소스는 받지 않습니다 — 최소 「기본 편집」을 선택해 주세요.",
+			ctaNote: "수정 절차와 환불 기준은 아래 FAQ에 있습니다 — 예약 시 동의한 것으로 간주합니다.", catProd: "보컬 프로덕션", catEdit: "오디오 편집", copyMix: "믹스", copyDeliver: "예상 납품", copyWeChat: "위챗 예약"
 		},
 		services: [
 			{
@@ -2505,7 +2620,7 @@ var I18N = {
 							{ label: "스튜디오 녹음 · 장소·장비 포함", price: "₩60,000/hr" },
 							{ label: "출장 녹음 · 고객 장소·장비 제공", price: "₩40,000/hr" }
 						],
-						ratesNote: "출장 녹음은 <strong>인건비만 포함</strong>됩니다. ChefDao는 녹음용 노트북만 지참하며 마이크·오디오 인터페이스·모니터링은 고객이 준비합니다. 장비 지참이 필요하면 사전에 문의해 주세요, 별도 견적입니다.",
+						ratesNote: "출장 녹음은 <strong>인건비만 포함</strong>됩니다. ChefDao는 녹음용 노트북만 지참하며 마이크·오디오 인터페이스·모니터링은 고객이 준비합니다. 장비 지참이 필요하면 사전에 문의해 주세요, 별도 견적입니다.<br><strong>녹음 고객 믹스 혜택</strong>: 서울에서 ChefDao와 녹음한 곡은 같은 곡 믹스를 ₩20,000 할인해 드립니다(스튜디오·출장·3H SESSION 모두 적용). 刀门 회원 20% 할인과 중복되지 않으며, 더 유리한 쪽으로 적용됩니다.",
 						packHead: "3H SESSION",
 						packs: [
 							{ label: "스튜디오 녹음 · 3H", was: "₩180,000", price: "₩160,000" },
@@ -2516,7 +2631,7 @@ var I18N = {
 						venue: "선택 가능 장소: 세종대 / 홍익대 / 왕십리 녹음실", address: "", mapUrl: ""
 					}
 				],
-				note: "최소 2시간 예약, 사전에 스케줄을 확인해 주세요. 3H SESSION은 일시불 결제이며 다른 할인과 중복 적용되지 않습니다. 레코딩은 刀门 회원 할인 대상이 아닙니다."
+				note: "최소 2시간 예약, 사전에 스케줄을 확인해 주세요. 3H SESSION은 일시불 결제이며 다른 할인과 중복 적용되지 않습니다(녹음 고객 믹스 혜택은 예외). 레코딩은 刀门 회원 할인 대상이 아닙니다."
 			},
 			{
 				id: "mixing", step: "Step 02", title: "믹싱 Mixing", builder: true,
@@ -2535,6 +2650,14 @@ var I18N = {
 				items: [
 					{ title: "커스텀 편곡", price: "₩600,000", unit: "+", desc: "아티스트의 음색과 스타일에 맞춘 맞춤 제작. 100% 독점 라이선스 포함. 가사·멜로디가 있는 프로젝트에 적합.", tags: ["독점 라이선스"] },
 					{ title: "풀 작사·작곡", price: "₩1,000,000", unit: "+", desc: "전문 작사·작곡가 참여. 기획부터 완성까지 상업적 수준의 멜로디와 가사 제공.", tags: ["풀 패키지"] }
+				]
+			},
+			{
+				id: "direction", step: "디렉션 전용", title: "프로젝트 프로듀서 Direction", isNew: true,
+				sub: "제작 작업은 직접 하지 않고 방향 설정과 판단만 맡습니다. 녹음·편곡·믹싱은 본인 또는 팀이 진행합니다. 견적기의 「프로듀서로 참여」(직접 주도·작업), 아래 「프로젝트 리드」(전 과정 참여)와 다른, 순수 자문형입니다.",
+				items: [
+					{ title: "싱글 프로젝트 프로듀서", isNew: true, price: "₩60,000", unit: "/곡", desc: "한 곡 전체의 방향·무드·구간별 피드백. 전체 진단 1회 + 후속 피드백 2회 포함, 초과 시 회차별 별도. 시간제가 아닌 고정 프로젝트 비용입니다.", tags: ["디렉션 전용", "피드백 2회"] },
+					{ title: "앨범 프로젝트 프로듀서", isNew: true, price: "문의", unit: "", desc: "<ul class=\"card-points\"><li>앨범 전체의 사운드 정체성과 레퍼런스 방향</li><li>곡 간 일관성 체크</li><li>선곡 및 트랙 순서 제안</li><li>곡당 진단 1회 + 후속 피드백</li><li>규모에 따라 개별 견적</li></ul>", tags: ["EP / 앨범", "디렉션 전용", "감독"] }
 				]
 			},
 			{
@@ -2612,7 +2735,7 @@ var I18N = {
 				steps: [
 					{ t: "방향 확정", d: "스타일 방향, 레퍼런스, 희망 납품일을 확정합니다." },
 					{ t: "계약금 및 소스", d: "계약금 50% 입금 시 일정과 견적이 확정됩니다. 이펙트를 적용하지 않은 드라이 보컬과 반주를 24-bit / 48kHz 이상으로 보내주시기 바랍니다." },
-					{ t: "방향 확인본", d: "전체 방향 확인을 위해 30–60초 발췌본을 전달합니다(방향 판단용이며 최종 사운드가 아닙니다). 방향이 맞지 않을 경우 <strong>계약금은 전액 환불</strong>되며 프로젝트는 종료됩니다." },
+					{ t: "방향 확인본", d: "전체 방향 확인을 위해 30–60초 발췌본을 전달합니다(방향 판단용이며 최종 사운드가 아닙니다). 방향이 맞지 않을 경우 <strong>계약금의 절반을 환불</strong>하고 프로젝트는 종료됩니다." },
 					{ t: "제작 및 검토", d: "합의된 방향으로의 보정은 <strong>횟수 제한이 없습니다</strong>. 방향 변경 또는 크리에이티브 추가 요청은 새로운 방안으로 간주되어 착수 전 별도 견적을 드립니다. 검토 의견은 Samply 타임라인을 통해, 전체 청취 후 일괄 정리하여 전달해 주시기 바랍니다." },
 					{ t: "마스터링 및 납품", d: "잔금 정산 후 크레딧과 함께 완성 마스터를 납품합니다. 수정 의견은 납품 후 <strong>7일 이내</strong>에 접수됩니다." }
 				]
@@ -2657,8 +2780,19 @@ var I18N = {
 					"포함 버전 수: 실행형 1개(착수 전 주신 지시대로 작업), 크리에이티브 3개(제가 방향을 제안하고 선택하십니다)",
 					"실행형은 착수 전에 모두 알려주세요. 착수 후 추가되는 아이디어는 1건당 ₩10,000입니다",
 					"<strong>의견은 한 번에 모아 보내주세요</strong>: 곡 전체를 들으신 뒤 정리해 주시면 됩니다. 나눠 보내셔도 모아서 작업하게 되며, 같은 수정량이라도 한 번에 오면 시간이 절반입니다",
-					"수정 의견은 납품 후 7일 이내에 주세요. 이후는 검수 완료로 간주합니다",
+					"수정 의견은 각 버전 납품 후 24시간 이내에 주세요 (다음 질문 참고)",
 					"별도 청구가 발생하는 작업은 반드시 착수 전에 견적을 드리고 확인받습니다 — 사후 청구는 없습니다"
+				]
+			},
+			{
+				q: "수정 일정은 어떻게 되나요?",
+				a: "모든 버전은 같은 리듬입니다: <strong>24시간 안에 의견, 24시간 안에 수정</strong>.",
+				list: [
+					"<strong>고객</strong>: 각 버전 납품 후 24시간 이내에 의견 — 곡 전체를 듣고 한 번에",
+					"<strong>저</strong>: 의견을 받은 뒤 24시간 이내에 수정본 전달 (일요일 휴무, 월요일로 순연)",
+					"<strong>24시간을 넘겨 의견을 주시면</strong>: 넘긴 일수만큼 납품일 순연. 급행 프로젝트는 일반 일정으로 전환되며 급행비는 환불되지 않습니다",
+					"<strong>72시간이 지나도 의견이 없으면</strong> (일요일 제외): 의견 없음으로 간주하고 마스터링·납품 절차로 넘어가며 잔금을 정산합니다",
+					"<strong>급행 프로젝트에서 제가 24시간을 넘기면</strong> (고객 사유 제외): 하루당 잔금 ₩10,000 차감, 상한은 급행비"
 				]
 			},
 			{
@@ -2682,7 +2816,8 @@ var I18N = {
 					"드라이 보컬: 아무 효과도 걸지 않은 원본 녹음(리버브·오토튠 인쇄 금지), WAV 48kHz/24bit 권장",
 					"반주: 완성된 인스트루멘털, BPM과 키 표기(모르셔도 괜찮습니다)",
 					"레퍼런스: 1–3곡(첫 곡이라면 필수) — 확정 후 프로젝트의 방향 기준이 됩니다",
-					"여러 테이크를 제가 골라 편집(comp)하는 것도 가능 — 추가 서비스로 별도 청구됩니다"
+					"여러 테이크를 제가 골라 편집(comp)하는 것도 가능 — 추가 서비스로 별도 청구됩니다",
+					"오디오 편집 「필요 없음」 선택 시: 음정·타이밍 보정이 끝난 보컬이어야 하며, 아니면 작업을 받지 않습니다"
 				]
 			},
 			{
@@ -2717,12 +2852,12 @@ var I18N = {
 			},
 			{
 				q: "결제는 어떻게 하나요? 계약금과 잔금은?",
-				a: "반반 방식: 계약금으로 착수하고 완성본 납품 시 잔금을 결제합니다. 계약금 확인 후 일정을 잡고 착수하며, 잔금 정산 후 워터마크 없는 완성본을 드립니다. 위챗으로 진행합니다.",
+				a: "반반 방식: 계약금으로 착수하고 완성본 납품 시 잔금을 결제합니다. 계약금 확인 후 일정을 잡고 착수하며, 잔금 정산 후 완성본 다운로드를 열어 드립니다. 위챗으로 진행합니다.",
 				list: [
 					"계약금이 확인되면 편집에 들어가기 전에 원본 소스로 30–60초 <strong>방향 확인본</strong>을 만들어 어떤 방향으로 가는지 들려드립니다",
-					"방향이 맞지 않으면 <strong>계약금 전액 환불</strong>, 프로젝트 종료 — 서로 일찍 멈출 수 있게 만든 단계입니다",
-					"방향 확정 후 본격 착수하며, 이후 중도 취소 시 계약금은 이미 투입된 창작 시간에 대한 비용으로 환불되지 않습니다",
-					"잔금 정산 후 워터마크 없는 완성본을 드립니다"
+					"방향이 맞지 않으면 <strong>계약금 절반 환불</strong>, 프로젝트 종료 — 나머지 절반은 방향 확인본 제작 비용입니다",
+					"첫 주문 할인을 적용한 경우: 계약금 70%, 잔금 30%",
+					"방향 확정 후 본격 착수하며, 이후 중도 취소는 아래 환불 기준에 따라 항목별로 정산합니다"
 				]
 			},
 			{
@@ -2740,13 +2875,17 @@ var I18N = {
 				a: "이미 합의된 방향으로 다듬는 보정 작업은 추가 요금 없이, 횟수 제한 없이 진행됩니다. 다만 대폭적인 재편곡, 보컬 교체, 방향을 뒤엎는 재작업은 사실상 새 곡 분량이라 새 작업 시간으로 청구됩니다 — 손대기 전에 먼저 확인하며, 사후 청구는 없습니다. 그리고: 첫 버전 납품 시 양쪽 다 뭔가 어긋난다고 느낀다면, 대개 서로 주파수가 맞지 않는다는 뜻입니다. 솔직한 느낌을 즉시 말씀해 주세요. 정말 맞지 않으면 억지로 밀어붙이지 말고 다음에 다시 협업하는 게 서로에게 낫습니다."
 			},
 			{
-				q: "믹스가 마음에 안 들면 환불되나요?",
-				a: "「방향 확인본」을 기준으로 두 단계로 나뉩니다:",
+				q: "마음에 안 들거나 중도 종료하면 환불은 어떻게 되나요?",
+				a: "항목별로 정산합니다: <strong>완성해서 드린 것은 청구, 시작 안 한 것은 청구 안 함, 제 사유면 환불</strong>.",
 				list: [
-					"<strong>방향 확인본 이전</strong>: 방향이 아니라고 느끼시면 계약금 전액 환불 후 종료합니다 — 서로 만족하지 못할 결과를 끝까지 끌고 가느니 여기서 환불해 드리는 편이 낫습니다",
-					"<strong>방향 확인본 이후</strong>: 계약금은 이미 투입된 창작 시간에 대한 비용으로 환불되지 않습니다. 다만 합의된 방향으로의 보정이라면 만족하실 때까지 계속 수정합니다",
-					"무료 풀 트라이얼 믹스는 제공하지 않습니다 — 믹싱 자체가 고강도의 창작 판단이며, 방향 확인본이 그 역할을 합니다",
-					"첫 납품에서 서로 아니라고 느껴진다면 바로 솔직히 말씀해 주세요. 정말 맞지 않으면 이번은 여기서 마무리하고 다음에 함께하는 편이 서로에게 낫습니다"
+					"<strong>방향 확인본</strong>: 방향이 맞지 않으면 계약금 절반 환불 후 종료. 나머지 절반은 방향 확인본 제작 비용입니다",
+					"<strong>오디오 편집</strong>: 편집 완료 후에는 환불되지 않으며, 편집된 보컬은 가져가셔서 어디서든 쓰실 수 있습니다",
+					"<strong>보컬 프로덕션 · 크리에이티브</strong>: 제안이 모두 마음에 안 들지만 믹스는 만족 → 보컬 프로덕션을 빼고 납품하며, 작업량에 따라 일부 환불: 3개 버전을 모두 만들었으면 절반, 덜 만들었으면 더 환불. 믹스 확정 전에 말씀해 주세요",
+					"<strong>보컬 프로덕션 · 실행형</strong>: 지시대로 완료했다면 환불되지 않습니다. 제대로 안 됐다면 제가 고칩니다",
+					"<strong>믹스</strong>: 보정은 무제한. 방향 확인 후 중도 종료 시 계약금은 환불되지 않고 잔금은 받지 않으며, 완성본 다운로드는 열리지 않습니다",
+					"<strong>급행비</strong>: 제가 급행 날짜를 못 지키면 전액 환불. 고객 의견 지연 때문이면 환불되지 않습니다",
+					"<strong>제 사유로 진행 불가</strong> (질병·장비 고장 등 7일 초과): 결제 금액 전액 환불, 완성된 편집 보컬은 무료로 드립니다",
+					"<strong>환불 불가</strong>: 刀门 회원비, 이미 납품한 추가 익스포트와 단독 마스터링"
 				]
 			},
 			{
@@ -2784,6 +2923,20 @@ var I18N = {
 					"<strong>스튜디오 측 사유</strong>: 사전에 안내드리고 새로운 납품일을 제시합니다. 마감 직전 통보는 하지 않습니다",
 					"<strong>특수 상황</strong>(질병, 장비 고장, 불가항력): 예상일을 초과할 수 있으며 이는 계약 위반에 해당하지 않습니다. 진행 상황은 즉시 공유합니다",
 					"발매·공모전·영상 등 확정 마감일이 있다면 착수 전에 알려주세요. 긴급 통로로 별도 확인합니다"
+				]
+			},
+			{
+				q: "「베이직」에 포함되지 않는 것은?",
+				a: "베이직 = 보내주신 트랙만 깔끔하게 믹스합니다. <strong>추가도, 디자인도 없습니다.</strong> 아래는 보컬 프로덕션에 속합니다:",
+				list: [
+					"<strong>애드립 디자인</strong>: 훅 끝이 비어 있어도 \"yeah / skrt\"를 대신 넣지 않습니다. 기존 애드립에 패닝 이동·피치 다운·전화 효과도 없습니다. 녹음된 애드립은 밸런스만 맞춥니다",
+					"<strong>백업 / 하모니 디자인</strong>: 메인 한 테이크뿐이면 더블 복제, 3도 하모니, 단어 스택을 하지 않습니다. 녹음된 스택은 평소대로 믹스합니다",
+					"<strong>공간 디자인</strong>: 딜레이 스로우, 섹션 전환 시 리버브 확장, 훅 직전 모노 드라이, 좌우로 움직이는 보컬. 베이직은 통일된 리버브 / 딜레이 한 세트만 포함",
+					"<strong>보컬 이펙트</strong>: 스터터, 리버스, 피치 변경, 디스토션, 특정 단어 이펙트",
+					"<strong>섹션 대비</strong>: 벌스는 좁게, 훅은 터지게 — 보컬 질감 전환과 오토메이션. 베이직은 곡 전체 레벨·주파수 밸런스만",
+					"한두 가지만 원하고 명확하다면 → 보컬 프로덕션 「실행형」, 제가 정하길 원하면 → 「풀」",
+					"<strong>소스를 들은 뒤 「최소 권장 등급」을 알려드립니다</strong>: 예컨대 메인 한 테이크에 훅이 비어 있으면 베이직으로는 발매 수준이 안 된다고 바로 말씀드립니다. 그래도 베이직을 원하시면 가능하며, 납품은 베이직 범위 기준이고 \"왜 애드립이 없냐\"는 수정 사항이 아닙니다",
+					"<strong>「일단 베이직, 나중에 추가」</strong>: 착수 전 등급 변경은 차액만, 방향 확인본 이후 업그레이드는 차액 + 리믹스 비용 ₩20,000 / 회 (보컬 디자인을 더하면 곡 전체를 다시 밸런싱해야 합니다)"
 				]
 			},
 			{
@@ -3123,6 +3276,28 @@ function qbAdvance(mutate) {
 		requestAnimationFrame(function () { qbScrollStep(target); });
 	});
 }
+// 个性化定制：不瞬移，慢慢滑到「按需微调」开头，让客户一路看到有哪些可调项
+function qbGoDiy() {
+	var el = document.getElementById("qb-tune");
+	if (!el) return;
+	var from = window.scrollY, to = el.getBoundingClientRect().top + from - 80;
+	if (to <= from + 4) return;
+	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { window.scrollTo({ top: to, behavior: "instant" }); return; }
+	var dur = Math.min(2200, Math.max(1100, (to - from) * 1.6)), t0 = null;
+	var root = document.documentElement, prev = root.style.scrollBehavior;
+	root.style.scrollBehavior = "auto"; // html 上的 smooth 会和逐帧滚动打架
+	var stop = function () { t0 = -1; };
+	window.addEventListener("wheel", stop, { once: true, passive: true });
+	window.addEventListener("touchstart", stop, { once: true, passive: true });
+	function step(ts) {
+		if (t0 === -1) { root.style.scrollBehavior = prev; return; }
+		if (t0 === null) t0 = ts;
+		var k = Math.min(1, (ts - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+		window.scrollTo(0, from + (to - from) * e);
+		if (k < 1) requestAnimationFrame(step); else root.style.scrollBehavior = prev;
+	}
+	requestAnimationFrame(step);
+}
 function qbSet(key, val) { qbAdvance(function () { qbState[key] = val; }); }
 // 点日历 = 试算，不滚动。客户往往要来回比几个日期，每点一次就被甩到报价单太烦。
 // 真正的「决定」交给确认按钮。
@@ -3151,13 +3326,8 @@ function qbJoinBeatsRush(q) {
 	if (save <= 0) return null;
 	return { save: save, free: memRate === 0, rate: Math.round((memRate || 0) * 100) };
 }
-function qbConfirmDate() {
-	var el = document.querySelector(".qb-extras");
-	if (!el) { qbRevealSummary(); return; }
-	var r = el.getBoundingClientRect(), h = window.innerHeight || 800;
-	if (r.top >= 64 && r.bottom <= h - 16) return; // 已经看得见就别动
-	qbSmoothTo(r.top + (window.pageYOffset || document.documentElement.scrollTop) - qbScrollOffset());
-}
+// 交付是最后一步，确认日期后直接看报价单
+function qbConfirmDate() { qbRevealSummary(); }
 function qbSetEdit(i, val) { qbAdvance(function () { qbState.edits[i] = val; }); }
 function qbSetProd(i, val) { qbAdvance(function () { qbState.prods[i] = val; }); }
 // 报价单不在视野里就先滚过去——动效在屏幕外播完等于没播。
@@ -3210,6 +3380,12 @@ function qbSetMem(i, val) {
 		// 页面还在滚就等它停稳，否则数字滚动会被移动盖过去
 		setTimeout(function () { qbJoinAnimate(before); }, moved ? 420 : 20);
 	}
+}
+// 单人单「我是刀门会员」开关：老会员不能再用新客优惠，两者互斥
+function qbSetMemberSelf() {
+	var on = qbMemState(0) !== 1;
+	if (on) qbState.newbie = false;
+	qbSetMem(0, on ? 1 : 0);
 }
 function qbSetAllMem(val) { for (var i = 0; i < qbState.count; i++) qbState.mem[i] = val; renderQuoteBuilder(); }
 // 一键把所有主唱设成同一档，人多时省得逐位点
@@ -3267,7 +3443,8 @@ function qbReset() {
 // ── Step sequence ───────────────────────────────────────────
 // 分轨模式多一步「工程规模」。一个步骤作答完毕，下一步才渲染出来。
 // 人声制作与音编都按主唱逐位选，排在人数之后
-function qbSteps() { return qbState.mode === "stems" ? ["mode", "stems", "preset", "count", "prod", "edit", "harmony", "lane"] : ["mode", "preset", "count", "prod", "edit", "harmony", "lane"]; }
+// 附加服务、优惠排在交付之前：会员会改变交付日期，先定身份再看日期，日期才不会选完又变
+function qbSteps() { return qbState.mode === "stems" ? ["mode", "stems", "preset", "count", "prod", "edit", "harmony", "extra", "perks", "lane"] : ["mode", "preset", "count", "prod", "edit", "harmony", "extra", "perks", "lane"]; }
 // 「按需微调」分组从这一步开始——它上面是套餐，下面全是可选调整
 var QB_TUNE_FROM = "count";
 // 当前的人声制作/音编/和声组合正好等于某个套餐 → 高亮那张卡；否则落到「自定义」
@@ -3288,10 +3465,12 @@ function qbSetPreset(i) {
 	qbState.harmony = p.harmony;
 	for (var v = 0; v < qbState.count; v++) { qbState.prods[v] = p.prod; qbState.edits[v] = p.edit; }
 	renderQuoteBuilder();
-	requestAnimationFrame(function () { requestAnimationFrame(function () { qbScrollStep("summary"); }); });
+	// 选完套餐停在「优惠」：新客 / 会员会改价格和交付日期，不能被直接滚过去
+	requestAnimationFrame(function () { requestAnimationFrame(function () { qbScrollStep("perks"); }); });
 }
 function qbAnswered(k) {
 	if (k === "preset") return true; // 永远有一份配置在手，套餐这一步不会「未作答」
+	if (k === "extra" || k === "perks") return true; // 都是可选项，不选也能下单
 	if (k === "mode") return qbState.mode !== null;
 	if (k === "stems") return qbState.stems !== null;
 	if (k === "harmony") return qbState.harmony !== null;
@@ -3370,7 +3549,8 @@ function qbCompute(q) {
 	var total = workBase + rush - discount + joinFee - newbie;
 	if (total < 0) { newbie += total; total = 0; }
 	// 半半模式：定金 50% 向上取整（略大的那一半先收），尾款为剩余，两者精确相加
-	var deposit = Math.ceil(total / 2);
+	// 用了新客立减的首单改为 7:3——优惠换更高的预付，降低首单跑单风险
+	var deposit = newbie > 0 ? Math.ceil(total * 0.7) : Math.ceil(total / 2);
 	var balance = total - deposit;
 	return { base: base, baseItem: baseItem, from: stems && baseItem.from, harmony: harmony, count: count,
 		mixExtra: mixExtra, prodTotal: prodTotal, prodCounts: prodCounts, maxProd: maxProd,
@@ -3521,6 +3701,12 @@ function renderQuoteBuilder() {
 				+ '<span class="qb-preset-desc">' + q.presets[pk].desc + '</span></button>';
 		}
 		var preBody = '<div class="qb-preset">' + preCards + '</div>';
+		// 第四个入口：三档都不合适的人，直接跳到下面逐项配；改过任一项即自动点亮
+		var diyOn = qbState.preset === null;
+		preBody += '<button class="qb-preset-diy' + (diyOn ? " active" : "") + '" onclick="qbGoDiy()">'
+			+ '<span class="qb-preset-name">' + q.diyName + '</span>'
+			+ '<span class="qb-preset-desc">' + (diyOn ? q.diyDescOn : q.diyDesc) + '</span>'
+			+ (diyOn ? '' : '<span class="qb-diy-go">' + q.diyGo + '</span>') + '</button>';
 		if (qbState.preset === null) {
 			preBody += '<div class="qb-preset-custom"><strong>' + q.presetCustom + '</strong><span>' + q.presetCustomDesc + '</span>'
 				+ '<button class="qb-preset-back" onclick="qbSetPreset(' + QB_PRESET_DEFAULT + ')">' + q.presets[QB_PRESET_DEFAULT].name + '</button></div>';
@@ -3538,7 +3724,7 @@ function renderQuoteBuilder() {
 	}
 
 	// 以下全是可选调整——先立一道分界，告诉客户「不改也能下单」
-	html += '<div class="qb-group"><div class="qb-group-t">' + q.tuneTitle + '</div><div class="qb-group-s">' + q.tuneSub + '</div></div>';
+	html += '<div class="qb-group" id="qb-tune"><div class="qb-group-t">' + q.tuneTitle + '</div><div class="qb-group-s">' + q.tuneSub + '</div></div>';
 
 	// 主唱人数：1–3 直接点选，4 位以上切换成步进器（编号随模式自动排）
 	if (shown >= idx.count) {
@@ -3674,8 +3860,11 @@ function renderQuoteBuilder() {
 			+ '<div class="qb-help-ops">' + q.editNote + '</div>'
 			+ (coverBind2 ? '<div class="qb-help-ops">' + q.coverNote + '</div>' : '')
 			+ (floorBinding ? '<div class="qb-help-ops">' + q.floorNote + '</div>' : '');
+		var noEdit = false;
+		for (var ne2 = 0; ne2 < qbState.count; ne2++) if (qbState.edits[ne2] === 0) { noEdit = true; break; }
 		var editBody = '<div class="qb-voc-list">' + vocRows + '</div>'
-			+ (coverBind2 ? '<div class="qb-cover-line">' + q.coverShort + '</div>' : '');
+			+ (coverBind2 ? '<div class="qb-cover-line">' + q.coverShort + '</div>' : '')
+			+ (noEdit ? '<div class="qb-cover-line">' + q.noEditLine + '</div>' : '');
 		html += qbRow("edit", idx.edit, q.editLabel, editBody, "", q.hints.edit, editWhy);
 	}
 
@@ -3700,6 +3889,89 @@ function renderQuoteBuilder() {
 			+ '<table class="qb-guide"><tbody>' + hGuideRows + '</tbody></table>';
 		html += qbRow("harmony", idx.harmony, q.harmonyLabel, '<div class="qb-seg four">' + harmBtns + '</div>',
 			qbState.harmony !== null ? q.harmonies[qbState.harmony].desc : "", q.hints.harmony, harmHelp);
+	}
+
+	// 附加服务：担任制作人（按小计 +X%），单独一步，不再和优惠挤在一起
+	if (shown >= idx.extra) {
+		var producerHtml = '<button class="qb-member qb-producer' + (qbState.producer ? " on" : "") + '" onclick="qbSet(\'producer\',' + (!qbState.producer) + ')" aria-pressed="' + qbState.producer + '">'
+			+ '<span><span class="qb-member-label">' + q.producerTitle + ' <span class="qb-plus">+' + Math.round(PRODUCER_RATE * 100) + '%</span></span>'
+			+ '<span class="qb-member-sub">' + q.producerSub + '</span></span>'
+			+ '<span class="qb-switch"></span></button>';
+		html += qbRow("extra", idx.extra, q.extraLabel, producerHtml, qbState.producer ? q.producerNote : "", q.hints.extra);
+	}
+
+	// 优惠：新客首单 / 我是会员 / 本单入会，全部是开关，放在交付之前
+	if (shown >= idx.perks) {
+		var cp = c;
+		if (!cp) { try { cp = qbCompute(q); } catch (e) { cp = null; } }
+		var joinOn = qbJoinOpen();
+		// 回本提示：挑出「加入后能省最多」的那位非会员，一键加入
+		var pbHtml = "", pbSave = -1, pbIdx = -1;
+		if (cp) {
+			for (var pb = 0; pb < qbState.count; pb++) {
+				if (qbMemState(pb) > 0) continue;
+				var sv = Math.round(cp.gShares[pb] * MEMBER_OFF);
+				if (sv > pbSave) { pbSave = sv; pbIdx = pb; }
+			}
+		}
+		if (pbIdx >= 0 && joinOn) {
+			var pbNet = pbSave - q.memberFee, pbGood = pbNet > 0;
+			var fill = function (t) {
+				return t.replace("{fee}", qbFmt(q, q.memberFee)).replace("{save}", qbFmt(q, pbSave))
+					.replace("{net}", qbFmt(q, Math.abs(pbNet))).replace("{d}", qbMemWeekLabel(q)).replace("{fast}", q.weekOne);
+			};
+			var pbMain = fill(pbGood ? q.pbYesMain : q.pbNoMain);
+			if (qbState.count > 1) pbMain = q.vocalistLabel + " " + (pbIdx + 1) + " · " + pbMain;
+			pbHtml = '<button class="qb-payback' + (pbGood ? "" : " dim") + '" onclick="qbSetMem(' + pbIdx + ',2)">'
+				+ '<span class="qb-pb-main">' + pbMain + '</span>'
+				+ '<span class="qb-pb-sub">' + fill(pbGood ? q.pbYesSub : q.pbNoSub) + '</span></button>';
+		}
+		var helpQ = ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="event.stopPropagation();qbScrollTo(\'svc-daomen\')">?</span>';
+		var perksBody = "";
+		if (qbState.count === 1) {
+			var m0 = qbMemState(0);
+			// 新客首单：老会员不适用，用过即消失
+			if (qbNewbieOk()) {
+				perksBody += '<button class="qb-member qb-newbie' + (qbState.newbie ? " on" : "") + '" onclick="qbToggleNewbie()" aria-pressed="' + !!qbState.newbie + '">'
+					+ '<span><span class="qb-member-label">' + q.newbieTitle + ' <span class="qb-plus">−' + qbFmt(q, q.newbieOff) + '</span></span>'
+					+ '<span class="qb-member-sub">' + q.newbieSub + '</span></span>'
+					+ '<span class="qb-switch"></span></button>';
+			}
+			perksBody += '<button class="qb-member' + (m0 === 1 ? " on" : "") + '" onclick="qbSetMemberSelf()" aria-pressed="' + (m0 === 1) + '">'
+				+ '<span><span class="qb-member-label">' + q.memSelfTitle + helpQ + '</span>'
+				+ '<span class="qb-member-sub">' + q.memSelfSub + '</span></span>'
+				+ '<span class="qb-switch"></span></button>';
+			if (m0 === 2) {
+				perksBody += '<button class="qb-member on" onclick="qbSetMem(0,0)" aria-pressed="true">'
+					+ '<span><span class="qb-member-label">' + q.joinOnTitle + ' <span class="qb-plus">+' + qbFmt(q, q.memberFee) + '</span></span>'
+					+ '<span class="qb-member-sub">' + q.joinOnSub.replace("{fee}", qbFmt(q, q.memberFee)) + '</span></span>'
+					+ '<span class="qb-switch"></span></button>';
+			} else if (m0 === 0) {
+				perksBody += pbHtml;
+			}
+		} else {
+			// 多人合作：会员逐位选（非会员 / 已是会员 / 本单加入），只有会员那份享 8 折
+			var memStates = joinOn ? [q.mState0, q.mState1, q.mState2 + " +" + qbFmt(q, q.memberFee)] : [q.mState0, q.mState1];
+			var memRows = "";
+			var mSame = qbAllSame(qbState.mem, qbState.count), mAllBtns = "";
+			for (var mab = 0; mab < memStates.length; mab++) {
+				mAllBtns += '<button class="qb-mini-btn' + (mab === mSame ? " active" : "") + '" onclick="qbSetAllMem(' + mab + ')">' + memStates[mab] + '</button>';
+			}
+			memRows += '<div class="qb-voc-row qb-all-row"><span class="qb-voc-name">' + q.allLabel + '</span><div class="qb-mini-seg">' + mAllBtns + '</div></div>';
+			for (var mv = 0; mv < qbState.count; mv++) {
+				var mchips = "";
+				for (var ms = 0; ms < memStates.length; ms++) {
+					mchips += '<button class="qb-mini-btn' + (qbMemState(mv) === ms ? " active" : "") + '" onclick="qbSetMem(' + mv + ',' + ms + ')">' + memStates[ms] + '</button>';
+				}
+				memRows += '<div class="qb-voc-row"><span class="qb-voc-name">' + q.vocalistLabel + ' ' + (mv + 1) + '</span><div class="qb-mini-seg">' + mchips + '</div></div>';
+			}
+			perksBody += '<div class="qb-member-label">' + q.memberTitle + helpQ + '</div>'
+				+ '<div class="qb-voc-list">' + memRows + '</div>'
+				+ '<div class="qb-member-sub" style="margin:9px 0 14px">' + q.memberPerNote + '</div>' + pbHtml;
+		}
+		// 通道关闭后补一句说明：既解释为什么没有加入按钮，也向创始会员保证权益照兑现
+		if (!joinOn) perksBody += '<div class="qb-member-sub" style="margin-top:4px">' + q.memClosedNote + '</div>';
+		html += qbRow("perks", idx.perks, q.perksLabel, '<div class="qb-perks">' + perksBody + '</div>', "", q.hints.perks);
 	}
 
 	// 交付日期：标准 stdMin–stdMax 工作日（跳周日）+积压；加急 rushMin–rushMax 自然日（含周日）
@@ -3751,8 +4023,6 @@ function renderQuoteBuilder() {
 					+ q.dateConfirm.replace("{d}", qbFmtDate(qbState.targetDate, currentLang)) + '</button>'
 				: '';
 			laneBody += '<div class="qb-date">' + qbCalHtml(q) + '<div class="' + cls + '">' + info + '</div>' + joinHtml + okBtn + '</div>';
-		} else {
-			laneBody += '<div class="qb-date">' + qbCalHtml(q) + '<div class="qb-date-info">' + q.calStdHint + '</div></div>';
 		}
 		var fastLine = q.laneFast.replace("{m}", qbMemWeekLabel(q));
 		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, "", q.hints.lane, q.laneNote.replace("{n}", qbStdWeekLabel(q)).replace("{fastline}", fastLine));
@@ -3823,85 +4093,9 @@ function renderQuoteBuilder() {
 			var splitHtml = '<div class="qb-split">'
 			+ '<div class="qb-split-row deposit"><span>' + q.depositLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit) + (c.from ? "+" : "") + '</span></div>'
 			+ '<div class="qb-split-row"><span>' + q.balanceLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + (c.from ? "+" : "") + '</span></div>'
-			+ '<div class="qb-split-note">' + q.depositNote + '</div>'
+			+ '<div class="qb-split-note">' + (c.newbie > 0 ? q.depositNoteNew : q.depositNote) + '</div>'
 			+ '</div>';
-		// 刀门会员：逐位选（非会员 / 已是会员 / 本单加入），只有会员那份享 8 折
-		// 通道关闭后只剩两种身份，「本单加入」整列消失
-		var joinOn = qbJoinOpen();
-		var memStates = joinOn ? [q.mState0, q.mState1, q.mState2 + " +" + qbFmt(q, q.memberFee)] : [q.mState0, q.mState1];
-		var memRows = "";
-		if (c.count > 1) {
-			var mSame = qbAllSame(qbState.mem, c.count), mAllBtns = "";
-			for (var mab = 0; mab < memStates.length; mab++) {
-				mAllBtns += '<button class="qb-mini-btn' + (mab === mSame ? " active" : "") + '" onclick="qbSetAllMem(' + mab + ')">' + memStates[mab] + '</button>';
-			}
-			memRows += '<div class="qb-voc-row qb-all-row"><span class="qb-voc-name">' + q.allLabel + '</span><div class="qb-mini-seg">' + mAllBtns + '</div></div>';
-		}
-		for (var mv = 0; mv < c.count; mv++) {
-			var mchips = "";
-			for (var ms = 0; ms < memStates.length; ms++) {
-				mchips += '<button class="qb-mini-btn' + (qbMemState(mv) === ms ? " active" : "") + '" onclick="qbSetMem(' + mv + ',' + ms + ')">' + memStates[ms] + '</button>';
-			}
-			memRows += '<div class="qb-voc-row">' + (c.count > 1 ? '<span class="qb-voc-name">' + q.vocalistLabel + ' ' + (mv + 1) + '</span>' : "")
-				+ '<div class="qb-mini-seg">' + mchips + '</div></div>';
-		}
-		// 回本提示：挑出「加入后能省最多」的那位非会员，一键加入
-		var pbSave = -1, pbIdx = -1;
-		for (var pb = 0; pb < c.count; pb++) {
-			if (qbMemState(pb) > 0) continue;
-			var sv = Math.round(c.gShares[pb] * MEMBER_OFF);
-			if (sv > pbSave) { pbSave = sv; pbIdx = pb; }
-		}
-		var pbHtml = "";
-		if (pbIdx >= 0 && joinOn) {
-			var pbNet = pbSave - q.memberFee, pbGood = pbNet > 0;
-			var fill = function (t) {
-				return t.replace("{fee}", qbFmt(q, q.memberFee)).replace("{save}", qbFmt(q, pbSave))
-					.replace("{net}", qbFmt(q, Math.abs(pbNet))).replace("{d}", qbMemWeekLabel(q)).replace("{fast}", q.weekOne);
-			};
-			var pbMain = fill(pbGood ? q.pbYesMain : q.pbNoMain);
-			if (c.count > 1) pbMain = q.vocalistLabel + " " + (pbIdx + 1) + " · " + pbMain;
-			pbHtml = '<button class="qb-payback' + (pbGood ? "" : " dim") + '" onclick="qbSetMem(' + pbIdx + ',2)">'
-				+ '<span class="qb-pb-main">' + pbMain + '</span>'
-				+ '<span class="qb-pb-sub">' + fill(pbGood ? q.pbYesSub : q.pbNoSub) + '</span></button>';
-		}
-		// 单人单（绝大多数）只显示「一张要约卡 + 一个小字切换」；
-		// 三档按钮与逐位说明只在多人合作时才有意义，那时才出现。
-		var memBody;
-		if (c.count === 1) {
-			if (qbMemState(0) > 0) {
-				memBody = '<div class="qb-mem-on">' + q.memOnLine.replace("{d}", qbMemWeekLabel(q)) + '</div>'
-					+ '<button class="qb-mem-link" onclick="qbSetMem(0,0)">' + q.memOff + '</button>';
-			} else {
-				memBody = pbHtml + '<button class="qb-mem-link" onclick="qbSetMem(0,1)">' + q.memAlready + '</button>';
-			}
-		} else {
-			memBody = '<div class="qb-voc-list">' + memRows + '</div>'
-				+ '<div class="qb-member-sub" style="margin-top:9px">' + q.memberPerNote + '</div>' + pbHtml;
-		}
-		// 新客开关只在「单人单 + 没用过」时出现，用完自动消失
-		var newbieHtml = "";
-		if (qbNewbieOk()) {
-			newbieHtml = '<button class="qb-member qb-newbie' + (qbState.newbie ? " on" : "") + '" onclick="qbToggleNewbie()" aria-pressed="' + !!qbState.newbie + '">'
-				+ '<span><span class="qb-member-label">' + q.newbieTitle + ' <span class="qb-plus">−' + qbFmt(q, q.newbieOff) + '</span></span>'
-				+ '<span class="qb-member-sub">' + q.newbieSub + '</span></span>'
-				+ '<span class="qb-switch"></span></button>';
-		}
-		// 通道关闭后补一句说明：既解释为什么没有加入按钮，也向创始会员保证权益照兑现
-		if (!joinOn) memBody += '<div class="qb-member-sub" style="margin-top:10px">' + q.memClosedNote + '</div>';
-		var memberHtml = '<div class="qb-memblock' + (c.discount > 0 ? " on" : "") + '">'
-			+ '<span class="qb-member-label">' + q.memberTitle
-			+ ' <span class="qb-help" role="button" tabindex="0" title="' + q.memberHelp + '" onclick="qbScrollTo(\'svc-daomen\')">?</span></span>'
-			+ memBody + '</div>';
-		// 附加服务：担任制作人（按小计 +X%），打开后附一句 producer points 说明
-		var producerHtml = '<button class="qb-member qb-producer' + (qbState.producer ? " on" : "") + '" onclick="qbSet(\'producer\',' + (!qbState.producer) + ')" aria-pressed="' + qbState.producer + '">'
-			+ '<span><span class="qb-member-label">' + q.producerTitle + ' <span class="qb-plus">+' + Math.round(PRODUCER_RATE * 100) + '%</span></span>'
-			+ '<span class="qb-member-sub">' + q.producerSub + '</span></span>'
-			+ '<span class="qb-switch"></span></button>'
-			+ (qbState.producer ? '<div style="margin-top:-8px;margin-bottom:16px">' + qbWhy(q.whyLabel, q.producerNote) + '</div>' : '');
-
 		html += '<div class="qb-step" data-qstep="summary">'
-			+ '<div class="qb-extras">' + newbieHtml + memberHtml + producerHtml + '</div>'
 			+ '<div class="qb-summary">' + eq + lines
 			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + fromTag + '</span></div>'
 			+ (c.count > 1 ? '<div class="qb-percap"><span>' + q.perHeadTotal + '</span><span class="qb-percap-v">' + qbFmt(q, Math.round(c.total / c.count)) + (c.from ? '+' : '') + '</span></div>' : '')
@@ -4069,6 +4263,8 @@ function qbCopy() {
 			L.push("　　　" + cTag);
 		}
 	}
+	// 只带跟这份配置直接相关的接单条件；通用条款放 FAQ，不塞进报价单
+	for (var ne = 0; ne < c.count; ne++) if (qbState.edits[ne] === 0) { L.push(HH); L.push(q.copyNoEdit); break; }
 	L.push(HH);
 	L.push(q.copyWeChat + " · " + CONTACT.wechat);
 	var txt = L.join("\n");
@@ -4101,7 +4297,7 @@ function renderCard(item) {
 	var unit = item.unit ? '<span class="card-price-unit">' + item.unit + '</span>' : "";
 	return '<div class="price-card">'
 		+ '<div class="card-price"><span class="card-price-num">' + item.price + '</span>' + unit + '</div>'
-		+ '<div class="card-title">' + item.title + '</div>'
+		+ '<div class="card-title">' + item.title + (item.isNew ? '<span class="qb-badge">NEW</span>' : '') + '</div>'
 		+ '<div class="card-desc">' + item.desc + '</div>'
 		+ (tags ? '<div class="card-tags">' + tags + '</div>' : "")
 		+ '</div>';
@@ -4246,7 +4442,7 @@ function renderService(svc) {
 			+ (svc.sub ? '<span class="sub-desc">' + svc.sub + '</span>' : "") + '</div>'
 			+ renderFlow(svc) + '</div>';
 	}
-	var head = '<div class="section-head"><div class="step-tag">' + svc.step + '</div><h2>' + svc.title + '</h2>'
+	var head = '<div class="section-head"><div class="step-tag">' + svc.step + '</div><h2>' + svc.title + (svc.isNew ? '<span class="qb-badge svc-new">NEW</span>' : '') + '</h2>'
 		+ (svc.sub ? '<span class="sub-desc">' + svc.sub + '</span>' : "") + '</div>';
 	var body;
 	if (svc.type === "recording") {
