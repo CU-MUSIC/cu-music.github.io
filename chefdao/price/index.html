@@ -1392,7 +1392,10 @@ var I18N = {
 			laneMinNote: "3 天内的交付请直接私信我，确认可行性与费用。",
 			laneDatePick: "选择你的期望交付日期", laneDateCta: "选择", laneDateChange: "更改",
 			depositLabel: "定金（开工）", balanceLabel: "尾款（交付）",
-			depositNote: "半半模式：定金开工，成品交付时补齐尾款。",
+			depositTier1: 500, depositTier2: 1000,
+			depositNoteT1: "¥500 以下 7:3：定金 70% 开工，交付时补齐 30% 尾款。",
+			depositNoteT2: "¥500–1000 6:4：定金 60% 开工，交付时补齐 40% 尾款。",
+			depositNoteT3: "¥1000 以上 5:5：定金开工，成品交付时补齐尾款。",
 			depositNoteNew: "新客首单 7:3：用了立减优惠，定金 70% 开工，交付时补齐 30% 尾款。",
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
 			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音与制作人费 8 折 · 加速通道 · 终身有效", memberLine: "刀门会员 · 8 折",
@@ -1594,7 +1597,7 @@ var I18N = {
 				sub: "五个阶段，从方向对齐到成品交付。",
 				steps: [
 					{ t: "方向对齐", d: "确认风格方向、参考作品与期望交付日期。" },
-					{ t: "定金与素材", d: "支付 50% 定金后锁定档期与报价。请提供未经效果处理的干声与伴奏，24-bit / 48kHz 或更高。" },
+					{ t: "定金与素材", d: "支付定金后锁定档期与报价，比例按订单金额分档（详见付款 FAQ）。请提供未经效果处理的干声与伴奏，24-bit / 48kHz 或更高。" },
 					{ t: "方向确认版", d: "交付 30–60 秒试听片段用于确认整体方向（此阶段仅供方向判断，非最终质感）。如方向不符，<strong>退还一半定金</strong>，项目终止。" },
 					{ t: "制作与审听", d: "朝既定方向的修正<strong>不限次数</strong>。变更方向或追加创意需求视为新方案，将于执行前另行报价。审听意见通过 Samply 时间轴提交，建议完整试听后一并汇总。" },
 					{ t: "母带与交付", d: "尾款结清后交付成品母带，附制作信息（Credits）。修改意见请于交付后 <strong>7 日内</strong>提出。" }
@@ -1716,9 +1719,10 @@ var I18N = {
 			},
 			{
 				q: "怎么付款？定金和尾款怎么算？",
-				a: "半半模式：定金开工，成品交付时结清尾款。定金确认后进入排期，尾款结清后开放成品下载。",
+				a: "定金开工，成品交付时结清尾款。定金确认后进入排期，尾款结清后开放成品下载。定金比例按订单金额分档：金额越小，尾款越难追，比例越高。",
 				list: [
-					"定金 50%，确认后锁定档期与当前报价；用了新客首单立减的，定金 70%、尾款 30%",
+					"¥500 以下：定金 70%、尾款 30%；¥500–1000：定金 60%、尾款 40%；¥1000 以上：定金 50%、尾款 50%——确认后锁定档期与当前报价",
+					"用了新客首单立减的，定金固定为 70%、尾款 30%（与分档取较高者）",
 					"定金到账后，先于音频编辑前交付 30–60 秒方向确认版",
 					"如方向不符：退还一半定金，项目终止（另一半抵方向确认版的制作）",
 					"方向确认后正式开工；此后中途终止，按「不满意 / 中途终止，怎么退款？」逐项结算"
@@ -1964,7 +1968,10 @@ var I18N = {
 			laneMinNote: "For delivery under 3 days, message me directly to confirm feasibility and fee.",
 			laneDatePick: "Pick your delivery date", laneDateCta: "Select", laneDateChange: "Change",
 			depositLabel: "Deposit (to start)", balanceLabel: "Balance (on delivery)",
-			depositNote: "50 / 50: pay the deposit to start, the balance on delivery.",
+			depositTier1: 75, depositTier2: 150,
+			depositNoteT1: "Under $75: 70 / 30 — a 70% deposit starts the work, 30% balance on delivery.",
+			depositNoteT2: "$75–150: 60 / 40 — a 60% deposit starts the work, 40% balance on delivery.",
+			depositNoteT3: "$150+: 50 / 50 — pay the deposit to start, the balance on delivery.",
 			depositNoteNew: "First order 70 / 30: with the first-order discount, a 70% deposit starts the work and the 30% balance is due on delivery.",
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
 			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off mixing & producer fee · fast lane · for life", memberLine: "Daomen member · 20% off",
@@ -2166,7 +2173,7 @@ var I18N = {
 				sub: "Five stages, from aligning the direction to final delivery.",
 				steps: [
 					{ t: "Direction alignment", d: "Confirm the stylistic direction, reference tracks and target delivery date." },
-					{ t: "Deposit & material", d: "A 50% deposit secures the slot and the quote. Please supply unprocessed dry vocals and the instrumental at 24-bit / 48kHz or higher." },
+					{ t: "Deposit & material", d: "A deposit secures the slot and the quote — the percentage is tiered by order size (see the payment FAQ). Please supply unprocessed dry vocals and the instrumental at 24-bit / 48kHz or higher." },
 					{ t: "Direction check", d: "A 30–60 second excerpt is delivered to confirm the overall direction (indicative of direction only, not the final sound). Should the direction not be right, <strong>half the deposit is refunded</strong> and the project ends." },
 					{ t: "Production & review", d: "Corrections toward the agreed direction are <strong>unlimited</strong>. A change of direction or additional creative requests constitute a new approach and are quoted before work begins. Notes are submitted on the Samply timeline, ideally consolidated after a full listen." },
 					{ t: "Mastering & delivery", d: "The final master is delivered with credits once the balance is settled. Revision notes are accepted <strong>within 7 days</strong> of delivery." }
@@ -2284,11 +2291,12 @@ var I18N = {
 			},
 			{
 				q: "How does payment work? Deposit and balance?",
-				a: "50/50: pay the deposit to start, the balance on delivery. I schedule and start once the deposit is confirmed, and open the final for download once the balance is settled. Via WeChat.",
+				a: "A deposit to start, the balance on delivery. I schedule and start once the deposit is confirmed, and open the final for download once the balance is settled. Via WeChat. The deposit percentage is tiered by order size — smaller orders carry more risk of an unpaid balance, so they carry a higher deposit.",
 				list: [
+					"Under $75: 70% deposit, 30% balance. $75–150: 60% deposit, 40% balance. $150+: 50/50 — confirming either locks the slot and the current quote",
+					"With the first-order discount, the deposit is a flat 70% (whichever is higher between the tier and the discount rate)",
 					"Once the deposit lands I build a 30–60 second <strong>direction check</strong> from the raw material — before any editing starts — so you can hear where I'm taking it",
 					"Not feeling it? <strong>Half the deposit is refunded</strong> and the project ends — the other half covers building the direction check",
-					"First order with the first-order discount: 70% deposit, 30% balance",
 					"Once the direction is signed off I start properly; cancelling after that is settled item by item — see the refund question below"
 				]
 			},
@@ -2532,7 +2540,10 @@ var I18N = {
 			laneMinNote: "3일 이내 납품은 직접 문의하여 가능 여부와 비용을 확인해 주세요.",
 			laneDatePick: "희망 납품일 선택", laneDateCta: "선택", laneDateChange: "변경",
 			depositLabel: "계약금 (착수)", balanceLabel: "잔금 (납품 시)",
-			depositNote: "반반 방식: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
+			depositTier1: 100000, depositTier2: 200000,
+			depositNoteT1: "10만원 미만 7:3: 계약금 70%로 착수, 납품 시 잔금 30% 결제.",
+			depositNoteT2: "10만~20만원 6:4: 계약금 60%로 착수, 납품 시 잔금 40% 결제.",
+			depositNoteT3: "20만원 이상 5:5: 계약금으로 착수, 완성본 납품 시 잔금 결제.",
 			depositNoteNew: "첫 주문 7:3: 첫 주문 할인 적용 시 계약금 70%로 착수, 납품 시 잔금 30% 결제.",
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
 			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱·프로듀서 20% 할인 · 패스트 레인 · 평생", memberLine: "刀门 회원 · 20% 할인",
@@ -2734,7 +2745,7 @@ var I18N = {
 				sub: "방향 확정부터 완성본 납품까지, 다섯 단계.",
 				steps: [
 					{ t: "방향 확정", d: "스타일 방향, 레퍼런스, 희망 납품일을 확정합니다." },
-					{ t: "계약금 및 소스", d: "계약금 50% 입금 시 일정과 견적이 확정됩니다. 이펙트를 적용하지 않은 드라이 보컬과 반주를 24-bit / 48kHz 이상으로 보내주시기 바랍니다." },
+					{ t: "계약금 및 소스", d: "계약금 입금 시 일정과 견적이 확정됩니다. 비율은 주문 금액에 따라 분담됩니다(결제 FAQ 참고). 이펙트를 적용하지 않은 드라이 보컬과 반주를 24-bit / 48kHz 이상으로 보내주시기 바랍니다." },
 					{ t: "방향 확인본", d: "전체 방향 확인을 위해 30–60초 발췌본을 전달합니다(방향 판단용이며 최종 사운드가 아닙니다). 방향이 맞지 않을 경우 <strong>계약금의 절반을 환불</strong>하고 프로젝트는 종료됩니다." },
 					{ t: "제작 및 검토", d: "합의된 방향으로의 보정은 <strong>횟수 제한이 없습니다</strong>. 방향 변경 또는 크리에이티브 추가 요청은 새로운 방안으로 간주되어 착수 전 별도 견적을 드립니다. 검토 의견은 Samply 타임라인을 통해, 전체 청취 후 일괄 정리하여 전달해 주시기 바랍니다." },
 					{ t: "마스터링 및 납품", d: "잔금 정산 후 크레딧과 함께 완성 마스터를 납품합니다. 수정 의견은 납품 후 <strong>7일 이내</strong>에 접수됩니다." }
@@ -2852,11 +2863,12 @@ var I18N = {
 			},
 			{
 				q: "결제는 어떻게 하나요? 계약금과 잔금은?",
-				a: "반반 방식: 계약금으로 착수하고 완성본 납품 시 잔금을 결제합니다. 계약금 확인 후 일정을 잡고 착수하며, 잔금 정산 후 완성본 다운로드를 열어 드립니다. 위챗으로 진행합니다.",
+				a: "계약금으로 착수하고 완성본 납품 시 잔금을 결제합니다. 계약금 확인 후 일정을 잡고 착수하며, 잔금 정산 후 완성본 다운로드를 열어 드립니다. 위챗으로 진행합니다. 계약금 비율은 주문 금액에 따라 분담됩니다 — 금액이 작을수록 잔금 미수 리스크가 커서 비율이 높습니다.",
 				list: [
+					"10만원 미만: 계약금 70%, 잔금 30% · 10만~20만원: 계약금 60%, 잔금 40% · 20만원 이상: 계약금 50%, 잔금 50% — 확인 시 일정과 현재 견적이 확정됩니다",
+					"첫 주문 할인을 적용한 경우: 계약금은 고정 70%입니다 (구간별 비율과 할인 비율 중 더 높은 쪽 적용)",
 					"계약금이 확인되면 편집에 들어가기 전에 원본 소스로 30–60초 <strong>방향 확인본</strong>을 만들어 어떤 방향으로 가는지 들려드립니다",
 					"방향이 맞지 않으면 <strong>계약금 절반 환불</strong>, 프로젝트 종료 — 나머지 절반은 방향 확인본 제작 비용입니다",
-					"첫 주문 할인을 적용한 경우: 계약금 70%, 잔금 30%",
 					"방향 확정 후 본격 착수하며, 이후 중도 취소는 아래 환불 기준에 따라 항목별로 정산합니다"
 				]
 			},
@@ -3548,9 +3560,11 @@ function qbCompute(q) {
 	var newbie = (qbState.newbie && count === 1 && !qbNewbieUsed() && qbMemState(0) !== 1) ? q.newbieOff : 0;
 	var total = workBase + rush - discount + joinFee - newbie;
 	if (total < 0) { newbie += total; total = 0; }
-	// 半半模式：定金 50% 向上取整（略大的那一半先收），尾款为剩余，两者精确相加
-	// 用了新客立减的首单改为 7:3——优惠换更高的预付，降低首单跑单风险
-	var deposit = newbie > 0 ? Math.ceil(total * 0.7) : Math.ceil(total / 2);
+	// 定金比例按订单金额分档：金额越小，尾款越难追，定金比例越高
+	// <тier1 7:3，tier1–tier2 6:4，≥tier2 5:5；新客立减固定 7:3，与分档取较高者
+	var depositRate = total < q.depositTier1 ? 0.7 : total < q.depositTier2 ? 0.6 : 0.5;
+	if (newbie > 0 && 0.7 > depositRate) depositRate = 0.7;
+	var deposit = Math.ceil(total * depositRate);
 	var balance = total - deposit;
 	return { base: base, baseItem: baseItem, from: stems && baseItem.from, harmony: harmony, count: count,
 		mixExtra: mixExtra, prodTotal: prodTotal, prodCounts: prodCounts, maxProd: maxProd,
@@ -3559,6 +3573,13 @@ function qbCompute(q) {
 		memCount: memCount, joinCount: joinCount, joinFee: joinFee,
 		fast: fast, rush: rush, rushRate: rushRate, producer: producer,
 		total: total, deposit: deposit, balance: balance };
+}
+// 定金比例分档对应的说明文案：新客立减优先，其次按金额分档
+function qbDepositNote(q, c) {
+	if (c.newbie > 0) return q.depositNoteNew;
+	if (c.total < q.depositTier1) return q.depositNoteT1;
+	if (c.total < q.depositTier2) return q.depositNoteT2;
+	return q.depositNoteT3;
 }
 // AA 账单：共同部分（基础/分轨价 + 多主唱混音 + 和声）按人头平摊，
 // 人声制作与音编各付各的；加急费与会员折扣按各人小计占比分摊。
@@ -4093,7 +4114,7 @@ function renderQuoteBuilder() {
 			var splitHtml = '<div class="qb-split">'
 			+ '<div class="qb-split-row deposit"><span>' + q.depositLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit) + (c.from ? "+" : "") + '</span></div>'
 			+ '<div class="qb-split-row"><span>' + q.balanceLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + (c.from ? "+" : "") + '</span></div>'
-			+ '<div class="qb-split-note">' + (c.newbie > 0 ? q.depositNoteNew : q.depositNote) + '</div>'
+			+ '<div class="qb-split-note">' + qbDepositNote(q, c) + '</div>'
 			+ '</div>';
 		html += '<div class="qb-step" data-qstep="summary">'
 			+ '<div class="qb-summary">' + eq + lines
