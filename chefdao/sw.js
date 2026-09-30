@@ -1,4 +1,4 @@
-const CACHE = 'chefdao-v1';
+const CACHE = 'chefdao-v2';
 
 // 缓存策略：图片用 Cache First（缓存优先），其他资源用 Network First
 self.addEventListener('fetch', e => {

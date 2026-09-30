@@ -1,2 +1,18 @@
-*.DS_Store
+# 系统 / 编辑器杂物
+.DS_Store
 .claude/
+.nova/
+
+# Notion 接口的依赖，GitHub Pages 用不上
+node_modules/
+
+# 本地备份和工具，不发布
+_backups/
+tools/
+*.bak*
+
+# 内部定价 / 工资 / 毛利文档、朋友圈海报，不发布
+_internal-*
+
+# 本地预览服务器配置
+serve.json
