@@ -24,7 +24,10 @@ fi
 
 echo
 echo "② 这次要上传的文件："
-git diff --cached --name-status | sed 's/^M/  修改/; s/^A/  新增/; s/^D/  删除/; s/^R[0-9]*/  改名/'
+changes=$(git -c core.quotepath=false diff --cached --name-status | sed 's/^M/  修改/; s/^A/  新增/; s/^D/  删除/; s/^R[0-9]*/  改名/')
+total=$(echo "$changes" | wc -l | tr -d ' ')
+echo "$changes" | head -20
+[ "$total" -gt 20 ] && echo "  …还有 $((total-20)) 个文件（共 $total 个）"
 echo
 read -r "?按回车上传，关闭窗口则取消… "
 
