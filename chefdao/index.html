@@ -1288,7 +1288,8 @@ async function initHybridAnimation() {
 
   const cells = document.querySelectorAll('.grid-cell');
   const isMobile = window.innerWidth < 768;
-  const maxFlying = isMobile ? 30 : 50;
+  // 必须覆盖整屏所有格子，否则最下面几行不飞入（手机 4 列时 30 个不够）
+  const maxFlying = Math.min(totalCells, isMobile ? 60 : 80);
   const flyingCount = Math.min(maxFlying, cells.length);
   let settledCount = 0;
 

@@ -273,6 +273,28 @@
 		.qb-badge { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 100px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.5; white-space: nowrap; color: var(--green-soft); border: 0.5px solid var(--green-line); background: rgba(var(--green-ink), 0.08); vertical-align: middle; transition: opacity 0.3s; }
 		.qb-step:not(.active) .qb-badge { opacity: 1; }
 		@media (prefers-reduced-motion: reduce) { .qb-step { opacity: 1; transform: none; transition: none; } .qb-step.active .qb-rec { animation: none; } }
+
+		/* ── Chef's Taste ── */
+		.qb-preset-card.qb-taste { width: 100%; margin-top: 10px; flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: space-between; border-style: dashed; }
+		.qb-preset-card.qb-taste .qb-taste-desc { display: block; flex-basis: 100%; order: 3; font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+		.qb-taste-note { margin-top: 12px; font-size: 12.5px; line-height: 1.7; color: var(--green-soft); }
+		.qb-q { position: relative; }
+		.qb-q::after { content: ""; position: absolute; inset: -11px; }
+		/* ── 专注模式：一次只显示一题 ── */
+		.qb-step.qb-focus { opacity: 1; transform: none; transition: none; animation: qbfIn 0.42s var(--ease) both; }
+		.qb-step.qb-focus.back { animation-name: qbfInBack; }
+		@keyframes qbfIn { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+		@keyframes qbfInBack { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+		.qbf-prog { margin: 6px 0 18px; }
+		.qbf-count { font-size: 12.5px; color: var(--text-dim); letter-spacing: 0.04em; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+		.qbf-bar { height: 3px; border-radius: 3px; background: rgba(var(--ink), 0.08); overflow: hidden; }
+		.qbf-bar i { display: block; height: 100%; border-radius: 3px; background: var(--green-soft); transition: width 0.5s var(--ease); }
+		.qbf-nav { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
+		.qbf-nav .qb-cta { margin-top: 0; flex: 1; width: auto; }
+		.qbf-back { flex-shrink: 0; background: none; border: 0.5px solid var(--border-hover); color: var(--text-primary); border-radius: 10px; padding: 15px 18px; font-size: 13px; cursor: pointer; font-family: var(--font); transition: border-color 0.2s; }
+		.qbf-back:hover { border-color: var(--pure); }
+		.qbf-diy { display: block; margin: 14px auto 0; background: none; border: 0; color: var(--text-dim); font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-family: var(--font); }
+		@media (prefers-reduced-motion: reduce) { .qb-step.qb-focus { animation: none; } .qbf-bar i { transition: none; } }
 		.qb-base-line strong { font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
 		.qb-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 		.qb-seg-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: rgba(var(--ink), 0.03); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 13px; cursor: pointer; transition: border-color 0.25s, background 0.25s; font-family: var(--font); text-align: left; min-height: 60px; }
@@ -3089,13 +3111,21 @@ var QB_PRESETS = [
 	{ prod: 2, edit: 3, harmony: 1 }  // 完整
 ];
 var QB_PRESET_DEFAULT = 1;
+var QBT_TASTE = {
+	zh: { desc: "不知道怎么选？听完你的作品，由我来配方案。先预收 {fee}，成单后计入开工定金。", note: "Chef's Taste · 先预收听审 {fee}，成单后计入开工定金；方案与最终价格听完作品后确认", fee: "听审预收（先付）" },
+	en: { desc: "Not sure what to pick? I'll listen and design the plan. {fee} up front, counted toward your start deposit once you book.", note: "Chef's Taste · {fee} listening deposit up front, counted toward the start deposit once booked; plan and final price confirmed after I hear the track.", fee: "Listening deposit (first)" },
+	ko: { desc: "고르기 어려우신가요? 곡을 듣고 제가 구성합니다. {fee} 선결제, 진행 시 착수 계약금에 포함.", note: "Chef's Taste · 청취 선결제 {fee}, 진행 시 착수 계약금에 포함. 곡을 들은 뒤 구성과 최종 가격을 확정합니다.", fee: "청취 선결제 (먼저)" }
+};
+var QB_TASTE_FEE = { zh: 99, en: 15, ko: 20000 };
+function qbTasteFee() { return QB_TASTE_FEE[currentLang] || QB_TASTE_FEE.zh; }
+function qbTasteText(k, q) { return ((QBT_TASTE[currentLang] || QBT_TASTE.zh)[k]).replace("{fee}", qbFmt(q, qbTasteFee())); }
 // 进页面即是一份完整配置：贴唱 · 标准套餐 · 1 位主唱 · 标准交付。
 // preset = 套餐索引，改动下面任何一项后由 qbSyncPreset() 自动落到 null（自定义）。
 function qbDefaultState() {
 	var p = QB_PRESETS[QB_PRESET_DEFAULT];
 	return { mode: "vocal", stems: 1, preset: QB_PRESET_DEFAULT, prods: [p.prod], harmony: p.harmony,
 		count: 1, edits: [p.edit], mem: [0], producer: false, lane: 0, targetDate: null,
-		rec: null, moreCount: false, aaOpen: false, fineOpen: false, aaCopy: true, newbie: false, help: {} };
+		rec: null, taste: false, moreCount: false, aaOpen: false, fineOpen: false, aaCopy: true, newbie: false, help: {} };
 }
 var qbState = qbDefaultState();
 // 制作人附加服务：按混音/制作小计加收的百分比（改这一个数就调价）
@@ -3166,6 +3196,7 @@ function qbLoadOrder() {
 	for (var k in qbState) if (o.s.hasOwnProperty(k) && o.s[k] !== null) qbState[k] = o.s[k];
 	qbState.help = {};
 	qbNormalizeState();
+	qbFocus = "summary";
 	renderQuoteBuilder();
 	qbScrollTo("svc-booking");
 }
@@ -3354,6 +3385,7 @@ function qbSmoothTo(y) {
 	qbScrollRAF = requestAnimationFrame(qbScrollFrame);
 }
 function qbScrollStep(key) {
+	if (qbFocusOn) return; // 专注模式由 qbFocusGo 负责换题，不再滚动长页
 	var el = document.querySelector('[data-qstep="' + (key || "summary") + '"]');
 	if (!el) return;
 	var r = el.getBoundingClientRect(), h = window.innerHeight || 800, off = qbScrollOffset();
@@ -3394,6 +3426,7 @@ function qbAdvance(mutate) {
 }
 // 个性化定制：不瞬移，慢慢滑到「按需微调」开头，让客户一路看到有哪些可调项
 function qbGoDiy() {
+	if (qbFocusOn) { qbFocusDiy = true; qbFocusNext(); return; }
 	var el = document.getElementById("qb-tune");
 	if (!el) return;
 	var from = window.scrollY, to = el.getBoundingClientRect().top + from - 80;
@@ -3414,7 +3447,7 @@ function qbGoDiy() {
 	}
 	requestAnimationFrame(step);
 }
-function qbSet(key, val) { qbAdvance(function () { qbState[key] = val; }); }
+function qbSet(key, val) { qbAdvance(function () { qbState[key] = val; }); if (qbFocusOn && (key === "mode" || key === "stems")) qbFocusNext(); }
 // 点日历 = 试算，不滚动。客户往往要来回比几个日期，每点一次就被甩到报价单太烦。
 // 真正的「决定」交给确认按钮。
 function qbPickDate(v) {
@@ -3449,6 +3482,7 @@ function qbSetProd(i, val) { qbAdvance(function () { qbState.prods[i] = val; });
 // 报价单不在视野里就先滚过去——动效在屏幕外播完等于没播。
 // 已经完整可见时不动，避免无谓的跳动。
 function qbRevealSummary() {
+	if (qbFocusOn) { if (qbComplete() && qbFocus !== "summary") qbFocusGo("summary"); return false; }
 	var el = document.querySelector(".qb-summary");
 	if (!el) return false;
 	var r = el.getBoundingClientRect(), h = window.innerHeight || 800;
@@ -3490,7 +3524,7 @@ function qbSetRec(o) {
 	else qbState.rec = { o: o, h: qbState.rec ? qbState.rec.h : 2 };
 	renderQuoteBuilder();
 	// 「不需要」= 这一步答完了，带客户滑到混音；选「需要」则留在原地选场地
-	if (o < 0) requestAnimationFrame(function () { requestAnimationFrame(function () { qbScrollStep("mode"); }); });
+	if (o < 0) { if (qbFocusOn) qbFocusNext(); else requestAnimationFrame(function () { requestAnimationFrame(function () { qbScrollStep("mode"); }); }); }
 }
 function qbRecHours(d) {
 	if (!qbState.rec) return;
@@ -3565,6 +3599,7 @@ function qbReset() {
 	if (wasMem) qbState.mem[0] = 1;
 	qbLsSet(LS_STATE, null); // 会员身份单独保存，不随重置清掉
 	qbMounted = {};
+	qbFocus = "rec"; qbFocusDiy = false; qbFocusShown = null;
 	renderQuoteBuilder();
 	qbScrollTo("svc-booking");
 }
@@ -3586,15 +3621,24 @@ function qbSyncPreset() {
 		if (ok) { qbState.preset = i; return; }
 	}
 	qbState.preset = null;
+	qbState.taste = false;
+}
+// Chef's Taste：客户不想选，交给我。按标准套餐起价，听完作品后由我定方案与最终价。
+function qbSetTaste() {
+	qbSetPreset(QB_PRESET_DEFAULT);
+	qbState.taste = true;
+	renderQuoteBuilder();
 }
 // 选套餐 = 一次填满全部档位。新手点一下就有完整报价，不用再往下答。
 function qbSetPreset(i) {
 	var p = QB_PRESETS[i];
+	qbState.taste = false;
 	qbState.preset = i;
 	qbState.harmony = p.harmony;
 	for (var v = 0; v < qbState.count; v++) { qbState.prods[v] = p.prod; qbState.edits[v] = p.edit; }
 	renderQuoteBuilder();
 	// 选完套餐停在「优惠」：新客 / 会员会改价格和交付日期，不能被直接滚过去
+	if (qbFocusOn) { qbFocusNext(); return; }
 	requestAnimationFrame(function () { requestAnimationFrame(function () { qbScrollStep("perks"); }); });
 }
 function qbAnswered(k) {
@@ -3699,7 +3743,7 @@ function qbCompute(q) {
 	var recDeposit = recOpt ? Math.min(rec, Math.round(recOpt.rate * 2)) : 0;
 	var deposit = recDeposit + Math.ceil(mixTotal * depositRate);
 	var balance = total - deposit;
-	return { base: base, baseItem: baseItem, from: stems && baseItem.from, harmony: harmony, count: count,
+	return { base: base, baseItem: baseItem, from: (stems && baseItem.from) || !!qbState.taste, tasteFee: qbState.taste ? Math.min(deposit, qbTasteFee()) : 0, harmony: harmony, count: count,
 		mixExtra: mixExtra, prodTotal: prodTotal, prodCounts: prodCounts, maxProd: maxProd,
 		editTotal: editTotal, editCounts: editCounts,
 		gross: gross, gShares: gShares, workBase: workBase, discount: discount, memDisc: memDisc, newbie: newbie,
@@ -3785,13 +3829,14 @@ function qbRow(key, idx, label, body, note, hint, help) {
 // 会员/加急/人数都会实时反映进去——Apple 卡片上的价格也是这么来的。
 function qbPresetTotal(q, i) {
 	var p = QB_PRESETS[i];
-	var sp = qbState.prods, se = qbState.edits, sh = qbState.harmony;
+	var sp = qbState.prods, se = qbState.edits, sh = qbState.harmony, st = qbState.taste;
+	qbState.taste = false;
 	var np = [], ne = [], v;
 	for (v = 0; v < qbState.count; v++) { np.push(p.prod); ne.push(p.edit); }
 	qbState.prods = np; qbState.edits = ne; qbState.harmony = p.harmony;
 	var c = null;
 	try { c = qbCompute(q); } catch (e) { c = null; }
-	qbState.prods = sp; qbState.edits = se; qbState.harmony = sh;
+	qbState.prods = sp; qbState.edits = se; qbState.harmony = sh; qbState.taste = st;
 	if (c) c.total -= c.rec - c.recPerk; // 套餐卡只比混音档位：录音是独立选的，不该把卡片价抬高
 	return c;
 }
@@ -3883,12 +3928,18 @@ function renderQuoteBuilder() {
 		var preCards = "";
 		for (var pk = 0; pk < QB_PRESETS.length; pk++) {
 			var pc = qbPresetTotal(q, pk), pTotal = pc ? qbFmt(q, pc.total) + (pc.from ? "+" : "") : "—";
-			preCards += '<button class="qb-preset-card' + (qbState.preset === pk ? " active" : "") + '" onclick="qbSetPreset(' + pk + ')">'
+			preCards += '<button class="qb-preset-card' + (qbState.preset === pk && !qbState.taste ? " active" : "") + '" onclick="qbSetPreset(' + pk + ')">'
 				+ '<span class="qb-preset-name">' + q.presets[pk].name + (pk === QB_PRESET_DEFAULT ? qbBadge(q.recMost) : "") + '</span>'
 				+ '<span class="qb-preset-price">' + pTotal + (qbState.count > 1 ? '<span class="qb-preset-per"> · ' + qbFmt(q, Math.round((pc ? pc.total : 0) / qbState.count)) + q.presetPer + '</span>' : '') + '</span>'
 				+ '<span class="qb-preset-desc">' + q.presets[pk].desc + '</span></button>';
 		}
 		var preBody = '<div class="qb-preset">' + preCards + '</div>';
+		// Chef's Taste：三档都懒得比的人，直接交给我
+		var tpc = qbPresetTotal(q, QB_PRESET_DEFAULT);
+		preBody += '<button class="qb-preset-card qb-taste' + (qbState.taste ? " active" : "") + '" onclick="qbSetTaste()">'
+			+ '<span class="qb-preset-name">Chef\'s Taste</span>'
+			+ '<span class="qb-preset-desc qb-taste-desc">' + qbTasteText('desc', q) + '</span>'
+			+ '<span class="qb-preset-price">' + (tpc ? qbFmt(q, tpc.total) + ' ' + q.fromSuffix : "—") + '</span></button>';
 		// 第四个入口：三档都不合适的人，直接跳到下面逐项配；改过任一项即自动点亮
 		var diyOn = qbState.preset === null;
 		preBody += '<button class="qb-preset-diy' + (diyOn ? " active" : "") + '" onclick="qbGoDiy()">'
@@ -4287,7 +4338,8 @@ function renderQuoteBuilder() {
 			+ '<div class="qb-fold-body"><div class="qb-fold-note">' + noteText + '</div></div></details>';
 		var delivStr = c.fast ? qbFmtDate(qbState.targetDate, currentLang) : stdRange;
 			var splitHtml = '<div class="qb-split">'
-			+ '<div class="qb-split-row deposit"><span>' + q.depositLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit) + (c.from ? "+" : "") + '</span></div>'
+			+ (c.tasteFee > 0 ? '<div class="qb-split-row deposit"><span>' + (QBT_TASTE[currentLang] || QBT_TASTE.zh).fee + '</span><span class="qb-split-val">' + qbFmt(q, c.tasteFee) + '</span></div>' : '')
+			+ '<div class="qb-split-row deposit"><span>' + q.depositLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit - c.tasteFee) + (c.from ? "+" : "") + '</span></div>'
 			+ '<div class="qb-split-row"><span>' + q.balanceLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + (c.from ? "+" : "") + '</span></div>'
 			+ qbWhy(q.depositWhy, qbDepositNote(q, c))
 			+ '</div>';
@@ -4298,7 +4350,7 @@ function renderQuoteBuilder() {
 			+ '<div class="qb-bd-line deliver' + (qbHasMember() ? ' fast' : '') + '"><span>' + q.copyDeliver
 				+ (qbHasMember() ? '<span class="qb-fast-tag">' + q.fastTag + '</span>' : '')
 				+ '</span><span class="qb-bd-val">' + delivStr + '</span></div>'
-				+ splitHtml + aaHtml + fineHtml + '</div>'
+				+ splitHtml + aaHtml + fineHtml + (qbState.taste ? '<div class="qb-taste-note">' + qbTasteText('note', q) + '</div>' : '') + '</div>'
 			+ '<button class="qb-cta" onclick="qbCopy()">' + q.cta + '</button>'
 			+ (c.count > 1 ? '<button class="qb-share" onclick="qbShareLink()">' + q.share + '</button>' : '')
 			+ '<button class="qb-reset" onclick="qbReset()">' + q.reset + '</button>'
@@ -4323,7 +4375,7 @@ function renderQuoteBuilder() {
 	var progHtml = '<div class="qb-prog live' + (done ? " done" : "") + '">'
 		+ '<span class="qb-prog-txt">' + barTxt + '</span>'
 		+ '<span class="qb-prog-total">' + barVal + '</span>'
-		+ '<button class="qb-prog-jump" onclick="qbScrollStep(\'summary\')" aria-label="' + q.totalLabel + '">↓</button></div>';
+		+ '<button class="qb-prog-jump" onclick="qbFocusGo(\'summary\')" aria-label="' + q.totalLabel + '">↓</button></div>';
 	// 还没开始选时，把上次的报价亮出来——回访客户不用从头再点一遍
 	var lastHtml = "";
 	if (qbIsPristine()) {
@@ -4349,8 +4401,80 @@ function renderQuoteBuilder() {
 	}
 	// 被收回的步骤（改了前面的选择）忘掉它，下次再露面时重新淡入
 	for (var k in qbMounted) { if (!present[k]) delete qbMounted[k]; }
+	if (qbFocusOn) qbApplyFocus(mount, q);
 	qbPriceSync(done ? c.total : null, done && c.from ? '<span class="qb-from">' + q.fromSuffix + '</span>' : "", done && c.from);
 	qbSaveState();
+}
+// ── 专注模式 ─────────────────────────────────────────────
+// 一次只摆一题，答完（或点「继续」）才滑到下一题；上方细进度条告诉客户还剩几步。
+// 套餐路径只走：录音 → 混音类型 → 套餐 → 人数 → 优惠 → 交付 → 报价；
+// 想逐项调人声／编辑／和声的客户点「自己逐项调整」，才把这几题接进来。
+var qbFocusOn = true, qbFocus = null, qbFocusDiy = false, qbFocusShown = null, qbFocusDir = 1;
+var QBF_T = {
+	zh: { step: "第 {n} 步 · 共 {m} 步", back: "← 上一步", next: "继续", edit: "← 修改选择", diy: "想自己逐项调整人声 / 编辑 / 和声？" },
+	en: { step: "Step {n} of {m}", back: "← Back", next: "Continue", edit: "← Edit choices", diy: "Want to tune vocals / editing / harmony yourself?" },
+	ko: { step: "{n} / {m} 단계", back: "← 이전", next: "계속", edit: "← 선택 수정", diy: "보컬 / 편집 / 하모니를 직접 조정하시겠어요?" }
+};
+function qbFocusSeq() {
+	var diyKeys = { prod: 1, edit: 1, harmony: 1, extra: 1 };
+	var diy = qbFocusDiy || qbState.preset === null;
+	var s = qbSteps().filter(function (k) { return diy || !diyKeys[k]; });
+	s.push("summary");
+	return s;
+}
+function qbFocusGo(key, back) {
+	qbFocus = key; qbFocusDir = back ? -1 : 1;
+	renderQuoteBuilder();
+}
+function qbFocusNext() {
+	var s = qbFocusSeq(), i = s.indexOf(qbFocus);
+	if (i < 0) i = 0;
+	if (i < s.length - 1) qbFocusGo(s[i + 1]);
+}
+function qbFocusPrev() {
+	var s = qbFocusSeq(), i = s.indexOf(qbFocus);
+	if (i > 0) qbFocusGo(s[i - 1], true);
+}
+function qbFocusDiyOn() { qbFocusDiy = true; qbFocusNext(); }
+function qbApplyFocus(mount, q) {
+	var seq = qbFocusSeq(), t = QBF_T[currentLang] || QBF_T.zh;
+	if (!qbFocus) qbFocus = (location.hash || "").indexOf("q=") >= 0 ? "summary" : "rec"; // 只有朋友分享的链接直达报价单，其余一律从头开始
+	if (seq.indexOf(qbFocus) < 0) qbFocus = seq[0];
+	var cur = mount.querySelector('[data-qstep="' + qbFocus + '"]');
+	if (!cur) { qbFocus = seq[0]; cur = mount.querySelector('[data-qstep="' + qbFocus + '"]'); }
+	if (!cur) return;
+	var nodes = mount.querySelectorAll("[data-qstep]");
+	for (var i = 0; i < nodes.length; i++) if (nodes[i] !== cur) nodes[i].style.display = "none";
+	var tune = document.getElementById("qb-tune"); if (tune) tune.style.display = "none";
+	var showDelivery = qbFocus === "lane" || qbFocus === "summary";
+	var hide = mount.querySelectorAll(".qb-sched, .qb-cap");
+	for (var h = 0; h < hide.length; h++) hide[h].style.display = showDelivery ? "" : "none";
+
+	var n = seq.indexOf(qbFocus) + 1, m = seq.length;
+	var prog = document.createElement("div"); prog.className = "qbf-prog";
+	prog.innerHTML = '<div class="qbf-count">' + t.step.replace("{n}", n).replace("{m}", m) + '</div><div class="qbf-bar"><i style="width:' + Math.round(n / m * 100) + '%"></i></div>';
+	cur.parentNode.insertBefore(prog, cur);
+
+	var nav = document.createElement("div"); nav.className = "qbf-nav";
+	var last = qbFocus === "summary";
+	nav.innerHTML = (n > 1 ? '<button class="qbf-back" onclick="qbFocusPrev()">' + (last ? t.edit : t.back) + '</button>' : '')
+		+ (last ? '' : '<button class="qb-cta" onclick="qbFocusNext()">' + t.next + '</button>');
+	cur.parentNode.insertBefore(nav, cur.nextSibling);
+	if (qbFocus === "count" && !(qbFocusDiy || qbState.preset === null)) {
+		var diy = document.createElement("button"); diy.className = "qbf-diy"; diy.textContent = t.diy; diy.onclick = qbFocusDiyOn;
+		nav.parentNode.insertBefore(diy, nav.nextSibling);
+	}
+
+	if (qbFocusShown !== qbFocus) {
+		cur.classList.add("qb-focus"); if (qbFocusDir < 0) cur.classList.add("back");
+		if (qbFocusShown !== null) {
+			var top = prog.getBoundingClientRect().top, offY = (document.querySelector(".qb-prog") ? 70 : 20);
+			if (top < 70 || top > 260) qbSmoothTo(top + (window.pageYOffset || document.documentElement.scrollTop) - 90 - offY + 20);
+		}
+		qbFocusShown = qbFocus;
+	} else {
+		cur.classList.add("qb-focus"); cur.style.animation = "none";
+	}
 }
 function qbFadeIn(el) {
 	requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add("qb-in"); }); });
@@ -4409,6 +4533,7 @@ function qbCopy() {
 	L.push(HH);
 	// 小节标题：混音类型 · 人数
 	L.push((stems ? q.modeStems : q.modeVocal) + " · " + c.count + q.countUnit + q.vocalistLabel);
+	if (qbState.taste) L.push(qbTasteText('note', q));
 	L.push("");
 	// 金额在前：一列数字最好扫。品类在前缀里补回来——
 	// 「执行向」单独出现是黑话，「人声制作 · 执行向」才对得上计算器里的第 03 步
@@ -4440,7 +4565,8 @@ function qbCopy() {
 	L.push("▍" + q.totalLabel + "　" + qbFmt(q, c.total) + sfx);
 	// 多人单的关键卖点：人均比单独做更便宜，但客户只看得到总价
 	if (c.count > 1) L.push("　" + q.perHeadTotal + "　" + qbFmt(q, Math.round(c.total / c.count)) + sfx);
-	L.push(q.depositLabel + " " + qbFmt(q, c.deposit) + sfx + " ／ " + q.balanceLabel + " " + qbFmt(q, c.balance) + sfx);
+	if (c.tasteFee > 0) L.push((QBT_TASTE[currentLang] || QBT_TASTE.zh).fee + " " + qbFmt(q, c.tasteFee) + " ／ " + q.depositLabel + " " + qbFmt(q, c.deposit - c.tasteFee) + sfx + " ／ " + q.balanceLabel + " " + qbFmt(q, c.balance) + sfx);
+	else L.push(q.depositLabel + " " + qbFmt(q, c.deposit) + sfx + " ／ " + q.balanceLabel + " " + qbFmt(q, c.balance) + sfx);
 	// 交付日期：按所选通道现算，含 18:00 顺延
 	var cut = qbCutoff();
 	var range = c.fast
@@ -4648,6 +4774,7 @@ function renderMixIntro(svc) {
 function bookGo(kind, instant) {
 	if (kind === "rec") { if (!qbState.rec) qbState.rec = { o: 2, h: 2 }; }
 	else qbState.rec = null;
+	if (qbFocusOn) { qbFocus = kind === "rec" ? "rec" : "mode"; qbFocusShown = null; qbFocusDir = 1; }
 	renderQuoteBuilder();
 	var key = kind === "rec" ? "rec" : "mode";
 	var go = function () {
@@ -4872,8 +4999,14 @@ function secSpy() {
 	for (var b = 0; b < btns.length; b++) {
 		var on = btns[b].getAttribute("data-sec") === active;
 		btns[b].classList.toggle("on", on);
-		if (on) btns[b].scrollIntoView({ block: "nearest", inline: "nearest" });
+		if (on && window.__secActive !== active) {
+			// 只横向滚导航条本身。scrollIntoView 会连页面纵向一起拉，
+			// 和 qbSmoothTo 逐帧写 scrollTo 打架（"实际位置对不上"→ 弹簧被取消），点顶栏就卡顿。
+			var box = btns[b].parentNode;
+			box.scrollTo({ left: btns[b].offsetLeft - (box.clientWidth - btns[b].offsetWidth) / 2, behavior: "auto" });
+		}
 	}
+	window.__secActive = active;
 }
 window.addEventListener("scroll", function () {
 	if (window.__secTick) return;
