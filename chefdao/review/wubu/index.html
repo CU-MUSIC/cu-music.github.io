@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/chefdao-logo-32.png">
+<title>舞步 · 审听 | ChefDao</title>
+<style>
+:root{
+  --bg:#0c0b24;--panel:#16153a;--panel2:#1d1c48;--line:rgba(220,218,240,.10);
+  --text:#dcdaf0;--dim:#8f8db0;--accent:#8b86f5;--accent-soft:rgba(139,134,245,.18);
+  --bar:#3b3a66;--white:#ecebf7;
+}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--text);font:17px/1.7 -apple-system,"SF Pro Text","PingFang SC","Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%;min-height:100vh;padding:max(20px,env(safe-area-inset-top)) 16px 64px}
+main{max-width:720px;margin:0 auto}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+
+/* 头部 */
+.head{display:flex;align-items:center;gap:16px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.cover{width:66px;height:66px;border-radius:8px;flex:none;background:#000 url(/chefdao/assets/chefdao-logo-180.png) center/cover}
+.meta{min-width:0;flex:1}
+.meta .proj{color:var(--dim);font-size:15px}
+.meta h1{font-size:19px;line-height:1.4;font-weight:600;overflow-wrap:anywhere}
+.ver{display:flex;align-items:center;gap:6px;background:var(--panel);border-radius:999px;padding:8px 14px;font-size:15px;flex:none}
+.share{background:var(--white);color:#15143a;border-radius:999px;padding:10px 18px;font-weight:600;font-size:15px;flex:none;min-height:44px}
+.share:active{opacity:.75}
+
+/* 波形 */
+.wavebox{position:relative;margin:28px 0 8px}
+#wave{width:100%;height:140px;display:block;cursor:pointer;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+#play{position:absolute;top:50%;left:0;width:48px;height:48px;margin:-24px 0 0 -24px;will-change:transform;pointer-events:none;border-radius:50%;background:rgba(12,11,36,.78);border:1px solid var(--line);display:grid;place-items:center;transition:opacity .25s,scale .2s cubic-bezier(.16,1,.3,1)}
+#play:active{scale:.9}
+#play svg{width:18px;height:18px;fill:var(--white)}
+#play .pa{display:none}
+body.playing #play .pl{display:none}
+body.playing #play .pa{display:block}
+#play{opacity:.95}
+body.playing #play{opacity:0}
+@media(hover:hover){.wavebox:hover #play,#play:focus-visible{opacity:1}}
+#tip{position:absolute;top:-6px;transform:translateX(-50%);background:var(--panel2);border-radius:6px;padding:0 8px;font-size:13px;line-height:22px;font-variant-numeric:tabular-nums;pointer-events:none;opacity:0;transition:opacity .15s}
+.wavebox.hov #tip{opacity:1}
+.clock{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:14px;font-variant-numeric:tabular-nums}
+.clock #tot{margin-left:auto}
+.pp{width:44px;height:44px;margin:-8px 0 -8px -10px;border-radius:50%;display:grid;place-items:center}
+.pp svg{width:18px;height:18px;fill:var(--white)}
+.pp .pa{display:none}
+body.playing .pp .pl{display:none}
+body.playing .pp .pa{display:block}
+.pp:active{scale:.9}
+.hint{color:var(--dim);font-size:15px;margin:14px 0 18px}
+
+/* 评论框 */
+.composer{background:var(--panel);border-radius:16px;padding:16px 16px 12px;border:1px solid transparent;transition:border-color .2s}
+.composer:focus-within{border-color:var(--accent-soft)}
+.composer textarea{width:100%;background:none;border:0;outline:0;color:var(--text);font:inherit;resize:none;min-height:52px}
+.composer textarea::placeholder{color:var(--dim)}
+.crow{display:flex;align-items:center;gap:10px;margin-top:6px}
+.stamp{display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:10px;padding:6px 12px;font-size:15px;font-variant-numeric:tabular-nums;color:var(--text)}
+.stamp svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2}
+.send{margin-left:auto;width:44px;height:44px;border-radius:50%;background:var(--panel2);display:grid;place-items:center}
+.send svg{width:20px;height:20px;fill:var(--dim)}
+.send.on{background:var(--accent)}
+.send.on svg{fill:#12113a}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:15px;color:var(--dim);min-height:36px}
+.chips button:hover{color:var(--text);border-color:var(--accent-soft)}
+
+/* 评论列表 */
+.lh{display:flex;align-items:center;margin:28px 0 8px;color:var(--dim);font-size:15px}
+.lh b{color:var(--text);font-weight:500}
+#list{list-style:none;padding:0}
+#list li{animation:in .45s cubic-bezier(.16,1,.3,1);display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.av{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:14px;flex:none}
+.body{flex:1;min-width:0}
+.who{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--dim)}
+.who .t{background:var(--panel2);color:var(--text);border-radius:6px;padding:0 8px;font-size:14px;font-variant-numeric:tabular-nums;min-height:24px}
+.who .x{margin-left:auto;padding:4px 8px;color:var(--dim);min-height:32px}
+.who .x:hover{color:var(--text)}
+.m{margin-top:2px;overflow-wrap:anywhere;color:var(--text)}
+.empty{color:var(--dim);font-size:15px;padding:14px 0}
+
+@keyframes in{from{opacity:0;transform:translateY(-8px);background:var(--accent-soft)}to{opacity:1;transform:none}}
+#list li.out{animation:out .25s ease forwards}
+@keyframes out{to{opacity:0;transform:translateX(16px)}}
+.send,.share,.copy2,.chips button{transition:background .2s,transform .15s,border-color .2s,color .2s}
+.send:active,.share:active,.copy2:active{transform:scale(.94)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* 整体感觉 */
+.overall{margin-top:24px}
+.overall label{display:block;color:var(--dim);font-size:15px;margin-bottom:8px}
+.overall textarea{width:100%;background:var(--panel);border:1px solid transparent;border-radius:14px;outline:0;color:var(--text);font:inherit;padding:12px 14px;resize:vertical}
+.overall textarea:focus{border-color:var(--accent-soft)}
+.overall textarea::placeholder{color:var(--dim)}
+.copy2{display:block;width:100%;margin-top:14px;background:var(--white);color:#15143a;border-radius:999px;padding:12px;font-weight:600;min-height:48px}
+.toast{color:var(--accent);font-size:15px;min-height:1.7em;margin-top:8px;text-align:center}
+
+@media (hover:none){#play{display:none}.pp{background:var(--white);margin:0 0 0 0;width:48px;height:48px}.pp svg{fill:#15143a}}
+@media (max-width:480px){
+  .head{flex-wrap:wrap}
+  .meta{flex-basis:calc(100% - 82px)}
+  .head .ver{order:3}
+  .head .share{order:4;margin-left:auto}
+  #wave{height:120px}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="head">
+    <div class="cover"></div>
+    <div class="meta">
+      <div class="proj">舞步</div>
+      <h1>舞步 Edit @ChefDao_V1_1017</h1>
+    </div>
+    <div class="ver">V1</div>
+    <button class="share" id="copyTop">复制反馈</button>
+  </div>
+
+  <audio id="a" src="v1.mp3" preload="metadata"></audio>
+  <div class="wavebox">
+    <canvas id="wave"></canvas><div id="tip">0:00</div>
+    <button id="play" aria-label="播放">
+      <svg class="pl" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>
+      <svg class="pa" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+    </button>
+  </div>
+  <div class="clock"><button class="pp" id="pp" aria-label="播放/暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg><svg class="pa" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></button><span id="cur">0:00</span><span id="tot">0:00</span></div>
+  <div class="hint">听到想改的地方，直接写评论，时间点会自动记下。听完点右上角「复制反馈」，粘贴到微信发给我。</div>
+
+  <div class="composer">
+    <textarea id="txt" rows="2" placeholder="留下评论…"></textarea>
+    <div class="crow">
+      <div class="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="stamp">0:00</span></div>
+      <button class="send" id="add" aria-label="添加"><svg viewBox="0 0 24 24"><path d="M3 20.5v-6.8l9-1.7-9-1.7V3.5L22 12z"/></svg></button>
+    </div>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div class="lh"><b>评论</b>&nbsp;·&nbsp;<span id="n">0</span></div>
+  <ul id="list"></ul>
+  <div class="empty" id="empty">还没有评论</div>
+
+  <div class="overall">
+    <label for="overall">整体感觉（可选）</label>
+    <textarea id="overall" rows="3" placeholder="整体想要的方向，例如：整体再亮一点、鼓再有力一点"></textarea>
+    <button class="copy2" id="copy">复制反馈</button>
+    <div class="toast" id="toast"></div>
+  </div>
+
+</main>
+
+<script>
+const TITLE='舞步', VER='V1', KEY='review:wubu:v1';
+const PEAKS=[0.45,0.45,0.54,0.46,0.54,0.53,0.52,0.51,0.52,0.53,0.51,0.49,0.37,0.49,0.39,0.52,0.49,0.54,0.51,0.43,0.49,0.50,0.54,0.51,0.52,0.51,0.49,0.50,0.53,0.78,0.78,0.93,0.71,0.80,0.52,0.51,0.93,0.87,0.79,0.84,0.91,0.44,0.50,0.38,0.88,0.73,0.92,0.84,0.74,0.61,0.78,1.00,0.72,0.88,0.64,0.77,0.56,0.64,0.65,0.59,0.48,0.86,0.78,0.69,0.57,0.57,0.62,0.71,0.79,0.71,0.68,0.71,0.58,0.53,0.45,0.81,0.91,0.79,0.88,0.80,0.87,0.74,0.81,0.55,0.79,0.78,0.91,0.91,0.59,0.71,0.82,0.86,1.00,0.68,0.77,0.62,0.70,0.76,0.78,0.63,0.87,0.92,0.80,0.78,0.78,0.65,0.57,0.55,0.76,0.81,0.65,0.60,0.72,0.62,0.74,0.77,0.30,0.59,0.56,0.93,0.76,0.53,0.52,0.49,0.75,0.80,0.79,0.56,0.61,0.65,0.53,0.87,0.64,0.86,0.82,0.76,0.60,0.91,0.77,0.77,0.77,0.75,0.67,0.51,0.49,0.37,0.59,0.36,0.61,0.72,0.57,0.56,0.74,0.80,0.51,0.61,0.54,0.71,0.58,0.83,0.77,0.63,0.53,0.76,0.71,0.49,0.75,0.75,0.82,0.64,0.75,0.58,0.50,0.59,0.72,0.60,0.47,0.87,0.80,0.79,0.69,0.85,0.88,0.72,0.82,0.85,0.77,0.72,0.85,0.83,0.80,0.81,0.65,0.72,0.75,0.82,0.76,0.80,0.62,0.51,0.79,0.96,0.75,0.84,0.66,0.65,0.73,0.81,0.83,0.64,0.59,0.63,0.81,0.70,0.74,0.72,0.73,0.69,0.70,0.87,0.74,0.70,0.73,0.71,0.63,0.74,0.87,0.80,0.63,0.77,0.57,0.64,0.52,0.48,0.72,0.71,0.68,0.68,0.49,0.54,0.78,0.65,0.70,0.80,0.81,0.51,0.48,0.31,0.71,0.77,0.78,0.58,0.59,0.57,0.85,0.77,0.51,0.60,0.43,0.60,0.40,0.51,0.86,0.65,0.61,0.77,0.73,0.67,0.55,0.42,0.75,0.70,0.85,0.81,0.72,0.48,0.45,0.98,0.64,0.98,0.73,0.71,0.75,0.98,0.86,0.57,0.88,0.71,0.77,0.64,0.52,0.53,0.40,0.51,0.44,0.02,0.00,0.00,0.00,0.00];
+const $=id=>document.getElementById(id);
+const a=$('a'), cv=$('wave'), ctx=cv.getContext('2d'), txt=$('txt');
+let notes=[], locked=null; // locked: 开始输入后锁定的时间点
+try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');notes=s.notes||[];$('overall').value=s.overall||''}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({notes,overall:$('overall').value}))}catch(e){}};
+const fmt=t=>{t=Math.max(0,Math.floor(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+const dur=()=>isFinite(a.duration)?a.duration:0;
+
+let hover=null, shown=0, t0=performance.now(), lastT=0, lastAt=0;
+const ease=x=>1-Math.pow(1-x,3);
+function curTime(){ // 播放时用时钟插值，playhead 才顺滑
+  const t=a.currentTime,now=performance.now();
+  if(t!==lastT){lastT=t;lastAt=now}
+  return a.paused?t:Math.min(dur()||t,t+(now-lastAt)/1000);
+}
+function draw(now){
+  const dpr=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const n=PEAKS.length,mid=h/2,amp=h/2-4,tt=curTime();
+  const p=dur()?tt/dur():0, px=p*w;
+  const intro=(i)=>{const k=Math.min(1,Math.max(0,(now-t0-i/n*500)/650));return ease(k)};
+  const hx=hover===null?null:hover*w;
+  const path=()=>{ // 连续填充的镜像波形
+    ctx.beginPath();
+    for(let x=0;x<=w;x+=1.5){const f=x/w*(n-1),i=Math.floor(f),u=f-i;
+      const v=(PEAKS[i]*(1-u)+PEAKS[Math.min(n-1,i+1)]*u)*intro(f)*amp+1;
+      x?ctx.lineTo(x,mid-v):ctx.moveTo(x,mid-v)}
+    for(let x=w;x>=0;x-=1.5){const f=x/w*(n-1),i=Math.floor(f),u=f-i;
+      const v=(PEAKS[i]*(1-u)+PEAKS[Math.min(n-1,i+1)]*u)*intro(f)*amp+1;
+      ctx.lineTo(x,mid+v)}
+    ctx.closePath();
+  };
+  ctx.save();path();ctx.clip();
+  ctx.fillStyle='#3b3a66';ctx.fillRect(0,0,w,h);                       // 未播放
+  if(hx!==null&&hx>px){ctx.fillStyle='#55538c';ctx.fillRect(px,0,hx-px,h)} // 悬停预览
+  ctx.fillStyle='#8b86f5';ctx.fillRect(0,0,px,h);                      // 已播放
+  ctx.restore();
+  ctx.fillStyle='#ecebf7';ctx.fillRect(px-1,0,2,h);                    // 播放头
+  if(hx!==null){ctx.fillStyle='rgba(236,235,247,.35)';ctx.fillRect(hx-.5,0,1,h)}
+  ctx.fillStyle='rgba(232,201,138,.9)';
+  notes.forEach(o=>{if(dur())ctx.fillRect(o.t/dur()*w-1,h-5,2,5)});
+  $('cur').textContent=fmt(tt);$('tot').textContent=fmt(dur());
+  if(locked===null)$('stamp').textContent=fmt(tt);
+  document.body.classList.toggle('playing',!a.paused);
+  // 播放键跟着鼠标（Samply 同款），平滑追随
+  const target=hx===null?w/2:Math.min(w-24,Math.max(24,hx));
+  shown+=(target-shown)*.22;
+  $('play').style.transform='translateX('+shown+'px)';
+  requestAnimationFrame(draw);
+}
+const frac=e=>{const r=cv.getBoundingClientRect();return Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))};
+function seekFrom(e){a.currentTime=frac(e)*dur();lastT=a.currentTime;lastAt=performance.now()}
+let drag=false;
+const box=document.querySelector('.wavebox');
+cv.addEventListener('pointerdown',e=>{drag=true;cv.setPointerCapture(e.pointerId);seekFrom(e)});
+box.addEventListener('pointermove',e=>{
+  hover=frac(e);box.classList.add('hov');
+  $('tip').style.left=(hover*cv.clientWidth)+'px';$('tip').textContent=fmt(hover*dur());
+  if(drag)seekFrom(e)});
+cv.addEventListener('pointerup',e=>{if(drag&&a.paused)a.play();drag=false;if(e.pointerType==='touch'){hover=null;box.classList.remove('hov')}});
+box.addEventListener('pointerleave',e=>{if(!drag){hover=null;box.classList.remove('hov')}});
+cv.addEventListener('pointercancel',()=>{drag=false;hover=null;box.classList.remove('hov')});
+shown=(cv.clientWidth||0)/2;
+$('pp').onclick=()=>a.paused?a.play():a.pause();
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!/TEXTAREA|INPUT/.test(e.target.tagName)){e.preventDefault();a.paused?a.play():a.pause()}});
+
+// 开始输入时锁定时间点（和 Samply 一样），清空后解锁
+txt.addEventListener('input',()=>{
+  if(txt.value&&locked===null){locked=Math.floor(a.currentTime);$('stamp').textContent=fmt(locked)}
+  if(!txt.value){locked=null}
+  $('add').classList.toggle('on',!!txt.value.trim());
+});
+const CHIPS=['人声偏大','人声偏小','人声太亮','太闷','低频太多','低频不够','鼓不够力','音高修正','太吵','想要更多空间感'];
+CHIPS.forEach(c=>{const b=document.createElement('button');b.textContent=c;
+  b.onclick=()=>{txt.value=txt.value?txt.value+'；'+c:c;txt.dispatchEvent(new Event('input'));txt.focus()};$('chips').appendChild(b)});
+
+function add(){
+  const v=txt.value.trim();if(!v){txt.focus();return}
+  notes.push({t:locked===null?Math.floor(a.currentTime):locked,m:v});notes.sort((x,y)=>x.t-y.t);
+  txt.value='';locked=null;$('add').classList.remove('on');render();save();
+}
+$('add').onclick=add;
+txt.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();add()}});
+
+function render(){
+  const ul=$('list');ul.innerHTML='';
+  notes.forEach((o,i)=>{
+    const li=document.createElement('li');
+    li.innerHTML='<div class="av">我</div><div class="body"><div class="who">我<button class="t"></button><button class="x" aria-label="删除">✕</button></div><div class="m"></div></div>';
+    const t=li.querySelector('.t');t.textContent=fmt(o.t);t.onclick=()=>{a.currentTime=o.t;a.play()};
+    li.querySelector('.m').textContent=o.m;
+    li.querySelector('.x').onclick=()=>{li.classList.add('out');setTimeout(()=>{notes.splice(i,1);render();save()},230)};
+    ul.appendChild(li);
+  });
+  $('n').textContent=notes.length;$('empty').hidden=notes.length>0;
+}
+$('overall').addEventListener('input',save);
+async function copy(){
+  const lines=['《'+TITLE+'》'+VER+' 反馈',...notes.map(o=>fmt(o.t)+' '+o.m)];
+  const ov=$('overall').value.trim();if(ov)lines.push('整体：'+ov);
+  const text=lines.join('\n');
+  try{await navigator.clipboard.writeText(text)}catch(e){
+    const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();
+  }
+  $('toast').textContent='已复制，去微信粘贴发给我';
+  const b=$('copyTop');b.textContent='已复制 ✓';setTimeout(()=>b.textContent='复制反馈',2000);
+}
+$('copy').onclick=copy;$('copyTop').onclick=copy;
+render();requestAnimationFrame(draw);
+</script>
+</body>
+</html>
