@@ -13,17 +13,34 @@ const store = {
 const PW_KEY = 'review:pw:' + S.slug;
 const cdate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? (+m[2]) + '月' + (+m[3]) + '日' : d; };
 const V = S.versions;
+// 版本名精简：「舞步 Edit @ChefDao_V2_1018」→「编辑 V2」；按文件名里的 Edit / Mix / Master 分阶段，编辑在前、混音在后
+const STAGE = { edit: '编辑', mix: '混音', master: '母带' };
+const stageOf = v => { const m = /\b(Edit|Mix|Master)\b/i.exec(String(v.file || '').replace(/@ChefDao.*$/i, '')); return m ? m[1].toLowerCase() : ''; };
+const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + v.ver;
+const multiStage = new Set(V.map(stageOf)).size > 1;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
 const dataKey = i => 'review:' + S.slug + ':' + V[i].ver.toLowerCase();
 
+// CU MUSIC 双圆标志（和官网首页同一个）：下载进度 0→60% 画外圈，40→100% 画内圈
+const MARK = '<svg class="cumark" viewBox="272 164 456 456" aria-hidden="true"><path class="r0" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="r0" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>'
+  + '<path class="r1" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="r2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const mb = n => (n / 1048576).toFixed(1);
+function drawProg(box, p, txt) {
+  box.classList.remove('intro');   // 开场画圈动画让位给真实进度
+  box.querySelector('.r1').style.strokeDashoffset = 1 - clamp01(p / .6);
+  box.querySelector('.r2').style.strokeDashoffset = 1 - clamp01((p - .4) / .6);
+  const t = box.querySelector('.dlt'); if (t) t.textContent = txt;
+}
 document.body.innerHTML = `
 <div class="lock" id="lock">
-  <div class="art"></div>
+  <div class="art lmark intro">${MARK}</div>
   <h1>${esc(S.title)}</h1>
   <div class="by" id="by">CU MUSIC</div>
   <div class="ask" id="ask">输入密码收听</div>
   <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
   <div class="spin"></div>
+  <div class="dl" id="dl"><div class="dlt" id="dlt">音频下载中</div></div>
   <input class="pin" id="pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="密码">
 </div>
 
@@ -32,7 +49,7 @@ document.body.innerHTML = `
     <div class="art"></div>
     <div>
       <div class="eyebrow">${esc(S.title)}</div>
-      <h1 id="vfile">${esc(cur.file)}</h1>
+      <h1 id="vfile">${esc(vname(cur))}</h1>
       <div class="meta" id="vmeta"></div>
     </div>
   </header>
@@ -40,8 +57,9 @@ document.body.innerHTML = `
     <div class="vhead"><span class="n1">1</span><span class="t1" id="vt1"></span>
       <button class="stack press" id="stack" aria-label="展开/收起版本"><svg viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg></button>
       <span class="d1" id="vd1"></span></div>
-    <div class="vwrap"><div><div class="vlist">${V.map((v, i) => [v, i]).reverse().map(([v, i]) =>
-      `<button class="vrow" data-i="${i}"><span class="vb"><span class="vn">${esc(v.file)}</span><span class="vd">${esc(cdate(v.date))}${i === V.length - 1 ? ' · 最新' : ''}</span></span><span class="hasdot"></span><span class="vt"><b>${esc(v.ver.toLowerCase())}</b></span><span class="vdur">${fmt(v.duration)}</span></button>`).join('')}</div></div></div>
+    <div class="vwrap"><div><div class="vlist">${V.map((v, i) => [v, i]).reverse().map(([v, i], k, arr) =>
+      (multiStage && (k === 0 || stageOf(arr[k - 1][0]) !== stageOf(v)) ? `<div class="vgrp">${STAGE[stageOf(v)] || '其他'}</div>` : '') +
+      `<button class="vrow" data-i="${i}"><span class="vb"><span class="vn">${esc(multiStage ? v.ver : vname(v))}</span><span class="vd">${esc(cdate(v.date))}${i === V.length - 1 ? ' · 最新' : ''}</span></span><span class="hasdot"></span><span class="vdur">${fmt(v.duration)}</span></button>`).join('')}</div></div></div>
   </section>
 
   <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
@@ -118,6 +136,7 @@ if (window.visualViewport) {
 pin.addEventListener('input', () => {
   pin.value = pin.value.replace(/\D/g, '').slice(0, 4);
   dots.forEach((d, i) => d.classList.toggle('on', i < pin.value.length));
+  $('#lock').style.setProperty('--b', [12, 9, 6, 4, 3][pin.value.length] + 'px');   // 每输一位，歌名清楚一点
   $('#ask').classList.remove('err'); $('#ask').textContent = '输入密码收听';
   if (pin.value.length === 4) tryUnlock(pin.value, true);
 });
@@ -127,6 +146,7 @@ async function tryUnlock(pw, typed) {
     const key = await keyFor(pw);
     await open(key, ub64(S.check));                       // 密码错会在这里抛错
     store.set(PW_KEY, pw);
+    document.title = S.title + ' — CU MUSIC';
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
     splash();
@@ -141,6 +161,7 @@ async function tryUnlock(pw, typed) {
   } catch (e) {
     $('#lock').classList.remove('busy');
     store.del(PW_KEY);
+    $('#lock').style.setProperty('--b', '12px');
     if (typed) {
       $('#ask').textContent = '密码不对，再试一次'; $('#ask').classList.add('err');
       const d = $('#dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
@@ -159,21 +180,29 @@ function enterApp() {
   [...$('#app').children].forEach((el, i) => el.style.setProperty('--i', i));
   const a1 = from.getBoundingClientRect(), a2 = to.getBoundingClientRect();
   const dx = a2.left + a2.width / 2 - (a1.left + a1.width / 2), dy = a2.top + a2.height / 2 - (a1.top + a1.height / 2);
-  const k = a2.width / a1.width;
+  const k = a2.width / a1.width * (from.classList.contains('lmark') ? .62 : 1);
   to.style.opacity = 0;
   L.classList.add('leaving');
   from.style.transform = `translate(${dx}px,${dy}px) scale(${k})`;
   from.style.borderRadius = (14 / k) + 'px';
   $('#app').classList.add('in');
+  if (from.classList.contains('lmark')) { to.style.transition = 'opacity .45s ease'; setTimeout(() => { to.style.opacity = ''; }, 380); }
   setTimeout(() => { to.style.opacity = ''; L.remove(); }, 700);
   markSeg(); updateCta();
 }
 let KEY = null;
 const urls = {};
-async function fetchVersion(i) {
+async function fetchVersion(i, onp) {
   if (!urls[i]) urls[i] = (async () => {
     const r = await fetch(V[i].audio);
-    const plain = await open(KEY, new Uint8Array(await r.arrayBuffer()));
+    const total = +r.headers.get('Content-Length') || 0;
+    let u8;
+    if (r.body && total && onp) {   // 边下边报进度
+      const rd = r.body.getReader(), parts = []; let got = 0;
+      for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onp(got / total, got, total); }
+      u8 = new Uint8Array(got); let o = 0; for (const c of parts) { u8.set(c, o); o += c.length; }
+    } else u8 = new Uint8Array(await r.arrayBuffer());
+    const plain = await open(KEY, u8);
     return URL.createObjectURL(new Blob([plain], { type: V[i].mime || 'audio/mpeg' }));
   })();
   try { return await urls[i]; } catch (e) { delete urls[i]; throw e; }
@@ -182,7 +211,15 @@ async function loadAudio(key) {
   KEY = key;
   try {
     if (a.src) return;
-    a.src = await fetchVersion(vi);
+    // 下载超过 0.4 秒才露出进度圈，缓存命中时不闪
+    // 下载超过 0.4 秒，解锁页上的 CU 标志就变成进度：随下载重新画一遍；缓存命中时不动它
+    const L = $('#lock'), mk = L.querySelector('.lmark'), t0 = performance.now();
+    a.src = await fetchVersion(vi, (p, got, total) => {
+      if (performance.now() - t0 < 400) return;
+      L.classList.add('dl-on');
+      drawProg(mk, p, ''); $('#dlt').textContent = '音频下载中 ' + Math.round(p * 100) + '% · ' + mb(got) + ' / ' + mb(total) + ' MB';
+    });
+    if (L.classList.contains('dl-on')) { drawProg(mk, 1, ''); $('#dlt').textContent = '下载完成'; }
     $('#play').disabled = false;
     $('#loading').style.opacity = 0;
   } catch (e) { $('#loading').textContent = '音频加载失败，请刷新重试'; }
@@ -408,10 +445,10 @@ function markSeg() {
     try { const d = JSON.parse(store.get(dataKey(i)) || '{}'); has = (d.notes || []).length > 0 || !!(d.overall || '').trim(); } catch (e) {}
     b.classList.toggle('has', has); b.classList.toggle('on', i === vi); b.setAttribute('aria-current', i === vi);
   });
-  $('#vt1').textContent = cur.file; $('#vd1').textContent = fmt(cur.duration);
+  $('#vt1').textContent = vname(cur); $('#vd1').textContent = fmt(cur.duration);
 }
 function showMeta() {
-  $('#vfile').textContent = cur.file;
+  $('#vfile').textContent = vname(cur);
   $('#vmeta').innerHTML = '<b>' + esc(cur.ver) + '</b>' + fmt(cur.duration) + ' · ' + esc(cdate(cur.date)) + (V.length > 1 ? ' · 共 ' + V.length + ' 版' : '');
   $('#mt').textContent = S.title + ' · ' + cur.ver;
 }
@@ -556,9 +593,10 @@ async function switchTo(i) {
   vi = i; cur = V[i];
   P0 = P; P = cur.peaks; morphAt = performance.now();
   loadNotes(); render(); updateCta(); showMeta(); markSeg(); if (cfbRender) cfbRender();
-  $('#loading').textContent = '正在载入 ' + cur.ver + '…'; $('#loading').style.opacity = 1;
+  const ld = $('#loading');
+  ld.innerHTML = MARK + '<div class="dlt">' + cur.ver + ' 下载中</div>'; ld.classList.add('prog'); ld.style.opacity = 1;
   try {
-    const url = await fetchVersion(i);
+    const url = await fetchVersion(i, (p, got, total) => { if (token === switching) drawProg(ld, p, cur.ver + ' 下载中 ' + Math.round(p * 100) + '% · ' + mb(got) + ' / ' + mb(total) + ' MB'); });
     if (token !== switching) return;
     a.src = url;
     await new Promise(r => a.addEventListener('loadedmetadata', r, { once: true }));

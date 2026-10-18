@@ -15,7 +15,7 @@
     j.song.versions.forEach(v => { if (v.audio.startsWith('/')) v.audio = API + v.audio; });
     if (!j.song.versions.length) return fail('这首歌暂时没有可以听的版本');
     window.SONG = j.song; window.SONG_LIVE = { api: API };   // SONG_LIVE：可以在页面里上传 / 删除版本
-    document.title = j.song.title + ' — CU MUSIC';
+    document.title = 'CU MUSIC';   // 歌名等输对密码再显示
     const s = document.createElement('script'); s.src = player; document.body.appendChild(s);
   } catch (e) { fail('网络不好，刷新再试一次'); }
 })();
