@@ -8,7 +8,7 @@ F=$(osascript -e 'POSIX path of (choose file with prompt "选这首歌的任意�
 [[ -n "$F" ]] || exit 0
 
 DIR=$(dirname "$F"); NAME=$(basename "$F")
-SONG=$(echo "${NAME%.*}" | sed -E 's/_V[0-9]+_[0-9]{4}$//; s/_[0-9]+$//; s/@ChefDao.*$//; s/[[:space:]]+$//')
+SONG=$(echo "${NAME%.*}" | sed -E 's/_V[0-9]+_[0-9]{4}$//; s/_[0-9]+$//; s/@ChefDao.*$//; s/[[:space:]]+$//; s/[[:space:]]+(Edit|Mix|Master)$//')
 echo "开通审听：$SONG"
 
 # 每个版本只取一个格式（m4a > mp3 > wav），按版本号从小到大加

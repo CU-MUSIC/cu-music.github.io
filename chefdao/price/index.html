@@ -889,6 +889,7 @@ html.qbo-lock, html.qbo-lock body { overflow: hidden; }
 .qbo-f input:focus, .qbo-f textarea:focus { border-color: var(--green-line); }
 .qbo-plan { background: var(--green-fill); border: 0.5px solid var(--green-line); border-radius: 10px; padding: 11px 13px; font-size: 14.5px; font-weight: 600; color: var(--green-soft); line-height: 1.5; }
 .qbo-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.qbo-ferr { margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: var(--warn); }
 .qbo-err { min-height: 0; font-size: 13.5px; line-height: 1.55; color: var(--warn); }
 .qbo-err:not(:empty) { margin: 2px 0 4px; }
 .qbo-send { margin-top: 10px; }
@@ -4423,7 +4424,18 @@ function renderQuoteBuilder() {
 				+ '</span></div>';
 		}
 	}
-	mount.innerHTML = qbNoticeHtml(q) + lastHtml + progHtml + '<div class="quote-builder">' + schedHtml + capHtml + html + '</div>';
+	// 下过单的客户：顶部常驻「我的订单 · 查看进度」，不用翻聊天记录找链接（记录存在这台设备上）
+	var trackHtml = "";
+	try {
+		var mine = JSON.parse(qbLsGet("cd_tracks") || "[]") || [];
+		if (mine.length && mine[0].c) {
+			var tt = { zh: ["我的订单", "查看进度 →", "订单"], en: ["My order", "View progress →", "Order"], ko: ["내 주문", "진행 보기 →", "주문"] }[currentLang] || ["我的订单", "查看进度 →", "订单"];
+			trackHtml = '<div class="qb-last"><span class="qb-last-l">' + tt[0] + '<span class="qb-last-t">'
+				+ (mine[0].song ? '《' + qbOrderEsc(mine[0].song) + '》' : tt[2] + ' #' + qbOrderEsc(mine[0].id)) + '</span></span>'
+				+ '<span class="qb-last-a"><a class="qb-last-btn" href="/p/#' + encodeURIComponent(mine[0].c) + '">' + tt[1] + '</a></span></div>';
+		}
+	} catch (e) {}
+	mount.innerHTML = qbNoticeHtml(q) + trackHtml + lastHtml + progHtml + '<div class="quote-builder">' + schedHtml + capHtml + html + '</div>';
 
 	// 首次出现的步骤淡入；已出现过的（含每次重渲染）立刻可见，避免整块重播动画
 	var nodes = mount.querySelectorAll("[data-qstep]"), present = {};
@@ -4460,6 +4472,12 @@ function qbFocusSeq() {
 function qbFocusGo(key, back) {
 	qbFocus = key; qbFocusDir = back ? -1 : 1;
 	renderQuoteBuilder();
+	// 上一题选项多、页面滚得深；下一题短的话会停在下单器下面，客户只看到空白。换题后把题目顶部拉回视野
+	setTimeout(function () {
+		var p = document.querySelector(".qbf-prog"); if (!p) return;
+		var r = p.getBoundingClientRect(), h = window.innerHeight || 800;
+		if (r.top < 56 || r.top > h * 0.45) qbSmoothTo(r.top + (window.pageYOffset || document.documentElement.scrollTop) - 96);
+	}, 40);
 }
 function qbFocusNext() {
 	var s = qbFocusSeq(), i = s.indexOf(qbFocus);
@@ -5200,25 +5218,34 @@ setInterval(function () { if (document.visibilityState === "visible") { qbs.dirt
 
 var QBO_T = {
 	zh: { btn: "确认下单", title: "正式下单", sub: "提交后立刻生成你的专属进度链接。付款在微信里进行，我确认收款后开工。也可以直接复制报价加我微信 {w}。",
-		name: "怎么称呼你", namePh: "例如：小王", wechat: "你的微信号", wechatPh: "微信号或手机号", song: "歌名", songPh: "还没定可以不填",
+		name: "怎么称呼你", namePh: "例如：小王", wechat: "你的微信号（选填）", wechatPh: "已经加过我微信可以不填", song: "歌名", songPh: "还没定可以不填",
 		plan: "所选方案与估价", note: "备注", notePh: "想要的风格、参考曲、交付时间……", send: "提交订单", sending: "提交中…", cancel: "取消",
 		ok: "下单成功", okSub: "我会尽快加你微信。如果着急，可以直接加我：{w}", close: "好的",
 		okTrack: "这是你的专属进度链接：付款、开工、交付都会在这里更新。我会尽快加你微信确认付款。", copyLink: "复制链接", copied: "已复制 ✓", openLink: "打开进度页 →",
 		errName: "请填写称呼", errWechat: "请填写正确的微信号（5–40 位字母、数字或 _ -）", errNet: "没提交上，检查网络再试一次；或直接加微信 {w}", errRate: "提交太频繁了，稍后再试；或直接加微信 {w}" },
 	en: { btn: "Place order", title: "Place your order", sub: "You'll get a private progress link right away. Payment happens on WeChat; work starts once I confirm it. You can also add me on WeChat: {w}.",
-		name: "Your name", namePh: "e.g. Alex", wechat: "WeChat ID / email", wechatPh: "WeChat ID, phone or email", song: "Song title", songPh: "Optional",
+		name: "Your name", namePh: "e.g. Alex", wechat: "WeChat ID / email (optional)", wechatPh: "Skip if we're already connected", song: "Song title", songPh: "Optional",
 		plan: "Selected plan & estimate", note: "Notes", notePh: "Style, references, deadline…", send: "Place order", sending: "Sending…", cancel: "Cancel",
 		ok: "Order placed", okSub: "I'll be in touch soon. In a hurry? Add me on WeChat: {w}", close: "OK",
 		okTrack: "This is your private progress link: payment, work and delivery all update here. I'll add you on WeChat to confirm payment.", copyLink: "Copy link", copied: "Copied ✓", openLink: "Open progress page →",
 		errName: "Please enter your name", errWechat: "Please enter a valid WeChat ID / email (5–40 characters)", errNet: "Couldn't send. Check your connection, or add WeChat {w}", errRate: "Too many attempts, try again later, or add WeChat {w}" },
 	ko: { btn: "주문하기", title: "주문하기", sub: "제출하면 바로 전용 진행 링크가 생성됩니다. 결제는 위챗으로 진행되며 입금 확인 후 작업을 시작합니다. 위챗 {w} 로 바로 추가하셔도 됩니다.",
-		name: "이름", namePh: "예: 민수", wechat: "위챗 ID / 이메일", wechatPh: "위챗 ID, 전화번호 또는 이메일", song: "곡 제목", songPh: "선택 사항",
+		name: "이름", namePh: "예: 민수", wechat: "위챗 ID / 이메일 (선택)", wechatPh: "이미 연락 중이면 비워 두셔도 됩니다", song: "곡 제목", songPh: "선택 사항",
 		plan: "선택한 구성과 예상 견적", note: "메모", notePh: "원하는 스타일, 레퍼런스, 납기…", send: "주문하기", sending: "보내는 중…", cancel: "취소",
 		ok: "주문 완료", okSub: "곧 연락드리겠습니다. 급하시면 위챗 {w} 로 추가해 주세요.", close: "확인",
 		okTrack: "전용 진행 링크입니다. 결제, 작업, 납품 상황이 여기에서 업데이트됩니다. 위챗으로 결제 확인 연락드리겠습니다.", copyLink: "링크 복사", copied: "복사됨 ✓", openLink: "진행 페이지 열기 →",
 		errName: "이름을 입력해 주세요", errWechat: "올바른 위챗 ID / 이메일을 입력해 주세요 (5–40자)", errNet: "전송 실패. 네트워크를 확인하거나 위챗 {w} 로 연락 주세요", errRate: "요청이 너무 잦습니다. 잠시 후 다시 시도하거나 위챗 {w} 로 연락 주세요" }
 };
 function qbOrderT() { return QBO_T[currentLang] || QBO_T.zh; }
+// 下单时的工期快照：交付通道、承诺的工作日区间、加急日期、有没有音频编辑——进度页的预计日期从这里算
+function qbOrderSchedule() {
+	try {
+		var q = I18N[currentLang].quote, c = qbCompute(q), edit = false;
+		for (var e = 0; e < q.edits.length; e++) if (c.editCounts[e] > 0 && q.edits[e].price > 0) edit = true;
+		return { lane: c.fast ? "rush" : (qbHasMember() ? "member" : "std"), wdMin: qbStdMinDays(), wdMax: qbStdMaxDays(),
+			target: c.fast ? qbState.targetDate : null, edit: edit };
+	} catch (x) { return null; }
+}
 var qbOrderOpened = 0, qbOrderLast = null;
 function qbOrderEsc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 function qbOrderOpen() {
@@ -5234,7 +5261,7 @@ function qbOrderOpen() {
 		+ '<form class="qbo-sheet" role="dialog" aria-modal="true" aria-labelledby="qbo-t" novalidate onsubmit="qbOrderSend(event)">'
 		+ '<div class="qbo-grab"></div><div class="qbo-t" id="qbo-t">' + t.title + '</div><div class="qbo-sub">' + t.sub.replace("{w}", w) + '</div>'
 		+ '<label class="qbo-f"><span>' + t.name + ' *</span><input id="qbo-name" maxlength="20" autocomplete="name" placeholder="' + t.namePh + '" value="' + qbOrderEsc(saved.name) + '"></label>'
-		+ '<label class="qbo-f"><span>' + t.wechat + ' *</span><input id="qbo-wx" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + t.wechatPh + '" value="' + qbOrderEsc(saved.wechat) + '"></label>'
+		+ '<label class="qbo-f"><span>' + t.wechat + '</span><input id="qbo-wx" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + t.wechatPh + '" value="' + qbOrderEsc(saved.wechat) + '"></label>'
 		+ '<label class="qbo-f"><span>' + t.song + '</span><input id="qbo-song" maxlength="60" placeholder="' + t.songPh + '"></label>'
 		+ '<div class="qbo-f"><span>' + t.plan + '</span><div class="qbo-plan">' + qbOrderEsc(planTxt) + '</div></div>'
 		+ '<label class="qbo-f"><span>' + t.note + '</span><textarea id="qbo-note" maxlength="500" rows="3" placeholder="' + t.notePh + '"></textarea></label>'
@@ -5248,7 +5275,7 @@ function qbOrderOpen() {
 	document.documentElement.classList.add("qbo-lock");
 	requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("on"); }); });
 	qbOrderOpened = Date.now();
-	qbOrderLast = { plan: qbStatPlan(), total: total };
+	qbOrderLast = { plan: qbStatPlan(), total: total, sch: qbOrderSchedule() };
 	qbStatHit("form");
 	document.addEventListener("keydown", qbOrderKey);
 	if (!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) setTimeout(function () { var f = document.getElementById(saved.name ? "qbo-song" : "qbo-name"); if (f) f.focus(); }, 80);
@@ -5268,25 +5295,36 @@ function qbOrderClose() {
 	el.classList.remove("on");
 	setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
 }
+// 错误写在出错的输入框正下方，并把它滚到屏幕中间——写在按钮旁边，键盘一挡就看不见了
+function qbOrderFieldErr(id, msg) {
+	var old = document.querySelectorAll("#qbo .qbo-ferr");
+	for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
+	if (!id) return;
+	var f = document.getElementById(id); if (!f) return;
+	var d = document.createElement("div"); d.className = "qbo-ferr"; d.setAttribute("role", "alert"); d.textContent = msg;
+	f.parentNode.appendChild(d);
+	f.focus({ preventScroll: true });
+	setTimeout(function () { f.scrollIntoView({ block: "center", behavior: "smooth" }); }, 60);
+}
 function qbOrderSend(e) {
 	e.preventDefault();
 	var t = qbOrderT(), w = CONTACT.wechat;
 	var v = function (id) { var x = document.getElementById(id); return x ? x.value.trim() : ""; };
 	var err = document.getElementById("qbo-err"), btn = document.getElementById("qbo-send");
 	var name = v("qbo-name"), wx = v("qbo-wx");
-	if (!name) { err.textContent = t.errName; document.getElementById("qbo-name").focus(); return; }
-	if (!/^[A-Za-z0-9_\-+.@ ]{5,40}$/.test(wx)) { err.textContent = t.errWechat; document.getElementById("qbo-wx").focus(); return; }
-	err.textContent = "";
+	if (!name) return qbOrderFieldErr("qbo-name", t.errName);
+	if (wx && !/^[A-Za-z0-9_\-+.@ ]{5,40}$/.test(wx)) return qbOrderFieldErr("qbo-wx", t.errWechat);
+	qbOrderFieldErr(); err.textContent = "";
 	btn.disabled = true; btn.textContent = t.sending;
 	qbLsSet("cd_order_me", JSON.stringify({ name: name, wechat: wx }));
 	var detail = ""; try { detail = qbQuoteText(); } catch (x) {}
 	var body = JSON.stringify({ name: name, wechat: wx, song: v("qbo-song"), note: v("qbo-note"), website: v("qbo-hp"),
-		plan: qbOrderLast.plan, total: qbOrderLast.total, detail: detail, lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
+		plan: qbOrderLast.plan, total: qbOrderLast.total, sch: qbOrderLast.sch, detail: detail, lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
 	var fail = function (msg) { err.textContent = msg.replace("{w}", w); btn.disabled = false; btn.textContent = t.send; };
 	fetch(QBS_API + "/o", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
 		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
 		.then(function (j) {
-			if (!j.ok) return fail(j.status === 429 ? t.errRate : j.e === "field" ? t.errWechat : t.errNet);
+			if (!j.ok) { if (j.e === "field") { btn.disabled = false; btn.textContent = t.send; return qbOrderFieldErr("qbo-wx", t.errWechat); } return fail(j.status === 429 ? t.errRate : t.errNet); }
 			qbStatHit("ordered");
 			var sh = document.querySelector("#qbo .qbo-sheet");
 			if (!sh) return;

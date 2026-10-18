@@ -27,14 +27,15 @@ main{max-width:420px;margin:0 auto;min-height:100%;display:flex;flex-direction:c
 .song{margin-top:10px;font-size:15px;color:var(--text-2);min-height:1.6em}
 .st{margin-top:44px;font-size:52px;line-height:1.05;font-weight:700;letter-spacing:-.035em;transition:opacity .4s}
 .sub{margin-top:14px;font-size:15px;color:var(--text-2);min-height:1.6em}
-.track{margin-top:40px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.due{margin-top:2px;font-size:13px;color:var(--text-3);min-height:1.5em;font-variant-numeric:tabular-nums}
+.track{margin-top:40px;display:grid;grid-template-columns:repeat(var(--n,5),1fr);gap:6px}
 .track i{height:2px;border-radius:1px;background:var(--hair);position:relative;overflow:hidden}
 .track i.on{background:var(--text)}
 .track i.cur{background:var(--hair)}
 .track i.cur::after{content:"";position:absolute;inset:0;background:var(--text);transform-origin:left;animation:fill 2.2s cubic-bezier(.4,0,.2,1) infinite}
 @keyframes fill{0%{transform:scaleX(0);opacity:1}80%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
 @media (prefers-reduced-motion:reduce){.track i.cur::after{animation:none;transform:scaleX(.5)}}
-.labels{margin-top:10px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;font-size:11px;color:var(--text-3);letter-spacing:.02em}
+.labels{margin-top:10px;display:grid;grid-template-columns:repeat(var(--n,5),1fr);gap:6px;font-size:11px;color:var(--text-3);letter-spacing:.02em}
 .labels span.on{color:var(--text-2)}
 .off .track,.off .labels{opacity:.35}
 .cta{margin-top:44px;align-self:flex-start;font-size:15px;color:var(--text);text-decoration:none;border-bottom:1px solid var(--hair);padding-bottom:2px}
@@ -49,17 +50,29 @@ main{max-width:420px;margin:0 auto;min-height:100%;display:flex;flex-direction:c
   <div class="song" id="song"></div>
   <div class="st" id="st">读取中</div>
   <div class="sub" id="sub"></div>
-  <div class="track" id="track"><i></i><i></i><i></i><i></i><i></i></div>
-  <div class="labels" id="labels"><span>付款</span><span>准备</span><span>混音</span><span>审听</span><span>交付</span></div>
+  <div class="due" id="due"></div>
+  <div class="track" id="track"></div>
+  <div class="labels" id="labels"></div>
   <a class="cta" id="cta" href="#" target="_blank" rel="noopener" hidden></a>
 </main>
 <script>
 (() => {
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const WECHAT = 'Cookdao';
-const ST = ['待付款', '准备中', '混音中', '待审听', '已交付'];
+// 阶段由订单决定：选了音频编辑就多一步「音频编辑」
+const NAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
+const SHORT = { pay: '付款', prep: '准备', edit: '编辑', mix: '混音', review: '审听', done: '交付' };
+const OLD = ['pay', 'prep', 'mix', 'review', 'done'];
 const $ = id => document.getElementById(id);
-const track = [...document.querySelectorAll('#track i')], labels = [...document.querySelectorAll('#labels span')];
+let track = [], labels = [], built = '';
+function build(steps) {
+  const key = steps.join(); if (key === built) return; built = key;
+  $('m').style.setProperty('--n', steps.length);
+  $('track').innerHTML = steps.map(() => '<i></i>').join('');
+  $('labels').innerHTML = steps.map(k => '<span>' + SHORT[k] + '</span>').join('');
+  track = [...document.querySelectorAll('#track i')]; labels = [...document.querySelectorAll('#labels span')];
+}
+build(OLD);
 const md = (t, iso) => { const d = iso ? new Date(t + 'T00:00:00') : new Date(t); return (d.getMonth() + 1) + '月' + d.getDate() + '日'; };
 let me = false; try { me = localStorage.getItem('review:me') === '1'; } catch (e) {}
 const ua = navigator.userAgent;
@@ -67,36 +80,41 @@ const device = (/iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Andro
 const code = () => (location.hash.match(/[A-Za-z0-9]{16,32}/) || [''])[0];
 
 function msg(st, sub) {
-  $('m').className = 'off'; $('st').textContent = st; $('sub').textContent = sub; $('song').textContent = '';
+  $('m').className = 'off'; $('st').textContent = st; $('sub').textContent = sub; $('song').textContent = ''; $('due').textContent = '';
   track.forEach(el => el.className = ''); labels.forEach(el => el.classList.remove('on')); $('cta').hidden = true;
 }
 function show(d) {
-  const k = Math.max(0, Math.min(4, d.stage | 0)), t = d.times || [];
+  const steps = Array.isArray(d.steps) && d.steps.length ? d.steps : OLD; build(steps);
+  const last = steps.length - 1, k = Math.max(0, Math.min(last, d.stage | 0)), t = d.times || [], key = steps[k], dt = d.dates || {};
   const mode = (d.plan || '').split(' · ')[0];
   $('song').textContent = (d.song ? '《' + d.song + '》' : '订单 #' + d.no) + (mode ? ' · ' + mode : '');
   document.title = (d.song ? '《' + d.song + '》' : '项目') + '进度 | CU MUSIC';
   $('m').className = d.cancelled ? 'off' : '';
+  $('due').textContent = '';
   if (d.cancelled) {
     $('st').textContent = '已取消';
     $('sub').textContent = '有疑问请微信联系 ' + WECHAT;
   } else {
-    const eta = d.eta ? '预计 ' + md(d.eta, true) + ' 交付第一版' : '';
-    $('st').textContent = ST[k];
-    $('sub').textContent = [
-      '订单已确认，付款后安排排期',
-      eta ? '已收款 · ' + eta : '已收款，正在检查分轨',
-      eta || '正在混音',
-      '第一版已完成，请审听',
-      (t[4] ? md(t[4]) + ' · ' : '') + '最终文件已交付',
-    ][k];
+    const on = x => x ? md(x, true) : '';
+    const weeks = d.lane === 'rush' && d.target ? on(d.target) + ' 交付' : d.lane === 'member' ? '约一周交付' : d.wdMax ? '约' + ['一', '两', '三', '四'][Math.min(3, Math.ceil(d.wdMax / 6) - 1)] + '周交付' : '';
+    $('st').textContent = NAME[key];
+    $('sub').textContent = {
+      pay: '订单已确认，付款后安排排期' + (weeks ? ' · ' + weeks : ''),
+      prep: '已收款，正在检查素材',
+      edit: dt.edit ? '预计 ' + on(dt.edit) + ' 完成编辑' : '正在进行音频编辑',
+      mix: dt.mix ? '预计 ' + on(dt.mix) + ' 交付第一版' : '正在混音',
+      review: '第一版已完成，请审听',
+      done: (t[last] ? md(t[last]) + ' · ' : '') + (d.deliver ? '最终文件已交付' : '最终文件已通过微信发送'),
+    }[key];
+    if (key !== 'pay' && key !== 'done' && dt.done) $('due').textContent = '预计交付 ' + on(dt.done);
   }
-  const done = k === 4;
+  const done = k === last;
   track.forEach((el, i) => { el.className = i < k || (done && i === k) ? 'on' : i === k && !d.cancelled ? 'cur' : ''; });
   labels.forEach((el, i) => el.classList.toggle('on', i <= k));
-  const link = !d.cancelled && (k === 3 ? d.review : k === 4 ? d.deliver : null);
+  const link = !d.cancelled && (key === 'review' ? d.review : key === 'done' ? d.deliver : null);
   const cta = $('cta');
   cta.hidden = !link;
-  if (link) { cta.href = link; cta.textContent = k === 3 ? '审听 →' : '下载文件 →'; }
+  if (link) { cta.href = link; cta.textContent = key === 'review' ? '审听 →' : '下载文件 →'; }
 }
 let last = 0;
 async function load(view) {

@@ -66,6 +66,7 @@ document.body.innerHTML = `
   <div class="sect">我的评论<span class="n" id="n">0</span></div>
   <div class="group" id="list"></div>
   <div class="empty" id="empty">还没有评论，播放时随时写下来</div>
+  <section id="cfb" hidden><div class="sect">客户评论<span class="r" id="cfn"></span></div><div class="group" id="cfl"></div></section>
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
@@ -98,6 +99,17 @@ const open = (key, u8) => crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.subarr
 const pin = $('#pin'), dots = [...document.querySelectorAll('#dots i')];
 const focusPin = () => pin.focus({ preventScroll: true });
 $('#dots').onclick = focusPin; $('#lock').onclick = focusPin;
+// 手机键盘弹出时，iOS 不会缩小 fixed 的解锁页，密码点会被键盘挡住：跟着可见区域缩，内容整体上移
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  const fit = () => {
+    const L = document.getElementById('lock'); if (!L) return;
+    const kb = vv.height < window.innerHeight * 0.82;
+    L.classList.toggle('kb', kb);
+    L.style.bottom = kb ? 'auto' : ''; L.style.height = kb ? vv.height + 'px' : ''; L.style.top = kb ? vv.offsetTop + 'px' : '';
+  };
+  vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit);
+}
 pin.addEventListener('input', () => {
   pin.value = pin.value.replace(/\D/g, '').slice(0, 4);
   dots.forEach((d, i) => d.classList.toggle('on', i < pin.value.length));
@@ -118,6 +130,7 @@ async function tryUnlock(pw, typed) {
     await Promise.all([loadAudio(key), minWait]);
     clearTimeout(slow);
     enterApp();
+    clientFb();
   } catch (e) {
     $('#lock').classList.remove('busy');
     store.del(PW_KEY);
@@ -154,7 +167,7 @@ async function fetchVersion(i) {
   if (!urls[i]) urls[i] = (async () => {
     const r = await fetch(V[i].audio);
     const plain = await open(KEY, new Uint8Array(await r.arrayBuffer()));
-    return URL.createObjectURL(new Blob([plain], { type: 'audio/mpeg' }));
+    return URL.createObjectURL(new Blob([plain], { type: V[i].mime || 'audio/mpeg' }));
   })();
   try { return await urls[i]; } catch (e) { delete urls[i]; throw e; }
 }
@@ -372,6 +385,50 @@ function showMeta() {
   $('#mt').textContent = S.title + ' · ' + cur.ver;
 }
 let switching = 0;
+/* ───────── 刀大厨自己看：客户评论 + 从看板跳过来的时间点 ─────────
+   同一个域名下打开过看板（存了管理钥匙）的设备，才会去读客户评论；客户的设备读不到也看不到这一块 */
+async function jumpTo(ver, t) {
+  const i = V.findIndex(v => v.ver === ver);
+  if (i >= 0 && i !== vi) await switchTo(i);
+  seek(Math.max(0, t - 2));   // 提前 2 秒，听得到前后文
+  if (a.paused && !$('#play').disabled) a.play();
+  $('#wave').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+async function clientFb() {
+  const at = new URLSearchParams(location.search).get('at');   // 看板链接 ?at=V1-24
+  const m = at && /^(V\d{1,3})-(\d+(?:\.\d+)?)$/.exec(at);
+  if (m) setTimeout(() => jumpTo(m[1], +m[2]), 300);
+  const key = store.get('insights:key'); if (!key) return;
+  const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+  try {
+    const j = await (await fetch(API + '/q?days=365', { headers: { Authorization: 'Bearer ' + key } })).json();
+    if (!j.ok) return;
+    const names = new Map((j.listeners || []).map(x => [x.lid, x.name]));
+    const items = [];
+    (j.feedback || []).filter(f => f.slug === S.slug).forEach(f => {
+      let cm = []; try { cm = JSON.parse(f.comments || '[]'); } catch (e) {}
+      const who = names.get(f.lid) || ('听众 ' + f.lid);
+      cm.forEach(c => items.push({ ver: f.ver, t: c.t, m: c.m, who, sent: f.sent, at: f.updated }));
+      if (f.overall) items.push({ ver: f.ver, t: null, m: '整体：' + f.overall, who, sent: f.sent, at: f.updated });
+    });
+    if (!items.length) return;
+    // 同一条评论客户可能在两次打开里都同步过：按 版本+时间点+内容 去重
+    const seen = new Set(), list = items.sort((x, y) => x.ver.localeCompare(y.ver, 'en', { numeric: true }) || (x.t ?? 1e9) - (y.t ?? 1e9))
+      .filter(x => { const k = x.ver + '|' + x.t + '|' + x.m; if (seen.has(k)) return false; seen.add(k); return true; });
+    const box = $('#cfl'); box.innerHTML = '';
+    list.forEach(o => {
+      const row = document.createElement('div'); row.className = 'row';
+      row.innerHTML = '<button class="t press"></button><div class="m"></div>';
+      const tb = row.querySelector('.t');
+      tb.textContent = o.ver.toLowerCase() + ' ' + (o.t == null ? '—' : fmt(o.t));
+      if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
+      row.querySelector('.m').textContent = o.m;
+      box.appendChild(row);
+    });
+    $('#cfn').textContent = list.length + ' 条 · ' + [...new Set(list.map(x => x.who))].join('、');
+    $('#cfb').hidden = false;
+  } catch (e) {}
+}
 async function switchTo(i) {
   if (i === vi || !KEY) return;
   const token = ++switching, t = a.currentTime, playing = !a.paused;

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/chefdao-logo-32.png">
+<link rel="apple-touch-icon" href="/chefdao/assets/chefdao-logo-180.png">
+<title>审听 | ChefDao</title>
+<link rel="stylesheet" href="../player.css?v=33d53be0">
+<style>.boot{position:fixed;inset:0;display:grid;place-items:center;color:#74726f;font:15px -apple-system,"PingFang SC",sans-serif;background:#0e0e0f}</style>
+</head>
+<body>
+<div class="boot" id="boot">正在载入…</div>
+<script>
+// 看板上传的审听页：歌曲数据从 stats.cumusic.work 读（音频是加密的，要输密码才能听），然后交给共用播放器
+(async () => {
+  const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+  const slug = (location.hash.slice(1) || new URLSearchParams(location.search).get('s') || '').replace(/[^a-z0-9]/g, '');
+  const fail = t => { document.getElementById('boot').textContent = t; };
+  if (!slug) return fail('链接不完整，请向刀大厨要完整链接');
+  try {
+    const r = await fetch(API + '/rs?s=' + slug, { cache: 'no-store' });
+    const j = await r.json();
+    if (!j.ok) return fail('找不到这首歌，请向刀大厨确认链接');
+    j.song.versions.forEach(v => { if (v.audio.startsWith('/')) v.audio = API + v.audio; });
+    window.SONG = j.song;
+    document.title = j.song.title + ' · 审听 | ChefDao';
+    const s = document.createElement('script'); s.src = '../player.js?v=33d53be0'; document.body.appendChild(s);
+  } catch (e) { fail('网络不好，刷新再试一次'); }
+})();
+</script>
+</body>
+</html>

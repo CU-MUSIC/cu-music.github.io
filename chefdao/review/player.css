@@ -62,11 +62,16 @@ svg{display:block}
 .lock .ask{color:var(--text-2);font-size:15px;margin-top:40px;min-height:1.6em;transition:color .2s}
 .lock .ask.err{color:var(--red)}
 .dots{display:flex;gap:22px;margin-top:18px;cursor:text;padding:10px}
-.dots i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--text-2);transition:background-color .15s,border-color .15s,transform .25s var(--spring)}
+.dots i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--text-2);transition:background-color .15s,border-color .15s,transform .25s var(--spring)}
 .dots i.on{background:var(--text);border-color:var(--text);transform:scale(1.08)}
 .dots.shake{animation:shake .5s cubic-bezier(.36,.07,.19,.97)}
 @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(5px)}30%,50%,70%{transform:translateX(-10px)}40%,60%{transform:translateX(10px)}}
 .pin{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+/* 键盘弹出：封面缩小、间距收紧，保证歌名、提示和密码点都在键盘上方 */
+.lock.kb{justify-content:center;padding-top:12px;padding-bottom:12px}
+.lock.kb .art{width:72px;height:72px;border-radius:16px;margin-bottom:14px}
+.lock.kb h1{font-size:22px}
+.lock.kb .ask{margin-top:18px}
 .spin{width:20px;height:20px;border-radius:50%;border:2px solid var(--fill-3);border-top-color:var(--text);animation:spin .8s linear infinite;margin:18px auto 0;display:none}
 .lock.busy .spin{display:block}
 .lock.busy .dots{display:none}

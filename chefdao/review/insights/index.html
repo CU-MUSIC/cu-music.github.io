@@ -71,7 +71,8 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .cmh{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--text-3)}
 .cmh span.sent{color:var(--text-2)}
 .cmr{display:grid;grid-template-columns:44px 1fr;gap:8px;font-size:15px;line-height:1.55}
-.cmr b{font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-2);font-size:14px;padding-top:1px}
+.cmr b,.cmr a{font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-2);font-size:14px;padding-top:1px}
+.cmr a{color:var(--text);text-decoration:underline;text-decoration-color:var(--fill-3);text-underline-offset:3px}
 .cmr span{min-width:0;overflow-wrap:anywhere}
 
 .empty,.msg{color:var(--text-3);font-size:15px;padding:24px 0;text-align:center}
@@ -81,6 +82,28 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .login p{color:var(--text-3);font-size:14px}
 
 /* 顶部三个分区：审听 / 价格页 / 订单 */
+.upbtn{display:block;width:100%;margin:-8px 0 22px;padding:12px;border-radius:12px;background:var(--fill);color:var(--text);font-size:16px;font-weight:600}
+.upbtn:active{background:var(--fill-2)}
+.up{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55)}
+.up-s{width:100%;max-width:520px;max-height:92vh;max-height:92dvh;overflow-y:auto;background:#161617;border-radius:18px 18px 0 0;
+  padding:18px max(20px,env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:14px}
+@media (min-width:600px){.up{align-items:center}.up-s{border-radius:18px}}
+.up-h{display:flex;justify-content:space-between;align-items:center;font-size:20px;font-weight:700}
+.up-h button{font-size:15px;color:var(--text-2);font-weight:400}
+.up label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text-2)}
+.up select,.up input[type=text],.up input[type=tel]{background:var(--fill-2);border-radius:10px;padding:11px 12px;font-size:16px;color:var(--text);border:0;width:100%}
+.up .file{background:var(--fill);border:1px dashed var(--fill-3);border-radius:12px;padding:18px;text-align:center;color:var(--text-2);font-size:15px;cursor:pointer}
+.up .file b{color:var(--text);display:block;margin-bottom:2px;overflow-wrap:anywhere}
+.up .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.up .go{background:var(--pearl);color:var(--ink);border-radius:12px;padding:13px;font-size:16px;font-weight:600}
+.up .go:disabled{opacity:.45}
+.up .msg2{font-size:14px;color:var(--text-2);min-height:1.4em;line-height:1.6}
+.up .msg2.err{color:var(--red)}
+.up .bar2{height:4px;border-radius:2px;background:var(--fill-2);overflow:hidden}
+.up .bar2 i{display:block;height:100%;width:0;background:var(--text);transition:width .25s}
+.up .done{background:var(--fill);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.up .done code{font-size:13px;overflow-wrap:anywhere;color:var(--text)}
+.up .done button{align-self:flex-start;background:var(--fill-2);border-radius:999px;padding:6px 14px;font-size:14px}
 .tabs{display:flex;gap:4px;background:var(--fill);border-radius:12px;padding:3px;margin-bottom:22px}
 .tabs button{flex:1;font-size:15px;padding:8px 6px;border-radius:9px;color:var(--text-2);position:relative}
 .tabs button.on{background:var(--fill-3);color:var(--text);font-weight:600}
@@ -113,12 +136,21 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .stg{margin-top:12px;background:var(--fill);border-radius:14px;padding:12px 12px 14px}
 .stg-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:17px}
 .stg-h b{font-weight:700}
+button.av{cursor:pointer;padding:0}
+.ln{cursor:pointer}
+.ln .lid{font-size:12px;font-weight:500;color:var(--text-3);margin-left:4px}
+.ln .lid.add{opacity:.0;transition:opacity .2s}
+.item:hover .ln .lid.add,.ln:focus .lid.add{opacity:1}
+@media (hover:none){.ln .lid.add{opacity:.6}}
+.stg-h em{font-style:normal;font-size:13px;font-weight:500;color:var(--text-2);margin-left:6px}
+.stg-h em.soon{color:var(--text)}
+.stg-h em.late{color:var(--red)}
 .stg-h span{font-size:13px;color:var(--text-3);text-align:right}
-.segs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:10px}
+.segs{display:grid;grid-template-columns:repeat(var(--n,5),1fr);gap:4px;margin-top:10px}
 .segs i{height:3px;border-radius:2px;background:var(--fill-3)}
 .segs i.on{background:var(--text)}
 .segs i.cur{background:linear-gradient(90deg,var(--text) 50%,var(--fill-3) 50%)}
-.segl{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:5px;font-size:11px;color:var(--text-3)}
+.segl{display:grid;grid-template-columns:repeat(var(--n,5),1fr);gap:4px;margin-top:5px;font-size:11px;color:var(--text-3)}
 .segl span.on{color:var(--text-2)}
 .stg-t{margin-top:8px;font-size:13px;color:var(--text-3);line-height:1.6}
 .link{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--text-2)}
@@ -162,11 +194,17 @@ let KEY = store.get('insights:key');
 let days = +store.get('insights:days') || 30, song = '', data = null, pdata = null;
 let tab = store.get('insights:tab') || 'listen', ofilter = '';
 const TABS = [['listen', '审听'], ['price', '价格页'], ['orders', '订单']];
-// 订单 5 个阶段（和客户进度页 cumusic.work/p/ 一致）；next = 推进按钮上写的动作
-const STAGES = ['待付款', '准备中', '混音中', '待审听', '已交付'];
-const NEXT = ['已收款，开始准备', '开始混音', '发第一版审听', '已交付'];
-const OFILTERS = [['pay', '待付款', o => !o.cancelled && !(o.stage > 0)], ['doing', '进行中', o => !o.cancelled && o.stage >= 1 && o.stage <= 3],
-  ['done', '已交付', o => !o.cancelled && o.stage === 4], ['cancel', '已取消', o => !!o.cancelled]];
+// 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
+const SNAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
+// 推进按钮上写的是「进入这一步」的动作
+const SGO = { prep: '已收款，开始准备', edit: '开始音频编辑', mix: '开始混音', review: '发第一版审听', done: '已交付' };
+const OLDSTEPS = ['pay', 'prep', 'mix', 'review', 'done'];
+const stepsOf = o => { try { const x = JSON.parse(o.steps || 'null'); if (Array.isArray(x) && x.length) return x; } catch (e) {} return OLDSTEPS; };
+const datesOf = o => { let d = {}; try { d = JSON.parse(o.dates || '{}') || {}; } catch (e) {} if (o.eta && !d.mix) d.mix = o.eta; return d; };
+const isDone = o => (o.stage || 0) >= stepsOf(o).length - 1;
+const LANE = { std: '标准', member: '会员', rush: '加急' };
+const OFILTERS = [['pay', '待付款', o => !o.cancelled && !(o.stage > 0)], ['doing', '进行中', o => !o.cancelled && o.stage >= 1 && !isDone(o)],
+  ['done', '已交付', o => !o.cancelled && o.stage > 0 && isDone(o)], ['cancel', '已取消', o => !!o.cancelled]];
 const TRACK = 'https://cumusic.work/p/#';
 
 function login(err) {
@@ -244,11 +282,18 @@ function verBlock(x) {
     ${x.fb && x.fb.comments.length && x.dur ? '<div class="pins">' + x.fb.comments.map(c => `<i style="left:${Math.min(100, c.t / x.dur * 100)}%"></i>`).join('') + '</div>' : ''}
     <div class="facts">${facts.join(' · ')}${rep}</div>${cmts(x)}</div>`;
 }
+// 点评论时间点：打开审听页、切到那个版本、跳到那一秒（?at=V1-24）
+function atUrl(slug, ver, t) {
+  const hit = pdata && (pdata.songs || []).find(x => x.slug === slug && x.url);
+  const q = '?at=' + ver + '-' + Math.round(t * 10) / 10;
+  if (hit) { const [base, h] = hit.url.split('#'); return base + q + '#' + h; }
+  return 'https://cumusic.work/chefdao/review/' + slug + '/' + q;
+}
 // 客户写的评论：时间点 + 内容，整体感觉放最后
 function cmts(x) {
   const f = x.fb; if (!f || (!f.comments.length && !f.overall)) return x.notes ? '<div class="facts">写了 <b>' + x.notes + '</b> 条评论</div>' : '';
   return `<div class="cm"><div class="cmh">评论 ${f.comments.length} 条<span class="${f.sent ? 'sent' : ''}">${f.sent ? '已发送给你' : '还没点发送'}</span></div>
-    ${f.comments.map(c => `<div class="cmr"><b>${fmt(c.t)}</b><span>${esc(c.m)}</span></div>`).join('')}
+    ${f.comments.map(c => `<div class="cmr"><a href="${esc(atUrl(x.slug, x.ver, c.t))}" target="_blank" rel="noopener" title="在审听页打开这一处">${fmt(c.t)}</a><span>${esc(c.m)}</span></div>`).join('')}
     ${f.overall ? `<div class="cmr"><b>整体</b><span>${esc(f.overall)}</span></div>` : ''}</div>`;
 }
 
@@ -259,7 +304,8 @@ function render() {
   const head = `<div class="top"><div><div class="eyebrow">ChefDao 审听 · 价格页</div><h1>Insights</h1></div>
     ${tab === 'orders' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
-  root.innerHTML = head + (tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : renderListen());
+  root.innerHTML = head + (tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
+  const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
   document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
   const sg = document.getElementById('seg');
@@ -272,18 +318,28 @@ function render() {
     const o = pdata.orders.find(x => x.id === +b.dataset.id); if (!o) return;
     const a = b.dataset.act, k = o.stage || 0;
     if (a === 'next') stage(o, { stage: k + 1 });
-    else if (a === 'prev' && confirm('退回到「' + STAGES[k - 1] + '」？')) stage(o, { stage: k - 1 });
+    else if (a === 'prev' && confirm('退回到「' + SNAME[stepsOf(o)[k - 1]] + '」？')) stage(o, { stage: k - 1 });
+    else if (a === 'replan' && confirm('按下单时的工期，从今天起重新排三个预计日期？')) stage(o, { replan: true });
     else if (a === 'cancel' && confirm('取消这个订单？客户进度页会显示「已取消」')) stage(o, { cancel: true });
     else if (a === 'restore') stage(o, { cancel: false });
     else if (a === 'make') stage(o, {});
   });
+  root.querySelectorAll('[data-f-date]').forEach(el => el.onchange = () => {
+    const o = pdata.orders.find(x => x.id === +el.dataset.id); if (!o) return;
+    stage(o, { dates: { [el.dataset.fDate]: el.value || '' } });
+  });
   root.querySelectorAll('[data-f-eta],[data-f-review],[data-f-deliver]').forEach(el => el.onchange = () => {
     const o = pdata.orders.find(x => x.id === +el.dataset.id); if (!o) return;
     const k = el.dataset.fEta !== undefined ? 'eta' : el.dataset.fReview !== undefined ? 'review' : 'deliver';
-    const v = el.value.trim();
+    let v = el.value.trim();
+    if (v === '__other') {   // 海外客户可以直接给 Samply 链接
+      v = (prompt('粘贴审听链接（例如 Samply）') || '').trim();
+      if (!v) { el.value = o.review_url || ''; return; }
+    }
     if (v && k !== 'eta' && !/^https?:\/\/\S+$/.test(v)) { alert('链接要以 https:// 开头'); return; }
     stage(o, { [k]: v });
   });
+  root.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => editNote(b.dataset.ln));
   root.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {
     const done = () => { b.textContent = '已复制'; setTimeout(() => { b.textContent = '复制'; }, 1500); };
     navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copy).then(done, done) : done();
@@ -314,8 +370,8 @@ function renderListen() {
   <div class="sect">最近动态<span>${feed.length ? '共 ' + groups.size + ' 次打开' : ''}</span></div>
   <div class="feed">${feed.length ? feed.map(g => {
     const x = g[0], last = Math.max(...g.map(y => y.updated));
-    return `<div class="item"><div class="av">${esc(x.lid)}</div><div class="body">
-      <div class="who"><b>听众 ${esc(x.lid)}</b><time>${when(last, now)}</time></div>
+    return `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
+      <div class="who">${who(x.lid, '听众')}<time>${when(last, now)}</time></div>
       <div class="dev">${esc(x.device || '设备')}${x.visit > 1 ? ' · 第 ' + x.visit + ' 次打开' : ''}${x.country && x.country !== 'CN' ? ' · ' + esc(x.country) : ''}</div>
       ${g.map(verBlock).join('')}</div></div>`;
   }).join('') : '<div class="empty">这段时间还没人听</div>'}</div>`;
@@ -419,8 +475,8 @@ function renderPrice() {
     <div class="rank">${planList.length ? rank(planList, 8) : '<div class="empty">还没人动过选项</div>'}</div></div>
   <div class="blk"><div class="sect">来源</div><div class="rank">${rank(srcList, 6)}</div></div>
   <div class="sect">最近访问<span>${recent.length} 条</span></div>
-  <div class="feed">${recent.map(x => `<div class="item"><div class="av">${esc(x.lid)}</div><div class="body">
-    <div class="who"><b>访客 ${esc(x.lid)}</b><time>${when(x.updated, now)}</time></div>
+  <div class="feed">${recent.map(x => `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
+    <div class="who">${who(x.lid, '访客')}<time>${when(x.updated, now)}</time></div>
     <div class="dev">${esc(x.device || '设备')}${x.visit > 1 ? ' · 第 ' + x.visit + ' 次打开' : ''} · 停留 ${mins(x.dur)} · ${esc(srcOf(x))}${x.country && x.country !== 'CN' ? ' · ' + esc(x.country) : ''}</div>
     ${x.plan && (x.picked || x.quoted) ? `<div class="ver"><div class="t"><b>${esc(x.plan)}</b><span>${x.total != null ? money(x.total, x.cur) : '—'}</span></div>
       <div>${x.quoted ? '<span class="tag">看到报价</span>' : ''}${x.copy ? '<span class="tag hot">复制报价' + (x.copy > 1 ? ' ×' + x.copy : '') + '</span>' : ''}${x.contact ? '<span class="tag hot">点联系</span>' : ''}${x.share ? '<span class="tag">分享</span>' : ''}${x.form && !x.ordered ? '<span class="tag">打开表单没提交</span>' : ''}${x.ordered ? '<span class="tag hot">提交需求</span>' : ''}</div></div>`
@@ -432,18 +488,37 @@ function renderPrice() {
 // 审听页下拉：清单来自 /pq 的 songs（sync-songs.mjs 同步），再补上收听记录里出现过的歌
 const REVIEW = 'https://cumusic.work/chefdao/review/';
 function songOpts(cur) {
-  const m = new Map();
-  (pdata.songs || []).forEach(x => m.set(x.slug, x.title || x.slug));
-  (data ? data.rows : []).forEach(x => { if (!m.has(x.slug)) m.set(x.slug, x.title || x.slug); });
-  const curSlug = cur && cur.startsWith(REVIEW) ? cur.slice(REVIEW.length).replace(/\/.*$/, '') : '';
-  let h = '<option value="">— 选择审听页 —</option>' + [...m].map(([k, t]) => `<option value="${esc(REVIEW + k + '/')}"${k === curSlug ? ' selected' : ''}>《${esc(t)}》 ${esc(k)}</option>`).join('');
-  if (cur && !m.has(curSlug)) h += `<option value="${esc(cur)}" selected>${esc(cur)}</option>`;
+  const m = new Map();   // slug → [歌名, 链接]；看板上传的歌链接是 review/s/#slug
+  (pdata.songs || []).forEach(x => m.set(x.slug, [x.title || x.slug, x.url || REVIEW + x.slug + '/']));
+  (data ? data.rows : []).forEach(x => { if (!m.has(x.slug)) m.set(x.slug, [x.title || x.slug, REVIEW + x.slug + '/']); });
+  const known = [...m.values()].some(([, u]) => u === cur);
+  let h = '<option value="">— 选择审听页 —</option>' + [...m].map(([k, [t, u]]) => `<option value="${esc(u)}"${u === cur ? ' selected' : ''}>《${esc(t)}》 ${esc(k)}</option>`).join('');
+  if (cur && !known) h += `<option value="${esc(cur)}" selected>${esc(/samply/i.test(cur) ? 'Samply · ' + cur.replace(/^https?:\/\//, '') : cur)}</option>`;
+  h += '<option value="__other">其他链接（Samply 等）…</option>';
   return h;
 }
 function stepTimes(o) {
   let t = []; try { t = JSON.parse(o.times || '[]') || []; } catch (e) {}
   const md = x => { const d = new Date(x); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.toTimeString().slice(0, 5); };
-  return STAGES.map((n, i) => t[i] && i <= (o.stage || 0) ? n + ' ' + md(t[i]) : '').filter(Boolean).join(' · ');
+  return stepsOf(o).map((n, i) => t[i] && i <= (o.stage || 0) ? SNAME[n] + ' ' + md(t[i]) : '').filter(Boolean).join(' · ');
+}
+// 听众备注：匿名编号旁边显示你写的名字；点头像或名字改
+function lnote(lid) { return ((data && data.listeners) || []).find(x => x.lid === lid) || null; }
+function who(lid, kind) {
+  const n = lnote(lid);
+  return `<b class="ln" data-ln="${esc(lid)}">${n && n.name ? esc(n.name) + ' <span class="lid">' + esc(lid) + '</span>' : kind + ' ' + esc(lid) + ' <span class="lid add">＋备注</span>'}</b>`;
+}
+async function editNote(lid) {
+  const n = lnote(lid) || { lid, name: '' };
+  const v = prompt('给 ' + lid + ' 写备注（例如：小王 · 舞步主唱）。清空就是删除', n.name || '');
+  if (v === null) return;
+  const name = v.trim().slice(0, 30);
+  try {
+    const r = await fetch(API + '/lnote', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ lid, name }) });
+    const j = await r.json(); if (!j.ok) throw new Error();
+    data.listeners = (data.listeners || []).filter(x => x.lid !== lid).concat(name ? [{ lid, name }] : []);
+    render();
+  } catch (e) { alert('没存上，检查网络再试'); }
 }
 function renderOrders() {
   if (!pdata) return '<div class="msg">订单读不到（接口还没部署？）</div>';
@@ -453,30 +528,36 @@ function renderOrders() {
   return `<div class="chips" id="ochips"><button data-f="" class="${f ? '' : 'on'}">全部 ${all.length}</button>${OFILTERS.map(([k, t, fn]) =>
       `<button data-f="${k}" class="${ofilter === k ? 'on' : ''}">${t} ${all.filter(fn).length}</button>`).join('')}</div>
   <div class="feed">${list.length ? list.map(o => {
-    const k = o.stage || 0, url = o.code ? TRACK + o.code : '';
+    const st = stepsOf(o), L = st.length - 1, k = Math.min(o.stage || 0, L), url = o.code ? TRACK + o.code : '', dt = datesOf(o);
+    const due = dt.done && !o.cancelled && k < L ? Math.round((new Date(dt.done + 'T00:00:00') - new Date(new Date().toDateString())) / 864e5) : null;
     return `<div class="order${o.cancelled ? ' cxl' : ''}">
     <div class="who"><b>#${o.id} ${esc(o.name)}${o.song ? ' ·《' + esc(o.song) + '》' : ''}</b><time>${when(o.created, now)}</time></div>
-    <div class="wx">微信 <b>${esc(o.wechat)}</b><button data-copy="${esc(o.wechat)}">复制</button></div>
+    <div class="wx">${o.wechat ? `微信 <b>${esc(o.wechat)}</b><button data-copy="${esc(o.wechat)}">复制</button>` : '微信没填（客户说已经加过你）'}</div>
     <div class="plan"><b>${esc(o.plan || '—')}</b>${o.total != null ? ' · <b>' + money(o.total, o.cur) + '</b>' : ''}</div>
     ${o.note ? `<div class="note">${esc(o.note)}</div>` : ''}
-    ${o.detail ? `<details data-id="${o.id}"><summary>完整报价单${o.lid ? ' · 访客 ' + esc(o.lid) : ''}${o.lang !== 'zh' ? ' · ' + esc(o.lang) : ''}${o.pushed ? '' : ' · 未推送'}</summary><pre>${esc(o.detail)}</pre></details>` : ''}
+    ${o.detail ? `<details data-id="${o.id}"><summary>完整报价单${o.lid ? ' · ' + (lnote(o.lid) && lnote(o.lid).name ? esc(lnote(o.lid).name) + ' ' : '访客 ') + esc(o.lid) : ''}${o.lang !== 'zh' ? ' · ' + esc(o.lang) : ''}${o.pushed ? '' : ' · 未推送'}</summary><pre>${esc(o.detail)}</pre></details>` : ''}
     ${o.code ? `<div class="stg">
-      <div class="stg-h"><b>${o.cancelled ? '已取消' : STAGES[k]}</b><span>${o.last_view ? '客户最近查看 ' + when(o.last_view, now) + ' · 共 ' + o.views + ' 次' : '客户还没打开过'}</span></div>
-      <div class="segs">${STAGES.map((n, i) => `<i class="${o.cancelled ? '' : i < k || (k === 4 && i === 4) ? 'on' : i === k ? 'cur' : ''}"></i>`).join('')}</div>
-      <div class="segl">${STAGES.map((n, i) => `<span class="${i <= k ? 'on' : ''}">${n}</span>`).join('')}</div>
+      <div class="stg-h"><b>${o.cancelled ? '已取消' : SNAME[st[k]]}${due !== null ? ` <em class="${due < 0 ? 'late' : due <= 2 ? 'soon' : ''}">${due < 0 ? '已超期 ' + -due + ' 天' : due === 0 ? '今天交付' : '距交付 ' + due + ' 天'}</em>` : ''}</b><span>${o.last_view ? '客户最近查看 ' + when(o.last_view, now) + ' · 共 ' + o.views + ' 次' : '客户还没打开过'}</span></div>
+      <div class="segs" style="--n:${st.length}">${st.map((n, i) => `<i class="${o.cancelled ? '' : i < k || (k === L && i === L) ? 'on' : i === k ? 'cur' : ''}"></i>`).join('')}</div>
+      <div class="segl" style="--n:${st.length}">${st.map((n, i) => `<span class="${i <= k ? 'on' : ''}">${SNAME[n]}</span>`).join('')}</div>
+      ${o.lane ? `<div class="stg-t">${LANE[o.lane] || ''}${o.lane === 'rush' && o.target ? ' · 指定 ' + esc(o.target) : o.wd_max ? ' · ' + o.wd_min + '–' + o.wd_max + ' 个工作日' : ''}${st.includes('edit') ? ' · 含音频编辑' : ' · 不含音频编辑'}</div>` : ''}
       ${stepTimes(o) ? `<div class="stg-t">${stepTimes(o)}</div>` : ''}
       <div class="link"><span>${esc(url.replace('https://', ''))}</span><button data-copy="${esc(url)}">复制</button><a href="${esc(url)}" target="_blank" rel="noopener">打开</a></div>
       <div class="flds">
-        <label>预计交第一版<input type="date" data-f-eta data-id="${o.id}" value="${esc(o.eta || '')}"></label>
+        ${st.includes('edit') ? `<label>预计编辑完成<input type="date" data-f-date="edit" data-id="${o.id}" value="${esc(dt.edit || '')}"></label>` : ''}
+        <label>预计交第一版<input type="date" data-f-date="mix" data-id="${o.id}" value="${esc(dt.mix || '')}"></label>
+        <label>预计最终交付<input type="date" data-f-date="done" data-id="${o.id}" value="${esc(dt.done || '')}"></label>
         <label>审听页<select data-f-review data-id="${o.id}">${songOpts(o.review_url)}</select></label>
         <label>交付链接<input type="url" inputmode="url" data-f-deliver data-id="${o.id}" placeholder="网盘 / 下载地址" value="${esc(o.deliver_url || '')}"></label>
       </div>
       <div class="acts">${o.cancelled ? `<button class="go" data-act="restore" data-id="${o.id}">恢复订单</button>`
-        : (k < 4 ? `<button class="go" data-act="next" data-id="${o.id}">下一步：${NEXT[k]} →</button>` : '')
+        : (k < L ? `<button class="go" data-act="next" data-id="${o.id}">下一步：${SGO[st[k + 1]]} →</button>` : '')
           + (k > 0 ? `<button data-act="prev" data-id="${o.id}">退回</button>` : '')
-          + (k < 4 ? `<button data-act="cancel" data-id="${o.id}">取消</button>` : '')}</div>
-      ${!o.cancelled && k === 3 && !o.review_url ? '<div class="warn">还没选审听页，客户页不会出现「审听 →」</div>' : ''}
-      ${!o.cancelled && k === 4 && !o.deliver_url ? '<div class="warn">还没填交付链接，客户页不会出现「下载文件 →」</div>' : ''}
+          + (k > 0 && k < L ? `<button data-act="replan" data-id="${o.id}">重排日期</button>` : '')
+          + (k < L ? `<button data-act="cancel" data-id="${o.id}">取消</button>` : '')}</div>
+      ${!o.cancelled && k === 0 ? '<div class="warn" style="opacity:.7">点「已收款」后，按下单时的工期自动排出预计日期，之后可以改</div>' : ''}
+      ${!o.cancelled && st[k] === 'review' && !o.review_url ? '<div class="warn">还没选审听页，客户页不会出现「审听 →」</div>' : ''}
+      ${!o.cancelled && k === L && !o.deliver_url ? '<div class="warn">没填交付链接：客户页显示「最终文件已通过微信发送」</div>' : ''}
     </div>` : `<div class="acts"><button class="go" data-act="make" data-id="${o.id}">生成进度链接</button></div>`}
   </div>`;
   }).join('') : '<div class="empty">' + (all.length ? '这个状态下没有订单' : '还没有人下单') + '</div>'}</div>`;
@@ -490,9 +571,138 @@ async function stage(o, body) {
   try {
     const r = await fetch(API + '/ostage', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: o.id, ...body }) });
     const j = await r.json(); if (!j.ok) throw new Error(j.e || '');
-    Object.assign(o, { code: j.code, stage: j.stage, cancelled: j.cancelled, times: j.times, eta: j.eta, review_url: j.review_url, deliver_url: j.deliver_url });
+    Object.assign(o, { code: j.code, stage: j.stage, cancelled: j.cancelled, times: j.times, eta: j.eta, review_url: j.review_url, deliver_url: j.deliver_url,
+      steps: j.steps || o.steps, dates: j.dates || o.dates });
     render();
   } catch (e) { Object.assign(o, keep); render(); alert(e.message === 'url' ? '链接格式不对，要以 https:// 开头' : '没改成功，检查网络再试'); }
+}
+
+// ── 上传审听版本：浏览器里分析波形、（WAV 先转 MP3）、用审听密码加密，再传到 stats.cumusic.work ──
+let upBusy = false;
+async function api(path, opt = {}) {
+  const r = await fetch(API + path, { ...opt, headers: { Authorization: 'Bearer ' + KEY, ...(opt.headers || {}) } });
+  const j = await r.json().catch(() => ({ ok: false }));
+  if (!j.ok) throw new Error(j.e || ('HTTP ' + r.status));
+  return j;
+}
+const b64e = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+function nameInfo(fn) {   // 舞步 Mix @ChefDao_V3_1022.m4a → 歌名 / 版本 / 日期
+  const raw = fn.replace(/\.[^.]+$/, '');
+  const m = raw.match(/_V(\d+)_(\d{2})(\d{2})$/);
+  const title = raw.replace(/_V\d+_\d{4}$/, '').replace(/_\d+$/, '').replace(/@ChefDao.*$/i, '').trim().replace(/\s+(Edit|Mix|Master)$/i, '').trim();
+  const y = new Date().getFullYear();
+  return { raw, title, ver: m ? 'V' + (+m[1]) : '', date: m ? `${y}-${m[2]}-${m[3]}` : '' };
+}
+async function openUpload() {
+  if (document.getElementById('up')) return;
+  const el = document.createElement('div'); el.className = 'up'; el.id = 'up';
+  el.innerHTML = `<div class="up-s"><div class="up-h">上传审听版本<button type="button" id="upX">关闭</button></div>
+    <label>歌<select id="upSong"><option value="">读取中…</option></select></label>
+    <div id="upNew" class="row" hidden><label>歌名<input type="text" id="upTitle" autocomplete="off"></label><label>审听密码（4 位）<input type="tel" id="upPass" maxlength="4" value="1688"></label></div>
+    <div class="file" id="upPick"><b id="upFn">选择 bounce</b>m4a / mp3 / wav，手机上可以直接从 iCloud 选</div>
+    <input type="file" id="upFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden>
+    <div class="row"><label>版本<input type="text" id="upVer" placeholder="自动"></label><label>日期<input type="text" id="upDate" placeholder="今天"></label></div>
+    <div class="bar2"><i id="upBar"></i></div><div class="msg2" id="upMsg"></div>
+    <button type="button" class="go" id="upGo" disabled>上传</button><div id="upDone"></div></div>`;
+  document.body.appendChild(el);
+  const $u = id => document.getElementById(id);
+  const close = () => { if (!upBusy) el.remove(); };
+  $u('upX').onclick = close; el.onclick = e => { if (e.target === el) close(); };
+  let list = [], file = null;
+  const syncNew = () => { $u('upNew').hidden = $u('upSong').value !== '__new'; ready(); };
+  const ready = () => { $u('upGo').disabled = upBusy || !file || !$u('upSong').value || ($u('upSong').value === '__new' && !$u('upTitle').value.trim()); };
+  const fill = sel => {
+    $u('upSong').innerHTML = list.map(s => `<option value="${esc(s.slug)}">《${esc(s.title)}》 · 已有 ${s.versions.length} 版</option>`).join('') + '<option value="__new">＋ 新歌</option>';
+    $u('upSong').value = sel || (list.length ? list[0].slug : '__new');
+  };
+  try { list = (await api('/radm/list')).songs; } catch (e) {}
+  fill();
+  syncNew();
+  $u('upSong').onchange = syncNew; $u('upTitle').oninput = ready;
+  $u('upPick').onclick = () => $u('upFile').click();
+  $u('upFile').onchange = () => {
+    file = $u('upFile').files[0] || null; if (!file) return ready();
+    const n = nameInfo(file.name);
+    $u('upFn').textContent = file.name + ' · ' + (file.size / 1048576).toFixed(1) + ' MB';
+    if (n.ver) $u('upVer').value = n.ver;
+    if (n.date) $u('upDate').value = n.date;
+    const hit = list.find(s => s.title === n.title);
+    if (hit) $u('upSong').value = hit.slug; else if (n.title && $u('upSong').value === '__new') $u('upTitle').value = n.title;
+    else if (n.title && !hit) { $u('upSong').value = '__new'; $u('upTitle').value = n.title; }
+    syncNew();
+  };
+  $u('upGo').onclick = async () => {
+    const msg = (t, err) => { $u('upMsg').textContent = t; $u('upMsg').className = 'msg2' + (err ? ' err' : ''); };
+    const bar = p => { $u('upBar').style.width = Math.round(p * 100) + '%'; };
+    upBusy = true; ready(); $u('upDone').innerHTML = '';
+    try {
+      const pick = $u('upSong').value;
+      const prep = await api('/radm/prep', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pick === '__new' ? { title: $u('upTitle').value.trim(), pass: $u('upPass').value.trim() } : { slug: pick }) });
+      msg('读取文件…'); bar(.05);
+      const buf = await file.arrayBuffer();
+      msg('分析波形…'); bar(.12);
+      const AC = window.AudioContext || window.webkitAudioContext, ac = new AC();
+      const au = await new Promise((ok, no) => { const p = ac.decodeAudioData(buf.slice(0), ok, no); if (p && p.catch) p.catch(no); });
+      const N = 400, ch = [...Array(au.numberOfChannels)].map((_, i) => au.getChannelData(i)), len = au.length, pk = [];
+      for (let i = 0; i < N; i++) { let mx = 0; const a = Math.floor(i * len / N), b = Math.floor((i + 1) * len / N);
+        for (const c of ch) for (let j = a; j < b; j += 2) { const v = c[j] < 0 ? -c[j] : c[j]; if (v > mx) mx = v; } pk.push(mx); }
+      const pm = Math.max(...pk) || 1, peaks = pk.map(v => Math.round(v / pm * 100) / 100);
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      let bytes, mime;
+      if (ext === 'mp3') { bytes = new Uint8Array(buf); mime = 'audio/mpeg'; }
+      else if (['m4a', 'mp4', 'aac'].includes(ext)) { bytes = new Uint8Array(buf); mime = 'audio/mp4'; }
+      else {   // WAV / AIFF：转成 MP3 192k，不然太大
+        msg('转成 MP3…');
+        const toI16 = f => { const o = new Int16Array(f.length); for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); o[i] = v < 0 ? v * 0x8000 : v * 0x7fff; } return o; };
+        const L = toI16(ch[0]), R = ch[1] ? toI16(ch[1]) : null;
+        bytes = await new Promise((ok, no) => {
+          const w = new Worker('../enc/mp3.js');
+          w.onmessage = e => { if (e.data.done) { w.terminate(); ok(e.data.mp3); } else bar(.15 + e.data.p * .45); };
+          w.onerror = e => { w.terminate(); no(new Error('mp3')); };
+          w.postMessage({ id: 1, L, R, rate: au.sampleRate, kbps: 192 }, R ? [L.buffer, R.buffer] : [L.buffer]);
+        });
+        mime = 'audio/mpeg';
+      }
+      if (ac.close) ac.close();
+      msg('加密…'); bar(.62);
+      const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(prep.pass), 'PBKDF2', false, ['deriveKey']);
+      const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64d(prep.salt), iterations: prep.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+      const seal = async u8 => { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, u8));
+        const o = new Uint8Array(12 + ct.length); o.set(iv); o.set(ct, 12); return o; };
+      const blob = await seal(bytes);
+      if (blob.length > 25 * 1048576) throw new Error('文件太大（超过 25MB），请导出 m4a 或 mp3 再传');
+      const ver = ($u('upVer').value.trim().toUpperCase().replace(/^(\d)/, 'V$1')) || prep.next;
+      if (!/^V\d{1,3}$/.test(ver)) throw new Error('版本要写成 V1、V2 这样');
+      const fname = ver.toLowerCase() + '-' + [...crypto.getRandomValues(new Uint8Array(8))].map(b => 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 55]).join('') + '.bin';
+      msg('上传…'); bar(.7);
+      await new Promise((ok, no) => {   // 用 XHR 才有上传进度
+        const x = new XMLHttpRequest(); x.open('PUT', API + '/radm/audio?s=' + prep.slug + '&f=' + fname);
+        x.setRequestHeader('Authorization', 'Bearer ' + KEY); x.setRequestHeader('Content-Type', 'application/octet-stream');
+        x.upload.onprogress = e => { if (e.lengthComputable) bar(.7 + e.loaded / e.total * .27); };
+        x.onload = () => x.status === 200 ? ok() : no(new Error(x.status === 413 ? '文件太大（超过 25MB）' : '上传失败 ' + x.status));
+        x.onerror = () => no(new Error('网络断了，再试一次')); x.send(blob);
+      });
+      const n = nameInfo(file.name), date = /^\d{4}-\d{2}-\d{2}$/.test($u('upDate').value.trim()) ? $u('upDate').value.trim() : new Date().toLocaleDateString('sv-SE');
+      const te = new TextEncoder();
+      const res = await api('/radm/commit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        slug: prep.slug, title: prep.title, pass: prep.pass, salt: prep.salt,
+        chk: prep.fresh ? b64e(await seal(te.encode('ok'))) : undefined,
+        token: prep.push ? b64e(await seal(te.encode(prep.push))) : '', wkey: b64e(await seal(te.encode(prep.wk))),
+        version: { ver, file: n.raw, date, duration: Math.round(au.duration * 100) / 100, peaks, audio: fname, mime } }) });
+      bar(1); msg('');
+      $u('upDone').innerHTML = `<div class="done"><b>《${esc(prep.title)}》${esc(ver)} 已上线</b><code>${esc(res.url)}</code><div>密码 <b>${esc(prep.pass)}</b></div>
+        <button type="button" id="upCopy">复制链接和密码</button><div style="font-size:13px;color:var(--text-3)">到「订单」里把审听页选成这首歌，再推进到「待审听」</div></div>`;
+      $u('upCopy').onclick = () => { const t = '《' + prep.title + '》' + ver + ' 审听：' + res.url + '  密码 ' + prep.pass;
+        const done = () => { $u('upCopy').textContent = '已复制'; }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
+      file = null; $u('upFn').textContent = '再传一个'; $u('upVer').value = ''; $u('upDate').value = '';
+      list = (await api('/radm/list').catch(() => ({ songs: list }))).songs;
+      fill(prep.slug); syncNew();
+      load();
+    } catch (e) { msg(/^[a-z]+$|HTTP/.test(e.message) ? '没传成功（' + e.message + '），检查网络再试' : e.message, true); }
+    upBusy = false; ready();
+  };
 }
 
 load();
