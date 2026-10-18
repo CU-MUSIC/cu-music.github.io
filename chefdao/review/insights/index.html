@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0e0e0f">
 <link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/chefdao-logo-32.png">
 <link rel="apple-touch-icon" href="/chefdao/assets/chefdao-logo-180.png">
-<title>Insights · 审听 | ChefDao</title>
+<title>Insights — CU MUSIC</title>
 <style>
 /* 审听 Insights 看板：和审听页同一套黑白 token */
 :root{
@@ -74,7 +74,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .cmr b,.cmr a{font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-2);font-size:14px;padding-top:1px}
 .cmr a{color:var(--text);text-decoration:underline;text-decoration-color:var(--fill-3);text-underline-offset:3px}
 .cmr span{min-width:0;overflow-wrap:anywhere}
-.cmr.done>span{color:var(--text-2)}
+.cmr.done{opacity:.45}
+.cmr.done:hover{opacity:.8}
+.cmsep{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-3);margin:4px 0 0}
+.cmsep::before,.cmsep::after{content:"";flex:1;height:.5px;background:var(--hair)}
 .cmr .dn{font-style:normal;font-size:12px;color:var(--text-2);background:var(--fill-2);padding:1px 7px;border-radius:999px;margin-left:4px}
 .cmr .rp{display:block;font-style:normal;margin-top:4px;padding:6px 9px;border-radius:9px;background:var(--fill-2);font-size:14px;color:var(--text)}
 .cmr .cma{display:flex;gap:6px;margin-top:5px}
@@ -313,8 +316,9 @@ function atUrl(slug, ver, t) {
 function cmts(x) {
   const f = x.fb; if (!f || (!f.comments.length && !f.overall)) return x.notes ? '<div class="facts">写了 <b>' + x.notes + '</b> 条评论</div>' : '';
   return `<div class="cm"><div class="cmh">评论 ${f.comments.length} 条<span class="${f.sent ? 'sent' : ''}">${f.sent ? '已发送给你' : '还没点发送'}</span></div>
-    ${f.comments.map(c => { const r = reply(x.slug, x.ver, c.t, c.m);
-      return `<div class="cmr${r && r.done ? ' done' : ''}"><a href="${esc(atUrl(x.slug, x.ver, c.t))}" target="_blank" rel="noopener" title="在审听页打开这一处">${fmt(c.t)}</a><span>${esc(c.m)}${r && r.done ? ' <i class="dn">✓ 已处理</i>' : ''}${r && r.reply ? `<em class="rp">刀大厨：${esc(r.reply)}</em>` : ''}
+    ${f.comments.map(c => [c, reply(x.slug, x.ver, c.t, c.m)]).sort((p, q) => (p[1] && p[1].done ? 1 : 0) - (q[1] && q[1].done ? 1 : 0)).map(([c, r], i, arr) => {
+      const sep = r && r.done && !(i > 0 && arr[i - 1][1] && arr[i - 1][1].done) ? '<div class="cmsep">已处理</div>' : '';
+      return sep + `<div class="cmr${r && r.done ? ' done' : ''}"><a href="${esc(atUrl(x.slug, x.ver, c.t))}" target="_blank" rel="noopener" title="在审听页打开这一处">${fmt(c.t)}</a><span>${esc(c.m)}${r && r.done ? ' <i class="dn">✓ 已处理</i>' : ''}${r && r.reply ? `<em class="rp">刀大厨：${esc(r.reply)}</em>` : ''}
         <span class="cma"><button data-cr="reply" data-k="${esc(JSON.stringify([x.slug, x.ver, c.t, c.m]))}">${r && r.reply ? '改回复' : '回复'}</button><button data-cr="done" class="${r && r.done ? 'on' : ''}" data-k="${esc(JSON.stringify([x.slug, x.ver, c.t, c.m]))}">✓ 完成</button></span></span></div>`; }).join('')}
     ${f.overall ? `<div class="cmr"><b>整体</b><span>${esc(f.overall)}</span></div>` : ''}</div>`;
 }
@@ -323,7 +327,7 @@ function render() {
   // 每分钟自动刷新时，保留展开着的报价单
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
-  const head = `<div class="top"><div><div class="eyebrow">ChefDao 审听 · 价格页</div><h1>Insights</h1></div>
+  const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div>
     ${tab === 'orders' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
   root.innerHTML = head + (tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());

@@ -20,7 +20,7 @@ document.body.innerHTML = `
 <div class="lock" id="lock">
   <div class="art"></div>
   <h1>${esc(S.title)}</h1>
-  <div class="by" id="by">CU MUSIC · ChefDao 审听</div>
+  <div class="by" id="by">CU MUSIC</div>
   <div class="ask" id="ask">输入密码收听</div>
   <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
   <div class="spin"></div>
@@ -303,6 +303,8 @@ function add() {
 $('#add').onclick = add;
 txt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover:hover)').matches) { e.preventDefault(); add(); } });
 
+// 「已处理」分隔线（参考 Samply 的 Completed）
+function doneSep() { const d = document.createElement('div'); d.className = 'donesep'; d.textContent = '已处理'; return d; }
 // 评论行加上「刀大厨：回复」和「✓ 已处理」
 function decorate(row, r) {
   row.classList.toggle('done', !!(r && r.done));
@@ -322,7 +324,11 @@ async function loadReplies() {
 }
 function render(newId) {
   const list = $('#list'); list.innerHTML = '';
-  notes.forEach(o => {
+  const isDone = o => { const r = REPLIES.get(rk(cur.ver, o.t, o.m)); return !!(r && r.done); };
+  const order = notes.filter(o => !isDone(o)).concat(notes.filter(isDone));
+  let sep = false;
+  order.forEach(o => {
+    if (!sep && isDone(o)) { sep = true; list.appendChild(doneSep()); }
     const row = document.createElement('div'); row.className = 'row' + (o.id === newId ? ' new' : '');
     row.innerHTML = '<button class="t press"></button><div class="m"></div><button class="x" aria-label="删除"><svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2 2 10"/></svg></button>';
     const t = row.querySelector('.t'); t.textContent = fmt(o.t);
@@ -474,6 +480,7 @@ function ownerTools() {
   addEventListener('dragover', e => e.preventDefault());
   addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dropping'); up(e.dataTransfer.files[0]); });
 }
+let cfbRender = null;
 async function clientFb() {
   const at = new URLSearchParams(location.search).get('at');   // 看板链接 ?at=V1-24
   const m = at && /^(V\d{1,3})-(\d+(?:\.\d+)?)$/.exec(at);
@@ -495,13 +502,23 @@ async function clientFb() {
     // 同一条评论客户可能在两次打开里都同步过：按 版本+时间点+内容 去重
     const seen = new Set(), list = items.sort((x, y) => x.ver.localeCompare(y.ver, 'en', { numeric: true }) || (x.t ?? 1e9) - (y.t ?? 1e9))
       .filter(x => { const k = x.ver + '|' + x.t + '|' + x.m; if (seen.has(k)) return false; seen.add(k); return true; });
+    const mine = new Map();
+    try {   // 已有的回复 / 完成
+      const rj = await (await fetch(API + '/cr?s=' + S.slug, { headers: { Authorization: 'Bearer ' + key }, cache: 'no-store' })).json();
+      if (rj.ok) rj.replies.forEach(x => mine.set(rk(x.ver, x.t, x.m), x));
+    } catch (e) {}
+    // 只显示正在听的这一版的评论；切版本时重画
+    cfbRender = () => {
     const box = $('#cfl'); box.innerHTML = '';
-    const mine = new Map(), rows = [];
-    list.forEach(o => {
+    const done = o => { const r = mine.get(rk(o.ver, o.t, o.m)); return !!(r && r.done); };
+    const all = list.filter(o => o.ver === cur.ver), here = all.filter(o => !done(o)).concat(all.filter(done));
+    const rows = []; let sep = false;
+    here.forEach(o => {
+      if (!sep && done(o)) { sep = true; box.appendChild(doneSep()); }
       const row = document.createElement('div'); row.className = 'row';
       row.innerHTML = '<button class="t press"></button><div class="m"></div>';
       const tb = row.querySelector('.t');
-      tb.textContent = o.ver.toLowerCase() + ' ' + (o.t == null ? '—' : fmt(o.t));
+      tb.textContent = o.t == null ? '整体' : fmt(o.t);
       if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
       row.querySelector('.m').textContent = o.m;
       if (o.t != null) {
@@ -515,7 +532,7 @@ async function clientFb() {
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
             if (!j.reply && !j.done) mine.delete(k); else mine.set(k, { reply: j.reply, done: j.done });
-            sync();
+            cfbRender();
           } catch (e) { alert('没存上，检查网络再试'); }
         };
         acts.querySelector('[data-a=reply]').onclick = () => { const r = mine.get(k); const v = prompt('回复这条评论（客户会在审听页看到）：\n「' + o.m + '」', (r && r.reply) || ''); if (v !== null) save({ reply: v }); };
@@ -525,13 +542,11 @@ async function clientFb() {
       }
       box.appendChild(row);
     });
-    try {   // 已有的回复 / 完成
-      const rj = await (await fetch(API + '/cr?s=' + S.slug, { headers: { Authorization: 'Bearer ' + key }, cache: 'no-store' })).json();
-      if (rj.ok) rj.replies.forEach(x => mine.set(rk(x.ver, x.t, x.m), x));
-    } catch (e) {}
     rows.forEach(f => f());
-    $('#cfn').textContent = list.length + ' 条 · ' + [...new Set(list.map(x => x.who))].join('、');
+    $('#cfn').textContent = here.length ? here.length + ' 条 · ' + [...new Set(here.map(x => x.who))].join('、') : '这一版还没有';
     $('#cfb').hidden = false;
+    };
+    cfbRender();
   } catch (e) {}
 }
 async function switchTo(i) {
@@ -540,7 +555,7 @@ async function switchTo(i) {
   save();
   vi = i; cur = V[i];
   P0 = P; P = cur.peaks; morphAt = performance.now();
-  loadNotes(); render(); updateCta(); showMeta(); markSeg();
+  loadNotes(); render(); updateCta(); showMeta(); markSeg(); if (cfbRender) cfbRender();
   $('#loading').textContent = '正在载入 ' + cur.ver + '…'; $('#loading').style.opacity = 1;
   try {
     const url = await fetchVersion(i);
