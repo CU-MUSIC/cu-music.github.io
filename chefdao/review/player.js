@@ -69,7 +69,6 @@ document.body.innerHTML = `
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
-  <div class="foot-hint">写完点下方「发送给刀大厨」，我会在微信收到。<br>评论会保存在这台设备上，关掉页面也不会丢。<br>你的播放情况会同步给刀大厨，方便改得更准。</div>
 </main>
 
 <div class="dock">
@@ -256,7 +255,9 @@ function loadNotes() {
   try { const s = JSON.parse(store.get(dataKey(vi)) || '{}'); notes = s.notes || []; $('#overall').value = s.overall || ''; } catch (e) {}
 }
 loadNotes();
-const save = () => { store.set(dataKey(vi), JSON.stringify({ notes, overall: $('#overall').value })); markSeg(); };
+let syncT = 0;
+const save = () => { store.set(dataKey(vi), JSON.stringify({ notes, overall: $('#overall').value })); markSeg();
+  clearTimeout(syncT); syncT = setTimeout(() => track(vi, true), 1500); };
 const grow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
 
 txt.addEventListener('input', () => {
@@ -337,7 +338,7 @@ $('#cta').onclick = async () => {
     const r = await fetch('https://www.pushplus.plus/send', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: PUSH, title: '《' + S.title + '》' + cur.ver + ' 反馈 · ' + notes.length + ' 条', content: html, template: 'html' }) });
     const j = await r.json(); if (j.code !== 200) throw new Error(j.msg);
-    done('已发送'); hud('已发送，刀大厨会在微信收到');
+    done('已发送'); hud('已发送，刀大厨会在微信收到'); track(vi, true, true);
   } catch (e) {
     await copy(plainText()); done('已复制'); hud('发送没成功，已帮你复制，请粘贴到微信发给我', 4000);
   } finally { busy = false; }
@@ -404,6 +405,7 @@ if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMeta
 /* ───────── 收听报告（Insights）：开始听、离开时的总结推到刀大厨微信 ─────────
    在自己设备上打开一次 #me 网址，这台设备就不再上报。 */
 if (location.hash === '#me') store.set('review:me', '1');
+if (location.hash === '#notme') store.del('review:me');   // 自己测试时用
 const ME = store.get('review:me') === '1';
 let lid = store.get('review:lid');
 if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.set('review:lid', lid); }
@@ -415,20 +417,23 @@ const BINS = 60, stats = {};
 const st = () => stats[vi] || (stats[vi] = { sec: 0, sent: 0, saved: -1, ends: 0, bins: new Array(BINS).fill(0), pinged: false, seen: 0 });
 const clock = () => new Date().toTimeString().slice(0, 5);
 function beacon(title, html) {
-  if (!PUSH || ME) return;
+  if (!PUSH || ME || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;   // 本地预览不推微信
   const q = new URLSearchParams({ token: PUSH, title, content: html, template: 'html' });
   fetch('https://www.pushplus.plus/send?' + q, { mode: 'no-cors', keepalive: true }).catch(() => {});
 }
 /* 同一份数据存进 stats.cumusic.work，给 insights 看板用 */
 const STATS = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787/e' : 'https://stats.cumusic.work/e';
 const sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-function track(i) {
-  const s = stats[i], v = V[i]; if (!WK || ME || !s) return;
-  if (s.saved >= 0 && s.sec - s.saved < 1) return;
+// force：评论有变化时也要同步；sent：点了「发送给刀大厨」
+function track(i, force, sent) {
+  i = +i; const s = stats[i] || (i === vi ? st() : null), v = V[i]; if (!WK || ME || !s) return;
+  if (!force && s.saved >= 0 && s.sec - s.saved < 1) return;
   s.saved = s.sec;
-  let n = 0; try { n = (JSON.parse(store.get(dataKey(+i)) || '{}').notes || []).length; } catch (e) {}
+  let d = {}; try { d = JSON.parse(store.get(dataKey(i)) || '{}'); } catch (e) {}
+  const cm = (d.notes || []).map(o => ({ t: Math.round(o.t * 10) / 10, m: String(o.m || '').slice(0, 500) }));
   const body = JSON.stringify({ k: WK, slug: S.slug, title: S.title, sid, ver: v.ver, lid, device, visit: visits,
-    sec: Math.round(s.sec * 10) / 10, dur: v.duration, ends: s.ends, bins: s.bins.map(x => Math.round(x * 10) / 10), notes: n });
+    sec: Math.round(s.sec * 10) / 10, dur: v.duration, ends: s.ends, bins: s.bins.map(x => Math.round(x * 10) / 10), notes: cm.length,
+    cm, ov: String(d.overall || '').slice(0, 1000), sent: !!sent });
   fetch(STATS, { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'text/plain' } }).catch(() => {});
 }
 let lastPos = null;
@@ -450,7 +455,7 @@ a.addEventListener('play', () => {
 });
 const mmss = sec => Math.floor(sec / 60) + ' 分 ' + Math.round(sec % 60) + ' 秒';
 function report() {
-  Object.keys(stats).forEach(track);
+  Object.keys(stats).forEach(i => track(i));
   const parts = [];
   Object.keys(stats).forEach(i => {
     const s = stats[i], v = V[i]; if (s.sec - s.sent < 5) return;

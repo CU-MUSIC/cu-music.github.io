@@ -893,6 +893,9 @@ html.qbo-lock, html.qbo-lock body { overflow: hidden; }
 .qbo-err:not(:empty) { margin: 2px 0 4px; }
 .qbo-send { margin-top: 10px; }
 .qbo-send:disabled { opacity: 0.6; cursor: default; }
+.qbo-link { background: var(--well); border: 0.5px solid var(--green-line); border-radius: 10px; padding: 12px 13px; font-size: 15px; font-weight: 600; color: var(--text-primary); word-break: break-all; -webkit-user-select: all; user-select: all; }
+.qbo-open { text-align: center; text-decoration: none; box-sizing: border-box; }
+.qbo-fav { margin-top: 12px; font-size: 13px; line-height: 1.6; color: var(--text-dim); }
 .qbo-done { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; margin: 6px 0 14px; background: var(--green-fill-hi); color: var(--green-soft); font-size: 26px; font-weight: 700; }
 </style>
 </head>
@@ -1508,7 +1511,7 @@ var I18N = {
 			noticePerHead: "每多 1 位主唱", noticeMinOrder: "混音最低消费",
 			noticeKeep: "基础混音 {b}、会员 8 折、入会费 {f} 均维持不变。已确认的项目不受本次调整影响。",
 			noticeCta: "按现行价格预约 · 微信 {w}",
-			cta: "复制报价 · 微信预约", copied: "报价已复制 ✓",
+			cta: "有疑问？复制报价，微信问我", copied: "报价已复制 ✓",
 			reset: "↺ 重新配置",
 			recMost: "最多人选", recPick: "推荐",
 			presetLabel: "套餐",
@@ -2110,7 +2113,7 @@ var I18N = {
 			noticePerHead: "Each extra vocalist", noticeMinOrder: "Minimum mixing order",
 			noticeKeep: "Basic Mix {b}, the 20% member discount and the {f} joining fee remain unchanged. Confirmed projects are not affected by this adjustment.",
 			noticeCta: "Book at current rates · WeChat {w}",
-			cta: "Copy quote · Book on WeChat", copied: "Quote copied ✓",
+			cta: "Questions? Copy quote & ask on WeChat", copied: "Quote copied ✓",
 			reset: "↺ Start over",
 			recMost: "Most picked", recPick: "Recommended",
 			presetLabel: "Package",
@@ -2708,7 +2711,7 @@ var I18N = {
 			noticePerHead: "보컬 1인 추가", noticeMinOrder: "믹싱 최소 주문",
 			noticeKeep: "베이직 믹스 {b}, 회원 20% 할인, 가입비 {f}는 변동이 없습니다. 확정된 프로젝트는 이번 조정의 영향을 받지 않습니다.",
 			noticeCta: "현행 가격으로 예약 · 위챗 {w}",
-			cta: "견적 복사 · 위챗 예약", copied: "견적 복사됨 ✓",
+			cta: "궁금한 점이 있다면 견적 복사 후 위챗 문의", copied: "견적 복사됨 ✓",
 			reset: "↺ 다시 설정",
 			recMost: "가장 많이 선택", recPick: "추천",
 			presetLabel: "패키지",
@@ -4381,9 +4384,9 @@ function renderQuoteBuilder() {
 				+ (qbHasMember() ? '<span class="qb-fast-tag">' + q.fastTag + '</span>' : '')
 				+ '</span><span class="qb-bd-val">' + delivStr + '</span></div>'
 				+ splitHtml + aaHtml + fineHtml + (qbState.taste ? '<div class="qb-taste-note">' + qbTasteText('note', q) + '</div>' : '') + '</div>'
-			+ '<button class="qb-cta" onclick="qbCopy()">' + q.cta + '</button>'
-			+ '<button class="qb-order-btn" onclick="qbOrderOpen()">' + qbOrderT().btn + '</button>'
+			+ '<button class="qb-cta" onclick="qbOrderOpen()">' + qbOrderT().btn + '</button>'
 			+ (c.count > 1 ? '<button class="qb-share" onclick="qbShareLink()">' + q.share + '</button>' : '')
+			+ '<button class="qb-reset qb-copy" onclick="qbCopy()">' + q.cta + '</button>'
 			+ '<button class="qb-reset" onclick="qbReset()">' + q.reset + '</button>'
 			+ '</div>';
 	}
@@ -4541,7 +4544,7 @@ function qbWriteClipboard(txt) {
 }
 // 复制不成时把文本摊出来让用户自己选，总好过一片死寂
 function qbShowFallback(txt) {
-	var host = document.querySelector(".qb-cta");
+	var host = document.querySelector(".qb-copy");
 	if (!host || document.getElementById("qb-fallback")) return;
 	var ta = document.createElement("textarea");
 	ta.id = "qb-fallback"; ta.className = "qb-fallback"; ta.value = txt; ta.readOnly = true;
@@ -4630,7 +4633,7 @@ function qbCopy() {
 	var q = I18N[currentLang].quote;
 	var c = qbCompute(q);
 	var txt = qbQuoteText();
-	var btn = document.querySelector(".qb-cta");
+	var btn = document.querySelector(".qb-copy");
 	var flash = function (label) {
 		if (!btn) return;
 		btn.textContent = label;
@@ -5153,6 +5156,29 @@ function qbStatSoon(ms) { clearTimeout(qbs.timer); qbs.timer = setTimeout(qbStat
 function qbStatClock() {
 	if (qbs.shown) { qbs.dur += (Date.now() - qbs.shown) / 1000; qbs.shown = document.visibilityState === "visible" ? Date.now() : 0; }
 }
+// 卡点追踪：每秒记一次客户此刻停在哪（页面各区块 / 下单表单 / 报价器第几步），连同最后停留位置和滚动深度一起上报
+var qbTrace = { dw: {}, last: "", sc: 0 };
+function qbTraceKey() {
+	if (document.getElementById("qbo")) return "order";
+	var y = window.innerHeight * 0.45, els = document.querySelectorAll(".service-section, .faq-section"), lastB = 0;
+	for (var i = 0; i < els.length; i++) {
+		var r = els[i].getBoundingClientRect();
+		lastB = r.bottom;
+		if (r.top <= y && r.bottom >= y) {
+			if (els[i].querySelector("#qb-mount")) return "q:" + (qbFocusOn && qbFocus ? qbFocus : "all");
+			return els[i].id ? els[i].id.replace(/^svc-/, "").slice(0, 20) : "faq";
+		}
+	}
+	return els.length && y > lastB ? "end" : "top";
+}
+setInterval(function () {
+	if (qbs.off || document.visibilityState !== "visible") return;
+	var k = qbTraceKey(), d = document.documentElement;
+	qbTrace.dw[k] = (qbTrace.dw[k] || 0) + 1; qbTrace.last = k;
+	var sc = Math.round((window.scrollY + window.innerHeight) / Math.max(1, d.scrollHeight) * 100);
+	if (sc > qbTrace.sc) qbTrace.sc = Math.min(100, sc);
+	qbs.dirty = true;
+}, 1000);
 function qbStatSend() {
 	if (qbs.off || !qbs.dirty) return;
 	qbStatClock();
@@ -5160,7 +5186,8 @@ function qbStatSend() {
 	var body = JSON.stringify({ page: "price", sid: qbs.sid, lid: qbs.lid, visit: qbs.visit, dur: Math.round(qbs.dur * 10) / 10,
 		lang: currentLang, device: qbs.device, ref: qbs.ref, utm: qbs.utm, picked: qbs.picked, quoted: qbs.quoted, steps: qbs.steps,
 		plan: qbStatPlan(), picks: qbStatPicks(), total: qbStatTotal(),
-		copy: qbs.copy, contact: qbs.contact, share: qbs.share, form: qbs.form, ordered: qbs.ordered });
+		copy: qbs.copy, contact: qbs.contact, share: qbs.share, form: qbs.form, ordered: qbs.ordered,
+		dw: qbTrace.dw, last: qbTrace.last, sc: qbTrace.sc });
 	try { fetch(QBS_API + "/p", { method: "POST", body: body, keepalive: true, headers: { "Content-Type": "text/plain" } }).catch(function () {}); } catch (e) {}
 }
 document.addEventListener("visibilitychange", function () {
@@ -5172,20 +5199,23 @@ window.addEventListener("pagehide", function () { qbs.dirty = true; qbStatSend()
 setInterval(function () { if (document.visibilityState === "visible") { qbs.dirty = true; qbStatSend(); } }, 30000);
 
 var QBO_T = {
-	zh: { btn: "提交需求 · 我来加你微信", title: "提交需求", sub: "留下微信，我看完方案会主动加你。也可以直接复制报价加我微信 {w}。",
+	zh: { btn: "确认下单", title: "正式下单", sub: "提交后立刻生成你的专属进度链接。付款在微信里进行，我确认收款后开工。也可以直接复制报价加我微信 {w}。",
 		name: "怎么称呼你", namePh: "例如：小王", wechat: "你的微信号", wechatPh: "微信号或手机号", song: "歌名", songPh: "还没定可以不填",
-		plan: "所选方案与估价", note: "备注", notePh: "想要的风格、参考曲、交付时间……", send: "提交", sending: "提交中…", cancel: "取消",
-		ok: "已收到", okSub: "我会尽快加你微信。如果着急，可以直接加我：{w}", close: "好的",
+		plan: "所选方案与估价", note: "备注", notePh: "想要的风格、参考曲、交付时间……", send: "提交订单", sending: "提交中…", cancel: "取消",
+		ok: "下单成功", okSub: "我会尽快加你微信。如果着急，可以直接加我：{w}", close: "好的",
+		okTrack: "这是你的专属进度链接：付款、开工、交付都会在这里更新。我会尽快加你微信确认付款。", copyLink: "复制链接", copied: "已复制 ✓", openLink: "打开进度页 →",
 		errName: "请填写称呼", errWechat: "请填写正确的微信号（5–40 位字母、数字或 _ -）", errNet: "没提交上，检查网络再试一次；或直接加微信 {w}", errRate: "提交太频繁了，稍后再试；或直接加微信 {w}" },
-	en: { btn: "Send request · I'll reach out", title: "Send a request", sub: "Leave your WeChat (or email) and I'll get in touch after reviewing your plan. You can also add me on WeChat: {w}.",
+	en: { btn: "Place order", title: "Place your order", sub: "You'll get a private progress link right away. Payment happens on WeChat; work starts once I confirm it. You can also add me on WeChat: {w}.",
 		name: "Your name", namePh: "e.g. Alex", wechat: "WeChat ID / email", wechatPh: "WeChat ID, phone or email", song: "Song title", songPh: "Optional",
-		plan: "Selected plan & estimate", note: "Notes", notePh: "Style, references, deadline…", send: "Send", sending: "Sending…", cancel: "Cancel",
-		ok: "Received", okSub: "I'll be in touch soon. In a hurry? Add me on WeChat: {w}", close: "OK",
+		plan: "Selected plan & estimate", note: "Notes", notePh: "Style, references, deadline…", send: "Place order", sending: "Sending…", cancel: "Cancel",
+		ok: "Order placed", okSub: "I'll be in touch soon. In a hurry? Add me on WeChat: {w}", close: "OK",
+		okTrack: "This is your private progress link: payment, work and delivery all update here. I'll add you on WeChat to confirm payment.", copyLink: "Copy link", copied: "Copied ✓", openLink: "Open progress page →",
 		errName: "Please enter your name", errWechat: "Please enter a valid WeChat ID / email (5–40 characters)", errNet: "Couldn't send. Check your connection, or add WeChat {w}", errRate: "Too many attempts, try again later, or add WeChat {w}" },
-	ko: { btn: "요청 보내기 · 먼저 연락드려요", title: "요청 보내기", sub: "위챗(또는 이메일)을 남겨 주시면 구성을 확인한 뒤 연락드립니다. 위챗 {w} 로 바로 추가하셔도 됩니다.",
+	ko: { btn: "주문하기", title: "주문하기", sub: "제출하면 바로 전용 진행 링크가 생성됩니다. 결제는 위챗으로 진행되며 입금 확인 후 작업을 시작합니다. 위챗 {w} 로 바로 추가하셔도 됩니다.",
 		name: "이름", namePh: "예: 민수", wechat: "위챗 ID / 이메일", wechatPh: "위챗 ID, 전화번호 또는 이메일", song: "곡 제목", songPh: "선택 사항",
-		plan: "선택한 구성과 예상 견적", note: "메모", notePh: "원하는 스타일, 레퍼런스, 납기…", send: "보내기", sending: "보내는 중…", cancel: "취소",
-		ok: "접수됐습니다", okSub: "곧 연락드리겠습니다. 급하시면 위챗 {w} 로 추가해 주세요.", close: "확인",
+		plan: "선택한 구성과 예상 견적", note: "메모", notePh: "원하는 스타일, 레퍼런스, 납기…", send: "주문하기", sending: "보내는 중…", cancel: "취소",
+		ok: "주문 완료", okSub: "곧 연락드리겠습니다. 급하시면 위챗 {w} 로 추가해 주세요.", close: "확인",
+		okTrack: "전용 진행 링크입니다. 결제, 작업, 납품 상황이 여기에서 업데이트됩니다. 위챗으로 결제 확인 연락드리겠습니다.", copyLink: "링크 복사", copied: "복사됨 ✓", openLink: "진행 페이지 열기 →",
 		errName: "이름을 입력해 주세요", errWechat: "올바른 위챗 ID / 이메일을 입력해 주세요 (5–40자)", errNet: "전송 실패. 네트워크를 확인하거나 위챗 {w} 로 연락 주세요", errRate: "요청이 너무 잦습니다. 잠시 후 다시 시도하거나 위챗 {w} 로 연락 주세요" }
 };
 function qbOrderT() { return QBO_T[currentLang] || QBO_T.zh; }
@@ -5259,9 +5289,27 @@ function qbOrderSend(e) {
 			if (!j.ok) return fail(j.status === 429 ? t.errRate : j.e === "field" ? t.errWechat : t.errNet);
 			qbStatHit("ordered");
 			var sh = document.querySelector("#qbo .qbo-sheet");
-			if (sh) sh.innerHTML = '<div class="qbo-grab"></div><div class="qbo-done">✓</div><div class="qbo-t">' + t.ok + '</div>'
-				+ '<div class="qbo-sub">' + t.okSub.replace("{w}", w) + '</div>'
-				+ '<button type="button" class="qb-cta" onclick="qbOrderClose()">' + t.close + '</button>';
+			if (!sh) return;
+			if (!j.code) {
+				sh.innerHTML = '<div class="qbo-grab"></div><div class="qbo-done">✓</div><div class="qbo-t">' + t.ok + '</div>'
+					+ '<div class="qbo-sub">' + t.okSub.replace("{w}", w) + '</div>'
+					+ '<button type="button" class="qb-cta" onclick="qbOrderClose()">' + t.close + '</button>';
+				return;
+			}
+			// 专属进度链接：本机也记一份，回来还能找到
+			var url = location.origin + "/p/#" + j.code;
+			var mine = []; try { mine = JSON.parse(qbLsGet("cd_tracks") || "[]") || []; } catch (x) {}
+			mine.unshift({ c: j.code, id: j.id, song: v("qbo-song"), t: Date.now() }); qbLsSet("cd_tracks", JSON.stringify(mine.slice(0, 20)));
+			sh.innerHTML = '<div class="qbo-grab"></div><div class="qbo-done">✓</div><div class="qbo-t">' + t.ok + ' · #' + j.id + '</div>'
+				+ '<div class="qbo-sub">' + t.okTrack + '</div>'
+				+ '<div class="qbo-link" id="qbo-link">' + qbOrderEsc(url.replace(/^https?:\/\//, "")) + '</div>'
+				+ '<button type="button" class="qb-cta qbo-send" id="qbo-copy">' + t.copyLink + '</button>'
+				+ '<a class="qb-order-btn qbo-open" href="' + qbOrderEsc(url) + '">' + t.openLink + '</a>'
+				+ '<button type="button" class="qb-reset" onclick="qbOrderClose()">' + t.close + '</button>';
+			document.getElementById("qbo-copy").onclick = function () {
+				var b = this, ok = function () { b.textContent = t.copied; setTimeout(function () { b.textContent = t.copyLink; }, 2000); };
+				qbWriteClipboard(url).then(ok).catch(function () { var r = document.createRange(); r.selectNodeContents(document.getElementById("qbo-link")); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); });
+			};
 		})
 		.catch(function () { fail(t.errNet); });
 }

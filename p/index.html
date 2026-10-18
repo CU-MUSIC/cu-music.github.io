@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/chefdao-logo-32.png">
+<link rel="apple-touch-icon" href="/chefdao/assets/chefdao-logo-180.png">
+<title>项目进度 | CU MUSIC</title>
+<style>
+/* 客户订单进度页：一屏只有歌名、一个状态词、一行副标题、五段细进度线和一个文字链接。数据来自 stats.cumusic.work/track */
+:root{
+  --bg:#0e0e0f; --hair:rgba(236,234,230,.12); --text:#e8e6e2; --text-2:#a3a19d; --text-3:#6d6b68;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Helvetica Neue",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--text);font:17px/1.6 var(--font);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;
+  padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px));padding-block:0}
+main{max-width:420px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center;
+  padding-top:calc(56px + env(safe-area-inset-top,0px));padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+.brand{font-size:12px;letter-spacing:.24em;color:var(--text-3);text-transform:uppercase}
+.song{margin-top:10px;font-size:15px;color:var(--text-2);min-height:1.6em}
+.st{margin-top:44px;font-size:52px;line-height:1.05;font-weight:700;letter-spacing:-.035em;transition:opacity .4s}
+.sub{margin-top:14px;font-size:15px;color:var(--text-2);min-height:1.6em}
+.track{margin-top:40px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.track i{height:2px;border-radius:1px;background:var(--hair);position:relative;overflow:hidden}
+.track i.on{background:var(--text)}
+.track i.cur{background:var(--hair)}
+.track i.cur::after{content:"";position:absolute;inset:0;background:var(--text);transform-origin:left;animation:fill 2.2s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes fill{0%{transform:scaleX(0);opacity:1}80%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.track i.cur::after{animation:none;transform:scaleX(.5)}}
+.labels{margin-top:10px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;font-size:11px;color:var(--text-3);letter-spacing:.02em}
+.labels span.on{color:var(--text-2)}
+.off .track,.off .labels{opacity:.35}
+.cta{margin-top:44px;align-self:flex-start;font-size:15px;color:var(--text);text-decoration:none;border-bottom:1px solid var(--hair);padding-bottom:2px}
+.cta:focus-visible{outline:2px solid var(--text);outline-offset:4px}
+.cta[hidden]{display:none}
+.loading .st,.loading .sub{opacity:.25}
+</style>
+</head>
+<body>
+<main id="m" class="loading">
+  <div class="brand">CU MUSIC</div>
+  <div class="song" id="song"></div>
+  <div class="st" id="st">读取中</div>
+  <div class="sub" id="sub"></div>
+  <div class="track" id="track"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="labels" id="labels"><span>付款</span><span>准备</span><span>混音</span><span>审听</span><span>交付</span></div>
+  <a class="cta" id="cta" href="#" target="_blank" rel="noopener" hidden></a>
+</main>
+<script>
+(() => {
+const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+const WECHAT = 'Cookdao';
+const ST = ['待付款', '准备中', '混音中', '待审听', '已交付'];
+const $ = id => document.getElementById(id);
+const track = [...document.querySelectorAll('#track i')], labels = [...document.querySelectorAll('#labels span')];
+const md = (t, iso) => { const d = iso ? new Date(t + 'T00:00:00') : new Date(t); return (d.getMonth() + 1) + '月' + d.getDate() + '日'; };
+let me = false; try { me = localStorage.getItem('review:me') === '1'; } catch (e) {}
+const ua = navigator.userAgent;
+const device = (/iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '其他') + (/MicroMessenger/i.test(ua) ? ' · 微信' : '');
+const code = () => (location.hash.match(/[A-Za-z0-9]{16,32}/) || [''])[0];
+
+function msg(st, sub) {
+  $('m').className = 'off'; $('st').textContent = st; $('sub').textContent = sub; $('song').textContent = '';
+  track.forEach(el => el.className = ''); labels.forEach(el => el.classList.remove('on')); $('cta').hidden = true;
+}
+function show(d) {
+  const k = Math.max(0, Math.min(4, d.stage | 0)), t = d.times || [];
+  const mode = (d.plan || '').split(' · ')[0];
+  $('song').textContent = (d.song ? '《' + d.song + '》' : '订单 #' + d.no) + (mode ? ' · ' + mode : '');
+  document.title = (d.song ? '《' + d.song + '》' : '项目') + '进度 | CU MUSIC';
+  $('m').className = d.cancelled ? 'off' : '';
+  if (d.cancelled) {
+    $('st').textContent = '已取消';
+    $('sub').textContent = '有疑问请微信联系 ' + WECHAT;
+  } else {
+    const eta = d.eta ? '预计 ' + md(d.eta, true) + ' 交付第一版' : '';
+    $('st').textContent = ST[k];
+    $('sub').textContent = [
+      '订单已确认，付款后安排排期',
+      eta ? '已收款 · ' + eta : '已收款，正在检查分轨',
+      eta || '正在混音',
+      '第一版已完成，请审听',
+      (t[4] ? md(t[4]) + ' · ' : '') + '最终文件已交付',
+    ][k];
+  }
+  const done = k === 4;
+  track.forEach((el, i) => { el.className = i < k || (done && i === k) ? 'on' : i === k && !d.cancelled ? 'cur' : ''; });
+  labels.forEach((el, i) => el.classList.toggle('on', i <= k));
+  const link = !d.cancelled && (k === 3 ? d.review : k === 4 ? d.deliver : null);
+  const cta = $('cta');
+  cta.hidden = !link;
+  if (link) { cta.href = link; cta.textContent = k === 3 ? '审听 →' : '下载文件 →'; }
+}
+let last = 0;
+async function load(view) {
+  const c = code();
+  if (!c) return msg('找不到订单', '链接不完整，请微信联系 ' + WECHAT);
+  try {
+    const q = 'c=' + c + (view ? '&v=1&d=' + encodeURIComponent(device) + (me ? '&me=1' : '') : '');
+    const r = await fetch(API + '/track?' + q, { cache: 'no-store' });
+    if (r.status === 404) return msg('找不到订单', '链接不完整，请微信联系 ' + WECHAT);
+    const j = await r.json(); if (!j.ok) throw new Error();
+    last = Date.now(); show(j);
+  } catch (e) { if (!last) msg('暂时读不到', '网络不太好，稍后下拉刷新'); }
+}
+load(true);
+// 切回页面算一次新的查看；停在页面上每 60 秒静默刷新
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(true); });
+addEventListener('hashchange', () => load(true));
+setInterval(() => { if (document.visibilityState === 'visible') load(false); }, 60000);
+})();
+</script>
+</body>
+</html>

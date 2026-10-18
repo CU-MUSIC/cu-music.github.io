@@ -65,6 +65,14 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .heat i{flex:1;background:var(--text);border-radius:1px;min-height:2px}
 .facts{font-size:14px;color:var(--text-2);line-height:1.6}
 .facts b{color:var(--text);font-weight:600}
+.pins{position:relative;height:6px;margin:-2px 0 6px}
+.pins i{position:absolute;top:0;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--text)}
+.cm{margin-top:10px;padding-top:10px;border-top:.5px solid var(--hair);display:flex;flex-direction:column;gap:6px}
+.cmh{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--text-3)}
+.cmh span.sent{color:var(--text-2)}
+.cmr{display:grid;grid-template-columns:44px 1fr;gap:8px;font-size:15px;line-height:1.55}
+.cmr b{font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-2);font-size:14px;padding-top:1px}
+.cmr span{min-width:0;overflow-wrap:anywhere}
 
 .empty,.msg{color:var(--text-3);font-size:15px;padding:24px 0;text-align:center}
 .login{max-width:340px;margin:18vh auto 0;text-align:center;display:flex;flex-direction:column;gap:14px}
@@ -102,12 +110,31 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .order details{margin-top:8px;font-size:14px;color:var(--text-3)}
 .order summary{cursor:pointer}
 .order pre{white-space:pre-wrap;font:13px/1.6 var(--font);color:var(--text-2);background:var(--fill);border-radius:10px;padding:10px 12px;margin-top:6px}
-.st{display:flex;gap:4px;margin-top:10px;background:var(--fill);border-radius:10px;padding:2px}
-.st button{flex:1;font-size:14px;padding:6px 4px;border-radius:8px;color:var(--text-2)}
-.st button.on{background:var(--fill-3);color:var(--text);font-weight:600}
-.st button.on[data-v="new"]{background:var(--red);color:var(--ink)}
-.st button.on[data-v="won"]{background:var(--pearl);color:var(--ink)}
-.st button:disabled{opacity:.5}
+.stg{margin-top:12px;background:var(--fill);border-radius:14px;padding:12px 12px 14px}
+.stg-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:17px}
+.stg-h b{font-weight:700}
+.stg-h span{font-size:13px;color:var(--text-3);text-align:right}
+.segs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:10px}
+.segs i{height:3px;border-radius:2px;background:var(--fill-3)}
+.segs i.on{background:var(--text)}
+.segs i.cur{background:linear-gradient(90deg,var(--text) 50%,var(--fill-3) 50%)}
+.segl{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:5px;font-size:11px;color:var(--text-3)}
+.segl span.on{color:var(--text-2)}
+.stg-t{margin-top:8px;font-size:13px;color:var(--text-3);line-height:1.6}
+.link{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--text-2)}
+.link span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link button,.link a{flex-shrink:0;font-size:13px;padding:3px 10px;border-radius:7px;background:var(--fill-2);color:var(--text);text-decoration:none}
+.flds{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.flds label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--text-3)}
+.flds input,.flds select{background:var(--fill-2);border:0;border-radius:9px;padding:8px 10px;font:inherit;font-size:16px;color:var(--text);min-width:0;width:100%;-webkit-appearance:none;appearance:none}
+.flds select{background-image:linear-gradient(45deg,transparent 50%,var(--text-2) 50%),linear-gradient(135deg,var(--text-2) 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
+.flds select option{background:#1a1a1b;color:var(--text)}
+.flds input::placeholder{color:var(--text-3)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.acts button{font-size:14px;padding:8px 12px;border-radius:9px;background:var(--fill-2);color:var(--text-2)}
+.acts button.go{flex:1 1 100%;background:var(--pearl);color:var(--ink);font-weight:600;font-size:15px;padding:11px 12px}
+.warn{margin-top:8px;font-size:13px;color:var(--red)}
+.order.cxl .who b,.order.cxl .plan{opacity:.5}
 </style>
 </head>
 <body>
@@ -135,7 +162,12 @@ let KEY = store.get('insights:key');
 let days = +store.get('insights:days') || 30, song = '', data = null, pdata = null;
 let tab = store.get('insights:tab') || 'listen', ofilter = '';
 const TABS = [['listen', '审听'], ['price', '价格页'], ['orders', '订单']];
-const STATUS = [['new', '新'], ['contacted', '已联系'], ['won', '成交'], ['lost', '放弃']];
+// 订单 5 个阶段（和客户进度页 cumusic.work/p/ 一致）；next = 推进按钮上写的动作
+const STAGES = ['待付款', '准备中', '混音中', '待审听', '已交付'];
+const NEXT = ['已收款，开始准备', '开始混音', '发第一版审听', '已交付'];
+const OFILTERS = [['pay', '待付款', o => !o.cancelled && !(o.stage > 0)], ['doing', '进行中', o => !o.cancelled && o.stage >= 1 && o.stage <= 3],
+  ['done', '已交付', o => !o.cancelled && o.stage === 4], ['cancel', '已取消', o => !!o.cancelled]];
+const TRACK = 'https://cumusic.work/p/#';
 
 function login(err) {
   root.innerHTML = `<form class="login" id="f"><div class="eyebrow">CU MUSIC · ChefDao</div><h1>Insights</h1>
@@ -147,6 +179,8 @@ function login(err) {
   };
 }
 
+// 正在看板里打字时，自动刷新先不重画，免得输入被冲掉
+const typing = () => { const a = document.activeElement; return a && root.contains(a) && /INPUT|TEXTAREA/.test(a.tagName); };
 async function load() {
   if (!KEY) return login();
   if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';
@@ -156,9 +190,11 @@ async function load() {
     if (r.status === 401) { store.del('insights:key'); KEY = null; return login(true); }
     const j = await r.json(); if (!j.ok) throw new Error();
     j.rows.forEach(x => { try { x.bins = JSON.parse(x.bins || 'null'); } catch (e) { x.bins = null; } });
+    const fb = new Map((j.feedback || []).map(f => { try { f.comments = JSON.parse(f.comments || '[]'); } catch (e) { f.comments = []; } return [f.sid + '|' + f.ver, f]; }));
+    j.rows.forEach(x => { x.fb = fb.get(x.sid + '|' + x.ver) || null; });
     const j2 = r2 && r2.ok ? await r2.json().catch(() => null) : null;
     if (j2 && j2.ok) pdata = j2;
-    data = j; render();
+    data = j; if (!typing()) render();
   } catch (e) { if (!data) root.innerHTML = '<div class="msg">读不到数据，检查网络后下拉刷新</div>'; }
 }
 
@@ -205,13 +241,21 @@ function verBlock(x) {
   let rep = reps >= 1.8 && (hi - lo + 1) * len >= 3 ? '<br>反复听最多：<b>' + fmt(lo * len) + '–' + fmt((hi + 1) * len) + '</b>（约 ' + Math.round(reps) + ' 遍）' : '';
   return `<div class="ver"><div class="t"><b>《${esc(x.title || x.slug)}》${esc(x.ver)}</b><span>${fmt(x.dur)}</span></div>
     ${b.length ? '<div class="heat">' + b.map(v => `<i style="height:${Math.max(8, v / mx * 100)}%;opacity:${v > 0 ? .25 + .75 * Math.min(1, v / mx) : .08}"></i>`).join('') + '</div>' : ''}
-    <div class="facts">${facts.join(' · ')}${x.notes ? '<br>写了 <b>' + x.notes + '</b> 条评论' : ''}${rep}</div></div>`;
+    ${x.fb && x.fb.comments.length && x.dur ? '<div class="pins">' + x.fb.comments.map(c => `<i style="left:${Math.min(100, c.t / x.dur * 100)}%"></i>`).join('') + '</div>' : ''}
+    <div class="facts">${facts.join(' · ')}${rep}</div>${cmts(x)}</div>`;
+}
+// 客户写的评论：时间点 + 内容，整体感觉放最后
+function cmts(x) {
+  const f = x.fb; if (!f || (!f.comments.length && !f.overall)) return x.notes ? '<div class="facts">写了 <b>' + x.notes + '</b> 条评论</div>' : '';
+  return `<div class="cm"><div class="cmh">评论 ${f.comments.length} 条<span class="${f.sent ? 'sent' : ''}">${f.sent ? '已发送给你' : '还没点发送'}</span></div>
+    ${f.comments.map(c => `<div class="cmr"><b>${fmt(c.t)}</b><span>${esc(c.m)}</span></div>`).join('')}
+    ${f.overall ? `<div class="cmr"><b>整体</b><span>${esc(f.overall)}</span></div>` : ''}</div>`;
 }
 
 function render() {
   // 每分钟自动刷新时，保留展开着的报价单
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
-  const nNew = pdata ? pdata.orders.filter(o => o.status === 'new').length : 0;
+  const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
   const head = `<div class="top"><div><div class="eyebrow">ChefDao 审听 · 价格页</div><h1>Insights</h1></div>
     ${tab === 'orders' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
@@ -224,7 +268,22 @@ function render() {
   if (c) c.onclick = e => { if (e.target.dataset.s !== undefined) { song = e.target.dataset.s; render(); } };
   const oc = document.getElementById('ochips');
   if (oc) oc.onclick = e => { if (e.target.dataset.f !== undefined) { ofilter = e.target.dataset.f; render(); } };
-  root.querySelectorAll('.st').forEach(el => el.onclick = e => { const b = e.target.closest('button'); if (b && !b.classList.contains('on')) setStatus(+el.dataset.id, b.dataset.v, el); });
+  root.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+    const o = pdata.orders.find(x => x.id === +b.dataset.id); if (!o) return;
+    const a = b.dataset.act, k = o.stage || 0;
+    if (a === 'next') stage(o, { stage: k + 1 });
+    else if (a === 'prev' && confirm('退回到「' + STAGES[k - 1] + '」？')) stage(o, { stage: k - 1 });
+    else if (a === 'cancel' && confirm('取消这个订单？客户进度页会显示「已取消」')) stage(o, { cancel: true });
+    else if (a === 'restore') stage(o, { cancel: false });
+    else if (a === 'make') stage(o, {});
+  });
+  root.querySelectorAll('[data-f-eta],[data-f-review],[data-f-deliver]').forEach(el => el.onchange = () => {
+    const o = pdata.orders.find(x => x.id === +el.dataset.id); if (!o) return;
+    const k = el.dataset.fEta !== undefined ? 'eta' : el.dataset.fReview !== undefined ? 'review' : 'deliver';
+    const v = el.value.trim();
+    if (v && k !== 'eta' && !/^https?:\/\/\S+$/.test(v)) { alert('链接要以 https:// 开头'); return; }
+    stage(o, { [k]: v });
+  });
   root.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {
     const done = () => { b.textContent = '已复制'; setTimeout(() => { b.textContent = '复制'; }, 1500); };
     navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copy).then(done, done) : done();
@@ -284,6 +343,32 @@ function rank(list, n) {
   const max = Math.max(1, ...list.map(r => r.n));
   return list.slice(0, n).map(r => `<div class="rk"><b>${esc(r.k)}</b><span>${r.right}</span><div class="bar"><i style="width:${r.n / max * 100}%"></i></div></div>`).join('');
 }
+const POS = { top: '页面顶部', end: '页面底部', order: '下单表单', faq: '常见问题', recording: '录音', mixing: '混音 & 母带', booking: '预约（报价器外）', creation: '词曲 & 编曲',
+  direction: '项目制作人', projectlead: '项目负责人', course: '混音教学', daomen: '刀门会员', flow: '制作流程',
+  'q:all': '报价器', 'q:rec': '报价器 · 推荐', 'q:mode': '报价器 · 类型', 'q:stems': '报价器 · 轨数', 'q:preset': '报价器 · 选套餐', 'q:count': '报价器 · 人数',
+  'q:prod': '报价器 · 人声制作', 'q:edit': '报价器 · 音编', 'q:harmony': '报价器 · 和声', 'q:extra': '报价器 · 加项', 'q:perks': '报价器 · 权益', 'q:lane': '报价器 · 档期', 'q:summary': '报价器 · 报价单' };
+const pos = k => POS[k] || k || '—';
+function renderTrace(rows) {
+  const tr = new Map((pdata.trace || []).map(t => [t.sid, t]));
+  const sess = rows.map(x => ({ x, t: tr.get(x.sid) })).filter(o => o.t);
+  if (!sess.length) return '<div class="blk"><div class="sect">卡点分析</div><div class="empty">新版价格页上线后开始收集</div></div>';
+  const dwell = new Map(), left = new Map(); let nLeft = 0, scSum = 0;
+  sess.forEach(({ x, t }) => {
+    let d = {}; try { d = JSON.parse(t.dwell || '{}') || {}; } catch (e) {}
+    Object.keys(d).forEach(k => { const v = dwell.get(k) || { k, sec: 0, n: 0 }; v.sec += d[k]; if (d[k] >= 3) v.n++; dwell.set(k, v); });
+    scSum += t.sc || 0;
+    if (!x.ordered && !x.copy && !x.contact) { nLeft++; const k = t.last || 'top'; left.set(k, (left.get(k) || 0) + 1); }
+  });
+  const dList = [...dwell.values()].filter(v => v.n).sort((a, b) => b.sec - a.sec).map(v => ({ k: pos(v.k), n: v.sec, right: v.n + ' 人看过 · 平均 ' + Math.round(v.sec / v.n) + ' 秒' }));
+  const lList = [...left].sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ k: pos(k), n, right: n + ' 人 · ' + pct(n, nLeft) + '%' }));
+  const nForm = rows.filter(x => x.form > 0).length, nFail = rows.filter(x => x.form > 0 && !x.ordered).length;
+  return `
+  <div class="blk"><div class="sect">停留最久的位置<span>${sess.length} 次访问 · 平均滚到 ${Math.round(scSum / sess.length)}%</span></div>
+    <div class="rank">${rank(dList, 10)}</div></div>
+  <div class="blk"><div class="sect">客户在哪里离开<span>没下单也没联系的 ${nLeft} 次 · 最后停在</span></div>
+    <div class="rank">${lList.length ? rank(lList, 8) : '<div class="empty">暂无</div>'}</div>
+    ${nForm ? `<div class="facts" style="margin-top:8px">打开下单表单 ${nForm} 次，其中 ${nFail} 次没提交</div>` : ''}</div>`;
+}
 function renderPrice() {
   if (!pdata) return '<div class="msg">价格页数据读不到（接口还没部署？）</div>';
   const now = pdata.now, since = now - days * 864e5;
@@ -326,8 +411,10 @@ function renderPrice() {
     ${step('打开价格页', n)}
     ${step('选了方案', nPick, '动过选项或往下走')}
     ${step('看到报价单', nQuote)}
-    ${step('点联系或提交', nAct, '复制报价 ' + nCopy + ' · 联系 ' + nCt + ' · 提交 ' + nOrd)}
+    ${step('打开下单表单', rows.filter(x => x.form > 0).length)}
+    ${step('下单成功', nOrd, '复制报价咨询 ' + nCopy + ' · 点联系 ' + nCt)}
   </div></div>
+  ${renderTrace(rows)}
   <div class="blk"><div class="sect">最常被选的方案<span>平均估价 ${avgTxt}${actTotals.length ? ' · 联系过的均价 ' + money(actTotals.reduce((a, b) => a + b, 0) / actTotals.length, 'CNY') : ''}</span></div>
     <div class="rank">${planList.length ? rank(planList, 8) : '<div class="empty">还没人动过选项</div>'}</div></div>
   <div class="blk"><div class="sect">来源</div><div class="rank">${rank(srcList, 6)}</div></div>
@@ -342,30 +429,70 @@ function renderPrice() {
 }
 
 // ── 订单 ────────────────────────────────────────────────
+// 审听页下拉：清单来自 /pq 的 songs（sync-songs.mjs 同步），再补上收听记录里出现过的歌
+const REVIEW = 'https://cumusic.work/chefdao/review/';
+function songOpts(cur) {
+  const m = new Map();
+  (pdata.songs || []).forEach(x => m.set(x.slug, x.title || x.slug));
+  (data ? data.rows : []).forEach(x => { if (!m.has(x.slug)) m.set(x.slug, x.title || x.slug); });
+  const curSlug = cur && cur.startsWith(REVIEW) ? cur.slice(REVIEW.length).replace(/\/.*$/, '') : '';
+  let h = '<option value="">— 选择审听页 —</option>' + [...m].map(([k, t]) => `<option value="${esc(REVIEW + k + '/')}"${k === curSlug ? ' selected' : ''}>《${esc(t)}》 ${esc(k)}</option>`).join('');
+  if (cur && !m.has(curSlug)) h += `<option value="${esc(cur)}" selected>${esc(cur)}</option>`;
+  return h;
+}
+function stepTimes(o) {
+  let t = []; try { t = JSON.parse(o.times || '[]') || []; } catch (e) {}
+  const md = x => { const d = new Date(x); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.toTimeString().slice(0, 5); };
+  return STAGES.map((n, i) => t[i] && i <= (o.stage || 0) ? n + ' ' + md(t[i]) : '').filter(Boolean).join(' · ');
+}
 function renderOrders() {
   if (!pdata) return '<div class="msg">订单读不到（接口还没部署？）</div>';
   const now = pdata.now, all = pdata.orders;
-  const cnt = k => all.filter(o => o.status === k).length;
-  const list = ofilter ? all.filter(o => o.status === ofilter) : all;
-  return `<div class="chips" id="ochips"><button data-f="" class="${ofilter ? '' : 'on'}">全部 ${all.length}</button>${STATUS.map(([k, t]) =>
-      `<button data-f="${k}" class="${ofilter === k ? 'on' : ''}">${t} ${cnt(k)}</button>`).join('')}</div>
-  <div class="feed">${list.length ? list.map(o => `<div class="order">
-    <div class="who"><b>${esc(o.name)}${o.song ? ' ·《' + esc(o.song) + '》' : ''}</b><time>${when(o.created, now)}</time></div>
+  const f = OFILTERS.find(x => x[0] === ofilter);
+  const list = f ? all.filter(f[2]) : all;
+  return `<div class="chips" id="ochips"><button data-f="" class="${f ? '' : 'on'}">全部 ${all.length}</button>${OFILTERS.map(([k, t, fn]) =>
+      `<button data-f="${k}" class="${ofilter === k ? 'on' : ''}">${t} ${all.filter(fn).length}</button>`).join('')}</div>
+  <div class="feed">${list.length ? list.map(o => {
+    const k = o.stage || 0, url = o.code ? TRACK + o.code : '';
+    return `<div class="order${o.cancelled ? ' cxl' : ''}">
+    <div class="who"><b>#${o.id} ${esc(o.name)}${o.song ? ' ·《' + esc(o.song) + '》' : ''}</b><time>${when(o.created, now)}</time></div>
     <div class="wx">微信 <b>${esc(o.wechat)}</b><button data-copy="${esc(o.wechat)}">复制</button></div>
     <div class="plan"><b>${esc(o.plan || '—')}</b>${o.total != null ? ' · <b>' + money(o.total, o.cur) + '</b>' : ''}</div>
     ${o.note ? `<div class="note">${esc(o.note)}</div>` : ''}
     ${o.detail ? `<details data-id="${o.id}"><summary>完整报价单${o.lid ? ' · 访客 ' + esc(o.lid) : ''}${o.lang !== 'zh' ? ' · ' + esc(o.lang) : ''}${o.pushed ? '' : ' · 未推送'}</summary><pre>${esc(o.detail)}</pre></details>` : ''}
-    <div class="st" data-id="${o.id}">${STATUS.map(([k, t]) => `<button data-v="${k}" class="${o.status === k ? 'on' : ''}">${t}</button>`).join('')}</div>
-  </div>`).join('') : '<div class="empty">' + (all.length ? '这个状态下没有订单' : '还没有人提交需求') + '</div>'}</div>`;
+    ${o.code ? `<div class="stg">
+      <div class="stg-h"><b>${o.cancelled ? '已取消' : STAGES[k]}</b><span>${o.last_view ? '客户最近查看 ' + when(o.last_view, now) + ' · 共 ' + o.views + ' 次' : '客户还没打开过'}</span></div>
+      <div class="segs">${STAGES.map((n, i) => `<i class="${o.cancelled ? '' : i < k || (k === 4 && i === 4) ? 'on' : i === k ? 'cur' : ''}"></i>`).join('')}</div>
+      <div class="segl">${STAGES.map((n, i) => `<span class="${i <= k ? 'on' : ''}">${n}</span>`).join('')}</div>
+      ${stepTimes(o) ? `<div class="stg-t">${stepTimes(o)}</div>` : ''}
+      <div class="link"><span>${esc(url.replace('https://', ''))}</span><button data-copy="${esc(url)}">复制</button><a href="${esc(url)}" target="_blank" rel="noopener">打开</a></div>
+      <div class="flds">
+        <label>预计交第一版<input type="date" data-f-eta data-id="${o.id}" value="${esc(o.eta || '')}"></label>
+        <label>审听页<select data-f-review data-id="${o.id}">${songOpts(o.review_url)}</select></label>
+        <label>交付链接<input type="url" inputmode="url" data-f-deliver data-id="${o.id}" placeholder="网盘 / 下载地址" value="${esc(o.deliver_url || '')}"></label>
+      </div>
+      <div class="acts">${o.cancelled ? `<button class="go" data-act="restore" data-id="${o.id}">恢复订单</button>`
+        : (k < 4 ? `<button class="go" data-act="next" data-id="${o.id}">下一步：${NEXT[k]} →</button>` : '')
+          + (k > 0 ? `<button data-act="prev" data-id="${o.id}">退回</button>` : '')
+          + (k < 4 ? `<button data-act="cancel" data-id="${o.id}">取消</button>` : '')}</div>
+      ${!o.cancelled && k === 3 && !o.review_url ? '<div class="warn">还没选审听页，客户页不会出现「审听 →」</div>' : ''}
+      ${!o.cancelled && k === 4 && !o.deliver_url ? '<div class="warn">还没填交付链接，客户页不会出现「下载文件 →」</div>' : ''}
+    </div>` : `<div class="acts"><button class="go" data-act="make" data-id="${o.id}">生成进度链接</button></div>`}
+  </div>`;
+  }).join('') : '<div class="empty">' + (all.length ? '这个状态下没有订单' : '还没有人下单') + '</div>'}</div>`;
 }
-async function setStatus(id, v, el) {
-  const o = pdata.orders.find(x => x.id === id); if (!o) return;
-  const old = o.status;
-  o.status = v; render();
+// 推进 / 退回 / 取消 / 改日期和链接：先改本地立刻重画，失败再退回
+async function stage(o, body) {
+  const keep = { ...o };
+  if (body.stage !== undefined) o.stage = body.stage;
+  if (body.cancel !== undefined) o.cancelled = body.cancel ? Date.now() : 0;
+  render();
   try {
-    const r = await fetch(API + '/os', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status: v }) });
-    const j = await r.json(); if (!j.ok) throw new Error();
-  } catch (e) { o.status = old; render(); alert('没改成功，检查网络再试'); }
+    const r = await fetch(API + '/ostage', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: o.id, ...body }) });
+    const j = await r.json(); if (!j.ok) throw new Error(j.e || '');
+    Object.assign(o, { code: j.code, stage: j.stage, cancelled: j.cancelled, times: j.times, eta: j.eta, review_url: j.review_url, deliver_url: j.deliver_url });
+    render();
+  } catch (e) { Object.assign(o, keep); render(); alert(e.message === 'url' ? '链接格式不对，要以 https:// 开头' : '没改成功，检查网络再试'); }
 }
 
 load();

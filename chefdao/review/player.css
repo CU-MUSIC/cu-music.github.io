@@ -203,7 +203,6 @@ svg{display:block}
   font:inherit;line-height:1.6;padding:12px 14px;resize:none;min-height:96px;transition:border-color .2s,background-color .2s}
 .overall:focus{border-color:rgba(236,234,230,.28);background:var(--fill-2)}
 .overall::placeholder{color:var(--text-3)}
-.foot-hint{color:var(--text-3);font-size:13px;text-align:center;margin-top:28px;line-height:1.7}
 
 /* 底部浮动发送按钮（毛玻璃） */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;align-items:center;gap:10px;
