@@ -16,3 +16,6 @@ _internal-*
 
 # 本地预览服务器配置
 serve.json
+
+# 审听页推送 token（明文，不上传）
+_secret/
