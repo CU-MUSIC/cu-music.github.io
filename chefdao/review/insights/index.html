@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/chefdao-logo-32.png">
+<link rel="apple-touch-icon" href="/chefdao/assets/chefdao-logo-180.png">
+<title>Insights · 审听 | ChefDao</title>
+<style>
+/* 审听 Insights 看板：和审听页同一套黑白 token */
+:root{
+  --bg:#0e0e0f; --bg-2:#151516;
+  --fill:rgba(236,234,230,.05); --fill-2:rgba(236,234,230,.085); --fill-3:rgba(236,234,230,.14);
+  --hair:rgba(236,234,230,.09);
+  --text:#e8e6e2; --text-2:#a3a19d; --text-3:#74726f;
+  --red:#e9a19a; --ink:#121213; --pearl:#ebe9e5;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{background:radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.06),transparent 60%),var(--bg);
+  color:var(--text);font:17px/1.6 var(--font);letter-spacing:-.005em;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;
+  min-height:100vh;min-height:100dvh}
+button,input{font:inherit;color:inherit;border:0;background:none}
+button{cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.wrap{max-width:680px;margin:0 auto;
+  padding:calc(28px + env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:22px}
+.eyebrow{font-size:13px;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase}
+h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
+.seg{display:flex;background:var(--fill);border-radius:10px;padding:2px;flex-shrink:0}
+.seg button{font-size:14px;padding:5px 11px;border-radius:8px;color:var(--text-2)}
+.seg button.on{background:var(--fill-3);color:var(--text)}
+
+.chips{display:flex;gap:8px;overflow-x:auto;margin:0 -18px 18px;padding:0 18px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex-shrink:0;font-size:15px;padding:6px 14px;border-radius:999px;background:var(--fill);color:var(--text-2);white-space:nowrap}
+.chips button.on{background:var(--pearl);color:var(--ink)}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:30px}
+.card{background:var(--fill);border-radius:16px;padding:16px 16px 12px;min-width:0}
+.card .lb{font-size:14px;color:var(--text-2)}
+.card .n{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.15;font-variant-numeric:tabular-nums}
+.card .d{font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.card svg{display:block;width:100%;height:44px;margin-top:8px;overflow:visible}
+
+.sect{display:flex;justify-content:space-between;align-items:baseline;font-size:20px;font-weight:700;letter-spacing:-.015em;margin-bottom:10px}
+.sect span{font-size:14px;font-weight:400;color:var(--text-3)}
+.feed{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:40px 1fr;gap:12px;padding:14px 0;border-top:.5px solid var(--hair)}
+.av{width:40px;height:40px;border-radius:50%;background:var(--fill-2);display:grid;place-items:center;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--text)}
+.body{min-width:0}
+.who{display:flex;justify-content:space-between;gap:10px;font-size:16px}
+.who b{font-weight:600}
+.who time{color:var(--text-3);font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dev{font-size:14px;color:var(--text-3)}
+.ver{margin-top:8px;background:var(--fill);border-radius:12px;padding:10px 12px}
+.ver .t{display:flex;justify-content:space-between;gap:8px;font-size:15px}
+.ver .t span{color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.heat{display:flex;gap:1px;height:18px;margin:8px 0 6px;align-items:flex-end}
+.heat i{flex:1;background:var(--text);border-radius:1px;min-height:2px}
+.facts{font-size:14px;color:var(--text-2);line-height:1.6}
+.facts b{color:var(--text);font-weight:600}
+
+.empty,.msg{color:var(--text-3);font-size:15px;padding:24px 0;text-align:center}
+.login{max-width:340px;margin:18vh auto 0;text-align:center;display:flex;flex-direction:column;gap:14px}
+.login input{background:var(--fill-2);border-radius:12px;padding:12px 14px;text-align:center;font-size:16px}
+.login button{background:var(--pearl);color:var(--ink);border-radius:12px;padding:12px;font-weight:600}
+.login p{color:var(--text-3);font-size:14px}
+
+/* 顶部三个分区：审听 / 价格页 / 订单 */
+.tabs{display:flex;gap:4px;background:var(--fill);border-radius:12px;padding:3px;margin-bottom:22px}
+.tabs button{flex:1;font-size:15px;padding:8px 6px;border-radius:9px;color:var(--text-2);position:relative}
+.tabs button.on{background:var(--fill-3);color:var(--text);font-weight:600}
+.tabs .dot{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--red);color:var(--ink);font-size:12px;font-weight:700;padding:0 5px;margin-left:5px;vertical-align:1px}
+.cards.three{grid-template-columns:1fr 1fr}
+.blk{margin-bottom:30px}
+.funnel{display:flex;flex-direction:column;gap:10px}
+.fn .t{display:flex;justify-content:space-between;gap:10px;font-size:15px;margin-bottom:5px}
+.fn .t span{color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:10px;border-radius:5px;background:var(--fill);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px;background:var(--text)}
+.rank{display:flex;flex-direction:column}
+.rk{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:11px 0;border-top:.5px solid var(--hair);font-size:15px}
+.rk b{font-weight:600}
+.rk span{color:var(--text-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.rk .bar{grid-column:1/-1;height:6px}
+.rk .bar i{opacity:.7}
+.tag{display:inline-block;font-size:12px;padding:1px 7px;border-radius:6px;background:var(--fill-2);color:var(--text-2);margin:4px 4px 0 0}
+.tag.hot{background:var(--pearl);color:var(--ink)}
+.order{padding:16px 0;border-top:.5px solid var(--hair)}
+.order .who{align-items:baseline}
+.order .wx{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:15px;color:var(--text-2)}
+.order .wx button{font-size:13px;padding:2px 9px;border-radius:7px;background:var(--fill-2);color:var(--text)}
+.order .plan{margin-top:8px;background:var(--fill);border-radius:12px;padding:10px 12px;font-size:15px}
+.order .plan b{font-weight:600}
+.order .note{margin-top:8px;font-size:15px;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
+.order details{margin-top:8px;font-size:14px;color:var(--text-3)}
+.order summary{cursor:pointer}
+.order pre{white-space:pre-wrap;font:13px/1.6 var(--font);color:var(--text-2);background:var(--fill);border-radius:10px;padding:10px 12px;margin-top:6px}
+.st{display:flex;gap:4px;margin-top:10px;background:var(--fill);border-radius:10px;padding:2px}
+.st button{flex:1;font-size:14px;padding:6px 4px;border-radius:8px;color:var(--text-2)}
+.st button.on{background:var(--fill-3);color:var(--text);font-weight:600}
+.st button.on[data-v="new"]{background:var(--red);color:var(--ink)}
+.st button.on[data-v="won"]{background:var(--pearl);color:var(--ink)}
+.st button:disabled{opacity:.5}
+</style>
+</head>
+<body>
+<div class="wrap" id="root"></div>
+<script>
+(() => {
+const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+const store = {
+  get(k) { try { return localStorage.getItem(k) } catch (e) { return null } },
+  set(k, v) { try { localStorage.setItem(k, v) } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k) } catch (e) {} },
+};
+const root = document.getElementById('root');
+const esc = x => String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+const mins = s => s < 60 ? Math.round(s) + ' 秒' : Math.floor(s / 60) + ' 分 ' + Math.round(s % 60) + ' 秒';
+
+// 打开过看板的设备就是刀大厨自己的，审听页不再统计这台设备
+store.set('review:me', '1');
+
+const m = /[#&]k=([\w-]+)/.exec(location.hash);
+if (m) { store.set('insights:key', m[1]); history.replaceState(null, '', location.pathname); }
+if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
+let KEY = store.get('insights:key');
+let days = +store.get('insights:days') || 30, song = '', data = null, pdata = null;
+let tab = store.get('insights:tab') || 'listen', ofilter = '';
+const TABS = [['listen', '审听'], ['price', '价格页'], ['orders', '订单']];
+const STATUS = [['new', '新'], ['contacted', '已联系'], ['won', '成交'], ['lost', '放弃']];
+
+function login(err) {
+  root.innerHTML = `<form class="login" id="f"><div class="eyebrow">CU MUSIC · ChefDao</div><h1>Insights</h1>
+    <input id="k" placeholder="管理钥匙" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button>进入</button><p>${err ? '钥匙不对，再试一次' : '钥匙在 chefdao/review/_secret/stats-admin'}</p></form>`;
+  document.getElementById('f').onsubmit = e => {
+    e.preventDefault(); KEY = document.getElementById('k').value.trim(); if (!KEY) return;
+    store.set('insights:key', KEY); load();
+  };
+}
+
+async function load() {
+  if (!KEY) return login();
+  if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';
+  try {
+    const auth = { headers: { Authorization: 'Bearer ' + KEY } };
+    const [r, r2] = await Promise.all([fetch(API + '/q?days=90', auth), fetch(API + '/pq?days=90', auth).catch(() => null)]);
+    if (r.status === 401) { store.del('insights:key'); KEY = null; return login(true); }
+    const j = await r.json(); if (!j.ok) throw new Error();
+    j.rows.forEach(x => { try { x.bins = JSON.parse(x.bins || 'null'); } catch (e) { x.bins = null; } });
+    const j2 = r2 && r2.ok ? await r2.json().catch(() => null) : null;
+    if (j2 && j2.ok) pdata = j2;
+    data = j; render();
+  } catch (e) { if (!data) root.innerHTML = '<div class="msg">读不到数据，检查网络后下拉刷新</div>'; }
+}
+
+// 每天的播放 / 听众，画迷你折线
+function series(rows, now) {
+  const day0 = new Date(now); day0.setHours(0, 0, 0, 0);
+  const start = day0.getTime() - (days - 1) * 864e5;
+  const plays = new Array(days).fill(0), lids = Array.from({ length: days }, () => new Set());
+  rows.forEach(x => { const i = Math.floor((x.started - start) / 864e5); if (i >= 0 && i < days) { plays[i]++; lids[i].add(x.lid); } });
+  return { plays, listeners: lids.map(s => s.size) };
+}
+function spark(vals) {
+  const W = 100, H = 40, max = Math.max(1, ...vals), n = vals.length;
+  const pts = vals.map((v, i) => [n === 1 ? W : i / (n - 1) * W, H - v / max * (H - 4) - 2]);
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join('');
+  const last = pts[pts.length - 1];
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    <path d="${line}L${W} ${H}L0 ${H}Z" fill="rgba(236,234,230,.08)" stroke="none"/>
+    <path d="${line}" fill="none" stroke="#e8e6e2" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="#e8e6e2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function when(t, now) {
+  const d = (now - t) / 1000;
+  if (d < 60) return '刚刚';
+  if (d < 3600) return Math.floor(d / 60) + ' 分钟前';
+  const a = new Date(t), b = new Date(now), hm = a.toTimeString().slice(0, 5);
+  if (a.toDateString() === b.toDateString()) return '今天 ' + hm;
+  if (new Date(now - 864e5).toDateString() === a.toDateString()) return '昨天 ' + hm;
+  return (a.getMonth() + 1) + '月' + a.getDate() + '日 ' + hm;
+}
+function verBlock(x) {
+  const len = x.dur / 60, b = x.bins || [];
+  const cover = b.length ? Math.round(b.filter(v => v >= len * .5).length / 60 * 100) : 0;
+  let top = 0; b.forEach((v, j) => { if (v > b[top]) top = j; });
+  const reps = b.length && len ? b[top] / len : 0;
+  let lo = top, hi = top;
+  while (lo > 0 && b[lo - 1] >= b[top] * .75) lo--;
+  while (hi < 59 && b[hi + 1] >= b[top] * .75) hi++;
+  const mx = Math.max(len, ...b) || 1;
+  const facts = [];
+  facts.push('听了 <b>' + mins(x.sec) + '</b>');
+  if (b.length) facts.push('覆盖 <b>' + cover + '%</b>');
+  if (x.ends) facts.push('完整听完 <b>' + x.ends + '</b> 次');
+  let rep = reps >= 1.8 && (hi - lo + 1) * len >= 3 ? '<br>反复听最多：<b>' + fmt(lo * len) + '–' + fmt((hi + 1) * len) + '</b>（约 ' + Math.round(reps) + ' 遍）' : '';
+  return `<div class="ver"><div class="t"><b>《${esc(x.title || x.slug)}》${esc(x.ver)}</b><span>${fmt(x.dur)}</span></div>
+    ${b.length ? '<div class="heat">' + b.map(v => `<i style="height:${Math.max(8, v / mx * 100)}%;opacity:${v > 0 ? .25 + .75 * Math.min(1, v / mx) : .08}"></i>`).join('') + '</div>' : ''}
+    <div class="facts">${facts.join(' · ')}${x.notes ? '<br>写了 <b>' + x.notes + '</b> 条评论' : ''}${rep}</div></div>`;
+}
+
+function render() {
+  // 每分钟自动刷新时，保留展开着的报价单
+  const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
+  const nNew = pdata ? pdata.orders.filter(o => o.status === 'new').length : 0;
+  const head = `<div class="top"><div><div class="eyebrow">ChefDao 审听 · 价格页</div><h1>Insights</h1></div>
+    ${tab === 'orders' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
+    <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
+  root.innerHTML = head + (tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : renderListen());
+  opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
+  document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
+  const sg = document.getElementById('seg');
+  if (sg) sg.onclick = e => { const d = +e.target.dataset.d; if (d) { days = d; store.set('insights:days', d); render(); } };
+  const c = document.getElementById('chips');
+  if (c) c.onclick = e => { if (e.target.dataset.s !== undefined) { song = e.target.dataset.s; render(); } };
+  const oc = document.getElementById('ochips');
+  if (oc) oc.onclick = e => { if (e.target.dataset.f !== undefined) { ofilter = e.target.dataset.f; render(); } };
+  root.querySelectorAll('.st').forEach(el => el.onclick = e => { const b = e.target.closest('button'); if (b && !b.classList.contains('on')) setStatus(+el.dataset.id, b.dataset.v, el); });
+  root.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {
+    const done = () => { b.textContent = '已复制'; setTimeout(() => { b.textContent = '复制'; }, 1500); };
+    navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copy).then(done, done) : done();
+  });
+}
+
+function renderListen() {
+  const now = data.now, since = now - days * 864e5;
+  const all = data.rows.filter(x => x.started >= since);
+  const songs = [...new Map(data.rows.map(x => [x.slug, x.title || x.slug])).entries()];
+  const rows = song ? all.filter(x => x.slug === song) : all;
+  const s = series(rows, now);
+  const listeners = new Set(rows.map(x => x.lid)).size;
+
+  // 按一次打开（sid）合并成一条动态
+  const groups = new Map();
+  rows.forEach(x => { if (!groups.has(x.sid)) groups.set(x.sid, []); groups.get(x.sid).push(x); });
+  const feed = [...groups.values()].map(g => g.sort((p, q) => p.started - q.started))
+    .sort((p, q) => Math.max(...q.map(x => x.updated)) - Math.max(...p.map(x => x.updated))).slice(0, 60);
+
+  return `
+  ${songs.length > 1 ? `<div class="chips" id="chips"><button data-s="" class="${song ? '' : 'on'}">全部</button>${songs.map(([k, t]) =>
+    `<button data-s="${esc(k)}" class="${song === k ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>` : ''}
+  <div class="cards">
+    <div class="card"><div class="lb">播放次数</div><div class="n">${rows.length}</div><div class="d">近 ${days} 天</div>${spark(s.plays)}</div>
+    <div class="card"><div class="lb">听众</div><div class="n">${listeners}</div><div class="d">近 ${days} 天</div>${spark(s.listeners)}</div>
+  </div>
+  <div class="sect">最近动态<span>${feed.length ? '共 ' + groups.size + ' 次打开' : ''}</span></div>
+  <div class="feed">${feed.length ? feed.map(g => {
+    const x = g[0], last = Math.max(...g.map(y => y.updated));
+    return `<div class="item"><div class="av">${esc(x.lid)}</div><div class="body">
+      <div class="who"><b>听众 ${esc(x.lid)}</b><time>${when(last, now)}</time></div>
+      <div class="dev">${esc(x.device || '设备')}${x.visit > 1 ? ' · 第 ' + x.visit + ' 次打开' : ''}${x.country && x.country !== 'CN' ? ' · ' + esc(x.country) : ''}</div>
+      ${g.map(verBlock).join('')}</div></div>`;
+  }).join('') : '<div class="empty">这段时间还没人听</div>'}</div>`;
+}
+
+// ── 价格页 ──────────────────────────────────────────────
+const SYM = { CNY: '¥', USD: '$', KRW: '₩' };
+const money = (v, cur) => (SYM[cur] || '') + Math.round(v).toLocaleString('en-US');
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+const contacted = x => x.copy > 0 || x.contact > 0 || x.ordered > 0;
+function srcOf(x) {
+  let u = null; try { u = JSON.parse(x.utm || 'null'); } catch (e) {}
+  if (u && u.source) return u.source;
+  if (!x.ref) return '直接打开';
+  const h = x.ref.split('/')[0].replace(/^www\./, '');
+  if (/cumusic\.work$/.test(h)) return '站内';
+  if (/xiaohongshu|xhslink/.test(h)) return '小红书';
+  if (/douyin/.test(h)) return '抖音';
+  if (/weixin|qq\.com/.test(h)) return '微信';
+  if (/bilibili|b23\.tv/.test(h)) return 'B 站';
+  if (/google|bing|baidu|sogou|so\.com/.test(h)) return '搜索';
+  return h;
+}
+function rank(list, n) {
+  const max = Math.max(1, ...list.map(r => r.n));
+  return list.slice(0, n).map(r => `<div class="rk"><b>${esc(r.k)}</b><span>${r.right}</span><div class="bar"><i style="width:${r.n / max * 100}%"></i></div></div>`).join('');
+}
+function renderPrice() {
+  if (!pdata) return '<div class="msg">价格页数据读不到（接口还没部署？）</div>';
+  const now = pdata.now, since = now - days * 864e5;
+  const rows = pdata.events.filter(x => x.started >= since);
+  if (!rows.length) return '<div class="empty">近 ' + days + ' 天价格页还没有访问记录</div>';
+  const day0 = new Date(now); day0.setHours(0, 0, 0, 0);
+  const start = day0.getTime() - (days - 1) * 864e5;
+  const opens = new Array(days).fill(0), acts = new Array(days).fill(0);
+  rows.forEach(x => { const i = Math.floor((x.started - start) / 864e5); if (i >= 0 && i < days) { opens[i]++; if (contacted(x)) acts[i]++; } });
+  const n = rows.length, nPick = rows.filter(x => x.picked).length, nQuote = rows.filter(x => x.quoted).length;
+  const nAct = rows.filter(contacted).length, nOrd = rows.filter(x => x.ordered).length;
+  const visitors = new Set(rows.map(x => x.lid)).size;
+  const durs = rows.map(x => x.dur).sort((a, b) => a - b), med = durs[Math.floor(durs.length / 2)] || 0;
+  const step = (label, v, note) => `<div class="fn"><div class="t"><b>${label}</b><span>${v} · ${pct(v, n)}%${note ? ' · ' + note : ''}</span></div><div class="bar"><i style="width:${pct(v, n)}%"></i></div></div>`;
+  const nCopy = rows.filter(x => x.copy > 0).length, nCt = rows.filter(x => x.contact > 0).length;
+
+  // 方案：只算动过选项或看到报价的那次打开，按中文方案名分组，估价按币种分开平均
+  const plans = new Map();
+  rows.filter(x => (x.picked || x.quoted) && x.plan).forEach(x => {
+    const p = plans.get(x.plan) || { k: x.plan, n: 0, sum: {}, cnt: {}, act: 0 };
+    p.n++; if (contacted(x)) p.act++;
+    if (x.total != null) { p.sum[x.cur] = (p.sum[x.cur] || 0) + x.total; p.cnt[x.cur] = (p.cnt[x.cur] || 0) + 1; }
+    plans.set(x.plan, p);
+  });
+  const planList = [...plans.values()].sort((a, b) => b.n - a.n).map(p => ({ k: p.k, n: p.n,
+    right: p.n + ' 次 · 均价 ' + (Object.keys(p.cnt).map(c => money(p.sum[c] / p.cnt[c], c)).join(' / ') || '—') + (p.act ? ' · ' + p.act + ' 次联系' : '') }));
+  const avgBy = {}; rows.filter(x => x.total != null && (x.picked || x.quoted)).forEach(x => { (avgBy[x.cur] = avgBy[x.cur] || []).push(x.total); });
+  const avgTxt = Object.keys(avgBy).map(c => money(avgBy[c].reduce((a, b) => a + b, 0) / avgBy[c].length, c)).join(' / ') || '—';
+  const actTotals = rows.filter(x => contacted(x) && x.total != null && x.cur === 'CNY').map(x => x.total);
+  const srcs = new Map(); rows.forEach(x => { const k = srcOf(x); const v = srcs.get(k) || { k, n: 0, act: 0 }; v.n++; if (contacted(x)) v.act++; srcs.set(k, v); });
+  const srcList = [...srcs.values()].sort((a, b) => b.n - a.n).map(v => ({ k: v.k, n: v.n, right: v.n + ' 次' + (v.act ? ' · ' + v.act + ' 次联系' : '') }));
+  const recent = rows.slice().sort((a, b) => b.updated - a.updated).slice(0, 40);
+
+  return `
+  <div class="cards">
+    <div class="card"><div class="lb">打开次数</div><div class="n">${n}</div><div class="d">${visitors} 位访客 · 停留中位 ${mins(med)}</div>${spark(opens)}</div>
+    <div class="card"><div class="lb">点联系 / 提交</div><div class="n">${nAct}</div><div class="d">转化 ${pct(nAct, n)}% · 提交 ${nOrd} 单</div>${spark(acts)}</div>
+  </div>
+  <div class="blk"><div class="sect">漏斗<span>近 ${days} 天</span></div><div class="funnel">
+    ${step('打开价格页', n)}
+    ${step('选了方案', nPick, '动过选项或往下走')}
+    ${step('看到报价单', nQuote)}
+    ${step('点联系或提交', nAct, '复制报价 ' + nCopy + ' · 联系 ' + nCt + ' · 提交 ' + nOrd)}
+  </div></div>
+  <div class="blk"><div class="sect">最常被选的方案<span>平均估价 ${avgTxt}${actTotals.length ? ' · 联系过的均价 ' + money(actTotals.reduce((a, b) => a + b, 0) / actTotals.length, 'CNY') : ''}</span></div>
+    <div class="rank">${planList.length ? rank(planList, 8) : '<div class="empty">还没人动过选项</div>'}</div></div>
+  <div class="blk"><div class="sect">来源</div><div class="rank">${rank(srcList, 6)}</div></div>
+  <div class="sect">最近访问<span>${recent.length} 条</span></div>
+  <div class="feed">${recent.map(x => `<div class="item"><div class="av">${esc(x.lid)}</div><div class="body">
+    <div class="who"><b>访客 ${esc(x.lid)}</b><time>${when(x.updated, now)}</time></div>
+    <div class="dev">${esc(x.device || '设备')}${x.visit > 1 ? ' · 第 ' + x.visit + ' 次打开' : ''} · 停留 ${mins(x.dur)} · ${esc(srcOf(x))}${x.country && x.country !== 'CN' ? ' · ' + esc(x.country) : ''}</div>
+    ${x.plan && (x.picked || x.quoted) ? `<div class="ver"><div class="t"><b>${esc(x.plan)}</b><span>${x.total != null ? money(x.total, x.cur) : '—'}</span></div>
+      <div>${x.quoted ? '<span class="tag">看到报价</span>' : ''}${x.copy ? '<span class="tag hot">复制报价' + (x.copy > 1 ? ' ×' + x.copy : '') + '</span>' : ''}${x.contact ? '<span class="tag hot">点联系</span>' : ''}${x.share ? '<span class="tag">分享</span>' : ''}${x.form && !x.ordered ? '<span class="tag">打开表单没提交</span>' : ''}${x.ordered ? '<span class="tag hot">提交需求</span>' : ''}</div></div>`
+      : '<div class="facts">只看了看，没动选项</div>'}
+  </div></div>`).join('')}</div>`;
+}
+
+// ── 订单 ────────────────────────────────────────────────
+function renderOrders() {
+  if (!pdata) return '<div class="msg">订单读不到（接口还没部署？）</div>';
+  const now = pdata.now, all = pdata.orders;
+  const cnt = k => all.filter(o => o.status === k).length;
+  const list = ofilter ? all.filter(o => o.status === ofilter) : all;
+  return `<div class="chips" id="ochips"><button data-f="" class="${ofilter ? '' : 'on'}">全部 ${all.length}</button>${STATUS.map(([k, t]) =>
+      `<button data-f="${k}" class="${ofilter === k ? 'on' : ''}">${t} ${cnt(k)}</button>`).join('')}</div>
+  <div class="feed">${list.length ? list.map(o => `<div class="order">
+    <div class="who"><b>${esc(o.name)}${o.song ? ' ·《' + esc(o.song) + '》' : ''}</b><time>${when(o.created, now)}</time></div>
+    <div class="wx">微信 <b>${esc(o.wechat)}</b><button data-copy="${esc(o.wechat)}">复制</button></div>
+    <div class="plan"><b>${esc(o.plan || '—')}</b>${o.total != null ? ' · <b>' + money(o.total, o.cur) + '</b>' : ''}</div>
+    ${o.note ? `<div class="note">${esc(o.note)}</div>` : ''}
+    ${o.detail ? `<details data-id="${o.id}"><summary>完整报价单${o.lid ? ' · 访客 ' + esc(o.lid) : ''}${o.lang !== 'zh' ? ' · ' + esc(o.lang) : ''}${o.pushed ? '' : ' · 未推送'}</summary><pre>${esc(o.detail)}</pre></details>` : ''}
+    <div class="st" data-id="${o.id}">${STATUS.map(([k, t]) => `<button data-v="${k}" class="${o.status === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+  </div>`).join('') : '<div class="empty">' + (all.length ? '这个状态下没有订单' : '还没有人提交需求') + '</div>'}</div>`;
+}
+async function setStatus(id, v, el) {
+  const o = pdata.orders.find(x => x.id === id); if (!o) return;
+  const old = o.status;
+  o.status = v; render();
+  try {
+    const r = await fetch(API + '/os', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status: v }) });
+    const j = await r.json(); if (!j.ok) throw new Error();
+  } catch (e) { o.status = old; render(); alert('没改成功，检查网络再试'); }
+}
+
+load();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && KEY) load(); });
+setInterval(() => { if (document.visibilityState === 'visible' && KEY && data) load(); }, 60000);
+})();
+</script>
+</body>
+</html>

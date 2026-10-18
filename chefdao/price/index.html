@@ -865,6 +865,35 @@
 		}
 	.card-points{margin:0;padding-left:1.1em}.card-points li{margin:.2em 0}
 .qb-badge.svc-new{font-size:11px;padding:3px 9px;margin-left:12px;vertical-align:0.35em}
+/* 「提交需求」按钮与底部弹层 */
+.qb-order-btn { display: block; width: 100%; margin-top: 9px; background: rgba(var(--green-ink), 0.10); border: 0.5px solid var(--green-line); border-radius: 10px; padding: 14px; font-family: var(--font); font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--green-soft); cursor: pointer; transition: background 0.2s; }
+.qb-order-btn:hover { background: rgba(var(--green-ink), 0.18); }
+html.qbo-lock, html.qbo-lock body { overflow: hidden; }
+.qbo { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; justify-content: center; }
+.qbo-back { position: absolute; inset: 0; background: rgba(var(--veil), 0.62); opacity: 0; transition: opacity 0.3s; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.qbo-sheet { position: relative; width: 100%; max-width: 480px; max-height: 92vh; max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+	background: var(--surface); border: 0.5px solid var(--border); border-bottom: 0; border-radius: 18px 18px 0 0;
+	padding: 10px 20px calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform 0.36s var(--ease); font-family: var(--font); }
+.qbo.on .qbo-back { opacity: 1; }
+.qbo.on .qbo-sheet { transform: none; }
+@media (min-width: 641px) { .qbo { align-items: center; } .qbo-sheet { border-radius: 18px; border-bottom: 0.5px solid var(--border); padding-bottom: 20px; transform: translateY(24px); opacity: 0; transition: transform 0.36s var(--ease), opacity 0.25s; } .qbo.on .qbo-sheet { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .qbo-sheet, .qbo-back { transition: none; } }
+.qbo-grab { width: 36px; height: 4px; border-radius: 2px; background: rgba(var(--ink), 0.16); margin: 0 auto 14px; }
+.qbo-t { font-size: 20px; font-weight: 700; letter-spacing: -0.015em; color: var(--text-primary); }
+.qbo-sub { font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin: 6px 0 16px; }
+.qbo-f { display: block; margin-bottom: 12px; }
+.qbo-f > span { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 6px; }
+.qbo-f input, .qbo-f textarea { display: block; width: 100%; box-sizing: border-box; background: var(--well); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 13px;
+	font-family: var(--font); font-size: 16px; line-height: 1.5; color: var(--text-primary); outline: none; transition: border-color 0.2s; resize: vertical; -webkit-appearance: none; appearance: none; }
+.qbo-f input::placeholder, .qbo-f textarea::placeholder { color: var(--text-dim); }
+.qbo-f input:focus, .qbo-f textarea:focus { border-color: var(--green-line); }
+.qbo-plan { background: var(--green-fill); border: 0.5px solid var(--green-line); border-radius: 10px; padding: 11px 13px; font-size: 14.5px; font-weight: 600; color: var(--green-soft); line-height: 1.5; }
+.qbo-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.qbo-err { min-height: 0; font-size: 13.5px; line-height: 1.55; color: var(--warn); }
+.qbo-err:not(:empty) { margin: 2px 0 4px; }
+.qbo-send { margin-top: 10px; }
+.qbo-send:disabled { opacity: 0.6; cursor: default; }
+.qbo-done { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; margin: 6px 0 14px; background: var(--green-fill-hi); color: var(--green-soft); font-size: 26px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -3227,6 +3256,7 @@ function qbShareLink() {
 		btn.textContent = q.shareDone;
 		setTimeout(function () { btn.textContent = q.share; }, 2000);
 	};
+	qbStatHit("share");
 	navigator.clipboard.writeText(url).then(done).catch(done);
 }
 function qbNormalizeState() {
@@ -4352,6 +4382,7 @@ function renderQuoteBuilder() {
 				+ '</span><span class="qb-bd-val">' + delivStr + '</span></div>'
 				+ splitHtml + aaHtml + fineHtml + (qbState.taste ? '<div class="qb-taste-note">' + qbTasteText('note', q) + '</div>' : '') + '</div>'
 			+ '<button class="qb-cta" onclick="qbCopy()">' + q.cta + '</button>'
+			+ '<button class="qb-order-btn" onclick="qbOrderOpen()">' + qbOrderT().btn + '</button>'
 			+ (c.count > 1 ? '<button class="qb-share" onclick="qbShareLink()">' + q.share + '</button>' : '')
 			+ '<button class="qb-reset" onclick="qbReset()">' + q.reset + '</button>'
 			+ '</div>';
@@ -4404,6 +4435,7 @@ function renderQuoteBuilder() {
 	if (qbFocusOn) qbApplyFocus(mount, q);
 	qbPriceSync(done ? c.total : null, done && c.from ? '<span class="qb-from">' + q.fromSuffix + '</span>' : "", done && c.from);
 	qbSaveState();
+	qbStatRender();
 }
 // ── 专注模式 ─────────────────────────────────────────────
 // 一次只摆一题，答完（或点「继续」）才滑到下一题；上方细进度条告诉客户还剩几步。
@@ -4517,7 +4549,8 @@ function qbShowFallback(txt) {
 	ta.onclick = function () { this.select(); };
 	host.parentNode.insertBefore(ta, host.nextSibling);
 }
-function qbCopy() {
+// 报价单纯文本：复制和「提交需求」共用
+function qbQuoteText() {
 	var q = I18N[currentLang].quote;
 	var c = qbCompute(q);
 	var stems = qbState.mode === "stems";
@@ -4591,7 +4624,12 @@ function qbCopy() {
 	for (var ne = 0; ne < c.count; ne++) if (qbState.edits[ne] === 0) { L.push(HH); L.push(q.copyNoEdit); break; }
 	L.push(HH);
 	L.push(q.copyWeChat + " · " + CONTACT.wechat);
-	var txt = L.join("\n");
+	return L.join("\n");
+}
+function qbCopy() {
+	var q = I18N[currentLang].quote;
+	var c = qbCompute(q);
+	var txt = qbQuoteText();
 	var btn = document.querySelector(".qb-cta");
 	var flash = function (label) {
 		if (!btn) return;
@@ -4601,6 +4639,7 @@ function qbCopy() {
 	var isTouch = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 	qbWriteClipboard(txt).then(function () {
 		qbArchiveOrder(q, c); // 复制成功才入档
+		qbStatHit("copy");
 		if (c.newbie > 0) qbLsSet(LS_NEWBIE_USED, "1"); // 首单优惠只用一次
 		var fb = document.getElementById("qb-fallback");
 		if (fb) fb.parentNode.removeChild(fb); // 上次失败留下的兜底框，成功后收掉
@@ -5051,6 +5090,7 @@ function switchLang(lang) {
 function copyContact() {
 	var t = I18N[currentLang];
 	var label = document.getElementById("cta-label");
+	qbStatHit("contact");
 	navigator.clipboard.writeText(CONTACT.wechat).then(function() {
 		label.textContent = t.ctaCopied;
 		window.location.href = "weixin://";
@@ -5061,6 +5101,171 @@ function copyContact() {
 		setTimeout(function() { label.textContent = t.ctaLabel; }, 2200);
 	});
 }
+// ── 匿名访问统计 + 「提交需求」────────────────────────────────
+// 统计写到 stats.cumusic.work/p（看板 chefdao/review/insights/）：只有匿名编号、停留、选项、报价、按了哪个按钮，不收任何个人信息。
+// 编号沿用审听页的 review:lid（同域），同一个人在审听页和价格页对得上；打开过看板的设备（review:me）不统计。
+var QBS_API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "http://localhost:8787" : "https://stats.cumusic.work";
+var qbs = (function () {
+	var off = qbLsGet("review:me") === "1";
+	var lid = qbLsGet("review:lid");
+	if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); qbLsSet("review:lid", lid); }
+	var sid = ""; while (sid.length < 12) sid += Math.random().toString(36).slice(2);
+	var visit = (+qbLsGet("cd_pv") || 0) + 1; qbLsSet("cd_pv", String(visit));
+	var utm = {}, sp = new URLSearchParams(location.search);
+	["source", "medium", "campaign", "content", "term"].forEach(function (k) { var v = sp.get("utm_" + k); if (v) utm[k] = v.slice(0, 60); });
+	var ref = document.referrer && document.referrer.indexOf(location.origin) !== 0 ? document.referrer : "";
+	var ua = navigator.userAgent;
+	var device = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android" : /Macintosh/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : "其他";
+	if (/MicroMessenger/i.test(ua)) device += " · 微信";
+	return { off: off, lid: lid, sid: sid.slice(0, 12), visit: visit, utm: utm, ref: ref, device: device,
+		shown: Date.now(), dur: 0, picked: 0, quoted: 0, steps: 0, first: null,
+		copy: 0, contact: 0, share: 0, form: 0, ordered: 0, dirty: true, timer: 0 };
+})();
+function qbStatPicks() {
+	var s = qbState;
+	return { m: s.mode, st: s.stems, p: s.preset === null ? -1 : s.preset, n: s.count, pr: s.prods, ed: s.edits, h: s.harmony,
+		ln: s.lane, ro: s.rec ? s.rec.o : -1, rh: s.rec ? s.rec.h : 0, pd: !!s.producer, mem: s.mem, tz: !!s.taste, nb: !!s.newbie };
+}
+// 中文方案名，看板按它分组：贴唱混音 · 标准 · 1 位
+function qbStatPlan() {
+	var z = I18N.zh.quote, s = qbState;
+	var name = s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
+	return (s.mode === "stems" ? z.modeStems : z.modeVocal) + " · " + name + " · " + s.count + z.countUnit;
+}
+function qbStatTotal() {
+	try { return qbComplete() ? qbCompute(I18N[currentLang].quote).total : null; } catch (e) { return null; }
+}
+function qbStatRender() {
+	try {
+		var key = JSON.stringify(qbStatPicks());
+		if (qbs.first === null) qbs.first = key;
+		else if (key !== qbs.first) qbs.picked = 1;
+		var seq = qbFocusSeq(), n = qbFocusOn ? seq.indexOf(qbFocus) + 1 : seq.length;
+		if (n > qbs.steps) qbs.steps = n;
+		if (n >= 3) qbs.picked = 1; // 点「继续」往下走也算接受了当前方案
+		if (qbFocusOn ? qbFocus === "summary" : qbComplete()) qbs.quoted = 1;
+		qbs.dirty = true;
+		qbStatSoon(4000);
+	} catch (e) {}
+}
+function qbStatHit(k) { qbs[k] = (qbs[k] || 0) + 1; qbs.dirty = true; qbStatSoon(800); }
+function qbStatSoon(ms) { clearTimeout(qbs.timer); qbs.timer = setTimeout(qbStatSend, ms); }
+function qbStatClock() {
+	if (qbs.shown) { qbs.dur += (Date.now() - qbs.shown) / 1000; qbs.shown = document.visibilityState === "visible" ? Date.now() : 0; }
+}
+function qbStatSend() {
+	if (qbs.off || !qbs.dirty) return;
+	qbStatClock();
+	qbs.dirty = false;
+	var body = JSON.stringify({ page: "price", sid: qbs.sid, lid: qbs.lid, visit: qbs.visit, dur: Math.round(qbs.dur * 10) / 10,
+		lang: currentLang, device: qbs.device, ref: qbs.ref, utm: qbs.utm, picked: qbs.picked, quoted: qbs.quoted, steps: qbs.steps,
+		plan: qbStatPlan(), picks: qbStatPicks(), total: qbStatTotal(),
+		copy: qbs.copy, contact: qbs.contact, share: qbs.share, form: qbs.form, ordered: qbs.ordered });
+	try { fetch(QBS_API + "/p", { method: "POST", body: body, keepalive: true, headers: { "Content-Type": "text/plain" } }).catch(function () {}); } catch (e) {}
+}
+document.addEventListener("visibilitychange", function () {
+	if (document.visibilityState === "visible") { if (!qbs.shown) qbs.shown = Date.now(); }
+	else { qbs.dirty = true; qbStatSend(); }
+});
+window.addEventListener("pagehide", function () { qbs.dirty = true; qbStatSend(); });
+// 停在页面上看的时候每 30 秒补一次停留时长
+setInterval(function () { if (document.visibilityState === "visible") { qbs.dirty = true; qbStatSend(); } }, 30000);
+
+var QBO_T = {
+	zh: { btn: "提交需求 · 我来加你微信", title: "提交需求", sub: "留下微信，我看完方案会主动加你。也可以直接复制报价加我微信 {w}。",
+		name: "怎么称呼你", namePh: "例如：小王", wechat: "你的微信号", wechatPh: "微信号或手机号", song: "歌名", songPh: "还没定可以不填",
+		plan: "所选方案与估价", note: "备注", notePh: "想要的风格、参考曲、交付时间……", send: "提交", sending: "提交中…", cancel: "取消",
+		ok: "已收到", okSub: "我会尽快加你微信。如果着急，可以直接加我：{w}", close: "好的",
+		errName: "请填写称呼", errWechat: "请填写正确的微信号（5–40 位字母、数字或 _ -）", errNet: "没提交上，检查网络再试一次；或直接加微信 {w}", errRate: "提交太频繁了，稍后再试；或直接加微信 {w}" },
+	en: { btn: "Send request · I'll reach out", title: "Send a request", sub: "Leave your WeChat (or email) and I'll get in touch after reviewing your plan. You can also add me on WeChat: {w}.",
+		name: "Your name", namePh: "e.g. Alex", wechat: "WeChat ID / email", wechatPh: "WeChat ID, phone or email", song: "Song title", songPh: "Optional",
+		plan: "Selected plan & estimate", note: "Notes", notePh: "Style, references, deadline…", send: "Send", sending: "Sending…", cancel: "Cancel",
+		ok: "Received", okSub: "I'll be in touch soon. In a hurry? Add me on WeChat: {w}", close: "OK",
+		errName: "Please enter your name", errWechat: "Please enter a valid WeChat ID / email (5–40 characters)", errNet: "Couldn't send. Check your connection, or add WeChat {w}", errRate: "Too many attempts, try again later, or add WeChat {w}" },
+	ko: { btn: "요청 보내기 · 먼저 연락드려요", title: "요청 보내기", sub: "위챗(또는 이메일)을 남겨 주시면 구성을 확인한 뒤 연락드립니다. 위챗 {w} 로 바로 추가하셔도 됩니다.",
+		name: "이름", namePh: "예: 민수", wechat: "위챗 ID / 이메일", wechatPh: "위챗 ID, 전화번호 또는 이메일", song: "곡 제목", songPh: "선택 사항",
+		plan: "선택한 구성과 예상 견적", note: "메모", notePh: "원하는 스타일, 레퍼런스, 납기…", send: "보내기", sending: "보내는 중…", cancel: "취소",
+		ok: "접수됐습니다", okSub: "곧 연락드리겠습니다. 급하시면 위챗 {w} 로 추가해 주세요.", close: "확인",
+		errName: "이름을 입력해 주세요", errWechat: "올바른 위챗 ID / 이메일을 입력해 주세요 (5–40자)", errNet: "전송 실패. 네트워크를 확인하거나 위챗 {w} 로 연락 주세요", errRate: "요청이 너무 잦습니다. 잠시 후 다시 시도하거나 위챗 {w} 로 연락 주세요" }
+};
+function qbOrderT() { return QBO_T[currentLang] || QBO_T.zh; }
+var qbOrderOpened = 0, qbOrderLast = null;
+function qbOrderEsc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+function qbOrderOpen() {
+	var t = qbOrderT(), q = I18N[currentLang].quote, total = qbStatTotal(), from = false;
+	try { from = qbCompute(q).from; } catch (e) {}
+	var planTxt = qbStatPlanLocal() + (total === null ? "" : " · " + qbFmt(q, total) + (from ? "+" : ""));
+	var saved = {}; try { saved = JSON.parse(qbLsGet("cd_order_me") || "{}") || {}; } catch (e) {}
+	var w = CONTACT.wechat;
+	var el = document.getElementById("qbo");
+	if (el) el.parentNode.removeChild(el);
+	el = document.createElement("div"); el.id = "qbo"; el.className = "qbo";
+	el.innerHTML = '<div class="qbo-back" onclick="qbOrderClose()"></div>'
+		+ '<form class="qbo-sheet" role="dialog" aria-modal="true" aria-labelledby="qbo-t" novalidate onsubmit="qbOrderSend(event)">'
+		+ '<div class="qbo-grab"></div><div class="qbo-t" id="qbo-t">' + t.title + '</div><div class="qbo-sub">' + t.sub.replace("{w}", w) + '</div>'
+		+ '<label class="qbo-f"><span>' + t.name + ' *</span><input id="qbo-name" maxlength="20" autocomplete="name" placeholder="' + t.namePh + '" value="' + qbOrderEsc(saved.name) + '"></label>'
+		+ '<label class="qbo-f"><span>' + t.wechat + ' *</span><input id="qbo-wx" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + t.wechatPh + '" value="' + qbOrderEsc(saved.wechat) + '"></label>'
+		+ '<label class="qbo-f"><span>' + t.song + '</span><input id="qbo-song" maxlength="60" placeholder="' + t.songPh + '"></label>'
+		+ '<div class="qbo-f"><span>' + t.plan + '</span><div class="qbo-plan">' + qbOrderEsc(planTxt) + '</div></div>'
+		+ '<label class="qbo-f"><span>' + t.note + '</span><textarea id="qbo-note" maxlength="500" rows="3" placeholder="' + t.notePh + '"></textarea></label>'
+		// 蜜罐：真人看不见也点不到，机器人会顺手填上
+		+ '<label class="qbo-hp" aria-hidden="true">Website<input id="qbo-hp" name="website" tabindex="-1" autocomplete="off"></label>'
+		+ '<div class="qbo-err" id="qbo-err" role="alert"></div>'
+		+ '<button class="qb-cta qbo-send" id="qbo-send">' + t.send + '</button>'
+		+ '<button type="button" class="qb-reset" onclick="qbOrderClose()">' + t.cancel + '</button>'
+		+ '</form>';
+	document.body.appendChild(el);
+	document.documentElement.classList.add("qbo-lock");
+	requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("on"); }); });
+	qbOrderOpened = Date.now();
+	qbOrderLast = { plan: qbStatPlan(), total: total };
+	qbStatHit("form");
+	document.addEventListener("keydown", qbOrderKey);
+	if (!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) setTimeout(function () { var f = document.getElementById(saved.name ? "qbo-song" : "qbo-name"); if (f) f.focus(); }, 80);
+}
+// 表单里给客户看的方案名跟随当前语言
+function qbStatPlanLocal() {
+	var z = I18N[currentLang].quote, s = qbState;
+	var name = s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
+	return (s.mode === "stems" ? z.modeStems : z.modeVocal) + " · " + name + " · " + s.count + z.countUnit;
+}
+function qbOrderKey(e) { if (e.key === "Escape") qbOrderClose(); }
+function qbOrderClose() {
+	var el = document.getElementById("qbo");
+	document.removeEventListener("keydown", qbOrderKey);
+	document.documentElement.classList.remove("qbo-lock");
+	if (!el) return;
+	el.classList.remove("on");
+	setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+}
+function qbOrderSend(e) {
+	e.preventDefault();
+	var t = qbOrderT(), w = CONTACT.wechat;
+	var v = function (id) { var x = document.getElementById(id); return x ? x.value.trim() : ""; };
+	var err = document.getElementById("qbo-err"), btn = document.getElementById("qbo-send");
+	var name = v("qbo-name"), wx = v("qbo-wx");
+	if (!name) { err.textContent = t.errName; document.getElementById("qbo-name").focus(); return; }
+	if (!/^[A-Za-z0-9_\-+.@ ]{5,40}$/.test(wx)) { err.textContent = t.errWechat; document.getElementById("qbo-wx").focus(); return; }
+	err.textContent = "";
+	btn.disabled = true; btn.textContent = t.sending;
+	qbLsSet("cd_order_me", JSON.stringify({ name: name, wechat: wx }));
+	var detail = ""; try { detail = qbQuoteText(); } catch (x) {}
+	var body = JSON.stringify({ name: name, wechat: wx, song: v("qbo-song"), note: v("qbo-note"), website: v("qbo-hp"),
+		plan: qbOrderLast.plan, total: qbOrderLast.total, detail: detail, lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
+	var fail = function (msg) { err.textContent = msg.replace("{w}", w); btn.disabled = false; btn.textContent = t.send; };
+	fetch(QBS_API + "/o", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
+		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
+		.then(function (j) {
+			if (!j.ok) return fail(j.status === 429 ? t.errRate : j.e === "field" ? t.errWechat : t.errNet);
+			qbStatHit("ordered");
+			var sh = document.querySelector("#qbo .qbo-sheet");
+			if (sh) sh.innerHTML = '<div class="qbo-grab"></div><div class="qbo-done">✓</div><div class="qbo-t">' + t.ok + '</div>'
+				+ '<div class="qbo-sub">' + t.okSub.replace("{w}", w) + '</div>'
+				+ '<button type="button" class="qb-cta" onclick="qbOrderClose()">' + t.close + '</button>';
+		})
+		.catch(function () { fail(t.errNet); });
+}
+
 document.addEventListener("DOMContentLoaded", function() {
 	qbSnapshotPrices(); // 必须在任何报价渲染之前
 	qbInitTheme();

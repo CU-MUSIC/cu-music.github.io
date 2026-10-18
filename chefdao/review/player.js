@@ -11,6 +11,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k) } catch (e) {} },
 };
 const PW_KEY = 'review:pw:' + S.slug;
+const cdate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? (+m[2]) + '月' + (+m[3]) + '日' : d; };
 const V = S.versions;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
 const dataKey = i => 'review:' + S.slug + ':' + V[i].ver.toLowerCase();
@@ -35,8 +36,13 @@ document.body.innerHTML = `
       <div class="meta" id="vmeta"></div>
     </div>
   </header>
-  <div class="seg" id="seg" role="tablist" aria-label="版本"${V.length > 1 ? '' : ' hidden'}><i class="thumb" id="thumb"></i>${V.map((v, i) =>
-    `<button role="tab" data-i="${i}">${esc(v.ver)}${i === V.length - 1 ? '<em>最新</em>' : ''}<span class="dot"></span></button>`).join('')}</div>
+  <section class="vers open" id="seg"${V.length > 1 ? '' : ' hidden'}>
+    <div class="vhead"><span class="n1">1</span><span class="t1" id="vt1"></span>
+      <button class="stack press" id="stack" aria-label="展开/收起版本"><svg viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg></button>
+      <span class="d1" id="vd1"></span></div>
+    <div class="vwrap"><div><div class="vlist">${V.map((v, i) => [v, i]).reverse().map(([v, i]) =>
+      `<button class="vrow" data-i="${i}"><span class="vb"><span class="vn">${esc(v.file)}</span><span class="vd">${esc(cdate(v.date))}${i === V.length - 1 ? ' · 最新' : ''}</span></span><span class="hasdot"></span><span class="vt"><b>${esc(v.ver.toLowerCase())}</b></span><span class="vdur">${fmt(v.duration)}</span></button>`).join('')}</div></div></div>
+  </section>
 
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -63,7 +69,7 @@ document.body.innerHTML = `
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
-  <div class="foot-hint">写完点下方「发送给刀大厨」，我会在微信收到。<br>评论会保存在这台设备上，关掉页面也不会丢。</div>
+  <div class="foot-hint">写完点下方「发送给刀大厨」，我会在微信收到。<br>评论会保存在这台设备上，关掉页面也不会丢。<br>你的播放情况会同步给刀大厨，方便改得更准。</div>
 </main>
 
 <div class="dock">
@@ -79,7 +85,7 @@ document.body.innerHTML = `
 <audio id="a" preload="auto"></audio>`;
 
 const a = $('#a');
-let PUSH = '', notes = [], locked = null;
+let PUSH = '', WK = '', notes = [], locked = null;
 
 /* ───────── 加解密 ───────── */
 async function keyFor(pw) {
@@ -106,6 +112,7 @@ async function tryUnlock(pw, typed) {
     await open(key, ub64(S.check));                       // 密码错会在这里抛错
     store.set(PW_KEY, pw);
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
+    if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
     splash();
     const minWait = new Promise(r => setTimeout(r, typed ? 900 : 650));
     const slow = setTimeout(() => { $('#by').textContent = '正在载入…'; }, 1600);
@@ -190,22 +197,22 @@ function draw(now) {
 
   // 圆角竖条波形（苹果语音备忘录式）
   const gap = 2, bw = Math.max(2, (w - gap * 120) / 120), step = bw + gap, cols = Math.floor((w + gap) / step);
-  const gPlay = ctx.createLinearGradient(0, 0, 0, h); gPlay.addColorStop(0, '#b1acff'); gPlay.addColorStop(1, '#8079f2');
+  const gPlay = ctx.createLinearGradient(0, 0, 0, h); gPlay.addColorStop(0, '#f2f0ec'); gPlay.addColorStop(1, '#c9c7c3');
   for (let c = 0; c < cols; c++) {
     const x = c * step, f = (x + bw / 2) / w * (N - 1);
     const v = started ? amp(f, now) : 0;
     const bh = Math.max(3, v * H * 2);
     const cx = x + bw / 2;
-    ctx.fillStyle = cx < px ? gPlay : (hx !== null && cx < hx ? '#55538e' : '#34335f');
+    ctx.fillStyle = cx < px ? gPlay : (hx !== null && cx < hx ? '#5c5b59' : '#363635');
     ctx.beginPath();
     ctx.roundRect ? ctx.roundRect(x, mid - bh / 2, bw, bh, bw / 2) : ctx.rect(x, mid - bh / 2, bw, bh);
     ctx.fill();
   }
   // 评论标记
-  ctx.fillStyle = 'rgba(232,201,138,.95)';
+  ctx.fillStyle = 'rgba(236,234,230,.95)';
   notes.forEach(o => { const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 2.5, 0, 7); ctx.fill(); });
   // 播放头
-  if (tt > 0 || !a.paused) { ctx.fillStyle = '#ecebf7'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - 1, 2, 2, h - 10, 1) : ctx.rect(px - 1, 2, 2, h - 10); ctx.fill(); }
+  if (tt > 0 || !a.paused) { ctx.fillStyle = '#ebe9e5'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - 1, 2, 2, h - 10, 1) : ctx.rect(px - 1, 2, 2, h - 10); ctx.fill(); }
 
   $('#cur').textContent = fmt(tt); $('#mfill').style.transform = 'scaleX(' + (tt / dur()) + ')'; $('#mtime').textContent = fmt(tt); $('#rem').textContent = '-' + fmt(dur() - tt);
   if (locked === null) $('#stampT').textContent = fmt(tt);
@@ -351,17 +358,16 @@ new IntersectionObserver(([en]) => {
 
 /* ───────── 版本切换 ───────── */
 function markSeg() {
-  document.querySelectorAll('#seg button').forEach(b => {
+  document.querySelectorAll('#seg .vrow').forEach(b => {
     const i = +b.dataset.i; let has = false;
     try { const d = JSON.parse(store.get(dataKey(i)) || '{}'); has = (d.notes || []).length > 0 || !!(d.overall || '').trim(); } catch (e) {}
-    b.classList.toggle('has', has); b.classList.toggle('on', i === vi); b.setAttribute('aria-selected', i === vi);
+    b.classList.toggle('has', has); b.classList.toggle('on', i === vi); b.setAttribute('aria-current', i === vi);
   });
-  const on = $('#seg button.on');
-  if (on) { const t = $('#thumb'); t.style.width = on.offsetWidth + 'px'; t.style.transform = 'translateX(' + on.offsetLeft + 'px)'; }
+  $('#vt1').textContent = cur.file; $('#vd1').textContent = fmt(cur.duration);
 }
 function showMeta() {
   $('#vfile').textContent = cur.file;
-  $('#vmeta').innerHTML = '<b>' + esc(cur.ver) + '</b>' + fmt(cur.duration) + ' · ' + esc(cur.date) + (V.length > 1 ? ' · 共 ' + V.length + ' 版' : '');
+  $('#vmeta').innerHTML = '<b>' + esc(cur.ver) + '</b>' + fmt(cur.duration) + ' · ' + esc(cdate(cur.date)) + (V.length > 1 ? ' · 共 ' + V.length + ' 版' : '');
   $('#mt').textContent = S.title + ' · ' + cur.ver;
 }
 let switching = 0;
@@ -383,11 +389,92 @@ async function switchTo(i) {
     $('#loading').style.opacity = 0;
   } catch (e) { $('#loading').textContent = '载入失败，请刷新重试'; }
 }
-$('#seg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) switchTo(+b.dataset.i); });
+$('#seg').addEventListener('click', e => { const b = e.target.closest('.vrow'); if (b) switchTo(+b.dataset.i); });
+$('#stack').onclick = () => $('#seg').classList.toggle('open');
 addEventListener('resize', markSeg);
 showMeta();
 
 render(); requestAnimationFrame(draw);
+
+/* ───────── 不提供下载：屏蔽右键 / 长按菜单 ───────── */
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: S.title, artist: 'CU MUSIC · ChefDao' });
+
+/* ───────── 收听报告（Insights）：开始听、离开时的总结推到刀大厨微信 ─────────
+   在自己设备上打开一次 #me 网址，这台设备就不再上报。 */
+if (location.hash === '#me') store.set('review:me', '1');
+const ME = store.get('review:me') === '1';
+let lid = store.get('review:lid');
+if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.set('review:lid', lid); }
+const visits = (+store.get('review:visits:' + S.slug) || 0) + 1; store.set('review:visits:' + S.slug, visits);
+const ua = navigator.userAgent;
+const device = (/iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? '安卓' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '设备')
+  + (/MicroMessenger/i.test(ua) ? ' · 微信内打开' : '');
+const BINS = 60, stats = {};
+const st = () => stats[vi] || (stats[vi] = { sec: 0, sent: 0, saved: -1, ends: 0, bins: new Array(BINS).fill(0), pinged: false, seen: 0 });
+const clock = () => new Date().toTimeString().slice(0, 5);
+function beacon(title, html) {
+  if (!PUSH || ME) return;
+  const q = new URLSearchParams({ token: PUSH, title, content: html, template: 'html' });
+  fetch('https://www.pushplus.plus/send?' + q, { mode: 'no-cors', keepalive: true }).catch(() => {});
+}
+/* 同一份数据存进 stats.cumusic.work，给 insights 看板用 */
+const STATS = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787/e' : 'https://stats.cumusic.work/e';
+const sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+function track(i) {
+  const s = stats[i], v = V[i]; if (!WK || ME || !s) return;
+  if (s.saved >= 0 && s.sec - s.saved < 1) return;
+  s.saved = s.sec;
+  let n = 0; try { n = (JSON.parse(store.get(dataKey(+i)) || '{}').notes || []).length; } catch (e) {}
+  const body = JSON.stringify({ k: WK, slug: S.slug, title: S.title, sid, ver: v.ver, lid, device, visit: visits,
+    sec: Math.round(s.sec * 10) / 10, dur: v.duration, ends: s.ends, bins: s.bins.map(x => Math.round(x * 10) / 10), notes: n });
+  fetch(STATS, { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'text/plain' } }).catch(() => {});
+}
+let lastPos = null;
+a.addEventListener('timeupdate', () => {
+  if (a.paused || !KEY) { lastPos = null; return; }
+  const t = a.currentTime;
+  if (lastPos !== null) {
+    const d = t - lastPos;
+    if (d > 0 && d < 1.5) { const s = st(); s.sec += d; s.bins[Math.min(BINS - 1, Math.floor(t / dur() * BINS))] += d; }
+  }
+  lastPos = t;
+});
+a.addEventListener('seeking', () => { lastPos = null; });
+a.addEventListener('ended', () => { st().ends++; });
+a.addEventListener('play', () => {
+  const s = st(); if (s.pinged) return; s.pinged = true; track(vi);
+  beacon('▶ 听众 ' + lid + ' 在听《' + S.title + '》' + cur.ver,
+    '<p><b>听众 ' + lid + '</b> 开始听 <b>《' + esc(S.title) + '》' + esc(cur.ver) + '</b></p><p>' + clock() + ' · ' + device + ' · 第 ' + visits + ' 次打开</p>');
+});
+const mmss = sec => Math.floor(sec / 60) + ' 分 ' + Math.round(sec % 60) + ' 秒';
+function report() {
+  Object.keys(stats).forEach(track);
+  const parts = [];
+  Object.keys(stats).forEach(i => {
+    const s = stats[i], v = V[i]; if (s.sec - s.sent < 5) return;
+    s.sent = s.sec;
+    const len = v.duration / BINS, d = v.duration;
+    const cover = Math.round(s.bins.filter(x => x >= len * .5).length / BINS * 100);
+    let top = 0; s.bins.forEach((x, j) => { if (x > s.bins[top]) top = j; });
+    const reps = s.bins[top] / len;
+    let lo = top, hi = top;
+    while (lo > 0 && s.bins[lo - 1] >= s.bins[top] * .75) lo--;
+    while (hi < BINS - 1 && s.bins[hi + 1] >= s.bins[top] * .75) hi++;
+    let n = 0; try { n = (JSON.parse(store.get(dataKey(+i)) || '{}').notes || []).length; } catch (e) {}
+    parts.push('<p><b>' + esc(v.ver) + '</b>：听了 ' + mmss(s.sec) + '（整首 ' + fmt(d) + '），覆盖 ' + cover + '%'
+      + (s.ends ? '，完整听完 ' + s.ends + ' 次' : '')
+      + (reps >= 1.8 ? '<br>反复听最多：' + fmt(lo * len) + '–' + fmt((hi + 1) * len) + '（约 ' + Math.round(reps) + ' 遍）' : '')
+      + (n ? '<br>写了 ' + n + ' 条评论' : '<br>还没写评论') + '</p>');
+  });
+  if (!parts.length) return;
+  beacon('听众 ' + lid + ' · 《' + S.title + '》收听报告',
+    '<p><b>听众 ' + lid + '</b> · ' + clock() + ' · ' + device + '</p>' + parts.join(''));
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') report(); });
+setInterval(() => { if (!a.paused) track(vi); }, 30000);
+addEventListener('pagehide', report);
 
 /* 记住过密码就直接进 */
 const saved = store.get(PW_KEY);
