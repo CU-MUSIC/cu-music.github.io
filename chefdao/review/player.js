@@ -22,15 +22,43 @@ let vi = V.length - 1, cur = V[vi];                       // 当前版本，默�
 const dataKey = i => 'review:' + S.slug + ':' + V[i].ver.toLowerCase();
 
 // CU MUSIC 双圆标志（和官网首页同一个）：下载进度 0→60% 画外圈，40→100% 画内圈
-const MARK = '<svg class="cumark" viewBox="272 164 456 456" aria-hidden="true"><path class="r0" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="r0" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>'
+const MARK = '<svg class="cumark" viewBox="272 164 456 456" aria-hidden="true"><path class="r0" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="r0 r0b" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>'
   + '<path class="r1" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="r2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
 const clamp01 = x => Math.max(0, Math.min(1, x));
 const mb = n => (n / 1048576).toFixed(1);
-function drawProg(box, p, txt) {
-  box.classList.remove('intro');   // 开场画圈动画让位给真实进度
-  box.querySelector('.r1').style.strokeDashoffset = 1 - clamp01(p / .6);
-  box.querySelector('.r2').style.strokeDashoffset = 1 - clamp01((p - .4) / .6);
-  const t = box.querySelector('.dlt'); if (t) t.textContent = txt;
+// 官网同款节奏：外圈 0.1s 起、内圈 0.5s 起，各画 1.9s，曲线 cubic-bezier(.45,.05,.15,1)
+function bez(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx, cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const X = t => ((ax * t + bx) * t + cx) * t, Y = t => ((ay * t + by) * t + cy) * t, dX = t => (3 * ax * t + 2 * bx) * t + cx;
+  return x => { let t = x; for (let i = 0; i < 6; i++) { const d = dX(t); if (Math.abs(d) < 1e-6) break; t -= (X(t) - x) / d; } return Y(Math.max(0, Math.min(1, t))); };
+}
+const EASE = bez(.45, .05, .15, 1), TL = 2.4;
+function paintMark(box, u) {
+  const tt = u * TL;
+  box.querySelector('.r1').style.strokeDashoffset = 1 - EASE(clamp01((tt - .1) / 1.9));
+  box.querySelector('.r2').style.strokeDashoffset = 1 - EASE(clamp01((tt - .5) / 1.9));
+}
+// 按固定时值画；下载跟不上时平滑减速、停在下载进度前面一点等它；下载完再按原速画完。返回画完的 Promise
+// 下一帧：正常用 requestAnimationFrame；页面在后台、帧不来时 60ms 后用定时器补上，解锁不会卡住
+function next(cb) {
+  let fired = false;
+  requestAnimationFrame(t => { if (!fired) { fired = true; cb(t); } });
+  setTimeout(() => { if (!fired) { fired = true; cb(performance.now()); } }, 60);
+}
+function runMark(box, state) {
+  let u = 0, last = 0;
+  return new Promise(done => {
+    const step = now => {
+      const dt = last ? Math.min(.05, (now - last) / 1000) : 0; last = now;
+      const cap = state.done ? 1 : Math.min(.92, state.p + .12);
+      const room = cap - u, base = dt / TL;
+      u = Math.min(cap, u + base * Math.max(.06, Math.min(1, room * 5)));
+      paintMark(box, u);
+      if (u >= 1) return done();
+      next(step);
+    };
+    next(step);
+  });
 }
 document.body.innerHTML = `
 <div class="lock" id="lock">
@@ -146,7 +174,7 @@ async function tryUnlock(pw, typed) {
     const key = await keyFor(pw);
     await open(key, ub64(S.check));                       // 密码错会在这里抛错
     store.set(PW_KEY, pw);
-    document.title = S.title + ' — CU MUSIC';
+    document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
     splash();
@@ -211,15 +239,18 @@ async function loadAudio(key) {
   KEY = key;
   try {
     if (a.src) return;
-    // 下载超过 0.4 秒才露出进度圈，缓存命中时不闪
-    // 下载超过 0.4 秒，解锁页上的 CU 标志就变成进度：随下载重新画一遍；缓存命中时不动它
-    const L = $('#lock'), mk = L.querySelector('.lmark'), t0 = performance.now();
-    a.src = await fetchVersion(vi, (p, got, total) => {
-      if (performance.now() - t0 < 400) return;
-      L.classList.add('dl-on');
-      drawProg(mk, p, ''); $('#dlt').textContent = '音频下载中 ' + Math.round(p * 100) + '% · ' + mb(got) + ' / ' + mb(total) + ' MB';
+    // 解锁：暗色轮廓上的亮环按官网节奏画出来，同时下载音频；下载慢时画线跟着减速，超过 0.8 秒才显示百分比
+    const L = $('#lock'), mk = L.querySelector('.lmark'), t0 = performance.now(), st = { p: 0, done: false };
+    const anim = runMark(mk, st);
+    const src = await fetchVersion(vi, (p, got, total) => {
+      st.p = p;
+      if (performance.now() - t0 < 800) return;
+      L.classList.add('dl-on'); $('#dlt').textContent = '音频下载中 ' + Math.round(p * 100) + '% · ' + mb(got) + ' / ' + mb(total) + ' MB';
     });
-    if (L.classList.contains('dl-on')) { drawProg(mk, 1, ''); $('#dlt').textContent = '下载完成'; }
+    st.done = true; st.p = 1;
+    if (L.classList.contains('dl-on')) $('#dlt').textContent = '下载完成';
+    await anim;
+    a.src = src;
     $('#play').disabled = false;
     $('#loading').style.opacity = 0;
   } catch (e) { $('#loading').textContent = '音频加载失败，请刷新重试'; }
@@ -594,9 +625,11 @@ async function switchTo(i) {
   P0 = P; P = cur.peaks; morphAt = performance.now();
   loadNotes(); render(); updateCta(); showMeta(); markSeg(); if (cfbRender) cfbRender();
   const ld = $('#loading');
-  ld.innerHTML = MARK + '<div class="dlt">' + cur.ver + ' 下载中</div>'; ld.classList.add('prog'); ld.style.opacity = 1;
+  ld.innerHTML = MARK + '<div class="dlt">' + vname(cur) + '</div>'; ld.classList.add('prog'); ld.style.opacity = 1;
   try {
-    const url = await fetchVersion(i, (p, got, total) => { if (token === switching) drawProg(ld, p, cur.ver + ' 下载中 ' + Math.round(p * 100) + '% · ' + mb(got) + ' / ' + mb(total) + ' MB'); });
+    const st = { p: 0, done: false }, anim = runMark(ld, st);
+    const url = await fetchVersion(i, (p, got, total) => { st.p = p; if (token === switching) ld.querySelector('.dlt').textContent = vname(cur) + ' 下载中 ' + Math.round(p * 100) + '% · ' + mb(got) + ' / ' + mb(total) + ' MB'; });
+    st.done = true; st.p = 1; await anim;
     if (token !== switching) return;
     a.src = url;
     await new Promise(r => a.addEventListener('loadedmetadata', r, { once: true }));

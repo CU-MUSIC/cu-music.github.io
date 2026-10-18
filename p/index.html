@@ -6,9 +6,10 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#0e0e0f">
-<link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/chefdao-logo-32.png">
-<link rel="apple-touch-icon" href="/chefdao/assets/chefdao-logo-180.png">
-<title>项目进度 | CU MUSIC</title>
+<title>项目进度</title>
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
 <style>
 /* 客户订单进度页：一屏只有歌名、一个状态词、一行副标题、五段细进度线和一个文字链接。数据来自 stats.cumusic.work/track */
 :root{
@@ -88,7 +89,7 @@ function show(d) {
   const last = steps.length - 1, k = Math.max(0, Math.min(last, d.stage | 0)), t = d.times || [], key = steps[k], dt = d.dates || {};
   const mode = (d.plan || '').split(' · ')[0];
   $('song').textContent = (d.song ? '《' + d.song + '》' : '订单 #' + d.no) + (mode ? ' · ' + mode : '');
-  document.title = (d.song ? '《' + d.song + '》' : '项目') + '进度 | CU MUSIC';
+  document.title = (d.song ? '《' + d.song + '》' : '项目') + '进度';
   $('m').className = d.cancelled ? 'off' : '';
   $('due').textContent = '';
   if (d.cancelled) {

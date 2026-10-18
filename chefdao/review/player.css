@@ -300,22 +300,22 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .cumark{display:block;width:56px;height:56px;overflow:visible}
 .cumark path{fill:none;stroke-width:36;stroke-linecap:round}
 .cumark .r0{stroke:var(--fill-2)}
-.cumark .r1,.cumark .r2{stroke:var(--text);stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .25s ease-out}
+.cumark .r1,.cumark .r2{stroke:var(--text);stroke-dasharray:1;stroke-dashoffset:1}
 .dl{display:none;flex-direction:column;align-items:center;gap:12px;margin-top:30px;opacity:0;transition:opacity .4s}
 .lock.splash.dl-on .dl{display:flex;opacity:1}
 .dlt{font-size:13px;color:var(--text-2);font-variant-numeric:tabular-nums;letter-spacing:.01em}
 .wave .loading.prog{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px}
 .wave .loading.prog .cumark{width:36px;height:36px}
 
-/* 解锁页：不用封面方块，直接是 CU MUSIC 双圆标志，进来时像官网首页一样画出来 */
+/* 解锁页：CU MUSIC 双圆标志。进来时暗色轮廓按官网节奏画出；输对密码后亮环再画一遍，同时下载音频 */
 .lock .art.lmark{background:none;box-shadow:none;border-radius:0;width:112px;height:112px}
 .lmark .cumark{width:100%;height:100%}
-.lmark .r0{opacity:0;transition:opacity .4s}
-.lock.dl-on .lmark .r0{opacity:1}
-.lmark.intro .r1,.lmark.intro .r2{animation:cu-draw 1.9s cubic-bezier(.45,.05,.15,1) .15s both;transition:none}
-.lmark.intro .r2{animation-delay:.55s}
+.lmark .r0{stroke:rgba(236,234,230,.2);stroke-dasharray:1;stroke-dashoffset:0}
+.lmark .r1,.lmark .r2{transition:none}
+.lmark.intro .r0{animation:cu-draw 1.9s cubic-bezier(.45,.05,.15,1) .15s both}
+.lmark.intro .r0b{animation-delay:.55s}
 @keyframes cu-draw{from{stroke-dashoffset:1;opacity:0}8%{opacity:1}to{stroke-dashoffset:0;opacity:1}}
-@media (prefers-reduced-motion:reduce){.lmark.intro .r1,.lmark.intro .r2{animation:none;stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.lmark.intro .r0{animation:none}}
 .lock.leaving .art.lmark{transition:transform .7s var(--ios),opacity .5s ease .2s;opacity:0}
 
 /* 版本列表按阶段分组：混音 / 编辑 */
