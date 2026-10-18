@@ -76,19 +76,17 @@ document.body.innerHTML = `
   <header class="head">
     <div class="art"></div>
     <div>
-      <div class="eyebrow">${esc(S.title)}</div>
-      <h1 id="vfile">${esc(vname(cur))}</h1>
+      <h1 id="vfile">${esc(S.title)}</h1>
       <div class="meta" id="vmeta"></div>
     </div>
   </header>
-  <section class="vers open" id="seg"${V.length > 1 ? '' : ' hidden'}>
-    <div class="vhead"><span class="n1">1</span><span class="t1" id="vt1"></span>
-      <button class="stack press" id="stack" aria-label="展开/收起版本"><svg viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg></button>
-      <span class="d1" id="vd1"></span></div>
-    <div class="vwrap"><div><div class="vlist">${V.map((v, i) => [v, i]).reverse().map(([v, i], k, arr) =>
-      (multiStage && (k === 0 || stageOf(arr[k - 1][0]) !== stageOf(v)) ? `<div class="vgrp">${STAGE[stageOf(v)] || '其他'}</div>` : '') +
-      `<button class="vrow" data-i="${i}"><span class="vb"><span class="vn">${esc(multiStage ? v.ver : vname(v))}</span><span class="vd">${esc(cdate(v.date))}${i === V.length - 1 ? ' · 最新' : ''}</span></span><span class="hasdot"></span><span class="vdur">${fmt(v.duration)}</span></button>`).join('')}</div></div></div>
-  </section>
+  <section class="vpick" id="seg"${V.length > 1 ? '' : ' hidden'}>${(() => {
+    // 版本选择：按阶段一组一排小按钮「编辑 V1 V2 · 混音 V3」，当前版本高亮
+    const groups = [];
+    V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
+    return groups.map(g => `<div class="vg">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${g.items.map(i =>
+      `<button class="vrow press" data-i="${i}"><span class="vn">${esc(V[i].ver)}</span><span class="hasdot"></span></button>`).join('')}</div>`).join('');
+  })()}</section>
 
   <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
@@ -476,11 +474,11 @@ function markSeg() {
     try { const d = JSON.parse(store.get(dataKey(i)) || '{}'); has = (d.notes || []).length > 0 || !!(d.overall || '').trim(); } catch (e) {}
     b.classList.toggle('has', has); b.classList.toggle('on', i === vi); b.setAttribute('aria-current', i === vi);
   });
-  $('#vt1').textContent = vname(cur); $('#vd1').textContent = fmt(cur.duration);
+
 }
 function showMeta() {
-  $('#vfile').textContent = vname(cur);
-  $('#vmeta').innerHTML = '<b>' + esc(cur.ver) + '</b>' + fmt(cur.duration) + ' · ' + esc(cdate(cur.date)) + (V.length > 1 ? ' · 共 ' + V.length + ' 版' : '');
+  // 大字是歌名，小字是当前版本和日期
+  $('#vmeta').textContent = vname(cur) + ' · ' + cdate(cur.date);
   $('#mt').textContent = S.title + ' · ' + cur.ver;
 }
 let switching = 0;
@@ -506,7 +504,7 @@ function ownerTools() {
   // 每个版本旁边一个「删除」
   document.querySelectorAll('.vrow').forEach(row => {
     const v = V[+row.dataset.i], x = document.createElement('span');
-    x.className = 'vdel'; x.setAttribute('role', 'button'); x.textContent = '删除';
+    x.className = 'vdel'; x.setAttribute('role', 'button'); x.setAttribute('aria-label', '删除 ' + v.ver); x.textContent = '×';
     x.onclick = async e => {
       e.stopPropagation();
       if (!confirm('删除《' + S.title + '》' + v.ver + '？客户将看不到这个版本，删了不能恢复')) return;
@@ -639,7 +637,7 @@ async function switchTo(i) {
   } catch (e) { $('#loading').textContent = '载入失败，请刷新重试'; }
 }
 $('#seg').addEventListener('click', e => { const b = e.target.closest('.vrow'); if (b) switchTo(+b.dataset.i); });
-$('#stack').onclick = () => $('#seg').classList.toggle('open');
+
 addEventListener('resize', markSeg);
 showMeta();
 
