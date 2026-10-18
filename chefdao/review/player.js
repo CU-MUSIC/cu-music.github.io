@@ -44,6 +44,7 @@ document.body.innerHTML = `
       `<button class="vrow" data-i="${i}"><span class="vb"><span class="vn">${esc(v.file)}</span><span class="vd">${esc(cdate(v.date))}${i === V.length - 1 ? ' · 最新' : ''}</span></span><span class="hasdot"></span><span class="vt"><b>${esc(v.ver.toLowerCase())}</b></span><span class="vdur">${fmt(v.duration)}</span></button>`).join('')}</div></div></div>
   </section>
 
+  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span id="rem">-${fmt(cur.duration)}</span></div>
   <div class="transport">
@@ -86,6 +87,10 @@ document.body.innerHTML = `
 
 const a = $('#a');
 let PUSH = '', WK = '', notes = [], locked = null;
+// 刀大厨对评论的回复 / 完成标记：键 = 版本|时间点(0.1 秒)|内容
+let REPLIES = new Map();
+const rk = (ver, t, m) => ver + '|' + (Math.round(t * 10) / 10) + '|' + m;
+const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 
 /* ───────── 加解密 ───────── */
 async function keyFor(pw) {
@@ -131,6 +136,8 @@ async function tryUnlock(pw, typed) {
     clearTimeout(slow);
     enterApp();
     clientFb();
+    ownerTools();
+    loadReplies();
   } catch (e) {
     $('#lock').classList.remove('busy');
     store.del(PW_KEY);
@@ -296,6 +303,23 @@ function add() {
 $('#add').onclick = add;
 txt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover:hover)').matches) { e.preventDefault(); add(); } });
 
+// 评论行加上「刀大厨：回复」和「✓ 已处理」
+function decorate(row, r) {
+  row.classList.toggle('done', !!(r && r.done));
+  row.querySelectorAll('.rp,.dn').forEach(x => x.remove());
+  const m = row.querySelector('.m'); if (!r) return;
+  if (r.done) { const d = document.createElement('span'); d.className = 'dn'; d.textContent = '✓ 已处理'; m.appendChild(d); }
+  if (r.reply) { const p = document.createElement('div'); p.className = 'rp'; p.innerHTML = '<b>刀大厨</b>'; p.appendChild(document.createTextNode(r.reply)); m.appendChild(p); }
+}
+async function loadReplies() {
+  if (!WK) return;
+  try {
+    const j = await (await fetch(API_BASE + '/cr?s=' + S.slug + '&k=' + encodeURIComponent(WK), { cache: 'no-store' })).json();
+    if (!j.ok) return;
+    REPLIES = new Map(j.replies.map(x => [rk(x.ver, x.t, x.m), x]));
+    render();
+  } catch (e) {}
+}
 function render(newId) {
   const list = $('#list'); list.innerHTML = '';
   notes.forEach(o => {
@@ -304,6 +328,7 @@ function render(newId) {
     const t = row.querySelector('.t'); t.textContent = fmt(o.t);
     t.onclick = () => { seek(o.t); if (a.paused && !$('#play').disabled) a.play(); };
     row.querySelector('.m').textContent = o.m;
+    decorate(row, REPLIES.get(rk(cur.ver, o.t, o.m)));
     row.querySelector('.x').onclick = () => {
       row.classList.add('out');
       setTimeout(() => { notes = notes.filter(n => n !== o); render(); save(); updateCta(); }, 260);
@@ -394,6 +419,61 @@ async function jumpTo(ver, t) {
   if (a.paused && !$('#play').disabled) a.play();
   $('#wave').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
+/* 刀大厨自己的设备（存了看板钥匙）+ 在线版本的歌：像 Samply 一样拖文件上传新版本、删版本 */
+function ownerTools() {
+  const live = window.SONG_LIVE, key = store.get('insights:key');
+  if (!live || !key) return;
+  const own = $('#own'); own.hidden = false;
+  const busy = t => { $('#ownT').textContent = t; };
+  const post = async (path, body) => {
+    const r = await fetch(live.api + path, { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({ ok: false })); if (!j.ok) throw new Error(j.e || r.status); return j;
+  };
+  // 每个版本旁边一个「删除」
+  document.querySelectorAll('.vrow').forEach(row => {
+    const v = V[+row.dataset.i], x = document.createElement('span');
+    x.className = 'vdel'; x.setAttribute('role', 'button'); x.textContent = '删除';
+    x.onclick = async e => {
+      e.stopPropagation();
+      if (!confirm('删除《' + S.title + '》' + v.ver + '？客户将看不到这个版本，删了不能恢复')) return;
+      try { busy('正在删除 ' + v.ver + '…'); await post('/radm/del', { slug: S.slug, ver: v.ver }); location.reload(); }
+      catch (err) { busy('没删掉，检查网络再试'); }
+    };
+    row.appendChild(x);
+  });
+  if (V.length < 2) $('#seg').hidden = true;   // 只剩一版时列表本来就不显示，删除按钮放到上传条里
+  if (V.length === 1) {
+    const x = document.createElement('button'); x.className = 'press'; x.textContent = '删除 ' + V[0].ver;
+    x.onclick = async () => { if (!confirm('删除《' + S.title + '》' + V[0].ver + '？这是唯一的版本，删了客户就听不到了')) return;
+      try { await post('/radm/del', { slug: S.slug, ver: V[0].ver }); location.reload(); } catch (e) { busy('没删掉，检查网络再试'); } };
+    own.appendChild(x);
+  }
+  let loading = null;
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  async function up(file) {
+    if (!file || own.classList.contains('busy')) return;
+    try {
+      await lib();
+      const n = cuNameInfo(file.name);
+      const next = 'V' + (V.reduce((m, v) => Math.max(m, parseInt(v.ver.slice(1)) || 0), 0) + 1);
+      const ver = n.ver || next;
+      if (V.some(v => v.ver === ver) && !confirm(ver + ' 已经有了，要覆盖吗？')) return;
+      if (!confirm('把「' + file.name + '」上传为《' + S.title + '》' + ver + '？')) return;
+      own.classList.add('busy');
+      const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, date: n.date, step: busy,
+        bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
+      busy('《' + S.title + '》' + r.ver + ' 已上线，正在刷新…');
+      setTimeout(() => location.reload(), 800);
+    } catch (e) { own.classList.remove('busy'); busy(/HTTP|^[a-z]+$/.test(e.message) ? '没传成功（' + e.message + '），再试一次' : e.message); }
+  }
+  $('#ownPick').onclick = () => $('#ownFile').click();
+  $('#ownFile').onchange = () => up($('#ownFile').files[0]);
+  let depth = 0;
+  addEventListener('dragenter', e => { if ([...(e.dataTransfer.types || [])].includes('Files')) { depth++; document.body.classList.add('dropping'); } });
+  addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; document.body.classList.remove('dropping'); } });
+  addEventListener('dragover', e => e.preventDefault());
+  addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dropping'); up(e.dataTransfer.files[0]); });
+}
 async function clientFb() {
   const at = new URLSearchParams(location.search).get('at');   // 看板链接 ?at=V1-24
   const m = at && /^(V\d{1,3})-(\d+(?:\.\d+)?)$/.exec(at);
@@ -416,6 +496,7 @@ async function clientFb() {
     const seen = new Set(), list = items.sort((x, y) => x.ver.localeCompare(y.ver, 'en', { numeric: true }) || (x.t ?? 1e9) - (y.t ?? 1e9))
       .filter(x => { const k = x.ver + '|' + x.t + '|' + x.m; if (seen.has(k)) return false; seen.add(k); return true; });
     const box = $('#cfl'); box.innerHTML = '';
+    const mine = new Map(), rows = [];
     list.forEach(o => {
       const row = document.createElement('div'); row.className = 'row';
       row.innerHTML = '<button class="t press"></button><div class="m"></div>';
@@ -423,8 +504,32 @@ async function clientFb() {
       tb.textContent = o.ver.toLowerCase() + ' ' + (o.t == null ? '—' : fmt(o.t));
       if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
       row.querySelector('.m').textContent = o.m;
+      if (o.t != null) {
+        const k = rk(o.ver, o.t, o.m), acts = document.createElement('div'); acts.className = 'acts';
+        acts.innerHTML = '<button class="press" data-a="reply">回复</button><button class="press" data-a="done">✓ 完成</button>';
+        const sync = () => { const r = mine.get(k); decorate(row, r); acts.querySelector('[data-a=done]').classList.toggle('on', !!(r && r.done));
+          acts.querySelector('[data-a=reply]').textContent = r && r.reply ? '改回复' : '回复'; };
+        const save = async body => {
+          try {
+            const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, ...body }) });
+            const j = await r.json(); if (!j.ok) throw new Error();
+            if (!j.reply && !j.done) mine.delete(k); else mine.set(k, { reply: j.reply, done: j.done });
+            sync();
+          } catch (e) { alert('没存上，检查网络再试'); }
+        };
+        acts.querySelector('[data-a=reply]').onclick = () => { const r = mine.get(k); const v = prompt('回复这条评论（客户会在审听页看到）：\n「' + o.m + '」', (r && r.reply) || ''); if (v !== null) save({ reply: v }); };
+        acts.querySelector('[data-a=done]').onclick = () => { const r = mine.get(k); save({ done: !(r && r.done) }); };
+        row.querySelector('.m').after(acts);
+        rows.push(sync);
+      }
       box.appendChild(row);
     });
+    try {   // 已有的回复 / 完成
+      const rj = await (await fetch(API + '/cr?s=' + S.slug, { headers: { Authorization: 'Bearer ' + key }, cache: 'no-store' })).json();
+      if (rj.ok) rj.replies.forEach(x => mine.set(rk(x.ver, x.t, x.m), x));
+    } catch (e) {}
+    rows.forEach(f => f());
     $('#cfn').textContent = list.length + ' 条 · ' + [...new Set(list.map(x => x.who))].join('、');
     $('#cfb').hidden = false;
   } catch (e) {}
@@ -534,7 +639,7 @@ function report() {
   beacon('听众 ' + lid + ' · 《' + S.title + '》收听报告',
     '<p><b>听众 ' + lid + '</b> · ' + clock() + ' · ' + device + '</p>' + parts.join(''));
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') report(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') report(); else loadReplies(); });
 setInterval(() => { if (!a.paused) track(vi); }, 30000);
 addEventListener('pagehide', report);
 
