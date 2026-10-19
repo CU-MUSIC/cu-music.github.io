@@ -1,4 +1,5 @@
-// 上传审听版本（看板和审听页共用）：浏览器里分析波形、WAV 先转 MP3、用审听密码加密，再传到 stats.cumusic.work
+// 上传审听版本（看板和审听页共用）：浏览器里分析波形、WAV 先转 m4a、用审听密码加密，再传到 stats.cumusic.work
+//   WAV / AIFF 自动转 m4a（AAC 320k）；m4a / mp3 原样上传
 //   const r = await cuUpload({ api, key, file, slug | (title, pass), ver?, date?, step: t => {}, bar: p => {} })
 //   → { slug, title, pass, ver, url }
 (() => {
@@ -11,6 +12,43 @@ function cuNameInfo(fn) {
   const m = raw.match(/_V(\d+)_(\d{2})(\d{2})$/);
   const title = raw.replace(/_V\d+_\d{4}$/, '').replace(/_\d+$/, '').replace(/@ChefDao.*$/i, '').trim().replace(/\s+(Edit|Mix|Master)$/i, '').trim();
   return { raw, title, ver: m ? 'V' + (+m[1]) : '', date: m ? `${new Date().getFullYear()}-${m[2]}-${m[3]}` : '' };
+}
+// WAV 头里的采样率（不是 WAV 返回 0）
+function wavRate(buf) {
+  try { const d = new DataView(buf); if (d.getUint32(0) !== 0x52494646 || d.getUint32(8) !== 0x57415645) return 0;
+    for (let p = 12; p + 8 < d.byteLength;) { const id = d.getUint32(p), n = d.getUint32(p + 4, true); if (id === 0x666d7420) return d.getUint32(p + 12, true); p += 8 + n + (n & 1); }
+  } catch (e) {} return 0;
+}
+const AAC = (au) => ({ codec: 'mp4a.40.2', sampleRate: au.sampleRate, numberOfChannels: Math.min(2, au.numberOfChannels), bitrate: 320000 });
+async function aacOk(au) {
+  try { return !!(window.AudioEncoder && (await AudioEncoder.isConfigSupported(AAC(au))).supported); } catch (e) { return false; }
+}
+function loadMuxer() {
+  return window.Mp4Muxer ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script');
+    s.src = new URL('enc/mp4-muxer.min.js', here).href; s.onload = ok; s.onerror = () => no(new Error('m4a')); document.head.appendChild(s); });
+}
+// AAC 320k 编码 + 封装成 m4a（fastStart，边下边播）
+async function toM4A(au, onp) {
+  await loadMuxer();
+  const cfg = AAC(au), nch = cfg.numberOfChannels, sr = au.sampleRate, len = au.length;
+  const target = new Mp4Muxer.ArrayBufferTarget();
+  const mux = new Mp4Muxer.Muxer({ target, audio: { codec: 'aac', numberOfChannels: nch, sampleRate: sr }, fastStart: 'in-memory' });
+  let err = null;
+  const enc = new AudioEncoder({ output: (c, m) => mux.addAudioChunk(c, m), error: e => { err = e; } });
+  enc.configure(cfg);
+  const chans = [...Array(nch)].map((_, i) => au.getChannelData(i)), F = 8192;
+  for (let o = 0; o < len; o += F) {
+    const n = Math.min(F, len - o), data = new Float32Array(n * nch);
+    for (let c = 0; c < nch; c++) data.set(chans[c].subarray(o, o + n), c * n);
+    enc.encode(new AudioData({ format: 'f32-planar', sampleRate: sr, numberOfFrames: n, numberOfChannels: nch, timestamp: Math.round(o / sr * 1e6), data }));
+    if (enc.encodeQueueSize > 64) await new Promise(r => setTimeout(r, 0));
+    if (o % (F * 32) === 0) { onp(o / len); await new Promise(r => setTimeout(r, 0)); }
+    if (err) throw err;
+  }
+  await enc.flush(); enc.close();
+  if (err) throw err;
+  mux.finalize(); onp(1);
+  return new Uint8Array(target.buffer);
 }
 async function cuUpload(o) {
   const step = o.step || (() => {}), bar = o.bar || (() => {});
@@ -25,7 +63,9 @@ async function cuUpload(o) {
   step('读取文件…'); bar(.05);
   const file = o.file, buf = await file.arrayBuffer();
   step('分析波形…'); bar(.12);
-  const AC = window.AudioContext || window.webkitAudioContext, ac = new AC();
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const srcRate = wavRate(buf), want = srcRate === 44100 || srcRate === 48000 ? srcRate : 48000;
+  let ac; try { ac = new AC({ sampleRate: want }); } catch (e) { ac = new AC(); }
   const au = await new Promise((ok, no) => { const p = ac.decodeAudioData(buf.slice(0), ok, no); if (p && p.catch) p.catch(no); });
   const N = 400, ch = [...Array(au.numberOfChannels)].map((_, i) => au.getChannelData(i)), len = au.length, pk = [];
   for (let i = 0; i < N; i++) { let mx = 0; const a = Math.floor(i * len / N), b = Math.floor((i + 1) * len / N);
@@ -35,15 +75,20 @@ async function cuUpload(o) {
   let bytes, mime;
   if (ext === 'mp3') { bytes = new Uint8Array(buf); mime = 'audio/mpeg'; }
   else if (['m4a', 'mp4', 'aac'].includes(ext)) { bytes = new Uint8Array(buf); mime = 'audio/mp4'; }
-  else {   // WAV / AIFF：转成 MP3 192k，不然太大
-    step('转成 MP3…');
+  else if (await aacOk(au)) {   // WAV / AIFF：转成 m4a（AAC 320k），用浏览器自带的编码器
+    step('转成 m4a…');
+    bytes = await toM4A(au, p => bar(.15 + p * .45));
+    mime = 'audio/mp4';
+  }
+  else {   // 浏览器不支持 AAC 编码时才退回 MP3 320k
+    step('这个浏览器不支持 m4a 编码，改转 MP3 320k…');
     const toI16 = f => { const out = new Int16Array(f.length); for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); out[i] = v < 0 ? v * 0x8000 : v * 0x7fff; } return out; };
     const L = toI16(ch[0]), R = ch[1] ? toI16(ch[1]) : null;
     bytes = await new Promise((ok, no) => {
       const w = new Worker(new URL('enc/mp3.js', here));
       w.onmessage = e => { if (e.data.done) { w.terminate(); ok(e.data.mp3); } else bar(.15 + e.data.p * .45); };
       w.onerror = () => { w.terminate(); no(new Error('mp3')); };
-      w.postMessage({ id: 1, L, R, rate: au.sampleRate, kbps: 192 }, R ? [L.buffer, R.buffer] : [L.buffer]);
+      w.postMessage({ id: 1, L, R, rate: au.sampleRate, kbps: 320 }, R ? [L.buffer, R.buffer] : [L.buffer]);
     });
     mime = 'audio/mpeg';
   }
