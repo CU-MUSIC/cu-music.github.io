@@ -144,27 +144,34 @@ async function keyFor(pw) {
 }
 const open = (key, u8) => crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.subarray(0, 12) }, key, u8.subarray(12));
 
-/* ───────── 歌名「数据失真」：没解锁是乱码；每输一位更稳定；密码对了逐字解码成真歌名 ───────── */
+/* ───────── 歌名：第一次输密码时先是模糊的，每输一位清楚一点；密码对了、要进入播放页的那一刻，快速闪一下乱码解出歌名 ─────────
+   记住过密码的设备再打开，歌名直接清晰显示，不做这些效果 */
 const scr = (() => {
-  const el = document.getElementById('lt'), T = [...S.title], G = '▓▒░█▚▞▙▟▛▜◢◣◤◥#%&@$*01';
-  const rnd = () => G[Math.floor(Math.random() * G.length)];
-  const spans = T.map(ch => { const s = document.createElement('span'); s.textContent = /\s/.test(ch) ? ' ' : rnd(); el.appendChild(s); return s; });
-  let flick = .9, timer = 0, done = false;
-  const tick = () => { if (done) return; spans.forEach((s, i) => { if (!/\s/.test(T[i]) && Math.random() < flick) s.textContent = rnd(); }); };
-  timer = setInterval(tick, 80);
-  const burst = ms => { el.classList.remove('gl'); void el.offsetWidth; el.classList.add('gl'); setTimeout(() => el.classList.remove('gl'), ms); };
+  const el = document.getElementById('lt'), T = [...S.title], first = !store.get(PW_KEY);
+  const HAN = '的一是不了人我在有他这中大来上国个到说们为子和你地出道也时年得就那要下以生会自着去之过家学对可她里后小么心多天而能好都然没日于起还发成事只作当想看文无开手十用主行方又如前所本见经头面公同三已老从动两长知民样现分将外但身些与高意进把法此实回二理美点月明社其声音乐曲光风夜梦雨星海',
+    LAT = 'ABCDEFGHJKLMNPQRSTUVWXYZ', NUM = '0123456789';
+  const pool = ch => /[㐀-鿿豈-﫿]/.test(ch) ? HAN : /[0-9]/.test(ch) ? NUM : /[A-Za-z]/.test(ch) ? LAT : '';
+  const rnd = ch => { const p = pool(ch); return p ? p[Math.floor(Math.random() * p.length)] : ch; };
+  el.textContent = S.title;
+  const blur = px => el.style.setProperty('--b', px + 'px');
+  if (first) { el.classList.add('bl'); blur(12); }
+  const nudge = () => { el.classList.remove('nd'); void el.offsetWidth; el.classList.add('nd'); };
   return {
-    level(n) { flick = [.9, .55, .32, .16, .06][n] ?? .06; burst(160); },
-    fail() { flick = .9; burst(380); },
-    decode() {   // 从左到右逐字定格，伴随错位闪烁
-      clearInterval(timer); el.classList.add('gl'); el.removeAttribute('aria-label');
-      const t0 = performance.now(), per = Math.max(60, 700 / T.length);
-      const run = () => {
-        const k = (performance.now() - t0) / per;
-        spans.forEach((s, i) => { s.textContent = i < k - 2 ? T[i] : (/\s/.test(T[i]) ? ' ' : rnd()); });
-        if (k - 2 < T.length) setTimeout(run, 45); else { done = true; spans.forEach((s, i) => s.textContent = T[i]); setTimeout(() => el.classList.remove('gl'), 180); }
-      };
-      run();
+    level(n) { if (first) { blur([12, 9, 6, 4, 3][n] ?? 3); nudge(); } },
+    fail() { if (first) { blur(12); nudge(); } },
+    decode() {   // 约 0.3 秒：去掉模糊，每个字快闪几下定格
+      if (!first) return Promise.resolve();
+      el.classList.remove('bl'); el.removeAttribute('aria-label'); el.textContent = '';
+      const spans = T.map(ch => { const s = document.createElement('span'); s.textContent = rnd(ch); el.appendChild(s); return s; });
+      return new Promise(done => {
+        let left = spans.length;
+        spans.forEach((s, i) => {
+          let n = 0;
+          const go = () => { if (n++ < 3) { s.textContent = rnd(T[i]); setTimeout(go, 40); } else { s.textContent = T[i]; s.classList.add('ok'); if (!--left) done(); } };
+          setTimeout(go, i * 45);
+        });
+        if (!left) done();
+      });
     },
   };
 })();
@@ -201,12 +208,10 @@ async function tryUnlock(pw, typed) {
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
     splash();
-    scr.decode();
     if (S.artist) { const by = $('#by'); by.classList.add('hi'); by.textContent = '欢迎，' + S.artist; }
     const minWait = new Promise(r => setTimeout(r, typed ? 900 : 650));
-    const slow = setTimeout(() => { $('#by').textContent = '正在载入…'; }, 1600);
     await Promise.all([loadAudio(key), minWait]);
-    clearTimeout(slow);
+    await scr.decode();   // 进入前一刻才解出歌名，解完马上进
     enterApp();
     clientFb();
     ownerTools();

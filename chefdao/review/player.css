@@ -323,13 +323,14 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .vgrp:first-child{padding-top:4px}
 
 /* 没输密码时歌名是糊的，每输一位清楚一点，解锁时慢慢完全显出来 */
-/* 歌名「数据失真」：乱码字符等宽排开；gl = 错位 + 红青分离的短暂闪烁 */
-.lock h1.scr{display:flex;justify-content:center;gap:.02em;min-height:1.15em;font-variant-numeric:tabular-nums}
-.lock h1.scr span{display:inline-block;min-width:1em;text-align:center}
-.lock h1.scr:not(.gl){opacity:.82}
-.lock h1.gl{animation:cu-glitch .18s steps(2) infinite;text-shadow:2px 0 rgba(255,40,90,.55),-2px 0 rgba(0,220,255,.55)}
-@keyframes cu-glitch{0%{transform:translate(0,0);clip-path:inset(0 0 0 0)}25%{transform:translate(-2px,1px);clip-path:inset(10% 0 45% 0)}50%{transform:translate(2px,-1px);clip-path:inset(55% 0 5% 0)}75%{transform:translate(-1px,0);clip-path:inset(0 0 70% 0)}100%{transform:translate(0,0);clip-path:inset(0 0 0 0)}}
-@media (prefers-reduced-motion:reduce){.lock h1.gl{animation:none}}
+/* 歌名：模糊用文字阴影做（不用 filter，边缘不会出现方框）；解码时乱码是灰的，定格的字变白 */
+.lock h1.scr{display:flex;justify-content:center;min-height:1.15em}
+.lock h1.bl{color:transparent;text-shadow:0 0 var(--b,12px) rgba(236,234,230,.9);transition:text-shadow .45s ease}
+.lock h1.scr span{display:inline-block;color:var(--text-3);transition:color .25s ease}
+.lock h1.scr span.ok{color:var(--text)}
+.lock h1.nd{animation:cu-nudge .22s ease-out}
+@keyframes cu-nudge{0%{transform:translateX(0)}35%{transform:translateX(1.5px)}70%{transform:translateX(-1px)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.lock h1.nd{animation:none}}
 .lock .by.hi{color:var(--text);font-weight:600}
 .lock.leaving h1{transition:opacity .25s ease,transform .6s var(--ios)}
 
