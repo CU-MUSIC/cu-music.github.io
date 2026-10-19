@@ -82,6 +82,9 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .cmr .dn{font-style:normal;font-size:12px;color:var(--text-2);background:var(--fill-2);padding:1px 7px;border-radius:999px;margin-left:4px}
 .cmr .rp{display:block;font-style:normal;margin-top:4px;padding:6px 9px;border-radius:9px;background:var(--fill-2);font-size:14px;color:var(--text)}
 .cmr .cma{display:flex;gap:6px;margin-top:5px}
+.cmr[data-go]{cursor:pointer;border-radius:8px;transition:background-color .15s}
+.cmr[data-go]:hover{background:var(--fill)}
+.cmr .cma .golink{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--pearl);color:var(--ink);text-decoration:none;font-weight:600}
 .cmr .cma button{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
 .cmr .cma button.on{background:var(--pearl);color:var(--ink)}
 
@@ -320,8 +323,8 @@ function cmts(x) {
   return `<div class="cm"><div class="cmh">评论 ${f.comments.length} 条<span class="${f.sent ? 'sent' : ''}">${f.sent ? '已发送给你' : '还没点发送'}</span></div>
     ${f.comments.map(c => [c, reply(x.slug, x.ver, c.t, c.m)]).sort((p, q) => (p[1] && p[1].done ? 1 : 0) - (q[1] && q[1].done ? 1 : 0)).map(([c, r], i, arr) => {
       const sep = r && r.done && !(i > 0 && arr[i - 1][1] && arr[i - 1][1].done) ? '<div class="cmsep">已处理</div>' : '';
-      return sep + `<div class="cmr${r && r.done ? ' done' : ''}"><a href="${esc(atUrl(x.slug, x.ver, c.t))}" target="_blank" rel="noopener" title="在审听页打开这一处">${fmt(c.t)}</a><span>${esc(c.m)}${r && r.done ? ' <i class="dn">✓ 已处理</i>' : ''}${r && r.reply ? `<em class="rp">刀大厨：${esc(r.reply)}</em>` : ''}
-        <span class="cma"><button data-cr="reply" data-k="${esc(JSON.stringify([x.slug, x.ver, c.t, c.m]))}">${r && r.reply ? '改回复' : '回复'}</button><button data-cr="done" class="${r && r.done ? 'on' : ''}" data-k="${esc(JSON.stringify([x.slug, x.ver, c.t, c.m]))}">✓ 完成</button></span></span></div>`; }).join('')}
+      return sep + `<div class="cmr${r && r.done ? ' done' : ''}" data-go="${esc(atUrl(x.slug, x.ver, c.t))}"><a href="${esc(atUrl(x.slug, x.ver, c.t))}" target="_blank" rel="noopener" title="在审听页打开这一处">${fmt(c.t)}</a><span>${esc(c.m)}${r && r.done ? ' <i class="dn">✓ 已处理</i>' : ''}${r && r.reply ? `<em class="rp">刀大厨：${esc(r.reply)}</em>` : ''}
+        <span class="cma"><a class="golink" href="${esc(atUrl(x.slug, x.ver, c.t))}" target="_blank" rel="noopener">去听 ↗</a><button data-cr="reply" data-k="${esc(JSON.stringify([x.slug, x.ver, c.t, c.m]))}">${r && r.reply ? '改回复' : '回复'}</button><button data-cr="done" class="${r && r.done ? 'on' : ''}" data-k="${esc(JSON.stringify([x.slug, x.ver, c.t, c.m]))}">✓ 完成</button></span></span></div>`; }).join('')}
     ${f.overall ? `<div class="cmr"><b>整体</b><span>${esc(f.overall)}</span></div>` : ''}</div>`;
 }
 
@@ -368,6 +371,10 @@ function render() {
     stage(o, { [k]: v });
   });
   root.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => editNote(b.dataset.ln));
+  root.querySelectorAll('.cmr[data-go]').forEach(row => row.onclick = e => {
+    if (e.target.closest('a,button')) return;
+    window.open(row.dataset.go, '_blank', 'noopener');
+  });
   root.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => {
     const k = JSON.parse(b.dataset.k), r = reply(...k);
     if (b.dataset.cr === 'done') return setReply(k, { done: !(r && r.done) });

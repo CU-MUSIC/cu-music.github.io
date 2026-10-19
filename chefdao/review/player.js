@@ -51,7 +51,7 @@ function runMark(box, state) {
     const step = now => {
       const dt = last ? Math.min(.05, (now - last) / 1000) : 0; last = now;
       const cap = state.done ? 1 : Math.min(.92, state.p + .12);
-      const room = cap - u, base = dt / TL;
+      const room = cap - u, base = dt / TL * (state.fast ? 2 : 1);
       u = Math.min(cap, u + base * Math.max(.06, Math.min(1, room * 5)));
       paintMark(box, u);
       if (u >= 1) return done();
@@ -199,7 +199,15 @@ async function tryUnlock(pw, typed) {
 function splash() {
   const L = $('#lock'); L.classList.remove('busy'); L.classList.add('splash');
 }
+function prefetchOthers() {
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  const order = V.map((v, i) => i).filter(i => i !== vi).reverse();
+  // 只下载存本地，不解密，省内存；真切到这一版时再解密
+  (async () => { for (const i of order) { if (urls[i] || await cacheGet(i)) continue;
+    try { const r = await fetch(V[i].audio); if (r.ok) await cachePut(i, new Uint8Array(await r.arrayBuffer())); } catch (e) {} } })();
+}
 function enterApp() {
+  setTimeout(prefetchOthers, 3000);
   // FLIP：解锁页的封面平滑移动、缩放到页头封面的位置
   const L = $('#lock'), from = L.querySelector('.art'), to = $('#app .head .art');
   $('#app').removeAttribute('aria-hidden');
@@ -218,16 +226,31 @@ function enterApp() {
 }
 let KEY = null;
 const urls = {};
+// 离线存储：加密后的音频存进浏览器缓存（文件名随机、内容不变，可以一直留着），下次打开直接读本地，不再下载
+const AUDIO_CACHE = 'cu-audio-1';
+const absUrl = i => new URL(V[i].audio, location.href).href;
+async function cacheGet(i) {
+  try { const r = await (await caches.open(AUDIO_CACHE)).match(absUrl(i)); return r ? new Uint8Array(await r.arrayBuffer()) : null; } catch (e) { return null; }
+}
+async function cachePut(i, u8) {
+  try { await (await caches.open(AUDIO_CACHE)).put(absUrl(i), new Response(u8, { headers: { 'Content-Type': 'application/octet-stream' } })); } catch (e) {}
+}
+const cached = new Set();
 async function fetchVersion(i, onp) {
   if (!urls[i]) urls[i] = (async () => {
+    let u8 = await cacheGet(i);
+    if (u8) { cached.add(i); if (onp) onp(1, u8.length, u8.length); }
+    else {
     const r = await fetch(V[i].audio);
     const total = +r.headers.get('Content-Length') || 0;
-    let u8;
     if (r.body && total && onp) {   // 边下边报进度
       const rd = r.body.getReader(), parts = []; let got = 0;
       for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onp(got / total, got, total); }
       u8 = new Uint8Array(got); let o = 0; for (const c of parts) { u8.set(c, o); o += c.length; }
     } else u8 = new Uint8Array(await r.arrayBuffer());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    cachePut(i, u8); cached.add(i);
+    }
     const plain = await open(KEY, u8);
     return URL.createObjectURL(new Blob([plain], { type: V[i].mime || 'audio/mpeg' }));
   })();
@@ -239,6 +262,7 @@ async function loadAudio(key) {
     if (a.src) return;
     // 解锁：暗色轮廓上的亮环按官网节奏画出来，同时下载音频；下载慢时画线跟着减速，超过 0.8 秒才显示百分比
     const L = $('#lock'), mk = L.querySelector('.lmark'), t0 = performance.now(), st = { p: 0, done: false };
+    if (await cacheGet(vi) !== null) st.fast = true;   // 本地已有：标志两倍速画完，直接进
     const anim = runMark(mk, st);
     const src = await fetchVersion(vi, (p, got, total) => {
       st.p = p;
@@ -625,7 +649,7 @@ async function switchTo(i) {
   const ld = $('#loading');
   ld.innerHTML = MARK + '<div class="dlt">' + vname(cur) + '</div>'; ld.classList.add('prog'); ld.style.opacity = 1;
   try {
-    const st = { p: 0, done: false }, anim = runMark(ld, st);
+    const st = { p: 0, done: false, fast: await cacheGet(i) !== null }, anim = runMark(ld, st);
     const url = await fetchVersion(i, (p, got, total) => { st.p = p; if (token === switching) ld.querySelector('.dlt').textContent = vname(cur) + ' 下载中 ' + Math.round(p * 100) + '% · ' + mb(got) + ' / ' + mb(total) + ' MB'; });
     st.done = true; st.p = 1; await anim;
     if (token !== switching) return;
