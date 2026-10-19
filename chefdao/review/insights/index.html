@@ -95,6 +95,35 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .login p{color:var(--text-3);font-size:14px}
 
 /* 顶部三个分区：审听 / 价格页 / 订单 */
+.lbar{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 16px;font-size:14px;color:var(--text-3)}
+.lbar .go{background:var(--pearl);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:18px 14px;margin-bottom:26px}
+.lcard{display:flex;flex-direction:column;gap:3px;text-align:left;min-width:0}
+.lcard b{font-size:15px;font-weight:600;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s}
+.lcard:hover .lc{transform:scale(1.02)}
+.lc svg{width:42%;height:42%}.lc svg path{fill:none;stroke:#e8e6e2;stroke-width:36;stroke-linecap:round}
+.lloose{display:flex;flex-direction:column;gap:6px;font-size:15px;margin-bottom:24px}
+.lloose div{display:flex;justify-content:space-between}.lloose a{color:var(--text-2);font-size:13px}
+.pjs{gap:12px}
+.pjtop{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:start}
+.pjcv{position:relative;display:block;padding:0}.pjcv .lc{width:120px}
+.pjcv span{position:absolute;left:0;right:0;bottom:6px;font-size:11px;color:#e8e6e2;text-align:center;opacity:.8}
+.pjf{display:flex;flex-direction:column;gap:8px;min-width:0}
+.pjlink{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px}
+.pjlink code{flex:1 1 100%;color:var(--text-2);overflow-wrap:anywhere}
+.pjlink button,.pjlink a{font-size:13px;padding:5px 12px;border-radius:999px;background:var(--fill-2);color:var(--text);text-decoration:none}
+.pjlink button{background:var(--pearl);color:var(--ink);font-weight:600}
+.pjtr{display:flex;flex-direction:column}
+.pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
+.pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
+.pjtr .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pjtr .t i{font-style:normal;color:var(--text-3);font-size:12px}
+.pjtr button{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
+.pjtr button:disabled{opacity:.3}
+.up .ghost{background:var(--fill-2);color:var(--text);border-radius:12px;padding:11px;font-size:15px}
+.up .ghost.danger{color:var(--red)}
+.up .dim{color:var(--text-3);font-size:14px;padding:8px 0}
 .rsm{background:var(--fill);border-radius:14px;margin:-8px 0 14px;padding:0 14px}
 .rsm summary{list-style:none;cursor:pointer;padding:12px 0;font-size:16px;font-weight:600;display:flex;justify-content:space-between}
 .rsm summary::-webkit-details-marker{display:none}
@@ -221,7 +250,7 @@ if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
 let KEY = store.get('insights:key');
 let days = +store.get('insights:days') || 30, song = '', data = null, pdata = null;
 let tab = store.get('insights:tab') || 'listen', ofilter = '';
-const TABS = [['listen', '审听'], ['price', '价格页'], ['orders', '订单']];
+const TABS = [['lib', 'Library'], ['listen', '审听'], ['price', '价格页'], ['orders', '订单']];
 // 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
 const SNAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
 // 推进按钮上写的是「进入这一步」的动作
@@ -254,6 +283,7 @@ async function load() {
     const auth = { headers: { Authorization: 'Bearer ' + KEY } };
     const [r, r2, r3] = await Promise.all([fetch(API + '/q?days=90', auth), fetch(API + '/pq?days=90', auth).catch(() => null), fetch(API + '/radm/list', auth).catch(() => null)]);
     const j3 = r3 && r3.ok ? await r3.json().catch(() => null) : null;
+    try { const jl = await (await fetch(API + '/lib', auth)).json(); if (jl.ok) LIB = jl; } catch (e) {}
     if (j3 && j3.ok) RSONGS = j3.songs;
     if (r.status === 401) { store.del('insights:key'); KEY = null; return login(true); }
     const j = await r.json(); if (!j.ok) throw new Error();
@@ -349,9 +379,9 @@ function render() {
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
   const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div>
-    ${tab === 'orders' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
+    ${tab === 'orders' || tab === 'lib' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
-  root.innerHTML = head + (tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
+  root.innerHTML = head + (tab === 'lib' ? renderLib() : tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
   document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
@@ -387,6 +417,8 @@ function render() {
     stage(o, { [k]: v });
   });
   root.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => editNote(b.dataset.ln));
+  root.querySelectorAll('.lcard[data-p]').forEach(b => b.onclick = () => openProject(b.dataset.p));
+  const ln = document.getElementById('lNew'); if (ln) ln.onclick = newProject;
   const rsm = document.getElementById('rsm'); if (rsm) rsm.ontoggle = () => { songsOpen = rsm.open; };
   root.querySelectorAll('[data-rs]').forEach(b => b.onclick = () => rsAction(b.closest('.rs').dataset.slug, b.dataset.rs, b));
   root.querySelectorAll('.cmr[data-go]').forEach(row => row.onclick = e => {
@@ -590,6 +622,97 @@ function place(sid, cc) {
   const head = g.country === 'CN' ? '' : (CC[g.country] || g.country || '');
   return [head, city, isp(g.org)].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' · ');
 }
+// ── Library：项目卡片墙（单曲 / EP / 专辑），点开管理封面、名称、曲目、链接 ──
+let LIB = { projects: [], loose: [] };
+const KINDS = { single: '单曲', ep: 'EP', album: '专辑' };
+const CUSVG = '<svg viewBox="272 164 456 456" aria-hidden="true"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
+const coverOf = p => p.cover ? `<div class="lc" style="background-image:url(${esc(API + p.cover)})"></div>` : `<div class="lc">${CUSVG}</div>`;
+function renderLib() {
+  return `<div class="lbar"><span>${LIB.projects.length} 个项目</span><button class="go" id="lNew">＋ 新项目</button></div>
+  <div class="lgrid">${LIB.projects.map(p => `<button class="lcard" data-p="${esc(p.slug)}">${coverOf(p)}
+    <b>${esc(p.title)}</b><span>${esc(p.artist || '未填歌手')} · ${KINDS[p.kind] || 'EP'}${p.tracks.length > 1 ? ' · ' + p.tracks.length + ' 首' : ''}</span></button>`).join('')}</div>
+  ${LIB.loose.length ? `<div class="sect">未归入项目<span>${LIB.loose.length}</span></div><div class="lloose">${LIB.loose.map(x => `<div>《${esc(x.title)}》<a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a></div>`).join('')}</div>` : ''}`;
+}
+async function lib(path, body, method) {
+  const r = await fetch(API + path, { method: method || 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({ ok: false })); if (!j.ok) throw new Error(j.e || r.status); return j;
+}
+async function libReload(open) {
+  try { const j = await (await fetch(API + '/lib', { headers: { Authorization: 'Bearer ' + KEY } })).json(); if (j.ok) LIB = j; } catch (e) {}
+  render(); if (open) openProject(open);
+}
+// 封面：浏览器里缩到 1200px 以内转 JPEG 再传
+async function shrink(file) {
+  const img = await createImageBitmap(file), k = Math.min(1, 1200 / Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return new Promise(ok => c.toBlob(ok, 'image/jpeg', .9));
+}
+function openProject(slug) {
+  const old = document.getElementById('pj'); if (old) old.remove();
+  const p = LIB.projects.find(x => x.slug === slug); if (!p) return;
+  const others = [...LIB.projects.filter(x => x.slug !== slug).flatMap(x => x.tracks.map(t => ({ ...t, from: x.title }))), ...LIB.loose.map(x => ({ ...x, from: '' }))];
+  const el = document.createElement('div'); el.className = 'up'; el.id = 'pj';
+  el.innerHTML = `<div class="up-s pjs"><div class="up-h">项目<button type="button" id="pjX">关闭</button></div>
+    <div class="pjtop"><button type="button" class="pjcv" id="pjCv" title="换封面">${coverOf(p)}<span>换封面</span></button>
+      <div class="pjf"><label>项目名<input type="text" id="pjT" value="${esc(p.title)}"></label><label>歌手<input type="text" id="pjA" value="${esc(p.artist || '')}" placeholder="例如：阿杰"></label>
+      <div class="row"><label>类型<select id="pjK">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}"${p.kind === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label>密码<input type="tel" id="pjP" maxlength="4" value="${esc(p.pass)}"></label></div></div></div>
+    <input type="file" id="pjFile" accept="image/*" hidden>
+    <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
+    <div class="sect">曲目<span>${p.tracks.length} 首</span></div>
+    <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i></span>
+      <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
+    <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
+    <div class="msg2" id="pjMsg"></div>
+    <div class="row"><button type="button" class="go" id="pjSave">保存</button><button type="button" class="ghost danger" id="pjDel">删除项目</button></div></div>`;
+  document.body.appendChild(el);
+  const $p = id => document.getElementById(id), msg = (t, e) => { $p('pjMsg').textContent = t; $p('pjMsg').className = 'msg2' + (e ? ' err' : ''); };
+  const close = () => el.remove();
+  $p('pjX').onclick = close; el.onclick = e => { if (e.target === el) close(); };
+  const setTracks = async list => { try { await lib('/lib/tracks', { project: slug, songs: list }); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } };
+  const order = p.tracks.map(t => t.slug);
+  el.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const i = +b.dataset.mv, j = i + +b.dataset.d; [order[i], order[j]] = [order[j], order[i]]; setTracks(order); });
+  el.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { if (confirm('把《' + p.tracks[+b.dataset.rm].title + '》移出这个项目？歌和审听链接都还在')) setTracks(order.filter((_, i) => i !== +b.dataset.rm)); });
+  if ($p('pjAdd')) $p('pjAdd').onchange = () => { const v = $p('pjAdd').value; if (v) setTracks(order.concat(v)); };
+  $p('pjUp').onclick = () => { close(); openUpload({ project: p }); };
+  $p('pjCv').onclick = () => $p('pjFile').click();
+  $p('pjFile').onchange = async () => {
+    const f = $p('pjFile').files[0]; if (!f) return;
+    msg('上传封面…');
+    try {
+      const blob = await shrink(f);
+      const r = await fetch(API + '/lib/cover?p=' + slug, { method: 'PUT', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg' }, body: blob });
+      const j = await r.json(); if (!j.ok) throw new Error(); await libReload(slug);
+    } catch (e) { msg('封面没传上，换一张图或检查网络', true); }
+  };
+  $p('pjCopy').onclick = () => { const t = '《' + $p('pjT').value + '》' + p.url + '  密码 ' + $p('pjP').value;
+    const done = () => { $p('pjCopy').textContent = '已复制'; }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
+  $p('pjSave').onclick = async () => {
+    if (!/^\d{4}$/.test($p('pjP').value)) return msg('密码要 4 位数字', true);
+    try { const pw = $p('pjP').value, sec = pw !== p.pass ? await sealPass(pw) : {};
+      await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.trim(), kind: $p('pjK').value, ...sec }); msg('已保存'); await libReload(slug); }
+    catch (e) { msg('没保存上，检查网络再试', true); }
+  };
+  $p('pjDel').onclick = async () => {
+    if (prompt('删除项目《' + p.title + '》？里面的歌和审听链接都还在，只是不再属于这个项目。\n确认请输入项目名：') !== p.title) return;
+    try { await lib('/lib/drop', { slug }); close(); await libReload(); } catch (e) { msg('没删掉，检查网络再试', true); }
+  };
+}
+// 项目密码校验块在浏览器里算（和审听页同一套 PBKDF2 → AES-GCM 'ok'），接口只存结果
+async function sealPass(pass) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), te = new TextEncoder();
+  const base = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 310000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, te.encode('ok')));
+  const o = new Uint8Array(12 + ct.length); o.set(iv); o.set(ct, 12);
+  const b64 = u8 => btoa(String.fromCharCode(...u8));
+  return { pass, salt: b64(salt), chk: b64(o) };
+}
+async function newProject() {
+  const t = prompt('新项目名（例如：夏夜 EP）'); if (!t || !t.trim()) return;
+  try { const j = await lib('/lib/save', { title: t.trim(), kind: 'ep', ...(await sealPass('1688')) }); await libReload(j.slug); } catch (e) { alert('没建成，检查网络再试'); }
+}
 // ── 审听页管理：所有在线审听链接，改歌名 / 歌手，复制链接 + 密码，打开，删除 ──
 let RSONGS = [], songsOpen = false;
 function renderSongs() {
@@ -707,10 +830,11 @@ async function api(path, opt = {}) {
   return j;
 }
 const nameInfo = fn => cuNameInfo(fn);
-async function openUpload() {
+async function openUpload(opt) {
   if (document.getElementById('up')) return;
+  const PJ = opt && opt.project ? opt.project : null;   // 从项目里点「上传新曲目」进来
   const el = document.createElement('div'); el.className = 'up'; el.id = 'up';
-  el.innerHTML = `<div class="up-s"><div class="up-h">上传审听版本<button type="button" id="upX">关闭</button></div>
+  el.innerHTML = `<div class="up-s"><div class="up-h">${PJ ? '上传到《' + esc(PJ.title) + '》' : '上传审听版本'}<button type="button" id="upX">关闭</button></div>
     <label>歌<select id="upSong"><option value="">读取中…</option></select></label>
     <div id="upNew" class="row" hidden><label>歌名<input type="text" id="upTitle" autocomplete="off"></label><label>审听密码（4 位）<input type="tel" id="upPass" maxlength="4" value="1688"></label></div>
     <div class="file" id="upPick"><b id="upFn">选择 bounce</b>m4a / mp3 / wav，手机上可以直接从 iCloud 选</div>
@@ -730,7 +854,8 @@ async function openUpload() {
     $u('upSong').value = sel || (list.length ? list[0].slug : '__new');
   };
   try { list = (await api('/radm/list')).songs; } catch (e) {}
-  fill();
+  if (PJ) { const mine = new Set(PJ.tracks.map(t => t.slug)); list = list.filter(x => mine.has(x.slug)); $u('upPass').value = PJ.pass; }
+  fill(PJ ? '__new' : undefined);
   syncNew();
   $u('upSong').onchange = syncNew; $u('upTitle').oninput = ready;
   $u('upPick').onclick = () => $u('upFile').click();
@@ -751,7 +876,7 @@ async function openUpload() {
     upBusy = true; ready(); $u('upDone').innerHTML = '';
     try {
       const pick = $u('upSong').value;
-      const r = await cuUpload({ api: API, key: KEY, file, slug: pick === '__new' ? '' : pick, title: $u('upTitle').value.trim(), pass: $u('upPass').value.trim(),
+      const r = await cuUpload({ api: API, key: KEY, file, slug: pick === '__new' ? '' : pick, title: $u('upTitle').value.trim(), pass: $u('upPass').value.trim(), project: PJ && PJ.slug,
         ver: $u('upVer').value, date: $u('upDate').value.trim(), step: msg, bar });
       const prep = r, ver = r.ver, res = r;
       bar(1); msg('');

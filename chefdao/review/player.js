@@ -76,6 +76,7 @@ document.body.innerHTML = `
   <header class="head">
     <div class="art"></div>
     <div>
+      ${S.project && S.project.title !== S.title ? `<a class="pjb" href="${esc(S.project.url)}">‹ ${esc(S.project.title)}</a>` : ''}
       <h1 id="vfile">${esc(S.title)}</h1>
       <div class="meta" id="vmeta"></div>
     </div>
@@ -238,6 +239,8 @@ function prefetchOthers() {
   (async () => { for (const i of order) { if (urls[i] || await cacheGet(i)) continue;
     try { const r = await fetch(V[i].audio); if (r.ok) await cachePut(i, new Uint8Array(await r.arrayBuffer())); } catch (e) {} } })();
 }
+// 项目封面：页头那块方形封面换成项目的封面图
+if (S.cover) { const art = document.querySelector('#app .head .art'); if (art) art.style.backgroundImage = 'url(' + API_BASE + S.cover + ')'; }
 function enterApp() {
   setTimeout(prefetchOthers, 3000);
   // FLIP：解锁页的封面平滑移动、缩放到页头封面的位置

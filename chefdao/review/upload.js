@@ -114,7 +114,7 @@ async function cuUpload(o) {
   const n = cuNameInfo(file.name), date = /^\d{4}-\d{2}-\d{2}$/.test(o.date || '') ? o.date : new Date().toLocaleDateString('sv-SE');
   const te = new TextEncoder();
   const res = await api('/radm/commit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-    slug: prep.slug, title: prep.title, pass: prep.pass, salt: prep.salt,
+    slug: prep.slug, title: prep.title, pass: prep.pass, salt: prep.salt, project: o.project || undefined,
     chk: prep.fresh ? b64e(await seal(te.encode('ok'))) : undefined,
     token: prep.push ? b64e(await seal(te.encode(prep.push))) : '', wkey: b64e(await seal(te.encode(prep.wk))),
     version: { ver, file: n.raw, date, duration: Math.round(au.duration * 100) / 100, peaks, audio: fname, mime } }) });

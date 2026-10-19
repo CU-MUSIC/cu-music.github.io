@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e0e0f">
+<title>CU MUSIC</title>
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
+<style>
+/* 项目页（EP / 专辑）：封面 + 名称，输一次密码出现曲目；每首歌的审听页自动记住这个密码 */
+:root{--bg:#0e0e0f;--fill:rgba(236,234,230,.05);--fill-2:rgba(236,234,230,.085);--hair:rgba(236,234,230,.09);--text:#e8e6e2;--text-2:#a3a19d;--text-3:#74726f;--red:#e9a19a;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{background:radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.06),transparent 60%),var(--bg);color:var(--text);font:17px/1.6 var(--font);-webkit-font-smoothing:antialiased;
+  min-height:100vh;min-height:100dvh;padding:calc(48px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center}
+.cv{width:min(64vw,260px);aspect-ratio:1;border-radius:18px;background:#0b0b0b center/cover;box-shadow:0 30px 70px -24px rgba(0,0,0,.75),0 0 0 .5px rgba(255,255,255,.08) inset;
+  display:grid;place-items:center}
+.cv svg{width:42%;height:42%}
+.cv svg path{fill:none;stroke:#e8e6e2;stroke-width:36;stroke-linecap:round}
+.kind{margin-top:26px;font-size:12px;letter-spacing:.16em;color:var(--text-3);text-transform:uppercase}
+h1{margin-top:6px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:-.02em}
+.ar{margin-top:4px;color:var(--text-2);font-size:15px}
+.ask{margin-top:34px;color:var(--text-2);font-size:15px;min-height:1.6em}
+.ask.err{color:var(--red)}
+.dots{display:flex;gap:22px;margin-top:16px;padding:10px;cursor:text}
+.dots i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--text-2);transition:background-color .15s,transform .25s}
+.dots i.on{background:var(--text);border-color:var(--text);transform:scale(1.08)}
+.dots.shake{animation:sh .5s}
+@keyframes sh{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.pin{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+#list{width:100%}
+.list{width:100%;margin-top:30px;display:flex;flex-direction:column;border-top:.5px solid var(--hair)}
+.tr{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:15px 4px;border-bottom:.5px solid var(--hair);color:var(--text);text-decoration:none;text-align:left;
+  opacity:0;transform:translateY(8px);animation:in .5s cubic-bezier(.2,.8,.2,1) forwards}
+.tr:active{background:var(--fill)}
+.tr .n{color:var(--text-3);font-variant-numeric:tabular-nums;font-size:14px}
+.tr .t{font-size:16px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .m{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
+@keyframes in{to{opacity:1;transform:none}}
+.empty{margin-top:30px;color:var(--text-3);font-size:14px}
+.boot{color:var(--text-3);font-size:15px;margin-top:30vh}
+</style>
+</head>
+<body>
+<main id="m"><div class="boot">正在载入…</div></main>
+<script>
+(async () => {
+const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+const slug = location.hash.slice(1).replace(/[^a-z0-9]/g, ''), m = document.getElementById('m');
+const esc = x => String(x || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const fmt = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+const KIND = { single: 'Single', ep: 'EP', album: 'Album' };
+const CU = '<svg viewBox="272 164 456 456"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
+if (!slug) { m.innerHTML = '<div class="boot">链接不完整，请向刀大厨要完整链接</div>'; return; }
+let P;
+try { const j = await (await fetch(API + '/pj?s=' + slug, { cache: 'no-store' })).json(); if (!j.ok) throw 0; P = j.project; }
+catch (e) { m.innerHTML = '<div class="boot">找不到这个项目，请向刀大厨确认链接</div>'; return; }
+document.title = P.title;
+m.innerHTML = '<div class="cv"' + (P.cover ? ' style="background-image:url(' + API + P.cover + ')"' : '') + '>' + (P.cover ? '' : CU) + '</div>'
+  + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '')
+  + '<div id="gate"><div class="ask" id="ask">输入密码收听</div><div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>'
+  + '<input class="pin" id="pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="密码"></div><div id="list"></div>';
+const pin = document.getElementById('pin'), dots = [...document.querySelectorAll('#dots i')], ask = document.getElementById('ask');
+const focus = () => pin.focus({ preventScroll: true });
+document.getElementById('dots').onclick = focus; m.onclick = e => { if (!e.target.closest('a')) focus(); };
+const ub64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function ok(pw) {
+  try {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: ub64(P.salt), iterations: P.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const c = ub64(P.check); await crypto.subtle.decrypt({ name: 'AES-GCM', iv: c.subarray(0, 12) }, key, c.subarray(12)); return true;
+  } catch (e) { return false; }
+}
+function open(pw) {
+  ls.set('review:pj:' + slug, pw);
+  P.tracks.forEach(t => ls.set('review:pw:' + t.slug, pw));   // 点进每首歌不用再输密码
+  document.getElementById('gate').remove();
+  document.getElementById('list').innerHTML = P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
+    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + '</span><span class="m">' + fmt(t.dur) + '</span></a>').join('') + '</div>'
+    : '<div class="empty">曲目还在准备中</div>';
+}
+pin.addEventListener('input', async () => {
+  pin.value = pin.value.replace(/\D/g, '').slice(0, 4);
+  dots.forEach((d, i) => d.classList.toggle('on', i < pin.value.length));
+  ask.classList.remove('err'); ask.textContent = '输入密码收听';
+  if (pin.value.length < 4) return;
+  const pw = pin.value; pin.blur();
+  if (await ok(pw)) return open(pw);
+  ask.textContent = '密码不对，再试一次'; ask.classList.add('err');
+  const d = document.getElementById('dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
+  setTimeout(() => { pin.value = ''; dots.forEach(x => x.classList.remove('on')); focus(); }, 420);
+});
+const saved = ls.get('review:pj:' + slug);
+if (saved && await ok(saved)) open(saved); else setTimeout(focus, 300);
+})();
+</script>
+</body>
+</html>
