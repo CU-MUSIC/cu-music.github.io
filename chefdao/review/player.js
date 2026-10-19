@@ -63,7 +63,7 @@ function runMark(box, state) {
 document.body.innerHTML = `
 <div class="lock" id="lock">
   <div class="art lmark intro">${MARK}</div>
-  <h1>${esc(S.title)}</h1>
+  <h1 id="lt" class="scr" aria-label="CU MUSIC"></h1>
   <div class="by" id="by">CU MUSIC</div>
   <div class="ask" id="ask">输入密码收听</div>
   <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
@@ -144,6 +144,31 @@ async function keyFor(pw) {
 }
 const open = (key, u8) => crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.subarray(0, 12) }, key, u8.subarray(12));
 
+/* ───────── 歌名「数据失真」：没解锁是乱码；每输一位更稳定；密码对了逐字解码成真歌名 ───────── */
+const scr = (() => {
+  const el = document.getElementById('lt'), T = [...S.title], G = '▓▒░█▚▞▙▟▛▜◢◣◤◥#%&@$*01';
+  const rnd = () => G[Math.floor(Math.random() * G.length)];
+  const spans = T.map(ch => { const s = document.createElement('span'); s.textContent = /\s/.test(ch) ? ' ' : rnd(); el.appendChild(s); return s; });
+  let flick = .9, timer = 0, done = false;
+  const tick = () => { if (done) return; spans.forEach((s, i) => { if (!/\s/.test(T[i]) && Math.random() < flick) s.textContent = rnd(); }); };
+  timer = setInterval(tick, 80);
+  const burst = ms => { el.classList.remove('gl'); void el.offsetWidth; el.classList.add('gl'); setTimeout(() => el.classList.remove('gl'), ms); };
+  return {
+    level(n) { flick = [.9, .55, .32, .16, .06][n] ?? .06; burst(160); },
+    fail() { flick = .9; burst(380); },
+    decode() {   // 从左到右逐字定格，伴随错位闪烁
+      clearInterval(timer); el.classList.add('gl'); el.removeAttribute('aria-label');
+      const t0 = performance.now(), per = Math.max(60, 700 / T.length);
+      const run = () => {
+        const k = (performance.now() - t0) / per;
+        spans.forEach((s, i) => { s.textContent = i < k - 2 ? T[i] : (/\s/.test(T[i]) ? ' ' : rnd()); });
+        if (k - 2 < T.length) setTimeout(run, 45); else { done = true; spans.forEach((s, i) => s.textContent = T[i]); setTimeout(() => el.classList.remove('gl'), 180); }
+      };
+      run();
+    },
+  };
+})();
+
 /* ───────── 解锁 ───────── */
 const pin = $('#pin'), dots = [...document.querySelectorAll('#dots i')];
 const focusPin = () => pin.focus({ preventScroll: true });
@@ -162,7 +187,7 @@ if (window.visualViewport) {
 pin.addEventListener('input', () => {
   pin.value = pin.value.replace(/\D/g, '').slice(0, 4);
   dots.forEach((d, i) => d.classList.toggle('on', i < pin.value.length));
-  $('#lock').style.setProperty('--b', [12, 9, 6, 4, 3][pin.value.length] + 'px');   // 每输一位，歌名清楚一点
+  scr.level(pin.value.length);   // 每输一位，乱码稳定一点
   $('#ask').classList.remove('err'); $('#ask').textContent = '输入密码收听';
   if (pin.value.length === 4) tryUnlock(pin.value, true);
 });
@@ -176,6 +201,8 @@ async function tryUnlock(pw, typed) {
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
     splash();
+    scr.decode();
+    if (S.artist) { const by = $('#by'); by.classList.add('hi'); by.textContent = '欢迎，' + S.artist; }
     const minWait = new Promise(r => setTimeout(r, typed ? 900 : 650));
     const slow = setTimeout(() => { $('#by').textContent = '正在载入…'; }, 1600);
     await Promise.all([loadAudio(key), minWait]);
@@ -187,7 +214,7 @@ async function tryUnlock(pw, typed) {
   } catch (e) {
     $('#lock').classList.remove('busy');
     store.del(PW_KEY);
-    $('#lock').style.setProperty('--b', '12px');
+    scr.fail();
     if (typed) {
       $('#ask').textContent = '密码不对，再试一次'; $('#ask').classList.add('err');
       const d = $('#dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
@@ -236,6 +263,15 @@ async function cachePut(i, u8) {
   try { await (await caches.open(AUDIO_CACHE)).put(absUrl(i), new Response(u8, { headers: { 'Content-Type': 'application/octet-stream' } })); } catch (e) {}
 }
 const cached = new Set();
+// 格式 + 码率：由文件大小和时长算出（去掉加密的 28 字节），贴近标准档位就取整；无损格式显示 Lossless
+const SIZE = {};
+function fmtTag(i) {
+  const v = V[i], n = SIZE[i]; if (!n || !v.duration) return '';
+  const m = v.mime || 'audio/mpeg';
+  if (/flac|alac|wav/.test(m)) return 'Lossless';
+  const raw = n * 8 / v.duration / 1000, std = [96, 128, 160, 192, 224, 256, 320].find(k => Math.abs(raw - k) / k < .08);
+  return (/mp4|aac/.test(m) ? 'AAC' : 'MP3') + ' ' + Math.round(std || raw) + 'k';
+}
 async function fetchVersion(i, onp) {
   if (!urls[i]) urls[i] = (async () => {
     let u8 = await cacheGet(i);
@@ -251,6 +287,7 @@ async function fetchVersion(i, onp) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     cachePut(i, u8); cached.add(i);
     }
+    SIZE[i] = u8.length - 28; if (i === vi) setTimeout(showMeta, 0);
     const plain = await open(KEY, u8);
     return URL.createObjectURL(new Blob([plain], { type: V[i].mime || 'audio/mpeg' }));
   })();
@@ -502,7 +539,8 @@ function markSeg() {
 }
 function showMeta() {
   // 大字是歌名，小字是当前版本和日期
-  $('#vmeta').textContent = vname(cur) + ' · ' + cdate(cur.date);
+  const tag = fmtTag(vi);
+  $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + cdate(cur.date)) + (tag ? '<span class="ftag' + (tag === 'Lossless' ? ' ll' : '') + '">' + esc(tag) + '</span>' : '');
   $('#mt').textContent = S.title + ' · ' + cur.ver;
 }
 let switching = 0;

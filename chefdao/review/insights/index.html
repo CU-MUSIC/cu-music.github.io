@@ -95,6 +95,20 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .login p{color:var(--text-3);font-size:14px}
 
 /* 顶部三个分区：审听 / 价格页 / 订单 */
+.rsm{background:var(--fill);border-radius:14px;margin:-8px 0 14px;padding:0 14px}
+.rsm summary{list-style:none;cursor:pointer;padding:12px 0;font-size:16px;font-weight:600;display:flex;justify-content:space-between}
+.rsm summary::-webkit-details-marker{display:none}
+.rsm summary span{font-size:13px;font-weight:400;color:var(--text-3)}
+.rs{border-top:.5px solid var(--hair);padding:12px 0;display:flex;flex-direction:column;gap:4px}
+.rs-h{display:flex;align-items:baseline;gap:10px;font-size:16px}
+.rs-h span{font-size:13px;color:var(--text-2)}
+.rs-h span.dim{color:var(--text-3)}
+.rs-m,.rs-l{font-size:13px;color:var(--text-3);overflow-wrap:anywhere}
+.rs-l b{color:var(--text-2)}
+.rs-a{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.rs-a button,.rs-a a{font-size:12.5px;padding:4px 11px;border-radius:999px;background:var(--fill-2);color:var(--text-2);text-decoration:none}
+.rs-a button:first-child{background:var(--pearl);color:var(--ink);font-weight:600}
+.rs-a .danger{color:var(--red)}
 .upbtn{display:block;width:100%;margin:-8px 0 22px;padding:12px;border-radius:12px;background:var(--fill);color:var(--text);font-size:16px;font-weight:600}
 .upbtn:active{background:var(--fill-2)}
 .up{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55)}
@@ -238,7 +252,9 @@ async function load() {
   if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';
   try {
     const auth = { headers: { Authorization: 'Bearer ' + KEY } };
-    const [r, r2] = await Promise.all([fetch(API + '/q?days=90', auth), fetch(API + '/pq?days=90', auth).catch(() => null)]);
+    const [r, r2, r3] = await Promise.all([fetch(API + '/q?days=90', auth), fetch(API + '/pq?days=90', auth).catch(() => null), fetch(API + '/radm/list', auth).catch(() => null)]);
+    const j3 = r3 && r3.ok ? await r3.json().catch(() => null) : null;
+    if (j3 && j3.ok) RSONGS = j3.songs;
     if (r.status === 401) { store.del('insights:key'); KEY = null; return login(true); }
     const j = await r.json(); if (!j.ok) throw new Error();
     j.rows.forEach(x => { try { x.bins = JSON.parse(x.bins || 'null'); } catch (e) { x.bins = null; } });
@@ -335,7 +351,7 @@ function render() {
   const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div>
     ${tab === 'orders' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
-  root.innerHTML = head + (tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
+  root.innerHTML = head + (tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
   document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
@@ -371,6 +387,8 @@ function render() {
     stage(o, { [k]: v });
   });
   root.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => editNote(b.dataset.ln));
+  const rsm = document.getElementById('rsm'); if (rsm) rsm.ontoggle = () => { songsOpen = rsm.open; };
+  root.querySelectorAll('[data-rs]').forEach(b => b.onclick = () => rsAction(b.closest('.rs').dataset.slug, b.dataset.rs, b));
   root.querySelectorAll('.cmr[data-go]').forEach(row => row.onclick = e => {
     if (e.target.closest('a,button')) return;
     window.open(row.dataset.go, '_blank', 'noopener');
@@ -571,6 +589,38 @@ function place(sid, cc) {
   const city = CITY[g.city] || g.city || REGION[g.region] || g.region || '';
   const head = g.country === 'CN' ? '' : (CC[g.country] || g.country || '');
   return [head, city, isp(g.org)].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' · ');
+}
+// ── 审听页管理：所有在线审听链接，改歌名 / 歌手，复制链接 + 密码，打开，删除 ──
+let RSONGS = [], songsOpen = false;
+function renderSongs() {
+  if (!RSONGS.length) return '';
+  const now = data ? data.now : Date.now();
+  return `<details class="rsm" id="rsm"${songsOpen ? ' open' : ''}><summary>审听页 <span>${RSONGS.length} 首</span></summary>${RSONGS.map(x => `
+    <div class="rs" data-slug="${esc(x.slug)}">
+      <div class="rs-h"><b>《${esc(x.title)}》</b>${x.artist ? `<span>${esc(x.artist)}</span>` : '<span class="dim">未填歌手</span>'}</div>
+      <div class="rs-m">${x.versions.map(v => esc(v.ver)).join(' ')} · ${x.people ? x.people + ' 位听众 · 最近 ' + when(x.heard, now) : '还没人听'}</div>
+      <div class="rs-l">${esc(x.url.replace('https://', ''))} · 密码 <b>${esc(x.pass)}</b></div>
+      <div class="rs-a"><button data-rs="copy">复制链接和密码</button><a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a><button data-rs="artist">${x.artist ? '改歌手' : '填歌手'}</button><button data-rs="title">改歌名</button><button data-rs="drop" class="danger">删除</button></div>
+    </div>`).join('')}</details>`;
+}
+async function rsAction(slug, act, btn) {
+  const x = RSONGS.find(y => y.slug === slug); if (!x) return;
+  const post = async (path, body) => { const r = await fetch(API + path, { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json(); if (!j.ok) throw new Error(); };
+  try {
+    if (act === 'copy') {
+      const t = '《' + x.title + '》审听：' + x.url + '  密码 ' + x.pass;
+      const done = () => { btn.textContent = '已复制'; setTimeout(() => { btn.textContent = '复制链接和密码'; }, 1500); };
+      return navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done();
+    }
+    if (act === 'artist') { const v = prompt('《' + x.title + '》的歌手（客户输对密码后看到「欢迎，歌手」）', x.artist || ''); if (v === null) return; await post('/radm/meta', { slug, artist: v.trim() }); x.artist = v.trim(); }
+    if (act === 'title') { const v = prompt('歌名', x.title); if (!v || !v.trim()) return; await post('/radm/meta', { slug, title: v.trim() }); x.title = v.trim(); }
+    if (act === 'drop') {
+      if (prompt('删除《' + x.title + '》的审听页？所有版本都会删掉，链接失效，收听记录和评论保留。\n确认请输入歌名：') !== x.title) return;
+      await post('/radm/drop', { slug }); RSONGS = RSONGS.filter(y => y.slug !== slug);
+    }
+    render();
+  } catch (e) { alert('没改成，检查网络再试'); }
 }
 // 听众备注：匿名编号旁边显示你写的名字；点头像或名字改
 function lnote(lid) { return ((data && data.listeners) || []).find(x => x.lid === lid) || null; }

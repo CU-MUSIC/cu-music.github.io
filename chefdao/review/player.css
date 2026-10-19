@@ -323,9 +323,14 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .vgrp:first-child{padding-top:4px}
 
 /* 没输密码时歌名是糊的，每输一位清楚一点，解锁时慢慢完全显出来 */
-.lock h1{filter:blur(var(--b,12px));opacity:.75;transition:filter .5s ease,opacity .5s ease,transform .6s var(--ios)}
-.lock.splash h1{filter:blur(0);opacity:1;transition:filter 1.4s ease,opacity 1.4s ease,transform .6s var(--ios)}
-@media (prefers-reduced-motion:reduce){.lock h1{transition:none}}
+/* 歌名「数据失真」：乱码字符等宽排开；gl = 错位 + 红青分离的短暂闪烁 */
+.lock h1.scr{display:flex;justify-content:center;gap:.02em;min-height:1.15em;font-variant-numeric:tabular-nums}
+.lock h1.scr span{display:inline-block;min-width:1em;text-align:center}
+.lock h1.scr:not(.gl){opacity:.82}
+.lock h1.gl{animation:cu-glitch .18s steps(2) infinite;text-shadow:2px 0 rgba(255,40,90,.55),-2px 0 rgba(0,220,255,.55)}
+@keyframes cu-glitch{0%{transform:translate(0,0);clip-path:inset(0 0 0 0)}25%{transform:translate(-2px,1px);clip-path:inset(10% 0 45% 0)}50%{transform:translate(2px,-1px);clip-path:inset(55% 0 5% 0)}75%{transform:translate(-1px,0);clip-path:inset(0 0 70% 0)}100%{transform:translate(0,0);clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:reduce){.lock h1.gl{animation:none}}
+.lock .by.hi{color:var(--text);font-weight:600}
 .lock.leaving h1{transition:opacity .25s ease,transform .6s var(--ios)}
 
 /* 版本选择：一排小按钮，按阶段分组 */
@@ -341,3 +346,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .vpick .vrow .hasdot{position:absolute;top:3px;right:4px;width:5px;height:5px;margin:0}
 .vpick .vrow .vdel{padding:0 0 0 2px;font-size:14px;line-height:1;color:inherit;opacity:.5;background:none}
 .vpick .vrow .vdel:hover{opacity:1;color:var(--red);background:none}
+
+/* 格式标签：AAC 320k / MP3 192k / Lossless */
+.head .meta .ftag{display:inline-block;margin-left:8px;padding:0 7px;border:.5px solid var(--fill-3);border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:18px;color:var(--text-2);vertical-align:1px}
+.head .meta .ftag.ll{color:var(--ink);background:var(--pearl);border-color:var(--pearl)}
