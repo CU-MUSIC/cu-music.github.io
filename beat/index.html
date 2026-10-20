@@ -162,7 +162,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .ctl .pp .pa{display:none}
 .bar.playing .pp .pl{display:none}
 .bar.playing .pp .pa{display:block}
-.ctl .ask{margin-left:6px}
+.ctl .ask{width:auto;height:34px;padding:0 14px;border-radius:17px;margin-left:6px;display:inline-flex;align-items:center;justify-content:center}
 .prog{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--text-3);font-variant-numeric:tabular-nums}
 .prog span{min-width:34px}
 .prog span:last-child{text-align:right}
@@ -173,6 +173,47 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .track .fill{background:var(--text)}
 .track:hover .rail,.track.drag .rail{height:6px}
 
+/* ── 授权弹窗（和 BeatStars 同样三档） ── */
+.lic{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:rgba(6,5,5,.66);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .25s}
+.lic.show{opacity:1;pointer-events:auto}
+.lic .box{width:min(880px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--bg-soft);border:1px solid var(--border);border-radius:18px;
+  padding:26px 28px 24px;transform:translateY(16px) scale(.98);transition:transform .45s var(--ios)}
+.lic.show .box{transform:none}
+.lic .hd{display:flex;align-items:flex-start;gap:16px}
+.lic .hd div{flex:1;min-width:0}
+.lic h2{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.3}
+.lic .hd p{font-size:14px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lic .x{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--text-2);flex:none}
+.lic .x:hover{background:var(--surface-hi);color:var(--text)}
+.lic .x svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:22px 0 4px}
+.tier{text-align:left;padding:14px 16px;border-radius:12px;background:var(--surface-hi);border:1.5px solid transparent;transition:border-color .15s,background-color .15s}
+.tier:hover{background:var(--surface-on)}
+.tier[aria-checked="true"]{border-color:var(--pearl);background:var(--surface-on)}
+.tier b{display:block;font-size:16px;font-weight:700}
+.tier .p{display:block;font-size:15px;margin-top:2px;font-variant-numeric:tabular-nums}
+.tier small{display:block;font-size:12.5px;color:var(--text-2);margin-top:2px}
+.terms{border-top:1px solid var(--border);margin-top:18px;padding-top:16px}
+.terms h3{font-size:15px;font-weight:700;margin-bottom:12px}
+.terms ul{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px}
+.terms li{display:flex;gap:10px;align-items:center;font-size:14px;color:var(--text-2);line-height:1.45}
+.terms li svg{width:20px;height:20px;flex:none;stroke:var(--text);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.lic .ft{display:flex;align-items:center;gap:12px;border-top:1px solid var(--border);margin-top:18px;padding-top:18px}
+.lic .ft .tot{flex:1;font-size:13px;color:var(--text-2)}
+.lic .ft .tot b{display:block;font-size:22px;color:var(--text);font-variant-numeric:tabular-nums;line-height:1.3}
+.lic .ft .btn{height:46px}
+.lic .note{font-size:12.5px;color:var(--text-3);margin-top:10px;text-align:right}
+@media (max-width:640px){
+  .lic{place-items:end center;padding:0}
+  .lic .box{border-radius:18px 18px 0 0;padding:20px max(16px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));max-height:92vh}
+  .lic h2{font-size:20px}
+  .tiers{grid-template-columns:1fr;gap:8px;margin-top:16px}
+  .tier{display:grid;grid-template-columns:1fr auto;align-items:center;padding:11px 14px}
+  .tier .p{grid-column:2;grid-row:1/3;margin:0;font-weight:600}
+  .terms ul{grid-template-columns:1fr 1fr;gap:10px 12px}
+  .terms li{font-size:13px}
+}
 .toast{position:fixed;left:50%;bottom:calc(var(--bar) + 40px + env(safe-area-inset-bottom));transform:translate(-50%,20px);z-index:30;
   background:var(--pearl);color:var(--ink);font-size:14px;font-weight:600;padding:10px 18px;border-radius:20px;opacity:0;pointer-events:none;
   transition:opacity .25s,transform .35s var(--ios);max-width:calc(100vw - 32px);text-align:center}
@@ -192,7 +233,8 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   .trk .cv{width:44px;height:44px}
   .trk .meta{display:none}
   .trk .t .sub .mobile-meta{display:inline}
-  .bar .ctl .prev,.bar .ctl .ask{display:none}
+  .bar .ctl .prev{display:none}
+  .bar .ctl .ask{margin-left:2px;padding:0 12px}
 }
 .mobile-meta{display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -242,7 +284,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   </section>
 
   <ol class="list" id="list"></ol>
-  <footer>价格请微信咨询</footer>
+  <footer>选好授权后复制信息，在微信付款和交付</footer>
 </div>
 
 <div class="bar" id="bar" oncontextmenu="return false">
@@ -253,7 +295,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
       <button class="prev press" id="prev" aria-label="上一首"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
       <button class="pp press" id="pp" aria-label="播放/暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg class="pa" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
       <button class="next press" id="next" aria-label="下一首"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
-      <button class="ask press" id="barAsk">询价</button>
+      <button class="ask press" id="barAsk">购买</button>
     </div>
     <div class="prog"><span id="cur">0:00</span><div class="track" id="seek"><div class="rail"><div class="buf" id="buf"></div><div class="fill" id="fill"></div></div></div><span id="dur">0:00</span></div>
   </div>
@@ -385,7 +427,7 @@ function render(){
       <img class="cv" src="${esc(coverOf(b))}" alt="" loading="lazy">
       <div class="t"><b>${esc(b.title)}</b><span class="sub">${mm ? `<span class="mobile-meta">${esc(mm)} · </span>` : ''}${sub}</span></div>
       <div class="meta"><span>${b.bpm ? b.bpm + ' BPM' : ''}</span><span class="k">${esc(b.key||'')}</span><span class="d">${b.duration ? fmt(b.duration) : ''}</span></div>
-      <button class="ask press" data-ask>询价</button>
+      <button class="ask press" data-ask>${LICENSES[0].price}</button>
     </li>`;
   }).join('');
   markPlaying();
@@ -394,7 +436,7 @@ function render(){
 $('list').addEventListener('click', e => {
   const li = e.target.closest('.trk'); if (!li) return;
   const b = DATA.beats.find(x => x.id === li.dataset.id);
-  if (e.target.closest('[data-ask]')) { ask(b); return; }
+  if (e.target.closest('[data-ask]')) { openLic(b); return; }
   if (cur === b) { toggle(); return; }
   queue = view.slice(); play(b);
 });
@@ -443,7 +485,7 @@ $('shuffle').onclick = () => {
 $('pp').onclick = toggle;
 $('prev').onclick = () => step(-1);
 $('next').onclick = () => step(1);
-$('barAsk').onclick = () => cur && ask(cur);
+$('barAsk').onclick = () => cur && openLic(cur);
 
 audio.addEventListener('play', markPlaying);
 audio.addEventListener('pause', markPlaying);
@@ -476,20 +518,70 @@ if ('mediaSession' in navigator) {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.target.matches('input,select,textarea')) return;
+  if (e.target.matches('input,select,textarea,button') || document.querySelector('.lic.show')) return;
   if (e.code === 'Space') { e.preventDefault(); toggle(); }
   else if (e.code === 'ArrowRight' && e.shiftKey) step(1);
   else if (e.code === 'ArrowLeft' && e.shiftKey) step(-1);
 });
 
-// 询价：复制一句话，客户直接粘贴到微信
-function ask(b){
-  const text = `询价：《${b.title}》${b.producers.map(prodName).join(' × ')} cumusic.work/beat#${b.id}`;
-  const done = () => toast('已复制，可粘贴到微信');
-  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
-  else fallback(text, done);
+// ── 授权：三档价格和条款，选好后复制一句话到微信付款 ──
+const IC = {
+  mic:'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>',
+  copies:'<svg viewBox="0 0 24 24"><path d="M5 5l6 7-6 7M11 5l6 7-6 7M17 5l3 3.5M17 19l3-3.5"/></svg>',
+  stream:'<svg viewBox="0 0 24 24"><circle cx="12" cy="11" r="2"/><path d="M12 13v8M8.5 7.5a5 5 0 0 0 0 7M15.5 7.5a5 5 0 0 1 0 7M5.5 4.5a9 9 0 0 0 0 13M18.5 4.5a9 9 0 0 1 0 13"/></svg>',
+  video:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>',
+  live:'<svg viewBox="0 0 24 24"><circle cx="15.5" cy="8.5" r="4.5"/><path d="M12.3 11.7L4 20M6 15l3 3"/></svg>',
+  radio:'<svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l9-5M3 13h18M8 17h.01M12 17h.01"/></svg>',
+};
+const LICENSES = [
+  { id:'basic', name:'Basic License', price:'$23.99', files:'MP3',
+    terms:[['mic','可用于录制歌曲'],['copies','发行最多 2,000 份'],['stream','线上播放 500,000 次'],['video','1 支 MV'],['live','可用于商业演出'],['radio','2 个电台播放']] },
+  { id:'premium', name:'Premium License', price:'$42.50', files:'MP3、WAV',
+    terms:[['mic','可用于录制歌曲'],['copies','发行最多 3,000 份'],['stream','线上播放 500,000 次'],['video','1 支 MV'],['live','可用于商业演出'],['radio','2 个电台播放']] },
+  { id:'exclusive', name:'Exclusive License', price:'议价', files:'MP3、WAV',
+    terms:[['mic','可用于录制歌曲'],['copies','发行份数不限'],['stream','线上播放不限'],['video','MV 不限'],['live','可用于商业演出'],['radio','电台播放不限']] },
+];
+const lic = document.createElement('div');
+lic.className = 'lic'; lic.setAttribute('role', 'dialog'); lic.setAttribute('aria-modal', 'true'); lic.setAttribute('aria-labelledby', 'licT');
+lic.innerHTML = `<div class="box">
+  <div class="hd"><div><h2 id="licT">选择授权</h2><p id="licB"></p></div><button class="x" id="licX" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="tiers" role="radiogroup" aria-label="授权">${LICENSES.map((l, i) =>
+    `<button class="tier" role="radio" data-i="${i}"><b>${l.name}</b><span class="p">${l.price}</span><small>${l.files}</small></button>`).join('')}</div>
+  <div class="terms"><h3 id="licH"></h3><ul id="licU"></ul></div>
+  <div class="ft"><div class="tot">合计<b id="licP"></b></div><button class="btn primary press" id="licGo"></button></div>
+  <p class="note">点按钮复制购买信息，粘贴到微信发给我们</p>
+</div>`;
+document.body.appendChild(lic);
+let licBeat = null, licI = 0;
+function pickLic(i){
+  licI = i; const l = LICENSES[i];
+  lic.querySelectorAll('.tier').forEach((t, j) => t.setAttribute('aria-checked', j === i));
+  $('licH').textContent = l.name + (l.id === 'exclusive' ? '' : `（${l.price}）`);
+  $('licU').innerHTML = l.terms.map(([ic, t]) => `<li>${IC[ic]}<span>${t}</span></li>`).join('');
+  $('licP').textContent = l.price;
+  $('licGo').textContent = l.id === 'exclusive' ? '微信议价' : '微信购买';
+}
+function openLic(b){
+  licBeat = b;
+  $('licB').textContent = `《${b.title}》· ${b.producers.map(prodName).join(' × ')}`;
+  pickLic(licI); lic.classList.add('show');
+  setTimeout(() => lic.querySelector(`.tier[data-i="${licI}"]`).focus(), 50);
   if (window.gtag) gtag('event', 'beat_ask', {beat: b.id});
 }
+const closeLic = () => lic.classList.remove('show');
+lic.addEventListener('click', e => {
+  if (e.target === lic || e.target.closest('#licX')) return closeLic();
+  const t = e.target.closest('.tier'); if (t) pickLic(+t.dataset.i);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && lic.classList.contains('show')) closeLic(); });
+$('licGo').onclick = () => {
+  const b = licBeat, l = LICENSES[licI];
+  const text = `购买伴奏：《${b.title}》${b.producers.map(prodName).join(' × ')}\n授权：${l.name}（${l.price}，${l.files}）\ncumusic.work/beat#${b.id}`;
+  const done = () => { closeLic(); toast('已复制，可粘贴到微信'); };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
+  else fallback(text, done);
+  if (window.gtag) gtag('event', 'beat_buy', {beat: b.id, license: l.id});
+};
 function fallback(text, done){
   const t = document.createElement('textarea'); t.value = text; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;opacity:0';
   document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch { toast(text); } t.remove();

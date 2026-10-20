@@ -63,7 +63,12 @@ label.l{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--text-3);
 .tg[aria-pressed="true"]{background:var(--pearl);border-color:var(--pearl);color:var(--ink);font-weight:600}
 .in{height:34px;border-radius:9px;border:1px solid var(--border);background:var(--bg-soft);padding:0 10px;font-size:14.5px;outline:none;min-width:0}
 .in:focus{border-color:var(--border-hi)}
-.tags{flex:1;min-width:180px}
+.mini{height:30px;padding:0 10px;border-radius:9px;font-size:13px;font-weight:600;background:var(--surface-hi);color:var(--text-2)}
+.mini:hover{background:var(--surface-on);color:var(--text)}
+.mini:disabled{opacity:.5;cursor:default}
+.hint{font-size:12.5px;color:var(--text-3);flex-basis:100%;padding-left:44px;min-height:0}
+.hint:empty{display:none}
+.hint button{color:var(--text);text-decoration:underline;text-underline-offset:3px;font-size:12.5px}
 .bpm{width:72px}.key{width:80px}.date{width:150px}
 .del{margin-left:auto;font-size:13px;color:var(--text-3);padding:4px 8px;border-radius:8px}
 .del:hover{color:var(--red)}
@@ -76,6 +81,7 @@ label.l{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--text-3);
 <body>
 <div class="wrap" id="app"></div>
 
+<script src="analyze.js"></script>
 <script>
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const PRODUCERS = { Uin: { name: 'Uin 尤因', cover: '/beat/img/uin.jpg' }, ChefDao: { name: '刀大厨 ChefDao', cover: '/beat/img/chefdao.jpg' } };
@@ -88,6 +94,8 @@ const store = {
 let KEY = store.get('insights:key');   // 和 Insights 共用同一把钥匙
 let BEATS = [];
 const fresh = new Set();
+const hints = {};   // 每首最近一次测调的提示（关系大小调）
+function setHint(id, r){ hints[id] = `测出 ${r.bpm} BPM · ${r.key}${r.alt ? ` · 也可能是 <button data-alt="${r.alt}">${r.alt}</button>` : ''}`; }
 const player = new Audio();
 let playing = null;
 const $ = id => document.getElementById(id);
@@ -117,7 +125,7 @@ async function boot(){
   if (!r || r.status === 401) { store.del('insights:key'); KEY = null; return login(!!r); }
   $('app').innerHTML = `<header><h1>伴奏管理</h1><a class="btn" href="/chefdao/review/insights/">Insights</a><a class="btn" href="/beat/" target="_blank">看伴奏页 ↗</a></header>
     <div class="drop" id="drop" tabindex="0" role="button"><b>把 m4a 拖进来</b>
-      <span>可以一次拖多首 · 上传后马上出现在伴奏页 · 曲名、风格、BPM 先从文件名猜，下面再改</span>
+      <span>可以一次拖多首 · 上传后马上出现在伴奏页 · 曲名和风格从文件名猜，BPM 和调性自动测，下面再改</span>
       <input type="file" id="file" accept=".m4a,.mp3,audio/mp4,audio/x-m4a,audio/mpeg" multiple hidden></div>
     <div class="queue" id="queue"></div><div class="count" id="count"></div><div id="list"></div>`;
   $('drop').onclick = () => $('file').click();
@@ -139,6 +147,9 @@ function render(){
   $('count').textContent = BEATS.length ? `已上架 ${BEATS.length} 首 · 改动自动保存，伴奏页刷新即可看到` : '';
   if (!BEATS.length) { $('list').innerHTML = '<div class="empty">还没有伴奏</div>'; return; }
   const G = [...new Set([...GENRES, ...BEATS.flatMap(b => b.genres)])];
+  // 标签按用过的次数排，常用的在前
+  const tc = {}; BEATS.forEach(b => b.tags.forEach(t => tc[t] = (tc[t] || 0) + 1));
+  const T = Object.keys(tc).sort((a, b) => tc[b] - tc[a] || a.localeCompare(b));
   $('list').innerHTML = BEATS.map(b => {
     const cover = b.cover ? API + '/bc/' + b.cover : (PRODUCERS[b.producers[0]] || PRODUCERS.Uin).cover;
     return `<div class="card${fresh.has(b.id) ? ' new' : ''}" data-id="${esc(b.id)}">
@@ -153,11 +164,16 @@ function render(){
         <div class="line"><label class="l">风格</label>${G.map(g =>
           `<button class="tg" data-arr="genres" data-v="${esc(g)}" aria-pressed="${b.genres.includes(g)}">${esc(g)}</button>`).join('')}
           <input class="in" data-newgenre placeholder="+ 新风格，回车" style="width:130px"></div>
-        <div class="line"><label class="l">标签</label><input class="in tags" data-k="tags" value="${esc(b.tags.join(', '))}" placeholder="Travis Scott, Dark（逗号隔开）"></div>
+        <div class="line"><label class="l">标签</label>${T.map(t =>
+          `<button class="tg" data-arr="tags" data-v="${esc(t)}" aria-pressed="${b.tags.includes(t)}">${esc(t)}</button>`).join('')}
+          <input class="in" data-newtag placeholder="+ 新标签，回车" style="width:130px"></div>
         <div class="line"><label class="l">BPM</label><input class="in bpm" data-k="bpm" inputmode="numeric" value="${esc(b.bpm ?? '')}" placeholder="140">
+          <button class="mini" data-bpm="0.5" title="BPM 减半">÷2</button><button class="mini" data-bpm="2" title="BPM 翻倍">×2</button>
           <label class="l" style="width:auto">调性</label><input class="in key" data-k="key" value="${esc(b.key ?? '')}" placeholder="Cm">
+          <button class="mini" data-detect>测 BPM / 调</button>
           <label class="l" style="width:auto">日期</label><input class="in date" type="date" data-k="date" value="${esc(b.date)}">
-          <button class="del" data-del>删除</button></div>
+          <button class="del" data-del>删除</button>
+          <div class="hint">${hints[b.id] || ''}</div></div>
       </div>
     </div>`;
   }).join('');
@@ -192,11 +208,12 @@ function onInput(e){
   patch(e.target.closest('.card'), { [k]: val(k, e.target.value) });
 }
 function onKey(e){
-  if (!e.target.matches('[data-newgenre]') || e.key !== 'Enter') return;
-  const g = e.target.value.trim(); if (!g) return;
+  const k = e.target.matches('[data-newgenre]') ? 'genres' : e.target.matches('[data-newtag]') ? 'tags' : null;
+  if (!k || e.key !== 'Enter' || e.isComposing) return;
+  const v = e.target.value.trim(); if (!v) return;
   const card = e.target.closest('.card'), b = BEATS.find(x => x.id === card.dataset.id);
-  if (!b.genres.includes(g)) b.genres.push(g);
-  patch(card, { genres: b.genres }); setTimeout(render, 600);
+  if (!b[k].includes(v)) b[k].push(v);
+  patch(card, { [k]: b[k] }); setTimeout(() => { render(); const i = document.querySelector(`.card[data-id="${b.id}"] [data-new${k === 'genres' ? 'genre' : 'tag'}]`); i && i.focus(); }, 500);
 }
 async function onClick(e){
   const card = e.target.closest('.card'); if (!card) return;
@@ -208,6 +225,24 @@ async function onClick(e){
     tg.setAttribute('aria-pressed', arr.includes(v));
     patch(card, { [tg.dataset.arr]: arr }); return;
   }
+  const mul = e.target.closest('[data-bpm]');
+  if (mul) {
+    const inp = card.querySelector('[data-k="bpm"]'), v = parseInt(inp.value, 10); if (!v) return;
+    inp.value = Math.round(v * +mul.dataset.bpm); patch(card, { bpm: +inp.value }); return;
+  }
+  const det = e.target.closest('[data-detect]');
+  if (det) {
+    det.disabled = true; det.textContent = '分析中…';
+    try {
+      const r = await beatAnalyze(await (await fetch(API + '/ba/' + b.file)).blob());
+      card.querySelector('[data-k="bpm"]').value = r.bpm; card.querySelector('[data-k="key"]').value = r.key;
+      setHint(b.id, r); card.querySelector('.hint').innerHTML = hints[b.id];
+      patch(card, { bpm: r.bpm, key: r.key });
+    } catch (err) { card.querySelector('.hint').textContent = '分析失败：' + (err.message || err); }
+    det.disabled = false; det.textContent = '测 BPM / 调'; return;
+  }
+  const alt = e.target.closest('[data-alt]');
+  if (alt) { card.querySelector('[data-k="key"]').value = alt.dataset.alt; patch(card, { key: alt.dataset.alt }); return; }
   if (e.target.closest('[data-play]')) {
     if (playing === b.id) { player.pause(); playing = null; }
     else { player.src = API + '/ba/' + b.file; player.play(); playing = b.id; }
@@ -323,6 +358,10 @@ async function upload(files){
       if (f.size > 25 * 1024 * 1024) throw new Error('文件超过 25MB');
       const g = guess(f.name), id = slugify(g.title), file = id + '-' + rand6() + (/\.mp3$/i.test(f.name) ? '.mp3' : '.m4a');
       const duration = await durationOf(f);
+      if (!g.bpm || !g.key) {
+        row.textContent = `测 BPM / 调性… ${f.name}`;
+        try { const r = await beatAnalyze(f); g.bpm = g.bpm || r.bpm; if (!g.key) { g.key = r.key; setHint(id, r); } } catch (e) {}
+      }
       await put(API + '/badm/audio?f=' + file, f, p => { row.textContent = `上传中 ${Math.round(p * 100)}% ${f.name}`; });
       const j = await api('/badm/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, file, duration, ...g }) });
       BEATS.unshift(j.beat); fresh.add(id);
