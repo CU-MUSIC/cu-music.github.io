@@ -482,9 +482,13 @@ const SYM = { CNY: '¥', USD: '$', KRW: '₩' };
 const money = (v, cur) => (SYM[cur] || '') + Math.round(v).toLocaleString('en-US');
 const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
 const contacted = x => x.copy > 0 || x.contact > 0 || x.ordered > 0;
+const SRCNAME = { threads: 'Threads', ig: 'Instagram', ins: 'Instagram', instagram: 'Instagram', xhs: '小红书', xiaohongshu: '小红书', dy: '抖音', douyin: '抖音',
+  wx: '微信', wechat: '微信', fb: 'Facebook', x: 'X', yt: 'YouTube', kakao: 'KakaoTalk' };
 function srcOf(x) {
   let u = null; try { u = JSON.parse(x.utm || 'null'); } catch (e) {}
-  if (u && u.source) return u.source;
+  if (u && u.source) return SRCNAME[u.source.toLowerCase()] || u.source;
+  const app = (x.device || '').split(' · ')[1];   // 在哪个 App 里打开的
+  if (app) return app;
   if (!x.ref) return '直接打开';
   const h = x.ref.split('/')[0].replace(/^www\./, '');
   if (/cumusic\.work$/.test(h)) return '站内';
@@ -492,6 +496,13 @@ function srcOf(x) {
   if (/douyin/.test(h)) return '抖音';
   if (/weixin|qq\.com/.test(h)) return '微信';
   if (/bilibili|b23\.tv/.test(h)) return 'B 站';
+  if (/threads\.(net|com)/.test(h)) return 'Threads';
+  if (/instagram\.com/.test(h)) return 'Instagram';
+  if (/facebook\.com|fb\.me/.test(h)) return 'Facebook';
+  if (/^(t\.co|x\.com|twitter\.com)$/.test(h)) return 'X';
+  if (/kakao/.test(h)) return 'KakaoTalk';
+  if (/naver/.test(h)) return 'NAVER';
+  if (/youtube|youtu\.be/.test(h)) return 'YouTube';
   if (/google|bing|baidu|sogou|so\.com/.test(h)) return '搜索';
   return h;
 }

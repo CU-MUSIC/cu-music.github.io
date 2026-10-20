@@ -727,8 +727,13 @@ let lid = store.get('review:lid');
 if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.set('review:lid', lid); }
 const visits = (+store.get('review:visits:' + S.slug) || 0) + 1; store.set('review:visits:' + S.slug, visits);
 const ua = navigator.userAgent;
+// 来源：在哪个 App 里打开的（App 内置浏览器会在 UA 里留名字）；也认链接上的 ?from=xxx
+const app = /Barcelona/i.test(ua) ? 'Threads' : /Instagram/i.test(ua) ? 'Instagram' : /FBAN|FBAV|FB_IAB/i.test(ua) ? 'Facebook' : /MicroMessenger/i.test(ua) ? '微信'
+  : /xhsdiscover|XiaoHongShu/i.test(ua) ? '小红书' : /aweme|BytedanceWebview|douyin/i.test(ua) ? '抖音' : /musical_ly|TikTok/i.test(ua) ? 'TikTok' : /Weibo/i.test(ua) ? '微博'
+  : / QQ\//.test(ua) ? 'QQ' : /KAKAOTALK/i.test(ua) ? 'KakaoTalk' : /NAVER\(inapp/i.test(ua) ? 'NAVER' : / Line\//.test(ua) ? 'LINE' : /Twitter/i.test(ua) ? 'X' : '';
+const from = (new URLSearchParams(location.search).get('from') || '').replace(/[^\w\u4e00-\u9fff-]/g, '').slice(0, 12);
 const device = (/iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? '安卓' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '设备')
-  + (/MicroMessenger/i.test(ua) ? ' · 微信内打开' : '');
+  + (app ? ' · ' + app : from ? ' · ' + from : '');
 const BINS = 60, stats = {};
 const st = () => stats[vi] || (stats[vi] = { sec: 0, sent: 0, saved: -1, ends: 0, bins: new Array(BINS).fill(0), pinged: false, seen: 0 });
 const clock = () => new Date().toTimeString().slice(0, 5);

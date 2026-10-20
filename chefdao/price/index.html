@@ -5143,7 +5143,13 @@ var qbs = (function () {
 	var ref = document.referrer && document.referrer.indexOf(location.origin) !== 0 ? document.referrer : "";
 	var ua = navigator.userAgent;
 	var device = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android" : /Macintosh/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : "其他";
-	if (/MicroMessenger/i.test(ua)) device += " · 微信";
+	// 来源 App（Threads / Instagram / 微信 / 小红书…）：App 内置浏览器会在 UA 里留名字；链接上的 ?from=xxx 也算来源
+	var app = /Barcelona/i.test(ua) ? "Threads" : /Instagram/i.test(ua) ? "Instagram" : /FBAN|FBAV|FB_IAB/i.test(ua) ? "Facebook" : /MicroMessenger/i.test(ua) ? "微信"
+  : /xhsdiscover|XiaoHongShu/i.test(ua) ? "小红书" : /aweme|BytedanceWebview|douyin/i.test(ua) ? "抖音" : /musical_ly|TikTok/i.test(ua) ? "TikTok" : /Weibo/i.test(ua) ? "微博"
+  : / QQ\//.test(ua) ? "QQ" : /KAKAOTALK/i.test(ua) ? "KakaoTalk" : /NAVER\(inapp/i.test(ua) ? "NAVER" : / Line\//.test(ua) ? "LINE" : /Twitter/i.test(ua) ? "X" : "";
+	if (app) device += " · " + app;
+	var from = (sp.get("from") || "").replace(/[^\w\u4e00-\u9fff-]/g, "").slice(0, 30);
+	if (from && !utm.source) utm.source = from;
 	return { off: off, lid: lid, sid: sid.slice(0, 12), visit: visit, utm: utm, ref: ref, device: device,
 		shown: Date.now(), dur: 0, picked: 0, quoted: 0, steps: 0, first: null,
 		copy: 0, contact: 0, share: 0, form: 0, ordered: 0, dirty: true, timer: 0 };

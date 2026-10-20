@@ -77,7 +77,10 @@ build(OLD);
 const md = (t, iso) => { const d = iso ? new Date(t + 'T00:00:00') : new Date(t); return (d.getMonth() + 1) + '月' + d.getDate() + '日'; };
 let me = false; try { me = localStorage.getItem('review:me') === '1'; } catch (e) {}
 const ua = navigator.userAgent;
-const device = (/iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '其他') + (/MicroMessenger/i.test(ua) ? ' · 微信' : '');
+const app = /Barcelona/i.test(ua) ? 'Threads' : /Instagram/i.test(ua) ? 'Instagram' : /FBAN|FBAV|FB_IAB/i.test(ua) ? 'Facebook' : /MicroMessenger/i.test(ua) ? '微信'
+  : /xhsdiscover|XiaoHongShu/i.test(ua) ? '小红书' : /aweme|BytedanceWebview|douyin/i.test(ua) ? '抖音' : /musical_ly|TikTok/i.test(ua) ? 'TikTok' : /Weibo/i.test(ua) ? '微博'
+  : / QQ\//.test(ua) ? 'QQ' : /KAKAOTALK/i.test(ua) ? 'KakaoTalk' : /NAVER\(inapp/i.test(ua) ? 'NAVER' : / Line\//.test(ua) ? 'LINE' : /Twitter/i.test(ua) ? 'X' : '';
+const device = (/iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '其他') + (app ? ' · ' + app : '');
 const code = () => (location.hash.match(/[A-Za-z0-9]{16,32}/) || [''])[0];
 
 function msg(st, sub) {
