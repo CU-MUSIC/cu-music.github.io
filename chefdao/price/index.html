@@ -1062,7 +1062,7 @@ function qbNoticeDismiss() {
 function qbNoticeHtml(q) {
 	// 用非会员那条线判断：会员延后是福利，公告本身照常提前挂
 	var live = new Date() >= new Date(PRICING.newFrom + "T00:00:00");
-	if (live || qbNoticeHidden()) return "";
+	if (PRICING.off || live || qbNoticeHidden()) return "";
 	var rows = qbNoticeRows(q);
 	if (!rows.length) return "";
 	var from = qbFmtDateY(PRICING.newFrom, currentLang);
@@ -1100,6 +1100,9 @@ function qbNoticeHtml(q) {
 //   D = 入口钉死、天花板抬高（通缩期形状）           ← 当前
 // 推导与三方案对比见 _internal-pricing.md
 var PRICING = {
+	// 2026-10-20 取消这次调价（合作取消）：off = true 时页面一直报现价，调价预告也不挂。
+	// 以后要重新调价：改 newFrom / memberFrom，把 off 改回 false 即可，方案 D 的数字都还在。
+	off: true,
 	newFrom: "2026-11-01",
 	// 刀门会员延后两个月：这是会员福利，不是两套价格
 	memberFrom: "2027-01-01",
@@ -1149,6 +1152,7 @@ var PRICING = {
 	}
 };
 function qbPricingLive() {
+	if (PRICING.off) return false;
 	var d = new Date(PRICING.newFrom + "T00:00:00");
 	return !isNaN(d.getTime()) && new Date() >= d;
 }
@@ -1193,6 +1197,7 @@ function qbAllMember() {
 function qbJoinOpen() { return new Date() < new Date(PRICING.joinUntil + "T00:00:00"); }
 // 非会员 newFrom 起用新价，全员会员 memberFrom 起才用。
 function qbNewPriceOn() {
+	if (PRICING.off) return false;
 	var iso = qbAllMember() ? PRICING.memberFrom : PRICING.newFrom;
 	var d = new Date(iso + "T00:00:00");
 	return !isNaN(d.getTime()) && new Date() >= d;
