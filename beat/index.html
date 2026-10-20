@@ -136,6 +136,10 @@ select.sort{height:40px;border-radius:12px;border:1px solid var(--border);backgr
 .trk .t .sub .g{color:var(--text)}
 .trk .meta{display:flex;gap:16px;font-size:13px;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .trk .meta .k{min-width:52px}
+/* 热度：近 30 天播放和购买意向，最热的一首满格 */
+.pop{display:inline-flex;gap:2px;align-items:center;height:20px}
+.pop i{width:3px;height:10px;border-radius:1px;background:var(--surface-on)}
+.pop i.on{background:var(--text-2)}
 .trk .meta .d{min-width:36px;text-align:right}
 .ask{height:32px;padding:0 13px;border-radius:16px;font-size:13px;font-weight:600;background:var(--surface-hi);color:var(--text);white-space:nowrap}
 .ask:hover{background:var(--surface-on)}
@@ -274,6 +278,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
         <input id="q" type="search" placeholder="搜曲名、风格、调性" autocomplete="off"></label>
       <select class="sort" id="sort" aria-label="排序">
         <option value="new">最新</option>
+        <option value="pop">最热门</option>
         <option value="bpm-asc">BPM 从慢到快</option>
         <option value="bpm-desc">BPM 从快到慢</option>
       </select>
@@ -317,6 +322,48 @@ let view = [];          // 当前筛选后的列表
 let queue = [];         // 播放队列（开始播放时的列表）
 let cur = null;         // 正在播放的 beat
 const audio = new Audio();
+
+// ── 匿名播放统计（stats.cumusic.work，Insights 的「伴奏」页看）──
+// 编号沿用审听页和价格页的 review:lid；打开过 Insights 或伴奏管理的设备不统计
+const trk = (() => {
+  let off = false, lid = 'ANON';
+  try {
+    off = localStorage.getItem('review:me') === '1' || !!localStorage.getItem('insights:key');
+    lid = localStorage.getItem('review:lid') || '';
+    if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); localStorage.setItem('review:lid', lid); }
+  } catch (e) {}
+  const ua = navigator.userAgent;
+  let device = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '其他';
+  if (/MicroMessenger/i.test(ua)) device += ' · 微信';
+  const send = (path, o, beacon) => {
+    if (off) return;
+    const body = JSON.stringify({ lid, ...o });
+    try {
+      if (beacon && navigator.sendBeacon) navigator.sendBeacon(API + path, new Blob([body], { type: 'text/plain' }));
+      else fetch(API + path, { method: 'POST', body, keepalive: true }).catch(() => {});
+    } catch (e) {}
+  };
+  let s = null;   // 当前这次播放：{pid, beat, heard, sent, last}
+  const flush = beacon => {
+    if (!s || s.heard - s.sent < 1 || s.heard < 10) return;
+    s.sent = s.heard;
+    send('/bp', { pid: s.pid, beat: s.beat, sec: Math.round(s.heard), dur: Math.round(audio.duration || 0), device }, beacon);
+  };
+  addEventListener('pagehide', () => flush(true));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); });
+  return {
+    start(b) { flush(true); s = { pid: Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6), beat: b.id, heard: 0, sent: 0, last: null }; },
+    // 只累计真正播过的时间，拖进度条不算
+    tick() {
+      if (!s) return;
+      const t = audio.currentTime, d = s.last == null ? 0 : t - s.last; s.last = t;
+      if (d > 0 && d < 1.5 && !audio.paused) s.heard += d;
+      if ((s.sent < 10 && s.heard >= 10) || s.heard - s.sent >= 30) flush(false);
+    },
+    flush() { if (s) s.last = null; flush(false); },
+    buy(b, kind, license) { send('/bb', { beat: b.id, kind, license }, kind === 'copy'); },
+  };
+})();
 audio.preload = 'none';
 
 const fmt = s => { s = Math.max(0, Math.round(s||0)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
@@ -410,6 +457,7 @@ function render(){
   view = DATA.beats.filter(b => matches(b));
   const byDate = (a,b) => (b.date||'').localeCompare(a.date||'');
   if (st.sort === 'new') view.sort(byDate);
+  else if (st.sort === 'pop') view.sort((a,b) => (b.pop||0) - (a.pop||0) || (b.plays||0) - (a.plays||0) || byDate(a,b));
   else view.sort((a,b) => ((a.bpm||999) - (b.bpm||999)) * (st.sort==='bpm-asc' ? 1 : -1) || byDate(a,b));
 
   const filtered = st.prod !== 'all' || st.genres.size || st.tags.size || st.q;
@@ -426,7 +474,7 @@ function render(){
       <div class="n"><span>${i+1}</span><svg class="ic-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><div class="eq"><i></i><i></i><i></i></div></div>
       <img class="cv" src="${esc(coverOf(b))}" alt="" loading="lazy">
       <div class="t"><b>${esc(b.title)}</b><span class="sub">${mm ? `<span class="mobile-meta">${esc(mm)} · </span>` : ''}${sub}</span></div>
-      <div class="meta"><span>${b.bpm ? b.bpm + ' BPM' : ''}</span><span class="k">${esc(b.key||'')}</span><span class="d">${b.duration ? fmt(b.duration) : ''}</span></div>
+      <div class="meta"><span class="pop" title="热度 ${b.pop||0} · 播放 ${b.plays||0} 次" aria-label="热度 ${b.pop||0}">${[1,2,3,4,5].map(n => `<i class="${(b.pop||0) >= n * 20 - 10 ? 'on' : ''}"></i>`).join('')}</span><span>${b.bpm ? b.bpm + ' BPM' : ''}</span><span class="k">${esc(b.key||'')}</span><span class="d">${b.duration ? fmt(b.duration) : ''}</span></div>
       <button class="ask press" data-ask>${LICENSES[0].price}</button>
     </li>`;
   }).join('');
@@ -442,6 +490,7 @@ $('list').addEventListener('click', e => {
 });
 
 function play(b){
+  trk.start(b);
   cur = b;
   audio.src = API + '/ba/' + b.file;
   audio.play().catch(() => {});
@@ -488,10 +537,11 @@ $('next').onclick = () => step(1);
 $('barAsk').onclick = () => cur && openLic(cur);
 
 audio.addEventListener('play', markPlaying);
-audio.addEventListener('pause', markPlaying);
-audio.addEventListener('ended', () => step(1));
+audio.addEventListener('pause', () => { markPlaying(); trk.flush(); });
+audio.addEventListener('ended', () => { trk.flush(); step(1); });
 audio.addEventListener('loadedmetadata', () => { $('dur').textContent = fmt(audio.duration); });
 audio.addEventListener('timeupdate', () => {
+  trk.tick();
   if (dragging || !audio.duration) return;
   $('fill').style.width = (audio.currentTime / audio.duration * 100) + '%';
   $('cur').textContent = fmt(audio.currentTime);
@@ -534,9 +584,9 @@ const IC = {
   radio:'<svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l9-5M3 13h18M8 17h.01M12 17h.01"/></svg>',
 };
 const LICENSES = [
-  { id:'basic', name:'Basic License', price:'$23.99', files:'MP3',
+  { id:'basic', name:'Basic License', price:'¥168', files:'MP3',
     terms:[['mic','可用于录制歌曲'],['copies','发行最多 2,000 份'],['stream','线上播放 500,000 次'],['video','1 支 MV'],['live','可用于商业演出'],['radio','2 个电台播放']] },
-  { id:'premium', name:'Premium License', price:'$42.50', files:'MP3、WAV',
+  { id:'premium', name:'Premium License', price:'¥299', files:'MP3、WAV',
     terms:[['mic','可用于录制歌曲'],['copies','发行最多 3,000 份'],['stream','线上播放 500,000 次'],['video','1 支 MV'],['live','可用于商业演出'],['radio','2 个电台播放']] },
   { id:'exclusive', name:'Exclusive License', price:'议价', files:'MP3、WAV',
     terms:[['mic','可用于录制歌曲'],['copies','发行份数不限'],['stream','线上播放不限'],['video','MV 不限'],['live','可用于商业演出'],['radio','电台播放不限']] },
@@ -566,6 +616,7 @@ function openLic(b){
   $('licB').textContent = `《${b.title}》· ${b.producers.map(prodName).join(' × ')}`;
   pickLic(licI); lic.classList.add('show');
   setTimeout(() => lic.querySelector(`.tier[data-i="${licI}"]`).focus(), 50);
+  trk.buy(b, 'open');
   if (window.gtag) gtag('event', 'beat_ask', {beat: b.id});
 }
 const closeLic = () => lic.classList.remove('show');
@@ -580,6 +631,7 @@ $('licGo').onclick = () => {
   const done = () => { closeLic(); toast('已复制，可粘贴到微信'); };
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
   else fallback(text, done);
+  trk.buy(b, 'copy', l.id);
   if (window.gtag) gtag('event', 'beat_buy', {beat: b.id, license: l.id});
 };
 function fallback(text, done){

@@ -88,6 +88,14 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .cmr .cma button{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
 .cmr .cma button.on{background:var(--pearl);color:var(--ink)}
 
+.bt{padding:12px 0;border-top:.5px solid var(--hair)}
+.bt-h{display:flex;justify-content:space-between;gap:10px;font-size:16px}
+.bt-h b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt-h span{color:var(--text-2);font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bt-m{font-size:14px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.bt-bar{height:4px;border-radius:2px;background:var(--fill-2);margin:6px 0 4px;overflow:hidden}
+.bt-bar i{display:block;height:100%;background:var(--text-2);border-radius:2px}
+.blink{font-size:14px;color:var(--text-2);text-decoration:underline;text-underline-offset:3px}
 .empty,.msg{color:var(--text-3);font-size:15px;padding:24px 0;text-align:center}
 .login{max-width:340px;margin:18vh auto 0;text-align:center;display:flex;flex-direction:column;gap:14px}
 .login input{background:var(--fill-2);border-radius:12px;padding:12px 14px;text-align:center;font-size:16px}
@@ -250,7 +258,7 @@ if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
 let KEY = store.get('insights:key');
 let days = +store.get('insights:days') || 30, song = '', data = null, pdata = null;
 let tab = store.get('insights:tab') || 'listen', ofilter = '';
-const TABS = [['lib', 'Library'], ['listen', '审听'], ['price', '价格页'], ['orders', '订单']];
+const TABS = [['lib', 'Library'], ['listen', '审听'], ['beat', '伴奏'], ['price', '价格页'], ['orders', '订单']];
 // 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
 const SNAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
 // 推进按钮上写的是「进入这一步」的动作
@@ -295,6 +303,7 @@ async function load() {
     if (j2 && j2.ok) pdata = j2;
     GEO = new Map([...(j.geo || []), ...((pdata && pdata.geo) || [])].map(g => [g.sid, g]));
     data = j; if (!typing()) render();
+    if (tab === 'beat') loadBeat();
   } catch (e) { if (!data) root.innerHTML = '<div class="msg">读不到数据，检查网络后下拉刷新</div>'; }
 }
 
@@ -381,7 +390,7 @@ function render() {
   const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div>
     ${tab === 'orders' || tab === 'lib' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
-  root.innerHTML = head + (tab === 'lib' ? renderLib() : tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
+  root.innerHTML = head + (tab === 'lib' ? renderLib() : tab === 'beat' ? renderBeat() : tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
   document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
@@ -622,6 +631,53 @@ function place(sid, cc) {
   const head = g.country === 'CN' ? '' : (CC[g.country] || g.country || '');
   return [head, city, isp(g.org)].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' · ');
 }
+// ── 伴奏：cumusic.work/beat 的播放和购买意向（/badm/stats）──
+let BSTAT = null, bFor = null;
+async function loadBeat() {
+  bFor = days;
+  try {
+    const j = await (await fetch(API + '/badm/stats?days=' + days, { headers: { Authorization: 'Bearer ' + KEY } })).json();
+    if (j.ok) BSTAT = j;
+  } catch (e) {}
+  if (tab === 'beat' && !typing()) render();
+}
+const LICN = { basic: 'Basic', premium: 'Premium', exclusive: 'Exclusive' };
+const pctOf = v => Math.round((v || 0) * 100) + '%';
+function renderBeat() {
+  if ((!BSTAT || BSTAT.days !== days) && bFor !== days) loadBeat();
+  const link = '<a class="blink" href="/beat/admin/" target="_blank" rel="noopener">伴奏管理 ↗</a>';
+  if (!BSTAT) return '<div class="msg">正在读取…</div>';
+  const B = BSTAT, now = B.now, name = id => { const r = B.rows.find(x => x.id === id); return r ? r.title : id; };
+  const plays = B.rows.reduce((a, r) => a + (r.plays || 0), 0), copies = B.rows.reduce((a, r) => a + (r.copies || 0), 0);
+  const secs = B.rows.reduce((a, r) => a + (r.secs || 0), 0);
+  const avg = plays ? B.rows.reduce((a, r) => a + (r.avgp || 0) * (r.plays || 0), 0) / plays : 0;
+  const rows = B.rows.slice().sort((a, b) => (b.plays || 0) - (a.plays || 0) || (b.copies || 0) - (a.copies || 0));
+  const top = Math.max(1, ...rows.map(r => r.plays || 0));
+  return `
+  <div class="cards">
+    <div class="card"><div class="lb">播放次数</div><div class="n">${plays}</div><div class="d">近 ${days} 天 · 听满 10 秒才算</div></div>
+    <div class="card"><div class="lb">听众</div><div class="n">${B.people}</div><div class="d">共听了 ${Math.round(secs / 60)} 分钟</div></div>
+    <div class="card"><div class="lb">平均听完</div><div class="n">${pctOf(avg)}</div><div class="d">每次播放听了多少</div></div>
+    <div class="card"><div class="lb">复制购买信息</div><div class="n">${copies}</div><div class="d">点了「微信购买 / 议价」</div></div>
+  </div>
+  <div class="sect">每首伴奏<span>${link}</span></div>
+  <div>${rows.length ? rows.map(r => `<div class="bt">
+    <div class="bt-h"><b>${esc(r.title)}</b><span>${r.plays || 0} 次 · ${r.people || 0} 人</span></div>
+    <div class="bt-bar"><i style="width:${(r.plays || 0) / top * 100}%"></i></div>
+    <div class="bt-m">${r.plays ? `平均听 ${pctOf(r.avgp)} · 听完 ${r.full || 0} 次 · 最近 ${when(r.last, now)}` : '这段时间没人听'}${r.opens ? ` · 打开授权 ${r.opens}` : ''}${r.copies ? ` · 复制 ${r.copies}（${['basic', 'premium', 'exclusive'].filter(k => r[k]).map(k => LICN[k] + ' ' + r[k]).join('，')}）` : ''}</div>
+  </div>`).join('') : '<div class="empty">还没有伴奏</div>'}</div>
+  <div class="sect" style="margin-top:28px">购买意向<span>${B.buys.length ? '最近 ' + B.buys.length + ' 条' : ''}</span></div>
+  <div class="feed">${B.buys.length ? B.buys.map(x => `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
+    <div class="who">${who(x.lid, '访客')}<time>${when(x.at, now)}</time></div>
+    <div class="dev">《${esc(name(x.beat))}》 · ${esc(LICN[x.license] || '未选授权')}${place(null, x.country) ? ' · ' + esc(place(null, x.country)) : ''}</div></div></div>`).join('')
+    : '<div class="empty">这段时间还没人复制购买信息</div>'}</div>
+  <div class="sect" style="margin-top:28px">最近播放<span>${B.plays.length ? '最近 ' + B.plays.length + ' 次' : ''}</span></div>
+  <div class="feed">${B.plays.length ? B.plays.map(x => `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
+    <div class="who">${who(x.lid, '听众')}<time>${when(x.started, now)}</time></div>
+    <div class="dev">《${esc(name(x.beat))}》 · 听了 ${fmt(x.sec)}${x.dur ? ' / ' + fmt(x.dur) : ''} · ${esc(x.device || '设备')}${place(null, x.country) ? ' · ' + esc(place(null, x.country)) : ''}</div></div></div>`).join('')
+    : '<div class="empty">这段时间还没人听</div>'}</div>`;
+}
+
 // ── Library：项目卡片墙（单曲 / EP / 专辑），点开管理封面、名称、曲目、链接 ──
 let LIB = { projects: [], loose: [] };
 const KINDS = { single: '单曲', ep: 'EP', album: '专辑' };
