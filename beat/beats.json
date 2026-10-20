@@ -1,0 +1,13 @@
+{
+  "producers": {
+    "Uin": {
+      "name": "Uin 尤因",
+      "cover": "img/uin.jpg"
+    },
+    "ChefDao": {
+      "name": "刀大厨 ChefDao",
+      "cover": "img/chefdao.jpg"
+    }
+  },
+  "beats": []
+}

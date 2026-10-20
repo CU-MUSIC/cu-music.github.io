@@ -14,6 +14,16 @@
 | cumusic.work/chefdao/xblz/ | `chefdao/xblz/index.html` | 小巴辣子一周年 |
 | cumusic.work/chefdao/cookin.html | `chefdao/cookin.html` | cookin |
 | cumusic.work/uin/ | `uin/index.html` | UIN 尤因 |
+| cumusic.work/beat/ | `beat/index.html` | 伴奏商店（ChefDao × Uin） |
+
+## 伴奏上架
+
+1. 双击 `伴奏管理.command`，浏览器会打开管理页
+2. 把 m4a 拖进去，曲名、风格、BPM 会先从文件名猜
+3. 在页面上改信息（自动保存），拖图片到封面上可以换封面
+4. 双击 `发布.command` 上线
+
+数据在 `beat/beats.json`，音频在 `beat/audio/`，封面在 `beat/cover/`。
 
 ## 文件夹
 

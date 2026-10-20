@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover" />
+<meta name="theme-color" content="#0b0a0a">
+<meta name="description" content="CU MUSIC 伴奏：刀大厨 ChefDao × Uin 尤因。在线试听，按风格和标签筛选，微信询价。" />
+<title>Beats · CU MUSIC</title>
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="CU MUSIC" />
+<meta property="og:title" content="CU MUSIC Beats" />
+<meta property="og:description" content="刀大厨 ChefDao × Uin 尤因 · 在线试听，微信询价" />
+<meta property="og:url" content="https://cumusic.work/beat/" />
+<meta property="og:image" content="https://cumusic.work/beat/img/uin.jpg" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8D9FZCMZFJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-8D9FZCMZFJ');
+</script>
+<style>
+/* 和 cumusic.work 主页同一套：暖黑底、米白字、不用纯黑纯白 */
+:root{
+  --bg:#0b0a0a;
+  --bg-soft:#121110;
+  --surface:rgba(255,252,248,.035);
+  --surface-hi:rgba(255,252,248,.065);
+  --surface-on:rgba(255,252,248,.10);
+  --text:#ece7e1;
+  --text-2:#9b948c;
+  --text-3:#6d6862;
+  --border:rgba(236,231,225,.10);
+  --border-hi:rgba(236,231,225,.22);
+  --pearl:#ebe6df;
+  --ink:#141210;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,1,.3,1);
+  --ios:cubic-bezier(.32,.72,0,1);
+  --maxw:880px;
+  --bar:76px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{
+  background:radial-gradient(110% 50% at 50% -8%,var(--glow,rgba(232,0,10,.10)),transparent 62%),var(--bg);
+  color:var(--text);font-family:var(--font);font-size:16px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh;
+}
+button,input,select{font:inherit;color:inherit}
+button{border:0;background:none;cursor:pointer}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--text);outline-offset:2px;border-radius:6px}
+.press{transition:transform .12s ease-out,background-color .2s,opacity .2s}
+.press:active{transform:scale(.96)}
+
+.wrap{max-width:var(--maxw);margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+
+/* ── 顶栏 ── */
+.top{display:flex;align-items:center;justify-content:space-between;padding-top:max(18px,env(safe-area-inset-top));height:64px}
+.top .mark{width:26px;height:26px;opacity:.85}
+.top .mark:hover{opacity:1}
+.top nav{display:flex;gap:20px;font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--text-2)}
+.top nav a:hover{color:var(--text)}
+
+/* ── 头部：像专辑页 ── */
+.hero{display:grid;grid-template-columns:200px 1fr;gap:32px;align-items:end;padding:28px 0 36px}
+.hero .art{position:relative;width:200px;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--bg-soft);
+  box-shadow:0 30px 70px -26px rgba(0,0,0,.9),0 0 0 .5px rgba(255,255,255,.08) inset}
+.hero .art img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transition:opacity .5s var(--ease)}
+.hero .art img.hide{opacity:0}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text-2);text-transform:uppercase;font-variant-numeric:tabular-nums}
+.hero h1{font-size:clamp(34px,6vw,52px);line-height:1.05;font-weight:800;letter-spacing:-.03em;margin:8px 0 6px;text-wrap:balance}
+.hero .by{color:var(--text-2);font-size:16px}
+.hero .actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 22px;border-radius:22px;font-weight:600;font-size:15px}
+.btn svg{width:16px;height:16px;fill:currentColor}
+.btn.primary{background:var(--pearl);color:var(--ink)}
+.btn.ghost{background:var(--surface-hi);color:var(--text)}
+.btn.ghost:hover{background:var(--surface-on)}
+
+/* ── 筛选 ── */
+.filters{position:sticky;top:0;z-index:5;padding:12px 0 10px;margin:0 calc(-1 * max(16px,env(safe-area-inset-left)));
+  padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));
+  background:rgba(11,10,10,.82);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+  border-bottom:1px solid transparent;transition:border-color .2s}
+.filters.stuck{border-bottom-color:var(--border)}
+.row1{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;background:var(--surface-hi);border-radius:12px;padding:3px;gap:2px}
+.seg button{height:34px;padding:0 14px;border-radius:9px;font-size:14px;font-weight:600;color:var(--text-2);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--pearl);color:var(--ink)}
+.search{flex:1;min-width:150px;position:relative}
+.search input{width:100%;height:40px;border-radius:12px;border:1px solid var(--border);background:var(--surface);padding:0 12px 0 36px;font-size:15px;outline:none}
+.search input:focus{border-color:var(--border-hi)}
+.search svg{position:absolute;left:12px;top:12px;width:16px;height:16px;stroke:var(--text-3);fill:none;stroke-width:2}
+select.sort{height:40px;border-radius:12px;border:1px solid var(--border);background:var(--surface);padding:0 10px;font-size:14px;color:var(--text-2)}
+.chips{display:flex;gap:8px;align-items:center;margin-top:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chips .lab{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--text-3);flex:none;width:34px}
+.chip{flex:none;height:32px;padding:0 13px;border-radius:16px;font-size:14px;font-weight:500;border:1px solid var(--border);color:var(--text-2);white-space:nowrap}
+.chip:hover{border-color:var(--border-hi);color:var(--text)}
+.chip[aria-pressed="true"]{background:var(--pearl);border-color:var(--pearl);color:var(--ink)}
+.chip small{font-size:12px;opacity:.6;margin-left:4px;font-variant-numeric:tabular-nums}
+.status{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:13px;color:var(--text-3);min-height:22px}
+.status button{color:var(--text-2);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+
+/* ── 曲目列表 ── */
+.list{list-style:none;padding:8px 0 calc(var(--bar) + 60px + env(safe-area-inset-bottom))}
+.trk{display:grid;grid-template-columns:28px 48px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:9px 10px;margin:0 -10px;border-radius:12px;cursor:pointer;transition:background-color .15s}
+.trk:hover{background:var(--surface)}
+.trk.on{background:var(--surface-hi)}
+.trk.flash{animation:flash 1.6s var(--ease)}
+@keyframes flash{0%,40%{background:var(--surface-on)}}
+.trk .n{font-size:14px;color:var(--text-3);text-align:center;font-variant-numeric:tabular-nums;position:relative;height:20px}
+.trk .n svg{display:none;width:14px;height:14px;fill:var(--text);margin:3px auto 0}
+.trk:hover .n span{display:none}
+.trk:hover .n .ic-play{display:block}
+.trk.on .n span,.trk.on .n .ic-play{display:none}
+.trk.on .n .eq{display:flex}
+.trk.on.paused .n .eq{display:none}
+.trk.on.paused .n .ic-play{display:block}
+.eq{display:none;gap:2px;align-items:flex-end;justify-content:center;height:14px;margin-top:3px}
+.eq i{width:3px;background:var(--text);border-radius:1px;animation:eq 1s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:-.4s}.eq i:nth-child(3){animation-delay:-.7s}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
+.trk .cv{width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--bg-soft)}
+.trk .t{min-width:0}
+.trk .t b{display:block;font-weight:600;font-size:16px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trk .t .sub{display:block;font-size:13px;color:var(--text-2);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.trk .t .sub .g{color:var(--text)}
+.trk .meta{display:flex;gap:16px;font-size:13px;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.trk .meta .k{min-width:52px}
+.trk .meta .d{min-width:36px;text-align:right}
+.ask{height:32px;padding:0 13px;border-radius:16px;font-size:13px;font-weight:600;background:var(--surface-hi);color:var(--text);white-space:nowrap}
+.ask:hover{background:var(--surface-on)}
+.empty{text-align:center;color:var(--text-2);padding:60px 0;font-size:15px}
+.empty button{margin-top:14px}
+
+footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var(--bar) + 40px + env(safe-area-inset-bottom));margin-top:-40px}
+
+/* ── 底部播放条 ── */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;
+  padding:10px max(16px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+  background:rgba(20,18,17,.86);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+  border-top:1px solid var(--border);transform:translateY(110%);transition:transform .5s var(--ios)}
+.bar.show{transform:none}
+.bar .in{max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:12px;align-items:center}
+.bar .cv{width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--bg-soft)}
+.bar .t{min-width:0}
+.bar .t b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.bar .t span{display:block;font-size:12.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl{display:flex;align-items:center;gap:4px}
+.ctl button{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;color:var(--text)}
+.ctl button svg{width:20px;height:20px;fill:currentColor}
+.ctl .pp{width:46px;height:46px;background:var(--pearl);color:var(--ink)}
+.ctl .pp .pa{display:none}
+.bar.playing .pp .pl{display:none}
+.bar.playing .pp .pa{display:block}
+.ctl .ask{margin-left:6px}
+.prog{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.prog span{min-width:34px}
+.prog span:last-child{text-align:right}
+.track{flex:1;height:22px;display:flex;align-items:center;cursor:pointer;touch-action:none}
+.track .rail{position:relative;width:100%;height:4px;border-radius:2px;background:var(--surface-on);overflow:hidden}
+.track .buf,.track .fill{position:absolute;left:0;top:0;bottom:0;width:0}
+.track .buf{background:rgba(236,231,225,.14)}
+.track .fill{background:var(--text)}
+.track:hover .rail,.track.drag .rail{height:6px}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--bar) + 40px + env(safe-area-inset-bottom));transform:translate(-50%,20px);z-index:30;
+  background:var(--pearl);color:var(--ink);font-size:14px;font-weight:600;padding:10px 18px;border-radius:20px;opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .35s var(--ios);max-width:calc(100vw - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:640px){
+  .hero{grid-template-columns:116px 1fr;gap:16px;align-items:center;padding:8px 0 22px}
+  .hero .art{width:116px;border-radius:10px}
+  .hero h1{font-size:28px;margin:4px 0 2px}
+  .hero .by{font-size:13.5px;line-height:1.5}
+  .hero .actions{margin-top:12px;gap:8px}
+  .hero .actions .btn{height:38px;padding:0 16px;font-size:14px}
+  .row1 .seg{width:100%}
+  .row1 .seg button{flex:1;padding:0 6px}
+  .trk{grid-template-columns:44px minmax(0,1fr) auto;gap:12px}
+  .trk .n{display:none}
+  .trk .cv{width:44px;height:44px}
+  .trk .meta{display:none}
+  .trk .t .sub .mobile-meta{display:inline}
+  .bar .ctl .prev,.bar .ctl .ask{display:none}
+}
+.mobile-meta{display:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a href="/" aria-label="CU MUSIC 主页">
+      <svg class="mark" viewBox="272 164 456 456" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g fill="none" stroke="#ece7e1" stroke-width="46" stroke-linecap="round">
+          <path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/>
+          <path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>
+        </g>
+      </svg>
+    </a>
+    <nav><a href="/chefdao/">CHEFDAO</a><a href="/uin/">UIN</a></nav>
+  </header>
+
+  <section class="hero">
+    <div class="art" id="heroArt"><img id="heroA" alt=""><img id="heroB" alt="" class="hide"></div>
+    <div>
+      <div class="eyebrow" id="stat">伴奏</div>
+      <h1>CU MUSIC Beats</h1>
+      <p class="by">刀大厨 ChefDao × Uin 尤因<br>在线试听 · 微信询价</p>
+      <div class="actions">
+        <button class="btn primary press" id="playAll"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>播放</button>
+        <button class="btn ghost press" id="shuffle"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-2.4 3.2-1.25-1.67L13.4 6H17V3zM3 6h4l9.4 12H17v-3l4 4-4 4v-3h-1.6L6 8H3V6zm0 10h3l2.35-3.13 1.25 1.66L7 18H3v-2z"/></svg>随机</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="filters" id="filters" aria-label="筛选">
+    <div class="row1">
+      <div class="seg" id="prodSeg" role="group" aria-label="制作人"></div>
+      <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="搜曲名、风格、调性" autocomplete="off"></label>
+      <select class="sort" id="sort" aria-label="排序">
+        <option value="new">最新</option>
+        <option value="bpm-asc">BPM 从慢到快</option>
+        <option value="bpm-desc">BPM 从快到慢</option>
+      </select>
+    </div>
+    <div class="chips" id="genreChips" aria-label="风格"></div>
+    <div class="chips" id="tagChips" aria-label="标签"></div>
+    <div class="status"><span id="count"></span><button id="clear" hidden>清除筛选</button></div>
+  </section>
+
+  <ol class="list" id="list"></ol>
+  <footer>价格微信问我们：点「询价」复制曲名，发到微信就行</footer>
+</div>
+
+<div class="bar" id="bar" oncontextmenu="return false">
+  <div class="in">
+    <img class="cv" id="barCv" alt="">
+    <div class="t"><b id="barT"></b><span id="barS"></span></div>
+    <div class="ctl">
+      <button class="prev press" id="prev" aria-label="上一首"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button class="pp press" id="pp" aria-label="播放/暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg class="pa" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+      <button class="next press" id="next" aria-label="下一首"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+      <button class="ask press" id="barAsk">询价</button>
+    </div>
+    <div class="prog"><span id="cur">0:00</span><div class="track" id="seek"><div class="rail"><div class="buf" id="buf"></div><div class="fill" id="fill"></div></div></div><span id="dur">0:00</span></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const GENRE_ORDER = ['Trap','R&B','Drill','Hyperpop','Lofi','Pop','Plugg','Jersey','Afro','Boom Bap','Rage','Dark'];
+let DATA = {producers:{}, beats:[]};
+const st = {prod:'all', genres:new Set(), tags:new Set(), q:'', sort:'new', tagsOpen:false};
+let view = [];          // 当前筛选后的列表
+let queue = [];         // 播放队列（开始播放时的列表）
+let cur = null;         // 正在播放的 beat
+const audio = new Audio();
+audio.preload = 'none';
+
+const fmt = s => { s = Math.max(0, Math.round(s||0)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
+const prodName = p => (DATA.producers[p] && DATA.producers[p].name) || p;
+const coverOf = b => b.cover ? 'cover/' + b.cover : ((DATA.producers[b.producers[0]] || {}).cover || 'img/uin.jpg');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+fetch('beats.json', {cache:'no-cache'}).then(r => r.json()).then(d => {
+  DATA = d; DATA.beats = (d.beats || []).filter(b => b && b.file);
+  DATA.beats.forEach(b => { b.producers = b.producers || []; b.genres = b.genres || []; b.tags = b.tags || []; });
+  init();
+}).catch(() => { $('list').innerHTML = '<li class="empty">伴奏列表没加载出来，刷新一下试试</li>'; });
+
+function init(){
+  const total = DATA.beats.reduce((a,b) => a + (b.duration||0), 0);
+  $('stat').textContent = DATA.beats.length ? `${DATA.beats.length} 首 · ${fmt(total)}` : '陆续上架中';
+  // 制作人切换
+  const prods = Object.keys(DATA.producers);
+  $('prodSeg').innerHTML = ['all', ...prods].map(p =>
+    `<button class="press" data-p="${esc(p)}" aria-pressed="${p==='all'}">${p==='all' ? '全部' : esc(prodName(p))}</button>`).join('');
+  $('prodSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; st.prod = b.dataset.p; render(); };
+  heroCovers(prods.map(p => DATA.producers[p].cover).filter(Boolean));
+  $('q').oninput = e => { st.q = e.target.value.trim().toLowerCase(); render(); };
+  $('sort').onchange = e => { st.sort = e.target.value; render(); };
+  $('clear').onclick = clearAll;
+  render();
+  if (location.hash.length > 1) {
+    const b = DATA.beats.find(x => x.id === decodeURIComponent(location.hash.slice(1)));
+    const li = b && document.querySelector(`.trk[data-id="${CSS.escape(b.id)}"]`);
+    if (li) { li.scrollIntoView({block:'center'}); li.classList.add('flash'); }
+  }
+}
+
+function clearAll(){ st.prod='all'; st.genres.clear(); st.tags.clear(); st.q=''; $('q').value=''; render(); }
+
+// 头部封面：几个制作人封面轮流淡入淡出
+function heroCovers(list){
+  if (!list.length) return;
+  const a = $('heroA'), b = $('heroB'); let i = 0, front = a;
+  a.src = list[0];
+  if (list.length < 2 || matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  setInterval(() => {
+    i = (i + 1) % list.length; const back = front === a ? b : a;
+    back.src = list[i]; back.onload = () => { back.classList.remove('hide'); front.classList.add('hide'); front = back; };
+  }, 4500);
+}
+
+function matches(b, skip){
+  if (st.prod !== 'all' && !b.producers.includes(st.prod)) return false;
+  if (skip !== 'g' && st.genres.size && !b.genres.some(g => st.genres.has(g))) return false;
+  if (skip !== 't' && st.tags.size && !b.tags.some(t => st.tags.has(t))) return false;
+  if (st.q) {
+    const hay = [b.title, ...b.genres, ...b.tags, b.key||'', b.bpm ? b.bpm+'bpm' : '', ...b.producers.map(prodName)].join(' ').toLowerCase();
+    if (!st.q.split(/\s+/).every(w => hay.includes(w))) return false;
+  }
+  return true;
+}
+
+// 每个标签旁边的数字 = 选它之后能看到几首（按其他筛选条件算）
+function chipRow(el, label, key, all, sel, order, limit){
+  const pool = DATA.beats.filter(b => matches(b, key));
+  const cnt = {}; all.forEach(x => cnt[x] = 0);
+  pool.forEach(b => b[key==='g'?'genres':'tags'].forEach(x => cnt[x] = (cnt[x]||0) + 1));
+  let items = [...all].sort((a,b) => {
+    const ia = order.indexOf(a), ib = order.indexOf(b);
+    if (ia >= 0 || ib >= 0) return (ia<0?99:ia) - (ib<0?99:ib);
+    return cnt[b] - cnt[a] || a.localeCompare(b);
+  });
+  items = items.filter(x => cnt[x] > 0 || sel.has(x));
+  if (!items.length) { el.hidden = true; return; }
+  el.hidden = false;
+  const more = limit && items.length > limit && !st.tagsOpen;
+  const shown = more ? items.slice(0, limit) : items;
+  el.innerHTML = `<span class="lab">${label}</span>` + shown.map(x =>
+    `<button class="chip press" data-v="${esc(x)}" aria-pressed="${sel.has(x)}">${esc(x)}<small>${cnt[x]}</small></button>`).join('')
+    + (more ? `<button class="chip press" data-more>更多 +${items.length - limit}</button>` : '');
+  el.onclick = e => {
+    const c = e.target.closest('button'); if (!c) return;
+    if (c.hasAttribute('data-more')) { st.tagsOpen = true; render(); return; }
+    const v = c.dataset.v; sel.has(v) ? sel.delete(v) : sel.add(v); render();
+  };
+}
+
+function render(){
+  document.querySelectorAll('#prodSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === st.prod));
+  const allG = new Set(), allT = new Set();
+  DATA.beats.forEach(b => { b.genres.forEach(g => allG.add(g)); b.tags.forEach(t => allT.add(t)); });
+  chipRow($('genreChips'), '风格', 'g', allG, st.genres, GENRE_ORDER, 0);
+  chipRow($('tagChips'), '标签', 't', allT, st.tags, [], 10);
+
+  view = DATA.beats.filter(b => matches(b));
+  const byDate = (a,b) => (b.date||'').localeCompare(a.date||'');
+  if (st.sort === 'new') view.sort(byDate);
+  else view.sort((a,b) => ((a.bpm||999) - (b.bpm||999)) * (st.sort==='bpm-asc' ? 1 : -1) || byDate(a,b));
+
+  const filtered = st.prod !== 'all' || st.genres.size || st.tags.size || st.q;
+  $('count').textContent = DATA.beats.length ? (filtered ? `${view.length} / ${DATA.beats.length} 首` : `共 ${view.length} 首`) : '';
+  $('clear').hidden = !filtered;
+
+  if (!DATA.beats.length) { $('list').innerHTML = '<li class="empty">伴奏陆续上架中，先加微信问我们</li>'; return; }
+  if (!view.length) { $('list').innerHTML = '<li class="empty">没有符合的伴奏<br><button class="btn ghost press" onclick="document.getElementById(\'clear\').click()">清除筛选</button></li>'; return; }
+
+  $('list').innerHTML = view.map((b,i) => {
+    const sub = [b.producers.map(prodName).join(' × '), b.genres.length ? `<span class="g">${esc(b.genres.join(' / '))}</span>` : '', ...b.tags.slice(0,3).map(esc)].filter(Boolean).join(' · ');
+    const mm = [b.bpm ? b.bpm + ' BPM' : '', b.key || ''].filter(Boolean).join(' · ');
+    return `<li class="trk" data-id="${esc(b.id)}">
+      <div class="n"><span>${i+1}</span><svg class="ic-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><div class="eq"><i></i><i></i><i></i></div></div>
+      <img class="cv" src="${esc(coverOf(b))}" alt="" loading="lazy">
+      <div class="t"><b>${esc(b.title)}</b><span class="sub">${mm ? `<span class="mobile-meta">${esc(mm)} · </span>` : ''}${sub}</span></div>
+      <div class="meta"><span>${b.bpm ? b.bpm + ' BPM' : ''}</span><span class="k">${esc(b.key||'')}</span><span class="d">${b.duration ? fmt(b.duration) : ''}</span></div>
+      <button class="ask press" data-ask>询价</button>
+    </li>`;
+  }).join('');
+  markPlaying();
+}
+
+$('list').addEventListener('click', e => {
+  const li = e.target.closest('.trk'); if (!li) return;
+  const b = DATA.beats.find(x => x.id === li.dataset.id);
+  if (e.target.closest('[data-ask]')) { ask(b); return; }
+  if (cur === b) { toggle(); return; }
+  queue = view.slice(); play(b);
+});
+
+function play(b){
+  cur = b;
+  audio.src = 'audio/' + encodeURIComponent(b.file);
+  audio.play().catch(() => {});
+  $('bar').classList.add('show');
+  $('barCv').src = coverOf(b);
+  $('barT').textContent = b.title;
+  $('barS').textContent = [b.producers.map(prodName).join(' × '), b.bpm ? b.bpm + ' BPM' : '', b.key].filter(Boolean).join(' · ');
+  $('fill').style.width = $('buf').style.width = '0';
+  $('cur').textContent = '0:00'; $('dur').textContent = b.duration ? fmt(b.duration) : '0:00';
+  if ('mediaSession' in navigator) {
+    const art = new URL(coverOf(b), location.href).href;
+    navigator.mediaSession.metadata = new MediaMetadata({title:b.title, artist:b.producers.map(prodName).join(' × '), album:'CU MUSIC Beats', artwork:[{src:art, sizes:'600x600', type:'image/jpeg'}]});
+  }
+  if (window.gtag) gtag('event', 'beat_play', {beat: b.id});
+  markPlaying();
+}
+function toggle(){ if (!cur) { $('playAll').click(); return; } audio.paused ? audio.play().catch(()=>{}) : audio.pause(); }
+function step(d){
+  if (!cur) return;
+  const q = queue.length ? queue : view;
+  if (d < 0 && audio.currentTime > 3) { audio.currentTime = 0; return; }
+  const i = q.indexOf(cur);
+  const nb = q[(i + d + q.length) % q.length];
+  if (nb) play(nb);
+}
+function markPlaying(){
+  document.querySelectorAll('.trk').forEach(li => {
+    const on = cur && li.dataset.id === cur.id;
+    li.classList.toggle('on', !!on); li.classList.toggle('paused', !!on && audio.paused);
+  });
+  $('bar').classList.toggle('playing', !audio.paused);
+}
+
+$('playAll').onclick = () => { if (!view.length) return; queue = view.slice(); play(queue[0]); };
+$('shuffle').onclick = () => {
+  if (!view.length) return;
+  queue = view.slice();
+  for (let i = queue.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [queue[i], queue[j]] = [queue[j], queue[i]]; }
+  play(queue[0]);
+};
+$('pp').onclick = toggle;
+$('prev').onclick = () => step(-1);
+$('next').onclick = () => step(1);
+$('barAsk').onclick = () => cur && ask(cur);
+
+audio.addEventListener('play', markPlaying);
+audio.addEventListener('pause', markPlaying);
+audio.addEventListener('ended', () => step(1));
+audio.addEventListener('loadedmetadata', () => { $('dur').textContent = fmt(audio.duration); });
+audio.addEventListener('timeupdate', () => {
+  if (dragging || !audio.duration) return;
+  $('fill').style.width = (audio.currentTime / audio.duration * 100) + '%';
+  $('cur').textContent = fmt(audio.currentTime);
+});
+audio.addEventListener('progress', () => {
+  if (audio.buffered.length && audio.duration) $('buf').style.width = (audio.buffered.end(audio.buffered.length - 1) / audio.duration * 100) + '%';
+});
+audio.addEventListener('error', () => { if (cur) toast('这首暂时播不了，试试下一首'); });
+
+// 拖动进度条
+let dragging = false;
+const seek = $('seek');
+const ratio = e => { const r = seek.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
+seek.addEventListener('pointerdown', e => { if (!audio.duration) return; dragging = true; seek.classList.add('drag'); seek.setPointerCapture(e.pointerId); move(e); });
+seek.addEventListener('pointermove', e => dragging && move(e));
+seek.addEventListener('pointerup', e => { if (!dragging) return; dragging = false; seek.classList.remove('drag'); audio.currentTime = ratio(e) * audio.duration; });
+function move(e){ const p = ratio(e); $('fill').style.width = p * 100 + '%'; $('cur').textContent = fmt(p * audio.duration); }
+
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => audio.play());
+  navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+  navigator.mediaSession.setActionHandler('previoustrack', () => step(-1));
+  navigator.mediaSession.setActionHandler('nexttrack', () => step(1));
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,select,textarea')) return;
+  if (e.code === 'Space') { e.preventDefault(); toggle(); }
+  else if (e.code === 'ArrowRight' && e.shiftKey) step(1);
+  else if (e.code === 'ArrowLeft' && e.shiftKey) step(-1);
+});
+
+// 询价：复制一句话，客户直接粘贴到微信
+function ask(b){
+  const text = `你好，想问下伴奏《${b.title}》（${b.producers.map(prodName).join(' × ')}）的价格 cumusic.work/beat#${b.id}`;
+  const done = () => toast('已复制曲名，粘贴到微信发给我们就行');
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
+  else fallback(text, done);
+  if (window.gtag) gtag('event', 'beat_ask', {beat: b.id});
+}
+function fallback(text, done){
+  const t = document.createElement('textarea'); t.value = text; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch { toast(text); } t.remove();
+}
+let tt;
+function toast(s){ const t = $('toast'); t.textContent = s; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2600); }
+
+// 筛选栏吸顶后加一条细线
+new IntersectionObserver(([e]) => $('filters').classList.toggle('stuck', e.intersectionRatio < 1), {threshold:[1], rootMargin:'-1px 0px 0px 0px'}).observe($('filters'));
+})();
+</script>
+</body>
+</html>
