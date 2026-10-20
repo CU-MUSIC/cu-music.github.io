@@ -15,15 +15,13 @@
 | cumusic.work/chefdao/cookin.html | `chefdao/cookin.html` | cookin |
 | cumusic.work/uin/ | `uin/index.html` | UIN 尤因 |
 | cumusic.work/beat/ | `beat/index.html` | 伴奏商店（ChefDao × Uin） |
+| cumusic.work/beat/admin/ | `beat/admin/index.html` | 伴奏上传管理 |
 
 ## 伴奏上架
 
-1. 双击 `伴奏管理.command`，浏览器会打开管理页
-2. 把 m4a 拖进去，曲名、风格、BPM 会先从文件名猜
-3. 在页面上改信息（自动保存），拖图片到封面上可以换封面
-4. 双击 `发布.command` 上线
+打开 cumusic.work/beat/admin/（钥匙和 Insights 一样），把 m4a 拖进去，在页面上改信息。上传和修改直接生效，不用双击发布。
 
-数据在 `beat/beats.json`，音频在 `beat/audio/`，封面在 `beat/cover/`。
+音频、封面和列表存在 stats.cumusic.work（`tools/stats-worker`，KV + D1 的 beats 表）。
 
 ## 文件夹
 

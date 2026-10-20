@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>伴奏管理 · CU MUSIC</title>
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<style>
+/* 伴奏管理：和伴奏页同一套暖黑配色。登录钥匙和 Insights 共用 */
+:root{
+  --bg:#0b0a0a;--bg-soft:#121110;--surface:rgba(255,252,248,.035);--surface-hi:rgba(255,252,248,.065);--surface-on:rgba(255,252,248,.10);
+  --text:#ece7e1;--text-2:#9b948c;--text-3:#6d6862;--border:rgba(236,231,225,.10);--border-hi:rgba(236,231,225,.24);
+  --pearl:#ebe6df;--ink:#141210;--ok:#8fbf9f;--red:#e9a19a;--hl:#e0b26a;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:16px/1.7 var(--font);-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{border:0;background:none;cursor:pointer}
+.wrap{max-width:920px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-right)) 120px max(16px,env(safe-area-inset-left))}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:24px;font-weight:800;letter-spacing:-.02em;flex:1}
+a.btn{font-size:14px;font-weight:600;background:var(--surface-hi);padding:7px 14px;border-radius:16px;color:var(--text);text-decoration:none}
+a.btn:hover{background:var(--surface-on)}
+
+.login{max-width:360px;margin:18vh auto 0;display:grid;gap:12px;text-align:center}
+.login p{color:var(--text-2);font-size:14px}
+.login .err{color:var(--red)}
+
+.drop{margin:22px 0 28px;border:1.5px dashed var(--border-hi);border-radius:18px;padding:34px 20px;text-align:center;cursor:pointer;transition:background-color .2s,border-color .2s}
+.drop:hover{background:var(--surface-hi);border-color:var(--text-2)}
+.drop b{font-size:18px;display:block}
+.drop span{color:var(--text-2);font-size:14px}
+.queue{display:flex;flex-direction:column;gap:6px;margin:-14px 0 24px;font-size:14px;color:var(--text-2)}
+.queue .err{color:var(--red)}
+.queue .done{color:var(--ok)}
+body.dragging::after{content:"松手上传";position:fixed;inset:12px;border:2px dashed var(--pearl);border-radius:22px;background:rgba(11,10,10,.85);
+  display:grid;place-items:center;font-size:28px;font-weight:800;z-index:50;pointer-events:none}
+
+.count{font-size:13px;color:var(--text-3);margin-bottom:10px}
+.card{display:grid;grid-template-columns:96px minmax(0,1fr);gap:18px;padding:18px;border:1px solid var(--border);border-radius:16px;margin-bottom:12px;background:var(--surface);transition:border-color .3s}
+.card.new{border-color:var(--hl)}
+.cv{position:relative;width:96px;height:96px;border-radius:10px;overflow:hidden;background:var(--bg-soft);cursor:pointer}
+.cv img{width:100%;height:100%;object-fit:cover}
+.cv span{position:absolute;inset:auto 0 0;font-size:11px;text-align:center;background:rgba(11,10,10,.7);padding:2px 0;opacity:0;transition:opacity .2s}
+.cv:hover span,.cv.over span{opacity:1}
+.cv.over{outline:2px solid var(--pearl)}
+.play{margin-top:8px;width:96px;height:32px;border-radius:16px;background:var(--surface-hi);font-size:13px;font-weight:600}
+.play.on{background:var(--pearl);color:var(--ink)}
+.f{display:grid;gap:12px;min-width:0}
+.line{display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center}
+.title{flex:1;min-width:180px;font-size:18px;font-weight:700;background:transparent;border:1px solid transparent;border-radius:8px;padding:2px 8px;margin-left:-8px}
+.title:hover{border-color:var(--border)}
+.title:focus{border-color:var(--border-hi);outline:none;background:var(--bg-soft)}
+.state{font-size:12px;color:var(--text-3);min-width:56px;text-align:right}
+.state.ok{color:var(--ok)}
+.state.err{color:var(--red)}
+label.l{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--text-3);width:34px;flex:none}
+.tg{height:30px;padding:0 12px;border-radius:15px;font-size:13.5px;border:1px solid var(--border);color:var(--text-2)}
+.tg:hover{border-color:var(--border-hi);color:var(--text)}
+.tg[aria-pressed="true"]{background:var(--pearl);border-color:var(--pearl);color:var(--ink);font-weight:600}
+.in{height:34px;border-radius:9px;border:1px solid var(--border);background:var(--bg-soft);padding:0 10px;font-size:14.5px;outline:none;min-width:0}
+.in:focus{border-color:var(--border-hi)}
+.tags{flex:1;min-width:180px}
+.bpm{width:72px}.key{width:80px}.date{width:150px}
+.del{margin-left:auto;font-size:13px;color:var(--text-3);padding:4px 8px;border-radius:8px}
+.del:hover{color:var(--red)}
+.del.confirm{background:var(--red);color:var(--ink);font-weight:600}
+.empty{text-align:center;color:var(--text-3);padding:30px 0}
+.pbtn{height:42px;border-radius:12px;background:var(--pearl);color:var(--ink);font-weight:700}
+@media (max-width:600px){.card{grid-template-columns:1fr}.cv{width:120px;height:120px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+const PRODUCERS = { Uin: { name: 'Uin 尤因', cover: '/beat/img/uin.jpg' }, ChefDao: { name: '刀大厨 ChefDao', cover: '/beat/img/chefdao.jpg' } };
+const GENRES = ['Trap', 'R&B', 'Drill', 'Hyperpop', 'Lofi', 'Pop', 'Plugg', 'Jersey', 'Afro', 'Boom Bap', 'Rage'];
+const store = {
+  get(k) { try { return localStorage.getItem(k) } catch (e) { return null } },
+  set(k, v) { try { localStorage.setItem(k, v) } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k) } catch (e) {} },
+};
+let KEY = store.get('insights:key');   // 和 Insights 共用同一把钥匙
+let BEATS = [];
+const fresh = new Set();
+const player = new Audio();
+let playing = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+const auth = () => ({ Authorization: 'Bearer ' + KEY });
+
+async function api(path, opt = {}) {
+  const r = await fetch(API + path, { ...opt, headers: { ...auth(), ...(opt.headers || {}) } });
+  if (r.status === 401) { store.del('insights:key'); KEY = null; login(true); throw new Error('钥匙不对'); }
+  const j = await r.json().catch(() => ({ ok: false }));
+  if (!j.ok) throw new Error(j.e === 'size' ? '文件超过 25MB' : (j.e || 'HTTP ' + r.status));
+  return j;
+}
+
+function login(bad){
+  $('app').innerHTML = `<form class="login" id="lf"><h1>伴奏管理</h1><p class="${bad ? 'err' : ''}">${bad ? '钥匙不对，再试一次' : '输入 Insights 的钥匙'}</p>
+    <input class="in" id="k" type="password" autocomplete="current-password" placeholder="钥匙" style="height:42px"><button class="pbtn">进入</button></form>`;
+  $('lf').onsubmit = e => { e.preventDefault(); KEY = $('k').value.trim(); if (!KEY) return; store.set('insights:key', KEY); boot(); };
+  $('k').focus();
+}
+
+async function boot(){
+  if (!KEY) return login();
+  // 用看板接口验钥匙
+  const r = await fetch(API + '/radm/list', { headers: auth() }).catch(() => null);
+  if (!r || r.status === 401) { store.del('insights:key'); KEY = null; return login(!!r); }
+  $('app').innerHTML = `<header><h1>伴奏管理</h1><a class="btn" href="/chefdao/review/insights/">Insights</a><a class="btn" href="/beat/" target="_blank">看伴奏页 ↗</a></header>
+    <div class="drop" id="drop" tabindex="0" role="button"><b>把 m4a 拖进来</b>
+      <span>可以一次拖多首 · 上传后马上出现在伴奏页 · 曲名、风格、BPM 先从文件名猜，下面再改</span>
+      <input type="file" id="file" accept=".m4a,.mp3,audio/mp4,audio/x-m4a,audio/mpeg" multiple hidden></div>
+    <div class="queue" id="queue"></div><div class="count" id="count"></div><div id="list"></div>`;
+  $('drop').onclick = () => $('file').click();
+  $('drop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } };
+  $('file').onchange = () => { upload([...$('file').files]); $('file').value = ''; };
+  $('list').addEventListener('input', onInput);
+  $('list').addEventListener('keydown', onKey);
+  $('list').addEventListener('click', onClick);
+  await refresh();
+}
+
+async function refresh(){
+  const r = await fetch(API + '/beats', { cache: 'no-cache' });
+  BEATS = (await r.json()).beats || [];
+  render();
+}
+
+function render(){
+  $('count').textContent = BEATS.length ? `已上架 ${BEATS.length} 首 · 改动自动保存，伴奏页刷新即可看到` : '';
+  if (!BEATS.length) { $('list').innerHTML = '<div class="empty">还没有伴奏</div>'; return; }
+  const G = [...new Set([...GENRES, ...BEATS.flatMap(b => b.genres)])];
+  $('list').innerHTML = BEATS.map(b => {
+    const cover = b.cover ? API + '/bc/' + b.cover : (PRODUCERS[b.producers[0]] || PRODUCERS.Uin).cover;
+    return `<div class="card${fresh.has(b.id) ? ' new' : ''}" data-id="${esc(b.id)}">
+      <div>
+        <div class="cv" title="点击或拖图片进来换封面"><img src="${esc(cover)}" alt=""><span>换封面</span></div>
+        <button class="play${playing === b.id ? ' on' : ''}" data-play>${playLabel(b)}</button>
+      </div>
+      <div class="f">
+        <div class="line"><input class="title" data-k="title" value="${esc(b.title)}" aria-label="曲名"><span class="state"></span></div>
+        <div class="line"><label class="l">制作</label>${Object.keys(PRODUCERS).map(p =>
+          `<button class="tg" data-arr="producers" data-v="${p}" aria-pressed="${b.producers.includes(p)}">${PRODUCERS[p].name}</button>`).join('')}</div>
+        <div class="line"><label class="l">风格</label>${G.map(g =>
+          `<button class="tg" data-arr="genres" data-v="${esc(g)}" aria-pressed="${b.genres.includes(g)}">${esc(g)}</button>`).join('')}
+          <input class="in" data-newgenre placeholder="+ 新风格，回车" style="width:130px"></div>
+        <div class="line"><label class="l">标签</label><input class="in tags" data-k="tags" value="${esc(b.tags.join(', '))}" placeholder="Travis Scott, Dark（逗号隔开）"></div>
+        <div class="line"><label class="l">BPM</label><input class="in bpm" data-k="bpm" inputmode="numeric" value="${esc(b.bpm ?? '')}" placeholder="140">
+          <label class="l" style="width:auto">调性</label><input class="in key" data-k="key" value="${esc(b.key ?? '')}" placeholder="Cm">
+          <label class="l" style="width:auto">日期</label><input class="in date" type="date" data-k="date" value="${esc(b.date)}">
+          <button class="del" data-del>删除</button></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+const playLabel = b => (playing === b.id ? '暂停' : '▶ 试听') + (b.duration ? ' ' + fmt(b.duration) : '');
+
+// ── 改信息：停手 0.4 秒后保存，同一首连着改几处一起存 ──
+const timers = {}, pend = {};
+function patch(card, obj){
+  const id = card.dataset.id, st = card.querySelector('.state');
+  st.className = 'state'; st.textContent = '保存中…';
+  pend[id] = Object.assign(pend[id] || {}, obj);
+  clearTimeout(timers[id]);
+  timers[id] = setTimeout(async () => {
+    const body = JSON.stringify({ id, ...pend[id] }); delete pend[id];
+    try {
+      const j = await api('/badm/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      Object.assign(BEATS.find(b => b.id === id), j.beat);
+      st.className = 'state ok'; st.textContent = '已保存 ✓';
+    } catch (e) { st.className = 'state err'; st.textContent = '没保存上'; }
+  }, 400);
+}
+function val(k, v){
+  if (k === 'tags') return v.split(/[,，、;；]/).map(s => s.trim()).filter(Boolean);
+  if (k === 'bpm') return v.trim() ? (parseInt(v, 10) || null) : null;
+  if (k === 'key') return v.trim() || null;
+  return v.trim();
+}
+function onInput(e){
+  const k = e.target.dataset.k; if (!k) return;
+  if (k === 'title' && !e.target.value.trim()) return;
+  patch(e.target.closest('.card'), { [k]: val(k, e.target.value) });
+}
+function onKey(e){
+  if (!e.target.matches('[data-newgenre]') || e.key !== 'Enter') return;
+  const g = e.target.value.trim(); if (!g) return;
+  const card = e.target.closest('.card'), b = BEATS.find(x => x.id === card.dataset.id);
+  if (!b.genres.includes(g)) b.genres.push(g);
+  patch(card, { genres: b.genres }); setTimeout(render, 600);
+}
+async function onClick(e){
+  const card = e.target.closest('.card'); if (!card) return;
+  const b = BEATS.find(x => x.id === card.dataset.id);
+  const tg = e.target.closest('[data-arr]');
+  if (tg) {
+    const arr = b[tg.dataset.arr], v = tg.dataset.v, i = arr.indexOf(v);
+    if (i >= 0) { if (tg.dataset.arr === 'producers' && arr.length === 1) return; arr.splice(i, 1); } else arr.push(v);
+    tg.setAttribute('aria-pressed', arr.includes(v));
+    patch(card, { [tg.dataset.arr]: arr }); return;
+  }
+  if (e.target.closest('[data-play]')) {
+    if (playing === b.id) { player.pause(); playing = null; }
+    else { player.src = API + '/ba/' + b.file; player.play(); playing = b.id; }
+    document.querySelectorAll('[data-play]').forEach(btn => {
+      const x = BEATS.find(y => y.id === btn.closest('.card').dataset.id);
+      btn.classList.toggle('on', playing === x.id); btn.textContent = playLabel(x);
+    });
+    return;
+  }
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    if (!del.classList.contains('confirm')) { del.classList.add('confirm'); del.textContent = '再点一次确认删除'; setTimeout(() => { del.classList.remove('confirm'); del.textContent = '删除'; }, 3000); return; }
+    try { await api('/badm/drop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.id }) }); } catch (err) { alertRow('✗ 删除失败：' + err.message); }
+    if (playing === b.id) { player.pause(); playing = null; }
+    refresh(); return;
+  }
+  if (e.target.closest('.cv')) pickCover(b.id);
+}
+player.addEventListener('ended', () => { playing = null; render(); });
+
+// ── 封面：浏览器里裁成 600×600 jpg 再传 ──
+function pickCover(id){
+  const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+  i.onchange = () => i.files[0] && uploadCover(id, i.files[0]); i.click();
+}
+async function uploadCover(id, f){
+  try {
+    const img = await createImageBitmap(f), s = Math.min(img.width, img.height), c = document.createElement('canvas');
+    c.width = c.height = 600;
+    c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 600, 600);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .86));
+    const j = await api('/badm/cover?id=' + encodeURIComponent(id), { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+    BEATS.find(b => b.id === id).cover = j.cover; render();
+  } catch (e) { alertRow('✗ 封面没传上：' + e.message); }
+}
+function alertRow(t){ const d = document.createElement('div'); d.className = 'err'; d.textContent = t; $('queue').prepend(d); }
+
+// ── 拖文件：拖到封面上 = 换封面，拖到别处 = 上传伴奏 ──
+let depth = 0;
+const isFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
+addEventListener('dragenter', e => { if (!isFiles(e) || !KEY) return; e.preventDefault(); depth++; });
+addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; document.body.classList.remove('dragging'); } });
+addEventListener('dragover', e => {
+  if (!isFiles(e) || !KEY) return; e.preventDefault();
+  const cv = e.target.closest?.('.cv');
+  document.querySelectorAll('.cv.over').forEach(x => x !== cv && x.classList.remove('over'));
+  if (cv) { cv.classList.add('over'); document.body.classList.remove('dragging'); } else document.body.classList.add('dragging');
+});
+addEventListener('drop', e => {
+  if (!isFiles(e) || !KEY) return; e.preventDefault(); depth = 0; document.body.classList.remove('dragging');
+  const files = [...e.dataTransfer.files], cv = e.target.closest?.('.cv');
+  document.querySelectorAll('.cv.over').forEach(x => x.classList.remove('over'));
+  if (cv && files[0] && files[0].type.startsWith('image/')) { uploadCover(cv.closest('.card').dataset.id, files[0]); return; }
+  if ($('drop')) upload(files);
+});
+
+// ── 从文件名猜信息：'MASK' Kanye West Type Beat_115_Cm@Uin@ChefDao.m4a ──
+const GENRE_RX = [
+  [/hyper\s*pop/i, 'Hyperpop'], [/\btrap\b/i, 'Trap'], [/r\s*&\s*b|\brnb\b/i, 'R&B'], [/lo-?\s*fi/i, 'Lofi'],
+  [/\bdrill\b/i, 'Drill'], [/\bplugg?\b/i, 'Plugg'], [/jersey/i, 'Jersey'], [/\brage\b/i, 'Rage'],
+  [/afro/i, 'Afro'], [/boom\s*bap/i, 'Boom Bap'], [/(^|[^r])\bpop\b/i, 'Pop'],
+];
+const MOODS = ['Dark', 'Sad', 'Chill', 'Bouncy', 'Melodic', 'Hard', 'Bully'];
+const titleCase = s => s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+function guess(name){
+  const stem = name.replace(/\.[^.]+$/, ''), at = stem.split('@'), main = at[0].trim();
+  const producers = [];
+  at.slice(1).forEach(p => { const k = Object.keys(PRODUCERS).find(x => p.toLowerCase().startsWith(x.toLowerCase())); if (k && !producers.includes(k)) producers.push(k); });
+  const q = main.match(/^['‘’"“”]([^'‘’"“”]+)['‘’"“”]\s*(.*)$/);
+  const title = (q ? q[1] : main.replace(/type\s*beat.*$/i, '').trim() || main).replace(/[_\s]+/g, ' ').trim();
+  const rest = q ? q[2] : main;
+  let bpm = null, key = null;
+  const bk = stem.match(/_(\d{2,3})_([A-G](?:#|b)?m?)(?=@|$|_)/);
+  if (bk) { bpm = +bk[1]; key = bk[2]; } else { const m = stem.match(/(\d{2,3})\s*bpm/i); if (m) bpm = +m[1]; }
+  const genres = GENRE_RX.filter(([rx]) => rx.test(rest)).map(([, g]) => g);
+  let who = (rest.match(/^(.*?)type\s*beat/i) || [, ''])[1];
+  GENRE_RX.forEach(([rx]) => { who = who.replace(new RegExp(rx.source, 'gi'), ' '); });
+  const tags = [];
+  MOODS.forEach(m => { const rx = new RegExp('\\b' + m + '\\b', 'gi'); if (rx.test(who)) { tags.push(m); who = who.replace(rx, ' '); } });
+  who.split(/\s+x\s+|(?<=^|\s|\P{ASCII})x(?=\s|\P{ASCII})|\s*[&,/+×]\s*/iu).map(s => s.replace(/\s+/g, ' ').trim()).filter(s => s.length > 1)
+    .reverse().forEach(s => tags.unshift(s === s.toUpperCase() ? titleCase(s) : s));
+  return { title, producers: producers.length ? producers : ['Uin'], genres, tags, bpm, key };
+}
+function slugify(title){
+  let s = title.normalize('NFKD').replace(/[^\w\s-]/g, '').trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
+  if (s.length < 2) s = 'beat-' + Date.now().toString(36);
+  let id = s, n = 2;
+  while (BEATS.some(b => b.id === id)) id = `${s}-${n++}`;
+  return id;
+}
+const rand6 = () => [...crypto.getRandomValues(new Uint8Array(6))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+const durationOf = f => new Promise(ok => {
+  const a = new Audio(), u = URL.createObjectURL(f);
+  a.preload = 'metadata'; a.onloadedmetadata = () => { URL.revokeObjectURL(u); ok(Math.round(a.duration) || 0); };
+  a.onerror = () => { URL.revokeObjectURL(u); ok(0); }; a.src = u;
+});
+// 用 XHR 传，才能显示上传进度
+const put = (url, file, onp) => new Promise((ok, no) => {
+  const x = new XMLHttpRequest(); x.open('PUT', url); x.setRequestHeader('Authorization', 'Bearer ' + KEY);
+  x.setRequestHeader('Content-Type', file.type || 'audio/mp4');
+  x.upload.onprogress = e => e.lengthComputable && onp(e.loaded / e.total);
+  x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {}
+    x.status === 200 && j.ok ? ok() : no(new Error(j.e === 'size' ? '文件超过 25MB' : x.status === 401 ? '钥匙不对' : '上传失败 ' + x.status)); };
+  x.onerror = () => no(new Error('网络断了')); x.send(file);
+});
+
+async function upload(files){
+  const ok = files.filter(f => /\.(m4a|mp3)$/i.test(f.name));
+  files.filter(f => !ok.includes(f)).forEach(f => alertRow(`✗ ${f.name}：只收 m4a 或 mp3`));
+  for (const f of ok) {
+    const row = document.createElement('div'); row.textContent = `准备 ${f.name}`; $('queue').prepend(row);
+    try {
+      if (f.size > 25 * 1024 * 1024) throw new Error('文件超过 25MB');
+      const g = guess(f.name), id = slugify(g.title), file = id + '-' + rand6() + (/\.mp3$/i.test(f.name) ? '.mp3' : '.m4a');
+      const duration = await durationOf(f);
+      await put(API + '/badm/audio?f=' + file, f, p => { row.textContent = `上传中 ${Math.round(p * 100)}% ${f.name}`; });
+      const j = await api('/badm/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, file, duration, ...g }) });
+      BEATS.unshift(j.beat); fresh.add(id);
+      row.className = 'done'; row.textContent = `✓ 已上架《${j.beat.title}》`;
+    } catch (err) { row.className = 'err'; row.textContent = `✗ ${f.name}：${err.message}`; }
+  }
+  render();
+  const first = document.querySelector('.card.new'); if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+boot();
+</script>
+</body>
+</html>

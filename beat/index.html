@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover" />
 <meta name="theme-color" content="#0b0a0a">
-<meta name="description" content="CU MUSIC 伴奏：刀大厨 ChefDao × Uin 尤因。在线试听，按风格和标签筛选，微信询价。" />
+<meta name="description" content="刀大厨 ChefDao、Uin 尤因的伴奏，可按风格和标签筛选。" />
 <title>Beats · CU MUSIC</title>
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
 <link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="CU MUSIC" />
 <meta property="og:title" content="CU MUSIC Beats" />
-<meta property="og:description" content="刀大厨 ChefDao × Uin 尤因 · 在线试听，微信询价" />
+<meta property="og:description" content="刀大厨 ChefDao × Uin 尤因" />
 <meta property="og:url" content="https://cumusic.work/beat/" />
 <meta property="og:image" content="https://cumusic.work/beat/img/uin.jpg" />
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-8D9FZCMZFJ"></script>
@@ -217,7 +217,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
     <div>
       <div class="eyebrow" id="stat">伴奏</div>
       <h1>CU MUSIC Beats</h1>
-      <p class="by">刀大厨 ChefDao × Uin 尤因<br>在线试听 · 微信询价</p>
+      <p class="by">刀大厨 ChefDao × Uin 尤因</p>
       <div class="actions">
         <button class="btn primary press" id="playAll"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>播放</button>
         <button class="btn ghost press" id="shuffle"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-2.4 3.2-1.25-1.67L13.4 6H17V3zM3 6h4l9.4 12H17v-3l4 4-4 4v-3h-1.6L6 8H3V6zm0 10h3l2.35-3.13 1.25 1.66L7 18H3v-2z"/></svg>随机</button>
@@ -242,7 +242,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   </section>
 
   <ol class="list" id="list"></ol>
-  <footer>价格微信问我们：点「询价」复制曲名，发到微信就行</footer>
+  <footer>价格请微信咨询</footer>
 </div>
 
 <div class="bar" id="bar" oncontextmenu="return false">
@@ -264,7 +264,12 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 (() => {
 const $ = id => document.getElementById(id);
 const GENRE_ORDER = ['Trap','R&B','Drill','Hyperpop','Lofi','Pop','Plugg','Jersey','Afro','Boom Bap','Rage','Dark'];
-let DATA = {producers:{}, beats:[]};
+// 伴奏列表和音频在 stats.cumusic.work（在 /beat/admin/ 上传管理）
+const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+let DATA = {producers:{
+  Uin: {name:'Uin 尤因', cover:'img/uin.jpg'},
+  ChefDao: {name:'刀大厨 ChefDao', cover:'img/chefdao.jpg'},
+}, beats:[]};
 const st = {prod:'all', genres:new Set(), tags:new Set(), q:'', sort:'new', tagsOpen:false};
 let view = [];          // 当前筛选后的列表
 let queue = [];         // 播放队列（开始播放时的列表）
@@ -274,18 +279,18 @@ audio.preload = 'none';
 
 const fmt = s => { s = Math.max(0, Math.round(s||0)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
 const prodName = p => (DATA.producers[p] && DATA.producers[p].name) || p;
-const coverOf = b => b.cover ? 'cover/' + b.cover : ((DATA.producers[b.producers[0]] || {}).cover || 'img/uin.jpg');
+const coverOf = b => b.cover ? API + '/bc/' + b.cover : ((DATA.producers[b.producers[0]] || {}).cover || 'img/uin.jpg');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-fetch('beats.json', {cache:'no-cache'}).then(r => r.json()).then(d => {
-  DATA = d; DATA.beats = (d.beats || []).filter(b => b && b.file);
+fetch(API + '/beats', {cache:'no-cache'}).then(r => r.json()).then(d => {
+  DATA.beats = (d.beats || []).filter(b => b && b.file);
   DATA.beats.forEach(b => { b.producers = b.producers || []; b.genres = b.genres || []; b.tags = b.tags || []; });
   init();
-}).catch(() => { $('list').innerHTML = '<li class="empty">伴奏列表没加载出来，刷新一下试试</li>'; });
+}).catch(() => { $('list').innerHTML = '<li class="empty">加载失败，请刷新</li>'; });
 
 function init(){
   const total = DATA.beats.reduce((a,b) => a + (b.duration||0), 0);
-  $('stat').textContent = DATA.beats.length ? `${DATA.beats.length} 首 · ${fmt(total)}` : '陆续上架中';
+  $('stat').textContent = DATA.beats.length ? `${DATA.beats.length} 首 · ${fmt(total)}` : '0 首';
   // 制作人切换
   const prods = Object.keys(DATA.producers);
   $('prodSeg').innerHTML = ['all', ...prods].map(p =>
@@ -369,8 +374,8 @@ function render(){
   $('count').textContent = DATA.beats.length ? (filtered ? `${view.length} / ${DATA.beats.length} 首` : `共 ${view.length} 首`) : '';
   $('clear').hidden = !filtered;
 
-  if (!DATA.beats.length) { $('list').innerHTML = '<li class="empty">伴奏陆续上架中，先加微信问我们</li>'; return; }
-  if (!view.length) { $('list').innerHTML = '<li class="empty">没有符合的伴奏<br><button class="btn ghost press" onclick="document.getElementById(\'clear\').click()">清除筛选</button></li>'; return; }
+  if (!DATA.beats.length) { $('list').innerHTML = '<li class="empty">暂无伴奏</li>'; return; }
+  if (!view.length) { $('list').innerHTML = '<li class="empty">没有符合条件的伴奏<br><button class="btn ghost press" onclick="document.getElementById(\'clear\').click()">清除筛选</button></li>'; return; }
 
   $('list').innerHTML = view.map((b,i) => {
     const sub = [b.producers.map(prodName).join(' × '), b.genres.length ? `<span class="g">${esc(b.genres.join(' / '))}</span>` : '', ...b.tags.slice(0,3).map(esc)].filter(Boolean).join(' · ');
@@ -396,7 +401,7 @@ $('list').addEventListener('click', e => {
 
 function play(b){
   cur = b;
-  audio.src = 'audio/' + encodeURIComponent(b.file);
+  audio.src = API + '/ba/' + b.file;
   audio.play().catch(() => {});
   $('bar').classList.add('show');
   $('barCv').src = coverOf(b);
@@ -452,7 +457,7 @@ audio.addEventListener('timeupdate', () => {
 audio.addEventListener('progress', () => {
   if (audio.buffered.length && audio.duration) $('buf').style.width = (audio.buffered.end(audio.buffered.length - 1) / audio.duration * 100) + '%';
 });
-audio.addEventListener('error', () => { if (cur) toast('这首暂时播不了，试试下一首'); });
+audio.addEventListener('error', () => { if (cur) toast('无法播放'); });
 
 // 拖动进度条
 let dragging = false;
@@ -479,8 +484,8 @@ document.addEventListener('keydown', e => {
 
 // 询价：复制一句话，客户直接粘贴到微信
 function ask(b){
-  const text = `你好，想问下伴奏《${b.title}》（${b.producers.map(prodName).join(' × ')}）的价格 cumusic.work/beat#${b.id}`;
-  const done = () => toast('已复制曲名，粘贴到微信发给我们就行');
+  const text = `询价：《${b.title}》${b.producers.map(prodName).join(' × ')} cumusic.work/beat#${b.id}`;
+  const done = () => toast('已复制，可粘贴到微信');
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
   else fallback(text, done);
   if (window.gtag) gtag('event', 'beat_ask', {beat: b.id});
