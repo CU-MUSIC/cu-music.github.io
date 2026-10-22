@@ -355,3 +355,8 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 /* 属于某个 EP / 专辑时，标题上方一行返回项目 */
 .head .pjb{display:inline-block;font-size:13px;color:var(--text-3);text-decoration:none;margin-bottom:2px}
 .head .pjb:hover{color:var(--text-2)}
+
+/* 响度统一开关：播放键下面一颗小胶囊，开着时白底 */
+.loudrow{display:flex;justify-content:center;margin:14px 0 12px}
+.loud{font-size:13px;padding:6px 14px;border-radius:999px;background:var(--fill);color:var(--text-2);font-variant-numeric:tabular-nums;transition:background-color .2s,color .2s}
+.loud.on{background:var(--pearl);color:var(--ink)}

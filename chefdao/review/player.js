@@ -100,6 +100,7 @@ document.body.innerHTML = `
     </button>
     <button class="skip press" id="fwd" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 3.5v3.7h-3.7"/></svg><span>5</span></button>
   </div>
+  <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button></div>
 
   <div class="sect">评论<span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
@@ -685,6 +686,50 @@ async function clientFb() {
     cfbRender();
   } catch (e) {}
 }
+/* ───────── 响度统一：把每个版本的整体响度拉到 -14 LUFS 再播，切版本对比时不被音量骗；放大时后面挂限幅器防爆音 ─────────
+   只有打开开关才把声音接进 Web Audio（默认路径完全不变） */
+const LOUD_TARGET = -14;
+let LOUD = store.get('review:loud') === '1', actx = null, gainN = null;
+const LU = {};
+V.forEach((v, i) => { if (Number.isFinite(v.lufs)) LU[i] = v.lufs; });
+function loudGraph() {
+  if (actx) { if (actx.state === 'suspended') actx.resume(); return true; }
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; actx = new AC();
+    const src = actx.createMediaElementSource(a); gainN = actx.createGain();
+    const lim = actx.createDynamicsCompressor();
+    lim.threshold.value = -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .12;
+    src.connect(gainN); gainN.connect(lim); lim.connect(actx.destination);
+    return true;
+  } catch (e) { actx = null; return false; }
+}
+async function measure(i) {   // 没有预先测好的老版本：用已经解密的音频在本地测一次
+  if (LU[i] !== undefined || !urls[i]) return LU[i];
+  try {
+    if (!window.cuLufs) await new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../lufs.js?v=20261022'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+    const buf = await (await fetch(await urls[i])).arrayBuffer();
+    const C = window.OfflineAudioContext || window.webkitOfflineAudioContext, tmp = new C(2, 44100, 44100);
+    const au = await new Promise((ok, no) => { const p = tmp.decodeAudioData(buf, ok, no); if (p && p.catch) p.catch(no); });
+    LU[i] = await cuLufs(au);
+  } catch (e) {}
+  return LU[i];
+}
+async function applyLoud() {
+  const lab = $('#loudv'), btn = $('#loud');
+  btn.classList.toggle('on', LOUD); btn.setAttribute('aria-pressed', LOUD);
+  if (!gainN) { lab.textContent = ''; return; }
+  if (!LOUD) { gainN.gain.setTargetAtTime(1, actx.currentTime, .05); lab.textContent = ''; return; }
+  const i = vi; lab.textContent = ' · 测量中';
+  const l = await measure(i); if (i !== vi) return;
+  if (l === undefined) { lab.textContent = ''; return; }
+  const db = Math.max(-20, Math.min(10, LOUD_TARGET - l));
+  gainN.gain.setTargetAtTime(Math.pow(10, db / 20), actx.currentTime, .05);
+  lab.textContent = ' · ' + (db > 0 ? '+' : '') + db.toFixed(1) + ' dB';
+}
+$('#loud').onclick = () => { LOUD = !LOUD; store.set('review:loud', LOUD ? '1' : '0'); if (LOUD) loudGraph(); applyLoud(); };
+// 记住了开着：第一次点播放时（有用户手势）接上
+$('#play').addEventListener('click', () => { if (LOUD && loudGraph()) applyLoud(); }, true);
+applyLoud();
 async function switchTo(i) {
   if (i === vi || !KEY) return;
   const token = ++switching, t = a.currentTime, playing = !a.paused;
@@ -704,6 +749,7 @@ async function switchTo(i) {
     a.currentTime = Math.min(t, dur() - .1); lastT = a.currentTime; lastAt = performance.now();
     if (playing) a.play();
     $('#loading').style.opacity = 0;
+    applyLoud();
   } catch (e) { $('#loading').textContent = '载入失败，请刷新重试'; }
 }
 $('#seg').addEventListener('click', e => { const b = e.target.closest('.vrow'); if (b) switchTo(+b.dataset.i); });

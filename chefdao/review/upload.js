@@ -23,6 +23,10 @@ const AAC = (au) => ({ codec: 'mp4a.40.2', sampleRate: au.sampleRate, numberOfCh
 async function aacOk(au) {
   try { return !!(window.AudioEncoder && (await AudioEncoder.isConfigSupported(AAC(au))).supported); } catch (e) { return false; }
 }
+function loadLib(file, glob) {
+  return window[glob] ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script');
+    s.src = new URL(file, here).href; s.onload = ok; s.onerror = () => no(new Error(file)); document.head.appendChild(s); });
+}
 function loadMuxer() {
   return window.Mp4Muxer ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script');
     s.src = new URL('enc/mp4-muxer.min.js', here).href; s.onload = ok; s.onerror = () => no(new Error('m4a')); document.head.appendChild(s); });
@@ -71,6 +75,8 @@ async function cuUpload(o) {
   for (let i = 0; i < N; i++) { let mx = 0; const a = Math.floor(i * len / N), b = Math.floor((i + 1) * len / N);
     for (const c of ch) for (let j = a; j < b; j += 2) { const v = c[j] < 0 ? -c[j] : c[j]; if (v > mx) mx = v; } pk.push(mx); }
   const pm = Math.max(...pk) || 1, peaks = pk.map(v => Math.round(v / pm * 100) / 100);
+  step('测响度…');
+  let lufs; try { await loadLib('lufs.js', 'cuLufs'); lufs = await cuLufs(au); } catch (e) {}
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   let bytes, mime;
   if (ext === 'mp3') { bytes = new Uint8Array(buf); mime = 'audio/mpeg'; }
@@ -117,7 +123,7 @@ async function cuUpload(o) {
     slug: prep.slug, title: prep.title, pass: prep.pass, salt: prep.salt, project: o.project || undefined,
     chk: prep.fresh ? b64e(await seal(te.encode('ok'))) : undefined,
     token: prep.push ? b64e(await seal(te.encode(prep.push))) : '', wkey: b64e(await seal(te.encode(prep.wk))),
-    version: { ver, file: n.raw, date, duration: Math.round(au.duration * 100) / 100, peaks, audio: fname, mime } }) });
+    version: { ver, file: n.raw, date, duration: Math.round(au.duration * 100) / 100, peaks, audio: fname, mime, lufs } }) });
   bar(1);
   return { slug: prep.slug, title: prep.title, pass: prep.pass, ver, url: res.url, next: prep.next };
 }
