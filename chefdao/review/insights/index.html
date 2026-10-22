@@ -757,7 +757,7 @@ function openProject(slug) {
       const j = await r.json(); if (!j.ok) throw new Error(); await libReload(slug);
     } catch (e) { msg('封面没传上，换一张图或检查网络', true); }
   };
-  $p('pjCopy').onclick = () => { const t = '《' + $p('pjT').value + '》' + p.url + '  密码 ' + $p('pjP').value;
+  $p('pjCopy').onclick = () => { const t = '《' + $p('pjT').value + '》\n' + p.url + '\n密码 ' + $p('pjP').value;
     const done = () => { $p('pjCopy').textContent = '已复制'; }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
   $p('pjSave').onclick = async () => {
     if (!/^\d{4}$/.test($p('pjP').value)) return msg('密码要 4 位数字', true);
@@ -780,9 +780,10 @@ async function sealPass(pass) {
   const b64 = u8 => btoa(String.fromCharCode(...u8));
   return { pass, salt: b64(salt), chk: b64(o) };
 }
+const newPass = () => String(1000 + crypto.getRandomValues(new Uint32Array(1))[0] % 9000);   // 新歌 / 新项目的审听密码：随机 4 位
 async function newProject() {
   const t = prompt('新项目名（例如：夏夜 EP）'); if (!t || !t.trim()) return;
-  try { const j = await lib('/lib/save', { title: t.trim(), kind: 'ep', ...(await sealPass('1688')) }); await libReload(j.slug); } catch (e) { alert('没建成，检查网络再试'); }
+  try { const j = await lib('/lib/save', { title: t.trim(), kind: 'ep', ...(await sealPass(newPass())) }); await libReload(j.slug); } catch (e) { alert('没建成，检查网络再试'); }
 }
 // ── 审听页管理：所有在线审听链接，改歌名 / 歌手，复制链接 + 密码，打开，删除 ──
 let RSONGS = [], songsOpen = false;
@@ -803,7 +804,7 @@ async function rsAction(slug, act, btn) {
     const j = await r.json(); if (!j.ok) throw new Error(); };
   try {
     if (act === 'copy') {
-      const t = '《' + x.title + '》审听：' + x.url + '  密码 ' + x.pass;
+      const t = '《' + x.title + '》\n' + x.url + '\n密码 ' + x.pass;
       const done = () => { btn.textContent = '已复制'; setTimeout(() => { btn.textContent = '复制链接和密码'; }, 1500); };
       return navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done();
     }
@@ -925,7 +926,7 @@ async function openUpload(opt) {
     $u('upSong').value = sel || (list.length ? list[0].slug : '__new');
   };
   try { list = (await api('/radm/list')).songs; } catch (e) {}
-  if (PJ) { const mine = new Set(PJ.tracks.map(t => t.slug)); list = list.filter(x => mine.has(x.slug)); $u('upPass').value = PJ.pass; }
+  if (PJ) { const mine = new Set(PJ.tracks.map(t => t.slug)); list = list.filter(x => mine.has(x.slug)); $u('upPass').value = PJ.pass; } else $u('upPass').value = newPass();
   fill(PJ ? '__new' : undefined);
   syncNew();
   $u('upSong').onchange = syncNew; $u('upTitle').oninput = ready;
@@ -953,7 +954,7 @@ async function openUpload(opt) {
       bar(1); msg('');
       $u('upDone').innerHTML = `<div class="done"><b>《${esc(prep.title)}》${esc(ver)} 已上线</b><code>${esc(res.url)}</code><div>密码 <b>${esc(prep.pass)}</b></div>
         <button type="button" id="upCopy">复制链接和密码</button><div style="font-size:13px;color:var(--text-3)">到「订单」里把审听页选成这首歌，再推进到「待审听」</div></div>`;
-      $u('upCopy').onclick = () => { const t = '《' + prep.title + '》' + ver + ' 审听：' + res.url + '  密码 ' + prep.pass;
+      $u('upCopy').onclick = () => { const t = '《' + prep.title + '》' + ver + '\n' + res.url + '\n密码 ' + prep.pass;
         const done = () => { $u('upCopy').textContent = '已复制'; }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
       file = null; $u('upFn').textContent = '再传一个'; $u('upVer').value = ''; $u('upDate').value = '';
       list = (await api('/radm/list').catch(() => ({ songs: list }))).songs;
