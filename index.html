@@ -704,10 +704,10 @@ footer{
 
   <div class="member-section" data-filter-target="uin" role="button" tabindex="0"
        aria-label="Uin — 筛选其参与的作品">
-    <div class="skill-tag">PROD</div>
+    <div class="skill-tag">SONGWRITER</div>
     <div class="member-bg" style="background-image:url('https://raw.githubusercontent.com/CU-MUSIC/cu-music.github.io/refs/heads/main/pics/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_2025-12-31_005323_255.jpg');" aria-hidden="true"></div>
     <div class="member-content">
-      <p class="member-role">Producer / Songwriter</p>
+      <p class="member-role">Songwriter / Producer</p>
       <p class="member-name">Uin</p>
       <div class="member-actions">
         <a class="personal-link" href="https://linktr.ee/uin_" target="_blank" rel="noopener noreferrer">Links ↗</a>
@@ -781,7 +781,7 @@ footer{
     <summary>作品标注的含义</summary>
     <div class="faq-answer">
       <p>ENGINEER —— ChefDao 参与，涵盖录音、混音、母带等工程环节。<br>
-      PROD —— Uin 参与，涵盖制作与词曲。<br>
+      SONGWRITER —— Uin 参与，涵盖词曲与制作。<br>
       CU —— 两人共同参与。</p>
     </div>
   </details>
@@ -915,7 +915,7 @@ function renderAlbums(filter = 'all'){
       const credits = a.credits || [];
       const badge = credits.includes('cookdao') && credits.includes('uin') ? 'CU'
                   : credits.includes('cookdao') ? 'ENGINEER'
-                  : credits.includes('uin') ? 'PROD' : '';
+                  : credits.includes('uin') ? 'SONGWRITER' : '';
       return `
         <a class="album-item" href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">
           <div class="album-cover">
