@@ -10,7 +10,9 @@ const here = (document.currentScript && document.currentScript.src) || location.
 function cuNameInfo(fn) {
   const raw = fn.replace(/\.[^.]+$/, '');
   const m = raw.match(/_V(\d+)_(\d{2})(\d{2})$/);
-  const title = raw.replace(/_V\d+_\d{4}$/, '').replace(/_\d+$/, '').replace(/@ChefDao.*$/i, '').trim().replace(/\s+(Edit|Mix|Master)$/i, '').trim();
+  // 歌名去掉流程后缀：_premaster / _master / _mix / _edit / _bip / _bounce / _final / _demo 这类，以及结尾的 _2 编号
+  const title = raw.replace(/_V\d+_\d{4}$/, '').replace(/@ChefDao.*$/i, '').trim().replace(/[_ ]\d+$/, '')
+    .replace(/([_\s-]+(pre-?master|master(ed)?|mix(down)?|edit|bip|bounce|final|print|stem[s]?|ref))+$/i, '').trim();
   return { raw, title, ver: m ? 'V' + (+m[1]) : '', date: m ? `${new Date().getFullYear()}-${m[2]}-${m[3]}` : '' };
 }
 // WAV 头里的采样率（不是 WAV 返回 0）

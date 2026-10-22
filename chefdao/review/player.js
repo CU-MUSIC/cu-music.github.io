@@ -16,7 +16,9 @@ const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户
 const V = S.versions.filter(v => v.ver !== 'REF');
 // 版本名精简：「舞步 Edit @ChefDao_V2_1018」→「编辑 V2」；按文件名里的 Edit / Mix / Master 分阶段，编辑在前、混音在后
 const STAGE = { edit: '编辑', mix: '混音', master: '母带' };
-const stageOf = v => { const m = /\b(Edit|Mix|Master)\b/i.exec(String(v.file || '').replace(/@ChefDao.*$/i, '')); return m ? m[1].toLowerCase() : ''; };
+const stageOf = v => { const f = String(v.file || '').replace(/@ChefDao.*$/i, '').replace(/_/g, ' ');
+  if (/\bpre-?master/i.test(f)) return 'mix';
+  const m = /\b(Edit|Mix|Master)\b/i.exec(f); return m ? m[1].toLowerCase() : ''; };
 const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + v.ver;
 const multiStage = new Set(V.map(stageOf)).size > 1;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
@@ -239,15 +241,14 @@ function splash() {
 }
 function prefetchOthers() {
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
-  const order = V.map((v, i) => i).filter(i => i !== vi).reverse();
-  // 只下载存本地，不解密，省内存；真切到这一版时再解密
-  (async () => { for (const i of order) { if (urls[i] || await cacheGet(i)) continue;
-    try { const r = await fetch(V[i].audio); if (r.ok) await cachePut(i, new Uint8Array(await r.arrayBuffer())); } catch (e) {} } })();
+  // 离当前版本越近越先：下载（或读本地缓存）+ 解密成可以直接播的音频，切版本不用等
+  const order = V.map((v, i) => i).filter(i => i !== vi).sort((x, y) => Math.abs(x - vi) - Math.abs(y - vi) || y - x).slice(0, 6);
+  (async () => { for (const i of order) { try { await fetchVersion(i); } catch (e) {} } })();
 }
 // 项目封面：页头那块方形封面换成项目的封面图
 if (S.cover) { const art = document.querySelector('#app .head .art'); if (art) art.style.backgroundImage = 'url(' + API_BASE + S.cover + ')'; }
 function enterApp() {
-  setTimeout(prefetchOthers, 3000);
+  setTimeout(prefetchOthers, 600);
   // FLIP：解锁页的封面平滑移动、缩放到页头封面的位置
   const L = $('#lock'), from = L.querySelector('.art'), to = $('#app .head .art');
   $('#app').removeAttribute('aria-hidden');
@@ -571,6 +572,13 @@ function ownerTools() {
   const live = window.SONG_LIVE, key = store.get('insights:key');
   if (!live || !key) return;
   const own = $('#own'); own.hidden = false;
+  // 点歌名直接改名（客户那边同步变）
+  const h = $('#vfile'); h.classList.add('editable'); h.title = '点一下改歌名';
+  h.onclick = async () => {
+    const v = prompt('歌名', S.title); if (!v || !v.trim() || v.trim() === S.title) return;
+    try { await post('/radm/meta', { slug: S.slug, title: v.trim() }); S.title = v.trim(); h.textContent = S.title; document.title = S.title; busy('歌名已改成《' + S.title + '》'); }
+    catch (e) { busy('没改成，检查网络再试'); }
+  };
   const busy = t => { $('#ownT').textContent = t; };
   const post = async (path, body) => {
     const r = await fetch(live.api + path, { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -712,7 +720,9 @@ async function clientFb() {
    响度统一：所有版本（含 REF）对齐到其中最小声的那个，只往下调不放大，不会爆音。
    REF：本地选一个参考曲（不上传），或你发给客户的 REF；解码进内存和混音同步播放，切换只是两路音量交叉淡变，播放不中断。
    只有打开响度统一或加了 REF，才把声音接进 Web Audio（默认路径完全不变）。 */
-let LOUD = store.get('review:loud') === '1', actx = null, gainN = null, refN = null;
+// 响度三档循环：关 → 对齐最小声（只往下调） → 统一到 -14 LUFS（小声的会放大，后面有防爆音）
+const LMODES = ['', 'min', 'lufs'];
+let LOUD = ({ '1': 'min', min: 'min', lufs: 'lufs' })[store.get('review:loud')] || '', actx = null, gainN = null, refN = null;
 const LU = {}, lkey = i => 'review:lufs:' + String(V[i].audio).split('/').pop();
 V.forEach((v, i) => { if (Number.isFinite(v.lufs)) LU[i] = v.lufs; else { const c = +store.get(lkey(i)); if (c < 0) LU[i] = c; } });
 let REF = null, refBuf = null, refNode = null, refAt = 0, refOff = 0, AB = 'mix';
@@ -720,8 +730,11 @@ function graph() {
   if (actx) { if (actx.state === 'suspended') actx.resume(); return true; }
   try {
     const AC = window.AudioContext || window.webkitAudioContext; actx = new AC();
-    const src = actx.createMediaElementSource(a); gainN = actx.createGain(); src.connect(gainN); gainN.connect(actx.destination);
-    refN = actx.createGain(); refN.gain.value = 0; refN.connect(actx.destination);
+    // 防爆音：阈值 0 dBFS，没超过就完全不动（对齐最小声那档只往下调，碰不到它）
+    const lim = actx.createDynamicsCompressor(); lim.threshold.value = 0; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .001; lim.release.value = .1;
+    lim.connect(actx.destination);
+    const src = actx.createMediaElementSource(a); gainN = actx.createGain(); src.connect(gainN); gainN.connect(lim);
+    refN = actx.createGain(); refN.gain.value = 0; refN.connect(lim);
     return true;
   } catch (e) { actx = null; return false; }
 }
@@ -757,13 +770,15 @@ function applyGains() {
   $('#abMix').classList.toggle('on', AB === 'mix'); $('#abRef').classList.toggle('on', AB === 'ref');
   if (!gainN) { lab.textContent = ''; return; }
   const all = V.map((v, i) => LU[i]).concat(REF ? [REF.lufs] : []).filter(Number.isFinite);
-  const target = LOUD && all.length ? Math.min(...all) : null;
-  const db = l => target === null || !Number.isFinite(l) ? 0 : target - l;
+  const target = LOUD === 'min' && all.length ? Math.min(...all) : LOUD === 'lufs' ? -14 : null;
+  const db = l => target === null || !Number.isFinite(l) ? 0 : Math.max(-24, Math.min(12, target - l));
   const now = actx.currentTime, mixDb = db(LU[vi]), refDb = REF ? db(REF.lufs) : 0;
   gainN.gain.setTargetAtTime(AB === 'mix' ? Math.pow(10, mixDb / 20) : 0, now, .008);
   refN.gain.setTargetAtTime(AB === 'ref' ? Math.pow(10, refDb / 20) : 0, now, .008);
   const d = AB === 'ref' ? refDb : mixDb;
-  lab.textContent = !LOUD ? '' : LU[vi] === undefined || (AB === 'ref' && !Number.isFinite(REF && REF.lufs)) ? ' · 测量中' : d < -.05 ? ' · ' + d.toFixed(1) + ' dB' : ' · 基准';
+  const head = LOUD === 'min' ? ' · 对齐最小' : LOUD === 'lufs' ? ' · -14 LUFS' : '';
+  lab.textContent = !LOUD ? '' : LU[vi] === undefined || (AB === 'ref' && !Number.isFinite(REF && REF.lufs)) ? head + ' · 测量中'
+    : LOUD === 'min' && Math.abs(d) < .05 ? head + ' · 基准' : head + ' · ' + (d > 0 ? '+' : '') + d.toFixed(1) + ' dB';
 }
 // REF 播放：AudioBuffer 从混音当前位置起播；混音暂停 / 跳转 / 切版本时跟着重启，保持同步
 function refStop() { if (refNode) { try { refNode.stop(); } catch (e) {} refNode.disconnect(); refNode = null; } }
@@ -807,7 +822,7 @@ async function loadShared() {   // 你发给客户的 REF：和版本一样加�
 }
 if (REFV) { $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; }
 document.addEventListener('keydown', e => { if (e.code === 'KeyR' && !/TEXTAREA|INPUT/.test(e.target.tagName) && (REF || REFV)) { e.preventDefault(); AB === 'ref' ? setAB('mix') : (REF ? setAB('ref') : loadShared()); } });
-$('#loud').onclick = () => { LOUD = !LOUD; store.set('review:loud', LOUD ? '1' : '0'); if (LOUD) { graph(); measureAll(); } applyGains(); };
+$('#loud').onclick = () => { LOUD = LMODES[(LMODES.indexOf(LOUD) + 1) % LMODES.length]; store.set('review:loud', LOUD || '0'); if (LOUD) { graph(); measureAll(); } applyGains(); };
 // 记住了开着：第一次点播放时（有用户手势）接上
 $('#play').addEventListener('click', () => { if ((LOUD || REF) && graph()) { if (LOUD) measureAll(); applyGains(); } }, true);
 applyGains();

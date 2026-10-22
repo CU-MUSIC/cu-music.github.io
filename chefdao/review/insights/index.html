@@ -124,7 +124,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .pjlink button,.pjlink a{font-size:13px;padding:5px 12px;border-radius:999px;background:var(--fill-2);color:var(--text);text-decoration:none}
 .pjlink button{background:var(--pearl);color:var(--ink);font-weight:600}
 .pjtr{display:flex;flex-direction:column}
-.pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
+.pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
 .pjtr .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pjtr .t i{font-style:normal;color:var(--text-3);font-size:12px}
 .pjtr button{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
@@ -729,7 +729,7 @@ function openProject(slug) {
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
     <div class="sect">曲目<span>${p.tracks.length} 首</span></div>
     <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i></span>
-      <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
+      <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
     <div class="msg2" id="pjMsg"></div>
     <div class="row"><button type="button" class="go" id="pjSave">保存</button><button type="button" class="ghost danger" id="pjDel">删除项目</button></div></div>`;
@@ -740,6 +740,10 @@ function openProject(slug) {
   const setTracks = async list => { try { await lib('/lib/tracks', { project: slug, songs: list }); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } };
   const order = p.tracks.map(t => t.slug);
   el.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const i = +b.dataset.mv, j = i + +b.dataset.d; [order[i], order[j]] = [order[j], order[i]]; setTracks(order); });
+  el.querySelectorAll('[data-rn]').forEach(b => b.onclick = async () => {
+    const t = p.tracks[+b.dataset.rn], v = prompt('歌名', t.title); if (!v || !v.trim() || v.trim() === t.title) return;
+    try { await lib('/radm/meta', { slug: t.slug, title: v.trim() }); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); }
+  });
   el.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { if (confirm('把《' + p.tracks[+b.dataset.rm].title + '》移出这个项目？歌和审听链接都还在')) setTracks(order.filter((_, i) => i !== +b.dataset.rm)); });
   if ($p('pjAdd')) $p('pjAdd').onchange = () => { const v = $p('pjAdd').value; if (v) setTracks(order.concat(v)); };
   $p('pjUp').onclick = () => { close(); openUpload({ project: p }); };
