@@ -107,7 +107,7 @@ async function cuUpload(o) {
   const blob = await seal(bytes);
   if (blob.length > 25 * 1048576) throw new Error('文件太大（超过 25MB），请导出 m4a 或 mp3 再传');
   const ver = (String(o.ver || '').trim().toUpperCase().replace(/^(\d)/, 'V$1')) || prep.next;
-  if (!/^V\d{1,3}$/.test(ver)) throw new Error('版本要写成 V1、V2 这样');
+  if (!/^(V\d{1,3}|REF)$/.test(ver)) throw new Error('版本要写成 V1、V2 这样');
   const fname = ver.toLowerCase() + '-' + [...crypto.getRandomValues(new Uint8Array(8))].map(b => 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 55]).join('') + '.bin';
   step('上传…'); bar(.7);
   await new Promise((ok, no) => {   // 用 XHR 才有上传进度

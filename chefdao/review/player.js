@@ -12,7 +12,8 @@ const store = {
 };
 const PW_KEY = 'review:pw:' + S.slug;
 const cdate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? (+m[2]) + '月' + (+m[3]) + '日' : d; };
-const V = S.versions;
+const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户的参考曲
+const V = S.versions.filter(v => v.ver !== 'REF');
 // 版本名精简：「舞步 Edit @ChefDao_V2_1018」→「编辑 V2」；按文件名里的 Edit / Mix / Master 分阶段，编辑在前、混音在后
 const STAGE = { edit: '编辑', mix: '混音', master: '母带' };
 const stageOf = v => { const m = /\b(Edit|Mix|Master)\b/i.exec(String(v.file || '').replace(/@ChefDao.*$/i, '')); return m ? m[1].toLowerCase() : ''; };
@@ -100,7 +101,10 @@ document.body.innerHTML = `
     </button>
     <button class="skip press" id="fwd" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 3.5v3.7h-3.7"/></svg><span>5</span></button>
   </div>
-  <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button></div>
+  <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
+    <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
+    <button class="loud press" id="refPick">＋ 加 REF</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="refname" id="refName" hidden></div>
 
   <div class="sect">评论<span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
@@ -592,7 +596,7 @@ function ownerTools() {
     own.appendChild(x);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261019'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261022'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
@@ -608,6 +612,24 @@ function ownerTools() {
       busy('《' + S.title + '》' + r.ver + ' 已上线，正在刷新…');
       setTimeout(() => location.reload(), 800);
     } catch (e) { own.classList.remove('busy'); busy(/HTTP|^[a-z]+$/.test(e.message) ? '没传成功（' + e.message + '），再试一次' : e.message); }
+  }
+  // 发给客户的 REF：和版本一样加密上传，客户的审听页就能直接切换对比
+  const rb = document.createElement('button'); rb.className = 'press'; rb.textContent = REFV ? '换 REF（客户可见）' : '上传 REF 给客户';
+  const rf = document.createElement('input'); rf.type = 'file'; rf.accept = 'audio/*,.m4a,.mp3,.wav,.aif,.aiff'; rf.hidden = true;
+  rb.onclick = () => rf.click(); own.appendChild(rb); own.appendChild(rf);
+  rf.onchange = async () => {
+    const f = rf.files[0]; if (!f || own.classList.contains('busy')) return;
+    if (!confirm('把「' + f.name + '」作为《' + S.title + '》的 REF 发给客户？')) return;
+    try { await lib(); own.classList.add('busy');
+      await cuUpload({ api: live.api, key, file: f, slug: S.slug, ver: 'REF', step: busy, bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
+      busy('REF 已上线，正在刷新…'); setTimeout(() => location.reload(), 800);
+    } catch (e) { own.classList.remove('busy'); busy(e.message); }
+  };
+  if (REFV) {
+    const xb = document.createElement('button'); xb.className = 'press'; xb.textContent = '删除 REF';
+    xb.onclick = async () => { if (!confirm('删除发给客户的 REF？')) return;
+      try { await post('/radm/del', { slug: S.slug, ver: 'REF' }); location.reload(); } catch (e) { busy('没删掉，检查网络再试'); } };
+    own.appendChild(xb);
   }
   $('#ownPick').onclick = () => $('#ownFile').click();
   $('#ownFile').onchange = () => up($('#ownFile').files[0]);
@@ -686,50 +708,109 @@ async function clientFb() {
     cfbRender();
   } catch (e) {}
 }
-/* ───────── 响度统一：把每个版本的整体响度拉到 -14 LUFS 再播，切版本对比时不被音量骗；放大时后面挂限幅器防爆音 ─────────
-   只有打开开关才把声音接进 Web Audio（默认路径完全不变） */
-const LOUD_TARGET = -14;
-let LOUD = store.get('review:loud') === '1', actx = null, gainN = null;
-const LU = {};
-V.forEach((v, i) => { if (Number.isFinite(v.lufs)) LU[i] = v.lufs; });
-function loudGraph() {
+/* ───────── 响度统一 + REF ─────────
+   响度统一：所有版本（含 REF）对齐到其中最小声的那个，只往下调不放大，不会爆音。
+   REF：本地选一个参考曲（不上传），或你发给客户的 REF；解码进内存和混音同步播放，切换只是两路音量交叉淡变，播放不中断。
+   只有打开响度统一或加了 REF，才把声音接进 Web Audio（默认路径完全不变）。 */
+let LOUD = store.get('review:loud') === '1', actx = null, gainN = null, refN = null;
+const LU = {}, lkey = i => 'review:lufs:' + String(V[i].audio).split('/').pop();
+V.forEach((v, i) => { if (Number.isFinite(v.lufs)) LU[i] = v.lufs; else { const c = +store.get(lkey(i)); if (c < 0) LU[i] = c; } });
+let REF = null, refBuf = null, refNode = null, refAt = 0, refOff = 0, AB = 'mix';
+function graph() {
   if (actx) { if (actx.state === 'suspended') actx.resume(); return true; }
   try {
     const AC = window.AudioContext || window.webkitAudioContext; actx = new AC();
-    const src = actx.createMediaElementSource(a); gainN = actx.createGain();
-    const lim = actx.createDynamicsCompressor();
-    lim.threshold.value = -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .12;
-    src.connect(gainN); gainN.connect(lim); lim.connect(actx.destination);
+    const src = actx.createMediaElementSource(a); gainN = actx.createGain(); src.connect(gainN); gainN.connect(actx.destination);
+    refN = actx.createGain(); refN.gain.value = 0; refN.connect(actx.destination);
     return true;
   } catch (e) { actx = null; return false; }
 }
-async function measure(i) {   // 没有预先测好的老版本：用已经解密的音频在本地测一次
-  if (LU[i] !== undefined || !urls[i]) return LU[i];
+const libLufs = () => window.cuLufs ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../lufs.js?v=20261022'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+const decodeBuf = buf => { const C = window.OfflineAudioContext || window.webkitOfflineAudioContext, tmp = new C(2, 44100, 44100);
+  return new Promise((ok, no) => { const p = tmp.decodeAudioData(buf, ok, no); if (p && p.catch) p.catch(no); }); };
+async function plainOf(i) {   // 某个版本解密后的音频字节（先读本地缓存，没有再下载）
+  let u8 = await cacheGet(i);
+  if (!u8) { const r = await fetch(V[i].audio); u8 = new Uint8Array(await r.arrayBuffer()); if (r.ok) cachePut(i, u8); }
+  return open(KEY, u8);
+}
+async function measure(i) {
+  if (LU[i] !== undefined) return LU[i];
   try {
-    if (!window.cuLufs) await new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../lufs.js?v=20261022'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
-    const buf = await (await fetch(await urls[i])).arrayBuffer();
-    const C = window.OfflineAudioContext || window.webkitOfflineAudioContext, tmp = new C(2, 44100, 44100);
-    const au = await new Promise((ok, no) => { const p = tmp.decodeAudioData(buf, ok, no); if (p && p.catch) p.catch(no); });
-    LU[i] = await cuLufs(au);
+    await libLufs();
+    LU[i] = await cuLufs(await decodeBuf(await plainOf(i)));
+    store.set(lkey(i), LU[i]);
+    const key = store.get('insights:key');   // 你的设备：测出来顺手存回去，客户就不用再测
+    if (key && window.SONG_LIVE) fetch(SONG_LIVE.api + '/radm/lufs', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: S.slug, ver: V[i].ver, lufs: LU[i] }) }).catch(() => {});
   } catch (e) {}
   return LU[i];
 }
-async function applyLoud() {
+let measuring = false;
+async function measureAll() {   // 要和最小声的比，所以每个版本都得知道响度：后台依次测完
+  if (measuring) return; measuring = true;
+  for (let i = V.length - 1; i >= 0; i--) if (LU[i] === undefined) { await measure(i); applyGains(); }
+  measuring = false;
+}
+function applyGains() {
   const lab = $('#loudv'), btn = $('#loud');
   btn.classList.toggle('on', LOUD); btn.setAttribute('aria-pressed', LOUD);
+  $('#abMix').classList.toggle('on', AB === 'mix'); $('#abRef').classList.toggle('on', AB === 'ref');
   if (!gainN) { lab.textContent = ''; return; }
-  if (!LOUD) { gainN.gain.setTargetAtTime(1, actx.currentTime, .05); lab.textContent = ''; return; }
-  const i = vi; lab.textContent = ' · 测量中';
-  const l = await measure(i); if (i !== vi) return;
-  if (l === undefined) { lab.textContent = ''; return; }
-  const db = Math.max(-20, Math.min(10, LOUD_TARGET - l));
-  gainN.gain.setTargetAtTime(Math.pow(10, db / 20), actx.currentTime, .05);
-  lab.textContent = ' · ' + (db > 0 ? '+' : '') + db.toFixed(1) + ' dB';
+  const all = V.map((v, i) => LU[i]).concat(REF ? [REF.lufs] : []).filter(Number.isFinite);
+  const target = LOUD && all.length ? Math.min(...all) : null;
+  const db = l => target === null || !Number.isFinite(l) ? 0 : target - l;
+  const now = actx.currentTime, mixDb = db(LU[vi]), refDb = REF ? db(REF.lufs) : 0;
+  gainN.gain.setTargetAtTime(AB === 'mix' ? Math.pow(10, mixDb / 20) : 0, now, .008);
+  refN.gain.setTargetAtTime(AB === 'ref' ? Math.pow(10, refDb / 20) : 0, now, .008);
+  const d = AB === 'ref' ? refDb : mixDb;
+  lab.textContent = !LOUD ? '' : LU[vi] === undefined || (AB === 'ref' && !Number.isFinite(REF && REF.lufs)) ? ' · 测量中' : d < -.05 ? ' · ' + d.toFixed(1) + ' dB' : ' · 基准';
 }
-$('#loud').onclick = () => { LOUD = !LOUD; store.set('review:loud', LOUD ? '1' : '0'); if (LOUD) loudGraph(); applyLoud(); };
+// REF 播放：AudioBuffer 从混音当前位置起播；混音暂停 / 跳转 / 切版本时跟着重启，保持同步
+function refStop() { if (refNode) { try { refNode.stop(); } catch (e) {} refNode.disconnect(); refNode = null; } }
+function refStart() {
+  refStop();
+  if (!refBuf || !actx || a.paused) return;
+  const off = a.currentTime; if (off >= refBuf.duration) return;
+  const n = actx.createBufferSource(); n.buffer = refBuf; n.connect(refN); n.start(0, off);
+  refNode = n; refAt = actx.currentTime; refOff = off;
+}
+a.addEventListener('playing', refStart);
+a.addEventListener('pause', refStop);
+a.addEventListener('seeked', () => { if (!a.paused) refStart(); });
+setInterval(() => { if (refNode && !a.paused && Math.abs(refOff + actx.currentTime - refAt - a.currentTime) > .06) refStart(); }, 500);
+async function setRef(buf, name, lufs) {
+  if (!graph()) return;
+  try {
+    refBuf = await new Promise((ok, no) => { const p = actx.decodeAudioData(buf, ok, no); if (p && p.catch) p.catch(no); });
+  } catch (e) { $('#refName').hidden = false; $('#refName').textContent = '这个文件读不了，换一个试试'; return; }
+  REF = { name, lufs };
+  if (!Number.isFinite(lufs)) { try { await libLufs(); REF.lufs = await cuLufs(refBuf); } catch (e) {} }
+  $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF';
+  $('#refName').hidden = false; $('#refName').textContent = 'REF · ' + name;
+  refStart(); applyGains();
+}
+function setAB(x) {
+  if (x === 'ref' && !REF) return;
+  if (!graph()) return;
+  AB = x; applyGains();
+}
+$('#abMix').onclick = () => setAB('mix');
+$('#abRef').onclick = () => { if (REF) setAB('ref'); else if (REFV) loadShared(); };
+$('#refPick').onclick = () => { graph(); $('#refFile').click(); };
+$('#refFile').onchange = async () => { const f = $('#refFile').files[0]; if (!f) return; $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
+  await setRef(await f.arrayBuffer(), f.name.replace(/\.[^.]+$/, '')); setAB('ref'); };
+async function loadShared() {   // 你发给客户的 REF：和版本一样加密存储
+  if (!REFV || REF) return;
+  graph(); $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
+  try { const r = await fetch(REFV.audio); const plain = await open(KEY, new Uint8Array(await r.arrayBuffer()));
+    await setRef(plain, REFV.file || 'REF', REFV.lufs); setAB('ref'); } catch (e) { $('#refName').textContent = 'REF 载入失败，刷新再试'; }
+}
+if (REFV) { $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; }
+document.addEventListener('keydown', e => { if (e.code === 'KeyR' && !/TEXTAREA|INPUT/.test(e.target.tagName) && (REF || REFV)) { e.preventDefault(); AB === 'ref' ? setAB('mix') : (REF ? setAB('ref') : loadShared()); } });
+$('#loud').onclick = () => { LOUD = !LOUD; store.set('review:loud', LOUD ? '1' : '0'); if (LOUD) { graph(); measureAll(); } applyGains(); };
 // 记住了开着：第一次点播放时（有用户手势）接上
-$('#play').addEventListener('click', () => { if (LOUD && loudGraph()) applyLoud(); }, true);
-applyLoud();
+$('#play').addEventListener('click', () => { if ((LOUD || REF) && graph()) { if (LOUD) measureAll(); applyGains(); } }, true);
+applyGains();
 async function switchTo(i) {
   if (i === vi || !KEY) return;
   const token = ++switching, t = a.currentTime, playing = !a.paused;
@@ -749,7 +830,7 @@ async function switchTo(i) {
     a.currentTime = Math.min(t, dur() - .1); lastT = a.currentTime; lastAt = performance.now();
     if (playing) a.play();
     $('#loading').style.opacity = 0;
-    applyLoud();
+    applyGains();
   } catch (e) { $('#loading').textContent = '载入失败，请刷新重试'; }
 }
 $('#seg').addEventListener('click', e => { const b = e.target.closest('.vrow'); if (b) switchTo(+b.dataset.i); });
