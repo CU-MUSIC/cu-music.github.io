@@ -105,8 +105,9 @@ document.body.innerHTML = `
   </div>
   <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
-    <button class="loud press" id="refPick">＋ 加 REF</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+    <button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
+  <section class="mst" id="mst" hidden></section>
 
   <div class="sect">评论<span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
@@ -739,7 +740,7 @@ function graph() {
     return true;
   } catch (e) { actx = null; return false; }
 }
-const libLufs = () => window.cuLufs ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../lufs.js?v=20261022'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+const libLufs = () => window.cuStats ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../lufs.js?v=20261023'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
 const decodeBuf = buf => { const C = window.OfflineAudioContext || window.webkitOfflineAudioContext, tmp = new C(2, 44100, 44100);
   return new Promise((ok, no) => { const p = tmp.decodeAudioData(buf, ok, no); if (p && p.catch) p.catch(no); }); };
 async function plainOf(i) {   // 某个版本解密后的音频字节（先读本地缓存，没有再下载）
@@ -801,7 +802,7 @@ async function setRef(buf, name, lufs) {
   } catch (e) { $('#refName').hidden = false; $('#refName').textContent = '这个文件读不了，换一个试试'; return; }
   REF = { name, lufs };
   if (!Number.isFinite(lufs)) { try { await libLufs(); REF.lufs = await cuLufs(refBuf); } catch (e) {} }
-  $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF';
+  $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; refStats = null; showStats();
   $('#refName').hidden = false; $('#refName').textContent = 'REF · ' + name;
   refStart(); applyGains();
 }
@@ -827,11 +828,52 @@ $('#loud').onclick = () => { LOUD = LMODES[(LMODES.indexOf(LOUD) + 1) % LMODES.l
 // 记住了开着：第一次点播放时（有用户手势）接上
 $('#play').addEventListener('click', () => { if ((LOUD || REF) && graph()) { if (LOUD) measureAll(); applyGains(); } }, true);
 applyGains();
+/* ───────── 母带数据：响度、真峰值、动态、立体声，和 REF 并排对比 ───────── */
+const MSTAT = {}, skey = i => 'review:stats:' + String(V[i].audio).split('/').pop();
+let refStats = null, mstOpen = false;
+async function statsOf(i) {
+  if (MSTAT[i]) return MSTAT[i];
+  try { const c = JSON.parse(store.get(skey(i)) || 'null'); if (c && Number.isFinite(c.i)) return (MSTAT[i] = c); } catch (e) {}
+  await libLufs();
+  const s = await cuStats(await decodeBuf(await plainOf(i)));
+  MSTAT[i] = s; store.set(skey(i), JSON.stringify(s));
+  if (LU[i] === undefined && Number.isFinite(s.i)) LU[i] = s.i;
+  return s;
+}
+const MROW = [   // [名称, 字段, 单位, 需要留意的条件]
+  ['短时最大', 'stMax', 'LUFS'], ['瞬时最大', 'mMax', 'LUFS'], ['采样峰值', 'sp', 'dBFS', v => v > -0.1], ['PLR', 'plr', 'dB'],
+  ['RMS', 'rms', 'dBFS'], ['峰均比', 'crest', 'dB'], ['立体声相关', 'corr', '', v => v < .2], ['侧 / 中', 'sm', 'dB'], ['削波采样', 'clip', '', v => v > 0]];
+const MPLAT = [['Spotify', -14], ['YouTube', -14], ['Apple Music', -16], ['TIDAL', -14]];
+const fx = (v, d = 1) => v === null || v === undefined || !Number.isFinite(v) ? '—' : (Math.round(v * 10 ** d) / 10 ** d).toFixed(d);
+function spark(list) {   // 短时响度曲线：当前版本实线，REF 虚线
+  const all = list.flatMap(x => x.s.short), lo = Math.max(-40, Math.min(...all) - 1), hi = Math.max(...all) + 1, n = Math.max(...list.map(x => x.s.short.length), 2);
+  return `<svg class="mspk" viewBox="0 0 300 56" preserveAspectRatio="none">${list.map(x => `<polyline class="${x.cls}" points="${x.s.short.map((v, k) =>
+    (k / (n - 1) * 300).toFixed(1) + ',' + (54 - (Math.max(lo, v) - lo) / (hi - lo) * 52).toFixed(1)).join(' ')}"/>`).join('')}</svg>`;
+}
+async function showStats() {
+  const el = $('#mst'); if (!mstOpen) return;
+  const i = vi, tok = el.dataset.tok = String(Math.random());
+  if (!MSTAT[i]) el.innerHTML = `<div class="mwait">${esc(vname(V[i]))} 测量中…</div>`;
+  let s, r = null;
+  try { s = await statsOf(i); } catch (e) { if (el.dataset.tok === tok) el.innerHTML = '<div class="mwait">测量失败，刷新再试</div>'; return; }
+  if (REF && refBuf) { try { if (!refStats) { await libLufs(); refStats = await cuStats(refBuf); } r = refStats; } catch (e) {} }
+  if (el.dataset.tok !== tok || !mstOpen) return;
+  const col = (o, k) => o ? fx(o[k], k === 'corr' ? 2 : k === 'clip' ? 0 : 1) : '';
+  const big = (lab, k, u, warn) => `<div class="mb${warn && warn(s[k]) ? ' warn' : ''}"><span>${lab}</span><b>${col(s, k)}</b><i>${u}</i>${r ? `<em>REF ${col(r, k)}</em>` : ''}</div>`;
+  el.innerHTML = `<div class="mhd"><span>${esc(vname(V[i]))}</span>${r ? '<span class="mref">REF</span>' : ''}</div>
+    <div class="mbig">${big('整体响度', 'i', 'LUFS')}${big('真峰值', 'tp', 'dBTP', v => v > -1)}${big('动态 LRA', 'lra', 'LU')}</div>
+    ${spark([{ s, cls: 'a' }].concat(r ? [{ s: r, cls: 'b' }] : []))}
+    <div class="mtab">${MROW.map(([lab, k, u, warn]) => `<div class="${warn && warn(s[k]) ? 'warn' : ''}"><span>${lab}</span><b>${col(s, k)}<i>${u}</i></b>${r ? `<b class="r">${col(r, k)}</b>` : ''}</div>`).join('')}</div>
+    <div class="msub">平台播放时的音量调整</div>
+    <div class="mtab">${MPLAT.map(([n, t]) => `<div><span>${n} <i>${t}</i></span><b>${s.i > t ? '−' + fx(s.i - t) : '+' + fx(t - s.i)}<i>dB</i></b>${r ? `<b class="r">${r.i > t ? '−' + fx(r.i - t) : '+' + fx(t - r.i)}</b>` : ''}</div>`).join('')}</div>
+    <div class="mft">按审听文件测${fmtTag(i) ? ' · ' + fmtTag(i) : ''}</div>`;
+}
+$('#mstBtn').onclick = () => { mstOpen = !mstOpen; $('#mst').hidden = !mstOpen; $('#mstBtn').classList.toggle('on', mstOpen); $('#mstBtn').setAttribute('aria-pressed', mstOpen); showStats(); };
 async function switchTo(i) {
   if (i === vi || !KEY) return;
   const token = ++switching, t = a.currentTime, playing = !a.paused;
   save();
-  vi = i; cur = V[i];
+  vi = i; cur = V[i]; showStats();
   P0 = P; P = cur.peaks; morphAt = performance.now();
   loadNotes(); render(); updateCta(); showMeta(); markSeg(); if (cfbRender) cfbRender();
   // 已经在后台备好的版本：直接换，不出 CU 动画，接着原来的位置播

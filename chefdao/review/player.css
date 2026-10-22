@@ -372,3 +372,30 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 /* 你的设备：歌名可以点了改 */
 .head h1.editable{cursor:text;border-radius:6px;transition:background-color .15s}
 .head h1.editable:hover{background:var(--fill)}
+
+/* 母带数据面板 */
+.mst{margin:10px 0 18px;padding:16px;border-radius:14px;background:var(--fill);font-variant-numeric:tabular-nums}
+.mst[hidden]{display:none}
+.mwait{text-align:center;font-size:13px;color:var(--text-3);padding:18px 0}
+.mhd{display:flex;justify-content:space-between;font-size:12px;letter-spacing:.06em;color:var(--text-3);margin-bottom:10px}
+.mhd .mref{display:inline-flex;align-items:center;gap:6px}.mhd .mref::before{content:"";width:14px;border-top:1.5px dashed var(--text-3)}
+.mbig{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mb{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:10px;background:var(--fill-2);min-width:0}
+.mb span{font-size:12px;color:var(--text-3)}
+.mb b{font-size:24px;font-weight:600;line-height:1.15;color:var(--text);letter-spacing:-.02em}
+.mb i{font-style:normal;font-size:11px;color:var(--text-3)}
+.mb em{font-style:normal;font-size:12px;color:var(--text-2);margin-top:4px}
+.mb.warn b,.mtab .warn b:not(.r){color:#e2b26f}
+.mspk{display:block;width:100%;height:56px;margin:14px 0 6px}
+.mspk polyline{fill:none;stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.mspk .a{stroke:var(--text)}.mspk .b{stroke:var(--text-3);stroke-dasharray:4 3}
+.mtab{display:flex;flex-direction:column}
+.mtab>div{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:baseline;padding:7px 0;border-bottom:.5px solid var(--hair);font-size:14px}
+.mtab>div:has(.r){grid-template-columns:1fr 92px 64px}
+.mtab>div:last-child{border-bottom:0}
+.mtab span{color:var(--text-2)}.mtab span i{font-style:normal;font-size:11px;color:var(--text-3)}
+.mtab b{font-weight:500;color:var(--text);text-align:right}.mtab b i{font-style:normal;font-size:11px;color:var(--text-3);margin-left:4px}
+.mtab b.r{color:var(--text-3)}
+.msub{font-size:12px;letter-spacing:.06em;color:var(--text-3);margin:16px 0 4px}
+.mft{font-size:11px;color:var(--text-3);margin-top:12px;text-align:right}
+@media(max-width:420px){.mb b{font-size:20px}.mst{padding:12px}}
