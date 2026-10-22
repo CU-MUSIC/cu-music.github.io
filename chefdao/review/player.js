@@ -92,7 +92,7 @@ document.body.innerHTML = `
       `<button class="vrow press" data-i="${i}"><span class="vn">${esc(V[i].ver)}</span><span class="hasdot"></span></button>`).join('')}</div>`).join('');
   })()}</section>
 
-  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span id="rem">-${fmt(cur.duration)}</span></div>
   <div class="transport">
@@ -585,6 +585,17 @@ function ownerTools() {
   const post = async (path, body) => {
     const r = await fetch(live.api + path, { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({ ok: false })); if (!j.ok) throw new Error(j.e || r.status); return j;
+  };
+  // 分享：一键复制「歌名 / 链接 / 密码」三行发给客户（有项目就发项目页）
+  let share = null;
+  fetch(live.api + '/lib', { headers: { Authorization: 'Bearer ' + key } }).then(r => r.json()).then(j => {
+    if (!j.ok) return;
+    const p = j.projects.find(x => x.tracks.some(t => t.slug === S.slug)), x = p || j.loose.find(y => y.slug === S.slug);
+    if (x) share = '《' + x.title + '》\n' + x.url + '\n密码 ' + x.pass;
+  }).catch(() => {});
+  $('#ownShare').onclick = async () => {
+    if (!share) return busy('还在读取链接，稍等再点');
+    await copy(share); const b = $('#ownShare'); b.textContent = '已复制'; setTimeout(() => { b.textContent = '分享'; }, 1500);
   };
   // 每个版本旁边一个「删除」
   document.querySelectorAll('.vrow').forEach(row => {
