@@ -335,12 +335,12 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .lock.leaving h1{transition:opacity .25s ease,transform .6s var(--ios)}
 
 /* 版本选择：一排小按钮，按阶段分组 */
-.vpick{display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px;margin-top:20px}
+.vpick{display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px;margin-top:20px}
 .vpick[hidden]{display:none}
-.vpick .vg{display:flex;align-items:center;gap:6px}
+.vpick .vg{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .vpick .vgl{font-size:12px;letter-spacing:.08em;color:var(--text-3);margin-right:4px}
-.vpick .vrow{position:relative;display:inline-flex;align-items:center;gap:6px;width:auto;padding:6px 13px;border-radius:999px;background:var(--fill);
-  font-size:14px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums;transition:background-color .2s,color .2s}
+.vpick .vrow{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto;min-width:56px;min-height:44px;padding:10px 18px;border-radius:999px;background:var(--fill);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-size:16px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums;transition:background-color .2s,color .2s}
 .vpick .vrow::before{display:none}
 .vpick .vrow .vn{font-size:inherit;font-weight:inherit;color:inherit}
 .vpick .vrow.on{background:var(--pearl);color:var(--ink)}

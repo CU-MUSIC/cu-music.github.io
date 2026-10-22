@@ -286,6 +286,7 @@ function fmtTag(i) {
   const raw = n * 8 / v.duration / 1000, std = [96, 128, 160, 192, 224, 256, 320].find(k => Math.abs(raw - k) / k < .08);
   return (/mp4|aac/.test(m) ? 'AAC' : 'MP3') + ' ' + Math.round(std || raw) + 'k';
 }
+const READY = {};   // 已下载并解密好的版本：切过去不用等
 async function fetchVersion(i, onp) {
   if (!urls[i]) urls[i] = (async () => {
     let u8 = await cacheGet(i);
@@ -303,7 +304,7 @@ async function fetchVersion(i, onp) {
     }
     SIZE[i] = u8.length - 28; if (i === vi) setTimeout(showMeta, 0);
     const plain = await open(KEY, u8);
-    return URL.createObjectURL(new Blob([plain], { type: V[i].mime || 'audio/mpeg' }));
+    return (READY[i] = URL.createObjectURL(new Blob([plain], { type: V[i].mime || 'audio/mpeg' })));
   })();
   try { return await urls[i]; } catch (e) { delete urls[i]; throw e; }
 }
@@ -833,6 +834,16 @@ async function switchTo(i) {
   vi = i; cur = V[i];
   P0 = P; P = cur.peaks; morphAt = performance.now();
   loadNotes(); render(); updateCta(); showMeta(); markSeg(); if (cfbRender) cfbRender();
+  // 已经在后台备好的版本：直接换，不出 CU 动画，接着原来的位置播
+  if (READY[i]) {
+    const t2 = curTime();
+    a.src = READY[i];
+    await new Promise(r => a.addEventListener('loadedmetadata', r, { once: true }));
+    if (token !== switching) return;
+    a.currentTime = Math.min(t2, dur() - .1); lastT = a.currentTime; lastAt = performance.now();
+    if (playing) a.play();
+    $('#loading').style.opacity = 0; applyGains(); return;
+  }
   const ld = $('#loading');
   ld.innerHTML = MARK + '<div class="dlt">' + vname(cur) + '</div>'; ld.classList.add('prog'); ld.style.opacity = 1;
   try {
