@@ -456,13 +456,14 @@ function renderListen() {
   const s = series(rows, now);
   const listeners = new Set(rows.map(x => x.lid)).size;
 
-  // 听众筛选：只看某个人的动态（按最近听过排）
-  const people = [...new Map([...rows].sort((p, q) => q.updated - p.updated).map(x => [x.lid, x])).keys()];
-  if (lis && !people.includes(lis)) lis = '';
+  // 听众筛选：只看某个人的动态（按最近听过排）。同一个名字的多台设备合成一个按钮
   const nameOf = l => { const n = lnote(l); return (n && (n.name || n.self)) || l; };
+  const keyOf = l => nameOf(l).trim().toLowerCase();
+  const people = [...new Map([...rows].sort((p, q) => q.updated - p.updated).map(x => [keyOf(x.lid), nameOf(x.lid)])).entries()];
+  if (lis && !people.some(([k]) => k === lis)) lis = '';
   // 按一次打开（sid）合并成一条动态
   const groups = new Map();
-  rows.filter(x => !lis || x.lid === lis).forEach(x => { if (!groups.has(x.sid)) groups.set(x.sid, []); groups.get(x.sid).push(x); });
+  rows.filter(x => !lis || keyOf(x.lid) === lis).forEach(x => { if (!groups.has(x.sid)) groups.set(x.sid, []); groups.get(x.sid).push(x); });
   const feed = [...groups.values()].map(g => g.sort((p, q) => p.started - q.started))
     .sort((p, q) => Math.max(...q.map(x => x.updated)) - Math.max(...p.map(x => x.updated))).slice(0, 60);
 
@@ -474,8 +475,8 @@ function renderListen() {
     <div class="card"><div class="lb">听众</div><div class="n">${listeners}</div><div class="d">近 ${days} 天</div>${spark(s.listeners)}</div>
   </div>
   <div class="sect">最近动态<span>${feed.length ? '共 ' + groups.size + ' 次打开' : ''}</span></div>
-  ${people.length > 1 ? `<div class="chips" id="lchips"><button data-l="" class="${lis ? '' : 'on'}">所有听众</button>${people.map(l =>
-    `<button data-l="${esc(l)}" class="${lis === l ? 'on' : ''}">${esc(nameOf(l))}</button>`).join('')}</div>` : ''}
+  ${people.length > 1 ? `<div class="chips" id="lchips"><button data-l="" class="${lis ? '' : 'on'}">所有听众</button>${people.map(([k, n]) =>
+    `<button data-l="${esc(k)}" class="${lis === k ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>` : ''}
   <div class="feed">${feed.length ? feed.map(g => {
     const x = g[0], last = Math.max(...g.map(y => y.updated));
     return `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
