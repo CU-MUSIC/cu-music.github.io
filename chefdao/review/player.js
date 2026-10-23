@@ -92,9 +92,10 @@ document.body.innerHTML = `
       `<button class="vrow press" data-i="${i}"><span class="vn">${esc(V[i].ver)}</span><span class="hasdot"></span></button>`).join('')}</div>`).join('');
   })()}</section>
 
-  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
-  <div class="times"><span id="cur">0:00</span><span id="rem">-${fmt(cur.duration)}</span></div>
+  <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
   <div class="transport">
     <button class="skip press" id="back" aria-label="后退 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 3.5v3.7h3.7"/></svg><span>5</span></button>
     <button class="playbtn press" id="play" aria-label="播放" disabled>
@@ -108,6 +109,7 @@ document.body.innerHTML = `
     <button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
   <section class="mst" id="mst" hidden></section>
+  <aside class="plist" id="plist" hidden></aside>
 
   <div class="sect">评论<span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
@@ -225,7 +227,7 @@ async function tryUnlock(pw, typed) {
   $('#lock').classList.add('busy'); pin.blur();
   try {
     const { key, pw: spw } = await songKey(pw);           // 密码错会在这里抛错
-    store.set(PW_KEY, spw);
+    store.set(PW_KEY, spw); if (PJ_KEY && pw) store.set(PJ_KEY + ':last', pw);   // 同项目切到下一首时先试这个
     document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
@@ -241,8 +243,7 @@ async function tryUnlock(pw, typed) {
   } catch (e) {
     $('#lock').classList.remove('busy');
     store.del(PW_KEY);
-    const pj = PJ_KEY && store.get(PJ_KEY);   // 记住的单曲密码过期了（比如项目改过密码）：再用记住的项目密码试一次
-    if (!typed && pj && pj !== pw) return tryUnlock(pj, false);
+    if (!typed && tries.length) return tryUnlock(tries.shift(), false);   // 记住的密码不对（比如项目改过密码）：换下一个记住的试
     scr.fail();
     if (typed) {
       $('#ask').textContent = '密码不对，再试一次'; $('#ask').classList.add('err');
@@ -263,8 +264,25 @@ function prefetchOthers() {
 }
 // 项目封面：页头那块方形封面换成项目的封面图
 if (S.cover) { const art = document.querySelector('#app .head .art'); if (art) art.style.backgroundImage = 'url(' + API_BASE + S.cover + ')'; }
+// 播放列表：同一个项目里的其他曲目（cypher 一首接一首），点了直接切过去（项目密码记着，不用再输）
+async function loadPlaylist() {
+  if (!S.project) return;
+  try {
+    const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug, { cache: 'no-store' })).json();
+    const T = j.ok ? j.project.tracks : []; if (T.length < 2) return;
+    const el = $('#plist');
+    el.innerHTML = `<div class="plh"><span>${esc(j.project.title)}</span><i>${T.length} 首</i></div>` + T.map((t, i) => `<a class="pli press${t.slug === S.slug ? ' on' : ''}" href="${esc(t.url)}">
+      <span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)}${t.artist ? `<i>${esc(t.artist)}</i>` : ''}</span><span class="m">${fmt(t.dur)}</span></a>`).join('');
+    el.hidden = false;
+    el.onclick = e => {   // 同一个页面只换 # 不会刷新，手动刷新一下
+      const l = e.target.closest('.pli'); if (!l) return; e.preventDefault(); if (l.classList.contains('on')) return;
+      const u = new URL(l.href); if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash;
+    };
+  } catch (e) {}
+}
 function enterApp() {
   setTimeout(prefetchOthers, 600);
+  loadPlaylist();
   // FLIP：解锁页的封面平滑移动、缩放到页头封面的位置
   const L = $('#lock'), from = L.querySelector('.art'), to = $('#app .head .art');
   $('#app').removeAttribute('aria-hidden');
@@ -365,6 +383,18 @@ function amp(f, now) {                    // f: 0..N-1，带入场动画
   const k = Math.min(1, Math.max(0, (now - t0 - f / N * 420) / 700));
   return v * ease(k);
 }
+/* ───────── 段落：波形上方标出每段是谁唱（cypher），播放时高亮当前这段。你的设备上可以加、改、删 ───────── */
+let PARTS = (S.parts || []).slice().sort((x, y) => x.t - y.t), partNow = -2;
+let onPart = i => { seek(PARTS[i].t); if (a.paused && !$('#play').disabled) $('#play').click(); };
+const partAt = t => { let k = -1; PARTS.forEach((p, i) => { if (p.t <= t + .05) k = i; }); return k; };
+function renderParts() {
+  const el = $('#parts'); el.hidden = !PARTS.length; partNow = -2;
+  el.innerHTML = PARTS.map((p, i) => { const s = Math.min(1, p.t / dur()), e = Math.min(1, (PARTS[i + 1] ? PARTS[i + 1].t : dur()) / dur());
+    return `<button class="pt press" data-i="${i}" style="left:${(s * 100).toFixed(2)}%;width:${(Math.max(0, e - s) * 100).toFixed(2)}%" title="${esc(fmt(p.t) + ' ' + p.n)}"><span>${esc(p.n)}</span></button>`; }).join('');
+}
+$('#parts').addEventListener('click', e => { const b = e.target.closest('.pt'); if (b) onPart(+b.dataset.i); });
+a.addEventListener('loadedmetadata', renderParts);
+renderParts();
 function draw(now) {
   if (!started && $('#app').classList.contains('in')) { started = true; t0 = now; }
   const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
@@ -385,12 +415,16 @@ function draw(now) {
     ctx.roundRect ? ctx.roundRect(x, mid - bh / 2, bw, bh, bw / 2) : ctx.rect(x, mid - bh / 2, bw, bh);
     ctx.fill();
   }
+  // 段落分界线
+  ctx.fillStyle = 'rgba(236,234,230,.22)';
+  PARTS.forEach(p => { if (p.t > .5) ctx.fillRect(Math.round(p.t / dur() * w), 0, 1, h); });
   // 评论标记
   ctx.fillStyle = 'rgba(236,234,230,.95)';
   notes.forEach(o => { const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 2.5, 0, 7); ctx.fill(); });
   // 播放头
   if (tt > 0 || !a.paused) { ctx.fillStyle = '#ebe9e5'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - 1, 2, 2, h - 10, 1) : ctx.rect(px - 1, 2, 2, h - 10); ctx.fill(); }
 
+  const pk = partAt(tt); if (pk !== partNow) { partNow = pk; $('#pnow').textContent = pk >= 0 ? PARTS[pk].n : ''; $('#parts').querySelectorAll('.pt').forEach((b, i) => b.classList.toggle('on', i === pk)); }
   $('#cur').textContent = fmt(tt); $('#mfill').style.transform = 'scaleX(' + (tt / dur()) + ')'; $('#mtime').textContent = fmt(tt); $('#rem').textContent = '-' + fmt(dur() - tt);
   if (locked === null) $('#stampT').textContent = fmt(tt);
   document.body.classList.toggle('playing', !a.paused);
@@ -614,6 +648,22 @@ function ownerTools() {
     await copy(share[k]); const t = b.textContent; b.textContent = '已复制'; setTimeout(() => { b.textContent = t; }, 1500);
   }; };
   shareBtn('#ownShare', 'song'); shareBtn('#ownShareP', 'project');
+  // 段落：播放到某段开头点「＋ 段落」记下这里换谁唱；点上方的名字改名，清空就删掉这段
+  const names = String(S.artist || '').split('、').filter(Boolean);
+  const saveParts = async () => {
+    try { await post('/radm/meta', { slug: S.slug, parts: PARTS }); busy('段落已保存，客户那边同步显示'); } catch (e) { busy('段落没保存上，检查网络再试'); }
+  };
+  $('#ownPart').onclick = () => {
+    const t = Math.round(curTime() * 10) / 10, k = PARTS.filter(p => p.t < t).length;
+    const v = prompt(fmt(t) + ' 开始这段是谁' + (names.length ? '（歌手：' + names.join('、') + '）' : ''), names[k] || '');
+    if (!v || !v.trim()) return;
+    PARTS = PARTS.filter(p => Math.abs(p.t - t) > .3).concat({ t, n: v.trim() }).sort((x, y) => x.t - y.t); renderParts(); saveParts();
+  };
+  onPart = i => {
+    const p = PARTS[i], v = prompt(fmt(p.t) + ' 这段的歌手（清空就删掉这段）', p.n); if (v === null) return;
+    if (v.trim()) p.n = v.trim(); else PARTS.splice(i, 1);
+    renderParts(); saveParts();
+  };
   // 每个版本旁边一个「删除」
   document.querySelectorAll('.vrow').forEach(row => {
     const v = V[+row.dataset.i], x = document.createElement('span');
@@ -903,7 +953,7 @@ async function switchTo(i) {
   save();
   vi = i; cur = V[i]; showStats();
   P0 = P; P = cur.peaks; morphAt = performance.now();
-  loadNotes(); render(); updateCta(); showMeta(); markSeg(); if (cfbRender) cfbRender();
+  loadNotes(); render(); updateCta(); showMeta(); markSeg(); renderParts(); if (cfbRender) cfbRender();
   // 已经在后台备好的版本：直接换，不出 CU 动画，接着原来的位置播
   if (READY[i]) {
     const t2 = curTime();
@@ -1026,9 +1076,10 @@ setInterval(() => { if (!a.paused) track(vi); }, 30000);
 addEventListener('pagehide', report);
 
 /* 记住过密码就直接进 */
-const saved = store.get(PW_KEY), pjSaved = PJ_KEY && store.get(PJ_KEY);
+// 自动解锁：这首歌记住的密码 → 记住的项目密码 → 同项目上一首用过的密码，依次试
+const saved = store.get(PW_KEY);
+let tries = [...new Set([saved, PJ_KEY && store.get(PJ_KEY), PJ_KEY && store.get(PJ_KEY + ':last')].filter(Boolean))];
 if (S.open || (S.project && S.project.open && S.project.wrap && !saved)) tryUnlock('', false);   // 不设密码：直接进
-else if (saved) tryUnlock(saved, false);
-else if (pjSaved) tryUnlock(pjSaved, false);
+else if (tries.length) tryUnlock(tries.shift(), false);
 else setTimeout(focusPin, 300);
 })();

@@ -40,6 +40,7 @@ h1{margin-top:6px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:
 .tr:active{background:var(--fill)}
 .tr .n{color:var(--text-3);font-variant-numeric:tabular-nums;font-size:14px}
 .tr .t{font-size:16px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .t i{display:block;font-style:normal;font-weight:400;font-size:13px;color:var(--text-3);margin-top:3px;overflow:hidden;text-overflow:ellipsis}
 .tr .m{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
 @keyframes in{to{opacity:1;transform:none}}
 .empty{margin-top:30px;color:var(--text-3);font-size:14px}
@@ -87,7 +88,7 @@ async function open(pw, key) {
   }
   document.getElementById('gate').remove();
   document.getElementById('list').innerHTML = P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
-    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + '</span><span class="m">' + fmt(t.dur) + '</span></a>').join('') + '</div>'
+    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + '</span><span class="m">' + fmt(t.dur) + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>';
 }
 pin.addEventListener('input', async () => {
