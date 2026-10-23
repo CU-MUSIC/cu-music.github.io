@@ -103,6 +103,17 @@ try { const j = await (await fetch(API + '/pj?s=' + slug, { cache: 'no-store' })
 catch (e) { m.innerHTML = '<div class="boot">找不到这个项目，请向刀大厨确认链接</div>'; return; }
 document.title = P.title;
 setTimeout(tilt, 0);
+// 访问记录：打开了项目页记一次（0 打开了），输对密码再记一次（1 查看了）。你自己的设备（存了看板钥匙）不记
+const sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+let lid = ls.get('review:lid'); if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); ls.set('review:lid', lid); }
+const ua = navigator.userAgent, app = /Barcelona/i.test(ua) ? 'Threads' : /Instagram/i.test(ua) ? 'Instagram' : /MicroMessenger/i.test(ua) ? '微信' : /xhsdiscover|XiaoHongShu/i.test(ua) ? '小红书' : /aweme|douyin/i.test(ua) ? '抖音' : / QQ\//.test(ua) ? 'QQ' : /KAKAOTALK/i.test(ua) ? 'KakaoTalk' : '';
+const device = (/iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? '安卓' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '设备') + (app ? ' · ' + app : '');
+const nv = (+ls.get('review:visits:ep:' + slug) || 0) + 1; ls.set('review:visits:ep:' + slug, nv);
+const accessPing = state => {
+  if (ls.get('insights:key') || ls.get('review:me') === '1' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  fetch(API + '/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify({ sid, lid, kind: 'ep', slug, state, device, visit: nv }) }).catch(() => {});
+};
+accessPing(0);
 m.innerHTML = '<div class="cv"' + (P.cover ? ' style="background-image:url(' + API + P.cover + ')"' : '') + '>' + (P.cover ? '' : CU) + '</div>'
   + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '')
   + '<div id="gate"><div class="ask" id="ask">输入密码收听</div><div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>'
@@ -159,7 +170,7 @@ async function ok(pw) {   // 密码对就返回项目密钥；不设密码的项
   } catch (e) { return null; }
 }
 async function open(pw, key) {
-  ls.set('review:pj:' + slug, pw);
+  ls.set('review:pj:' + slug, pw); accessPing(1);
   // 点进每首歌不用再输密码：用项目密钥解出每首歌自己的密码记下来
   for (const t of P.tracks) {
     let spw = pw; if (t.wrap) try { spw = new TextDecoder().decode(await dec(key, t.wrap)); } catch (e) {}

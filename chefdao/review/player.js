@@ -240,7 +240,7 @@ async function tryUnlock(pw, typed) {
   $('#lock').classList.add('busy'); pin.blur();
   try {
     const { key, pw: spw } = await songKey(pw);           // 密码错会在这里抛错
-    store.set(PW_KEY, spw); if (PJ_KEY && pw) store.set(PJ_KEY + ':last', pw);   // 同项目切到下一首时先试这个
+    store.set(PW_KEY, spw); if (PJ_KEY && pw) store.set(PJ_KEY + ':last', pw); accessPing(1);   // 同项目切到下一首时先试这个
     document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
@@ -1139,6 +1139,13 @@ function beacon(title, html) {
 /* 同一份数据存进 stats.cumusic.work，给 insights 看板用 */
 const STATS = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787/e' : 'https://stats.cumusic.work/e';
 const sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+// 访问记录：不管听没听，打开页面记一次（0 打开了），输对密码再记一次（1 查看了）。你自己的设备不记
+const accessPing = state => {
+  if (ME || store.get('insights:key') || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  fetch(API_BASE + '/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+    body: JSON.stringify({ sid, lid, kind: 'song', slug: S.slug, state, device, visit: visits }) }).catch(() => {});
+};
+accessPing(0);
 // force：评论有变化时也要同步；sent：点了「发送给刀大厨」
 function track(i, force, sent) {
   i = +i; const s = stats[i] || (i === vi ? st() : null), v = V[i]; if (!WK || ME || !s) return;

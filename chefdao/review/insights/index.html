@@ -41,6 +41,11 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .chips::-webkit-scrollbar{display:none}
 .chips button{flex-shrink:0;font-size:15px;padding:6px 14px;border-radius:999px;background:var(--fill);color:var(--text-2);white-space:nowrap}
 .chips button.on{background:var(--pearl);color:var(--ink)}
+.acc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fill);font-size:14px}
+.acc span{font-size:11px;color:var(--text-3);border:.5px solid var(--hair);border-radius:6px;padding:0 6px;white-space:nowrap}
+.acc b{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc em{font-style:normal;flex-basis:100%;font-size:12.5px;color:var(--text-3)}
+.acc.v em{color:var(--text)}
 .chips button.mem:not(.on){color:var(--text);box-shadow:0 0 0 1px var(--fill-3) inset}
 .chips button.dim:not(.on){opacity:.45}
 
@@ -469,8 +474,11 @@ function renderListen() {
   // 按一次打开（sid）合并成一条动态
   const groups = new Map();
   rows.filter(x => !lis || keyOf(x.lid) === lis).forEach(x => { if (!groups.has(x.sid)) groups.set(x.sid, []); groups.get(x.sid).push(x); });
-  const feed = [...groups.values()].map(g => g.sort((p, q) => p.started - q.started))
-    .sort((p, q) => Math.max(...q.map(x => x.updated)) - Math.max(...p.map(x => x.updated))).slice(0, 60);
+  // 没听、只是访问了项目页 / 曲目页的人：打开了（没输密码）、查看了（输了密码）。已经有收听记录的会话不重复列
+  const acc = (data.access || []).filter(a => a.updated >= since && !groups.has(a.sid) && (!song || (a.kind === 'song' && a.slug === song)) && (!lis || keyOf(a.lid) === lis))
+    .map(a => ({ acc: a, at: a.updated }));
+  const feed = [...groups.values()].map(g => g.sort((p, q) => p.started - q.started)).map(g => ({ g, at: Math.max(...g.map(x => x.updated)) }))
+    .concat(acc).sort((p, q) => q.at - p.at).slice(0, 60);
 
   return `
   ${songs.length > 1 ? `<div class="chips" id="chips"><button data-s="" class="${song ? '' : 'on'}">全部</button>${songs.map(([k, t]) =>
@@ -479,11 +487,16 @@ function renderListen() {
     <div class="card"><div class="lb">播放次数</div><div class="n">${rows.length}</div><div class="d">近 ${days} 天</div>${spark(s.plays)}</div>
     <div class="card"><div class="lb">听众</div><div class="n">${listeners}</div><div class="d">近 ${days} 天</div>${spark(s.listeners)}</div>
   </div>
-  <div class="sect">最近动态<span>${feed.length ? '共 ' + groups.size + ' 次打开' : ''}</span></div>
+  <div class="sect">最近动态<span>${feed.length ? '共 ' + (groups.size + acc.length) + ' 次打开' : ''}</span></div>
   ${people.length > 1 ? `<div class="chips" id="lchips"><button data-l="" class="${lis ? '' : 'on'}">所有听众</button>${people.map(([k, n]) =>
     `<button data-l="${esc(k)}" class="${lis === k ? 'on' : ''}${arts.size ? (arts.has(k) ? ' mem' : ' dim') : ''}">${esc(n)}</button>`).join('')}</div>` : ''}
-  <div class="feed">${feed.length ? feed.map(g => {
-    const x = g[0], last = Math.max(...g.map(y => y.updated));
+  <div class="feed">${feed.length ? feed.map(f => {
+    if (f.acc) { const a = f.acc;
+      return `<div class="item"><button class="av" data-ln="${esc(a.lid)}" title="写备注">${esc(a.lid)}</button><div class="body">
+      <div class="who">${who(a.lid, '访客')}<time>${when(a.updated, now)}</time></div>
+      <div class="dev">${esc(a.device || '设备')}${a.visit > 1 ? ' · 第 ' + a.visit + ' 次打开' : ''}${place(a.sid, '') ? ' · ' + esc(place(a.sid, '')) : ''}</div>
+      <div class="acc${a.state ? ' v' : ''}"><span>${a.kind === 'ep' ? '项目' : '曲目'}</span><b>《${esc(a.title)}》</b><em>${a.state ? '查看了 · 输了密码' : '打开了 · 没输密码'}</em></div></div></div>`; }
+    const g = f.g, x = g[0], last = f.at;
     return `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
       <div class="who">${who(x.lid, '听众')}<time>${when(last, now)}</time></div>
       <div class="dev">${esc(x.device || '设备')}${x.visit > 1 ? ' · 第 ' + x.visit + ' 次打开' : ''}${place(x.sid, x.country) ? ' · ' + esc(place(x.sid, x.country)) : ''}</div>
