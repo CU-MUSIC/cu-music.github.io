@@ -80,7 +80,7 @@ document.body.innerHTML = `
     <div class="art"></div>
     <div>
       ${S.project && S.project.title !== S.title ? `<a class="pjb" href="${esc(S.project.url)}">‹ ${esc(S.project.title)}</a>` : ''}
-      <h1 id="vfile">${esc(S.title)}</h1>
+      <h1 id="vfile">${esc(S.title)}</h1>${S.artist ? `<div class="hart">${esc(S.artist)}</div>` : ''}
       <div class="meta" id="vmeta"></div>
     </div>
   </header>

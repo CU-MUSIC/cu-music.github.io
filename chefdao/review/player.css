@@ -89,6 +89,7 @@ svg{display:block}
   box-shadow:0 12px 30px -12px rgba(0,0,0,.6),0 0 0 .5px rgba(255,255,255,.08) inset}
 .head .eyebrow{color:var(--text-3);font-size:13px;font-weight:600;letter-spacing:.04em}
 .head h1{font-size:22px;line-height:1.25;font-weight:700;letter-spacing:-.018em;overflow-wrap:anywhere;margin-top:2px}
+.head .hart{color:var(--text);opacity:.82;font-size:15px;font-weight:500;margin-top:2px;overflow-wrap:anywhere}
 .head .meta{color:var(--text-2);font-size:14px;margin-top:4px;font-variant-numeric:tabular-nums}
 .head .meta b{font-weight:600;color:var(--accent-2);background:var(--accent-tint);border-radius:6px;padding:1px 7px;margin-right:6px;font-size:13px}
 
