@@ -19,13 +19,17 @@ body{background:radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.06),trans
   min-height:100vh;min-height:100dvh;padding:calc(48px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
 main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center}
 /* 封面：近处一层贴身阴影 + 远处一层柔光阴影，顶边一道高光、底边压暗，背后一圈封面色的光晕，看起来浮在页面上 */
-.cv{position:relative;isolation:isolate;width:min(64vw,260px);aspect-ratio:1;border-radius:18px;
+.cv{--rx:0;--ry:0;--sx:30%;--sy:15%;position:relative;isolation:isolate;width:min(64vw,260px);aspect-ratio:1;border-radius:18px;
   background:radial-gradient(130% 100% at 28% 12%,#242426 0%,#121213 55%,#09090a 100%) center/cover;
+  /* 跟着鼠标（电脑）或陀螺仪（手机）微微转动，远处那层阴影往反方向偏，光源始终在同一边 */
+  transform:perspective(800px) rotateX(calc(var(--rx) * 1deg)) rotateY(calc(var(--ry) * 1deg));will-change:transform;
   box-shadow:0 1px 0 rgba(255,255,255,.10) inset,0 -1px 0 rgba(0,0,0,.6) inset,0 0 0 .5px rgba(255,255,255,.09) inset,
-    0 2px 4px rgba(0,0,0,.35),0 12px 24px -8px rgba(0,0,0,.55),0 40px 80px -28px rgba(0,0,0,.85);
+    0 2px 4px rgba(0,0,0,.35),0 12px 24px -8px rgba(0,0,0,.55),
+    calc(var(--ry) * -2.6px) calc(40px + var(--rx) * 2.6px) 80px -28px rgba(0,0,0,.85);
   display:grid;place-items:center}
 .cv::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  background:linear-gradient(160deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,.03) 32%,transparent 50%,rgba(0,0,0,.18) 100%)}
+  background:radial-gradient(circle at var(--sx) var(--sy),rgba(255,255,255,.14),transparent 55%),
+    linear-gradient(160deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.02) 32%,transparent 50%,rgba(0,0,0,.18) 100%)}
 .cv::after{content:"";position:absolute;inset:8% 6% -10%;z-index:-1;border-radius:inherit;background:inherit;filter:blur(36px) saturate(1.3);opacity:.35;transform:translateY(10px)}
 .cv svg{width:42%;height:42%;filter:drop-shadow(0 1px 0 rgba(255,255,255,.18)) drop-shadow(0 8px 14px rgba(0,0,0,.6))}
 .cv svg path{fill:none;stroke:#e8e6e2;stroke-width:36;stroke-linecap:round}
@@ -70,10 +74,40 @@ let P;
 try { const j = await (await fetch(API + '/pj?s=' + slug, { cache: 'no-store' })).json(); if (!j.ok) throw 0; P = j.project; }
 catch (e) { m.innerHTML = '<div class="boot">找不到这个项目，请向刀大厨确认链接</div>'; return; }
 document.title = P.title;
+setTimeout(tilt, 0);
 m.innerHTML = '<div class="cv"' + (P.cover ? ' style="background-image:url(' + API + P.cover + ')"' : '') + '>' + (P.cover ? '' : CU) + '</div>'
   + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '')
   + '<div id="gate"><div class="ask" id="ask">输入密码收听</div><div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>'
   + '<input class="pin" id="pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="密码"></div><div id="list"></div>';
+// 封面立体转动：电脑跟鼠标，手机跟陀螺仪（以拿手机的初始角度为准，慢慢回正）。iPhone 要在第一次点屏幕时允许「运动与方向」
+function tilt() {
+  const cv = m.querySelector('.cv'); if (!cv || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const MAX = 7; let tx = 0, ty = 0, x = 0, y = 0, raf = 0;
+  const step = () => {
+    x += (tx - x) * .12; y += (ty - y) * .12;
+    cv.style.setProperty('--ry', (x * MAX).toFixed(2)); cv.style.setProperty('--rx', (-y * MAX).toFixed(2));
+    cv.style.setProperty('--sx', (30 + x * 35).toFixed(1) + '%'); cv.style.setProperty('--sy', (15 + y * 35).toFixed(1) + '%');
+    raf = Math.abs(tx - x) + Math.abs(ty - y) > .002 ? requestAnimationFrame(step) : 0;
+  };
+  const set = (px, py) => { tx = Math.max(-1, Math.min(1, px)); ty = Math.max(-1, Math.min(1, py)); if (!raf) raf = requestAnimationFrame(step); };
+  if (matchMedia('(hover: hover)').matches) {
+    cv.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); set(((e.clientX - r.left) / r.width - .5) * 2, ((e.clientY - r.top) / r.height - .5) * 2); });
+    cv.addEventListener('pointerleave', () => set(0, 0));
+    return;
+  }
+  let base = null;
+  const ori = e => {
+    if (e.beta == null) return;
+    if (!base) base = { b: e.beta, g: e.gamma };
+    base.b += (e.beta - base.b) * .01; base.g += (e.gamma - base.g) * .01;
+    set((e.gamma - base.g) / 18, (e.beta - base.b) / 18);
+  };
+  const D = window.DeviceOrientationEvent;
+  if (D && typeof D.requestPermission === 'function') {
+    const ask = () => { removeEventListener('touchend', ask); D.requestPermission().then(s => { if (s === 'granted') addEventListener('deviceorientation', ori); }).catch(() => {}); };
+    addEventListener('touchend', ask);
+  } else addEventListener('deviceorientation', ori);
+}
 const pin = document.getElementById('pin'), dots = [...document.querySelectorAll('#dots i')], ask = document.getElementById('ask');
 const focus = () => pin.focus({ preventScroll: true });
 document.getElementById('dots').onclick = focus; m.onclick = e => { if (!e.target.closest('a')) focus(); };
