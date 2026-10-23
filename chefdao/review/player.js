@@ -604,7 +604,7 @@ function ownerTools() {
   // 分享：一键复制「歌名 / 链接 / 密码」三行发给客户。「分享」发这首歌；在多首的项目里另有「分享项目」
   const share = {}, line = x => '《' + x.title + '》\n' + x.url + (x.pass ? '\n密码 ' + x.pass : '');
   const get = p => fetch(live.api + p, { headers: { Authorization: 'Bearer ' + key } }).then(r => r.json());
-  get('/radm/list').then(j => { const x = j.ok && j.songs.find(y => y.slug === S.slug); if (x) share.song = line({ ...x, title: S.title }); }).catch(() => {});
+  get('/radm/list').then(j => { const x = j.ok && j.songs.find(y => y.slug === S.slug); if (x) share.song = line({ ...x, title: S.title, pass: x.share ?? x.pass }); }).catch(() => {});
   get('/lib').then(j => {
     const p = j.ok && j.projects.find(x => x.tracks.length > 1 && x.tracks.some(t => t.slug === S.slug));
     if (p) { share.project = line(p); $('#ownShareP').hidden = false; $('#ownShare').textContent = '分享这首'; }

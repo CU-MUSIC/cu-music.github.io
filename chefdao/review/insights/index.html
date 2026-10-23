@@ -746,7 +746,7 @@ function openProject(slug) {
   el.querySelectorAll('[data-sh]').forEach(b => b.onclick = async () => {
     const t = p.tracks[+b.dataset.sh];
     try { const x = (await songsP).songs.find(y => y.slug === t.slug); if (!x) throw 0;
-      await navigator.clipboard.writeText(shareText(x.title, x.url, x.pass)); b.textContent = '已复制'; setTimeout(() => { b.textContent = '分享'; }, 1500); }
+      await navigator.clipboard.writeText(shareText(x.title, x.url, x.share ?? x.pass)); b.textContent = '已复制'; setTimeout(() => { b.textContent = '分享'; }, 1500); }
     catch (e) { msg('没复制成，检查网络再试', true); }
   });
   el.querySelectorAll('[data-rn]').forEach(b => b.onclick = async () => {
@@ -826,7 +826,7 @@ function renderSongs() {
     <div class="rs" data-slug="${esc(x.slug)}">
       <div class="rs-h"><b>《${esc(x.title)}》</b>${x.artist ? `<span>${esc(x.artist)}</span>` : '<span class="dim">未填歌手</span>'}</div>
       <div class="rs-m">${x.versions.map(v => esc(v.ver)).join(' ')} · ${x.people ? x.people + ' 位听众 · 最近 ' + when(x.heard, now) : '还没人听'}</div>
-      <div class="rs-l">${esc(x.url.replace('https://', ''))} · 密码 <b>${esc(x.pass)}</b></div>
+      <div class="rs-l">${esc(x.url.replace('https://', ''))} · ${(x.share ?? x.pass) ? `密码 <b>${esc(x.share ?? x.pass)}</b>` : '不设密码'}</div>
       <div class="rs-a"><button data-rs="copy">复制链接和密码</button><a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a><button data-rs="artist">${x.artist ? '改歌手' : '填歌手'}</button><button data-rs="title">改歌名</button><button data-rs="drop" class="danger">删除</button></div>
     </div>`).join('')}</details>`;
 }
@@ -836,7 +836,7 @@ async function rsAction(slug, act, btn) {
     const j = await r.json(); if (!j.ok) throw new Error(); return j; };
   try {
     if (act === 'copy') {
-      const t = shareText(x.title, x.url, x.pass);
+      const t = shareText(x.title, x.url, x.share ?? x.pass);
       const done = () => { btn.textContent = '已复制'; setTimeout(() => { btn.textContent = '复制链接和密码'; }, 1500); };
       return navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done();
     }
@@ -984,7 +984,7 @@ async function openUpload(opt) {
         ver: $u('upVer').value, date: $u('upDate').value.trim(), step: msg, bar });
       const prep = r, ver = r.ver, res = r;
       bar(1); msg('');
-      $u('upDone').innerHTML = `<div class="done"><b>《${esc(prep.title)}》${esc(ver)} 已上线</b><code>${esc(res.url)}</code><div>密码 <b>${esc(prep.pass)}</b></div>
+      $u('upDone').innerHTML = `<div class="done"><b>《${esc(prep.title)}》${esc(ver)} 已上线</b><code>${esc(res.url)}</code><div>${prep.pass ? `密码 <b>${esc(prep.pass)}</b>` : '不设密码'}</div>
         <button type="button" id="upCopy">复制链接和密码</button><div style="font-size:13px;color:var(--text-3)">到「订单」里把审听页选成这首歌，再推进到「待审听」</div></div>`;
       $u('upCopy').onclick = () => { const t = '《' + prep.title + '》' + ver + '\n' + res.url + (prep.pass ? '\n密码 ' + prep.pass : '');
         const done = () => { $u('upCopy').textContent = '已复制'; }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
