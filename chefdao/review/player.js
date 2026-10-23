@@ -89,6 +89,12 @@ document.body.innerHTML = `
       <div class="meta" id="vmeta"></div>
     </div>
   </header>
+  ${(() => {   // 进度：项目页里改的阶段，这里只显示
+    const g = S.prog; if (!g || !(g.s >= 0)) return '';
+    const ST = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付'];
+    return `<div class="sprog"><div class="spbar">${ST.map((n, i) => `<span class="${i < g.s ? 'd' : i === g.s ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
+      + (g.s < 5 && g.due ? `<div class="spdue">预计 ${cdate(g.due)} 交付</div>` : '') + '</div>';
+  })()}
   <section class="vpick" id="seg"${V.length > 1 ? '' : ' hidden'}>${(() => {
     // 版本选择：按阶段一组一排小按钮「编辑 V1 V2 · 混音 V3」，当前版本高亮
     const groups = [];

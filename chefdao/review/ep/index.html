@@ -55,6 +55,14 @@ h1{margin-top:6px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:
 .tr .m{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
 @keyframes in{to{opacity:1;transform:none}}
 .empty{margin-top:30px;color:var(--text-3);font-size:14px}
+/* 曲目进度 */
+.tr .t em.pg{display:flex;align-items:center;gap:8px;font-style:normal;font-weight:500;font-size:12px;color:var(--text-2);margin-top:6px}
+.pg .bar{display:inline-flex;gap:3px}.pg .bar s{width:12px;height:3px;border-radius:2px;background:rgba(236,234,230,.14)}
+.pg .bar s.d{background:rgba(236,234,230,.55)}.pg .bar s.c{background:#e8e6e2}
+.pgr{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:.5px solid var(--hair);font-size:13.5px}
+.pgr .n{color:var(--text);min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.pay select,.pay input[type=date]{font:inherit;font-size:13px;color:var(--text);background:var(--fill-2);border:0;border-radius:8px;padding:6px 8px;color-scheme:dark}
+.pgall{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--text-3)}
 /* 收款情况（仅你可见） */
 .pay{margin-top:34px;padding:16px;border-radius:14px;border:1px dashed rgba(236,234,230,.16);text-align:left;font-variant-numeric:tabular-nums}
 .pyhd{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;color:var(--text-2)}.pyhd i{font-style:normal;font-weight:400;font-size:12px;color:var(--text-3)}
@@ -140,9 +148,41 @@ async function open(pw, key) {
   }
   document.getElementById('gate').remove();
   document.getElementById('list').innerHTML = P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
-    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + '</span><span class="m">' + fmt(t.dur) + '</span></a>').join('') + '</div>'
+    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>';
-  if (ls.get('insights:key')) payPanel();
+  if (ls.get('insights:key')) { progPanel(); payPanel(); }
+}
+// 进度：和订单进度一样的六个阶段。客户在曲目列表里看到每首歌走到哪；你在下面的「进度」面板里改
+const STAGES = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付'];
+const md = d => { const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || ''); return m ? (+m[1]) + '月' + (+m[2]) + '日' : ''; };
+function progTag(g) {
+  if (!g) return '';
+  return '<em class="pg"><span class="bar">' + STAGES.map((_, i) => '<s class="' + (i < g.s ? 'd' : i === g.s ? 'c' : '') + '"></s>').join('') + '</span>'
+    + STAGES[g.s] + (g.s < 5 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
+}
+function progPanel() {
+  const key = ls.get('insights:key'), el = document.createElement('section'); el.className = 'pay';
+  el.innerHTML = '<div class="pyhd"><span>进度</span><i>仅你可见 · 改了客户马上看到</i></div>' + P.tracks.map((t, i) => {
+    const g = t.prog || { s: -1, due: '' };
+    return '<div class="pgr"><span class="n">' + esc(t.title) + '</span><select data-i="' + i + '"><option value="-1"' + (g.s < 0 ? ' selected' : '') + '>不显示</option>'
+      + STAGES.map((n, k) => '<option value="' + k + '"' + (g.s === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select>'
+      + '<input type="date" data-i="' + i + '" value="' + esc(g.due || '') + '" aria-label="预计交付"></div>';
+  }).join('') + '<div class="pgall"><span>全部改成</span><select id="pgAll"><option value="">选择阶段</option>' + STAGES.map((n, k) => '<option value="' + k + '">' + n + '</option>').join('') + '</select></div>';
+  document.getElementById('list').appendChild(el);
+  const save = async (i, s, due) => {
+    const t = P.tracks[i], prog = s < 0 ? null : { s, due, at: (t.prog && t.prog.at) || {} };
+    try {
+      const r = await fetch(API + '/radm/meta', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: t.slug, prog }) });
+      if (!(await r.json()).ok) throw 0;
+      t.prog = prog && { ...prog, at: { ...prog.at, [s]: (prog.at[s] || Date.now()) } };
+      const row = document.querySelectorAll('.tr')[i], old = row && row.querySelector('.pg');
+      if (row) { if (old) old.remove(); row.querySelector('.t').insertAdjacentHTML('beforeend', progTag(t.prog)); }
+    } catch (e) { alert('没改成，检查网络再试'); }
+  };
+  el.querySelectorAll('select[data-i]').forEach(x => x.onchange = () => save(+x.dataset.i, +x.value, el.querySelector('input[data-i="' + x.dataset.i + '"]').value));
+  el.querySelectorAll('input[data-i]').forEach(x => x.onchange = () => { const sel = el.querySelector('select[data-i="' + x.dataset.i + '"]'); if (+sel.value >= 0) save(+x.dataset.i, +sel.value, x.value); });
+  el.querySelector('#pgAll').onchange = e => { const v = e.target.value; if (v === '') return;
+    el.querySelectorAll('select[data-i]').forEach(x => { x.value = v; save(+x.dataset.i, +v, el.querySelector('input[data-i="' + x.dataset.i + '"]').value); }); e.target.value = ''; };
 }
 // 收款情况：只在你的设备（存了看板钥匙）显示。读每首歌的费用单，按人列出定金 / 尾款，定金收齐才开工
 async function payPanel() {

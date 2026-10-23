@@ -482,3 +482,11 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .cgh{font-size:13px;font-weight:600;color:var(--text);padding:14px 16px 6px}
 .cgh:first-child{padding-top:10px}
 #cfl.grouped .cwho{display:none}
+
+/* 进度：六个阶段，当前阶段高亮 */
+.sprog{margin-top:18px}
+.spbar{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.spbar span{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spbar i{display:block;height:3px;border-radius:2px;background:var(--fill-2)}
+.spbar span.d i{background:var(--text-3)}.spbar span.c{color:var(--text);font-weight:600}.spbar span.c i{background:var(--text)}
+.spdue{font-size:12.5px;color:var(--text-2);margin-top:8px}
