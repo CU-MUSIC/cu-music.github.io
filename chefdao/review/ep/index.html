@@ -15,12 +15,12 @@
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;color-scheme:dark}
 *{box-sizing:border-box;margin:0}
 html{background:var(--bg)}
-body{background:radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.06),transparent 60%),var(--bg);color:var(--text);font:17px/1.6 var(--font);-webkit-font-smoothing:antialiased;
+body{background:radial-gradient(70% 420px at 50% 210px,rgba(236,234,230,.11),rgba(236,234,230,.04) 55%,transparent 100%),radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.06),transparent 60%),var(--bg);color:var(--text);font:17px/1.6 var(--font);-webkit-font-smoothing:antialiased;
   min-height:100vh;min-height:100dvh;padding:calc(48px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
 main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center}
 /* 封面：近处一层贴身阴影 + 远处一层柔光阴影，顶边一道高光、底边压暗，背后一圈封面色的光晕，看起来浮在页面上 */
 .cv{--rx:0;--ry:0;--sx:30%;--sy:15%;position:relative;isolation:isolate;width:min(64vw,260px);aspect-ratio:1;border-radius:18px;
-  background:radial-gradient(130% 100% at 28% 12%,#242426 0%,#121213 55%,#09090a 100%) center/cover;
+  background:radial-gradient(130% 100% at 28% 12%,#3a3a3d 0%,#1c1c1e 55%,#0e0e0f 100%) center/cover;
   /* 跟着鼠标（电脑）或陀螺仪（手机）微微转动，远处那层阴影往反方向偏，光源始终在同一边 */
   transform:perspective(800px) rotateX(calc(var(--rx) * 1deg)) rotateY(calc(var(--ry) * 1deg));will-change:transform;
   box-shadow:0 1px 0 rgba(255,255,255,.10) inset,0 -1px 0 rgba(0,0,0,.6) inset,0 0 0 .5px rgba(255,255,255,.09) inset,
