@@ -46,8 +46,12 @@ h1{margin-top:6px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:
 .pin{position:absolute;left:50%;bottom:0;opacity:0;width:1px;height:1px;pointer-events:none;font-size:16px}
 #gate{position:relative;display:flex;flex-direction:column;align-items:center}
 /* 键盘弹出：封面缩小、上下留白收紧，密码点留在键盘上面 */
+body{transition:padding-top .42s cubic-bezier(.32,.72,0,1)}
+.cv{transition:width .42s cubic-bezier(.32,.72,0,1),border-radius .42s cubic-bezier(.32,.72,0,1)}
+.cv::after{transition:opacity .3s ease}
+.kind,h1,.ask{transition:margin .42s cubic-bezier(.32,.72,0,1),font-size .42s cubic-bezier(.32,.72,0,1)}
 body.kb{padding-top:16px}
-body.kb .cv{width:96px;border-radius:12px}body.kb .cv::after{display:none}
+body.kb .cv{width:96px;border-radius:12px}body.kb .cv::after{opacity:0}
 body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:16px}
 #list{width:100%}
 .list{width:100%;margin-top:30px;display:flex;flex-direction:column;border-top:.5px solid var(--hair)}
@@ -140,7 +144,7 @@ if (window.visualViewport) {
   const fit = () => {
     const g = document.getElementById('gate'), kb = !!g && vv.height < window.innerHeight - 120;
     document.body.classList.toggle('kb', kb);
-    if (kb) requestAnimationFrame(() => { const r = g.getBoundingClientRect(), over = r.bottom - (vv.offsetTop + vv.height) + 20; if (over > 0) window.scrollBy(0, over); });
+    if (kb) requestAnimationFrame(() => { const r = g.getBoundingClientRect(), over = r.bottom - (vv.offsetTop + vv.height) + 20; if (over > 0) window.scrollBy({ top: over, behavior: 'smooth' }); });
   };
   vv.addEventListener('resize', fit);
 }

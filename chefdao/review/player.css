@@ -40,7 +40,8 @@ svg{display:block}
 .lock{
   position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:24px 16px calc(24px + env(safe-area-inset-bottom));text-align:center;
-  background:inherit;transition:opacity .45s var(--ios),transform .55s var(--ios),filter .45s var(--ios);
+  background:inherit;transition:opacity .45s var(--ios),transform .55s var(--ios),filter .45s var(--ios),
+    height .38s var(--ios),top .38s var(--ios),padding .45s var(--ios);
 }
 .lock::before{content:"";position:absolute;left:50%;top:42%;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;
   background:radial-gradient(closest-side,rgba(236,234,230,.10),transparent);opacity:0;transition:opacity .8s var(--ios);pointer-events:none}
@@ -69,10 +70,14 @@ svg{display:block}
 .pin{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;font-size:16px}   /* 16px：iPhone 聚焦时不自动放大页面 */
 /* 键盘弹出：封面缩小、间距收紧，保证歌名、提示和密码点都在键盘上方 */
 /* 键盘弹出：内容贴着可见区域顶部排，封面缩小，密码点留在键盘上面 */
-.lock.kb{justify-content:flex-start;padding-top:max(20px,env(safe-area-inset-top));padding-bottom:12px}
+.lock.kb{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(12px,10vh)}
 .lock.kb .art{width:56px;height:56px;border-radius:14px;margin-bottom:12px}
 .lock.kb h1{font-size:20px}
 .lock.kb .ask{margin-top:14px}
+/* 缩小 / 恢复：尺寸、字号、间距一起缓动，跟键盘升降同一个节奏，不要一下子跳 */
+.lock .art{transition:transform .6s var(--ios),opacity .35s var(--ios),width .42s var(--ios),height .42s var(--ios),margin .42s var(--ios),border-radius .42s var(--ios)}
+.lock h1{transition:opacity .35s var(--ios),transform .6s var(--ios),font-size .42s var(--ios)}
+.lock .ask{transition:opacity .35s var(--ios),transform .6s var(--ios),margin .42s var(--ios),color .2s}
 .spin{width:20px;height:20px;border-radius:50%;border:2px solid var(--fill-3);border-top-color:var(--text);animation:spin .8s linear infinite;margin:18px auto 0;display:none}
 .lock.busy .spin{display:block}
 .lock.busy .dots{display:none}
@@ -327,7 +332,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 /* 没输密码时歌名是糊的，每输一位清楚一点，解锁时慢慢完全显出来 */
 /* 歌名：模糊用文字阴影做（不用 filter，边缘不会出现方框）；解码时乱码是灰的，定格的字变白 */
 .lock h1.scr{display:flex;justify-content:center;min-height:1.15em}
-.lock h1.bl{color:transparent;text-shadow:0 0 var(--b,12px) rgba(236,234,230,.9);transition:text-shadow .45s ease}
+.lock h1.bl{color:transparent;text-shadow:0 0 var(--b,12px) rgba(236,234,230,.9);transition:text-shadow .45s ease,opacity .35s var(--ios),transform .6s var(--ios),font-size .42s var(--ios)}
 .lock h1.scr span{display:inline-block;color:var(--text-3);transition:color .25s ease}
 .lock h1.scr span.ok{color:var(--text)}
 .lock h1.nd{animation:cu-nudge .22s ease-out}
@@ -491,3 +496,8 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .spbar i{display:block;height:3px;border-radius:2px;background:var(--fill-2)}
 .spbar span.d i{background:var(--text-3)}.spbar span.c{color:var(--text);font-weight:600}.spbar span.c i{background:var(--text)}
 .spdue{font-size:12.5px;color:var(--text-2);margin-top:8px}
+
+/* 键盘弹出时 CU 标志也一起缩小（它的尺寸规则优先级更高，单独写） */
+.lock .art.lmark{transition:transform .6s var(--ios),opacity .35s var(--ios),width .42s var(--ios),height .42s var(--ios),margin .42s var(--ios)}
+.lock.kb .art.lmark{width:64px;height:64px}
+.lock.leaving .art.lmark{transition:transform .7s var(--ios),opacity .5s ease .2s}

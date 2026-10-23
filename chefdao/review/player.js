@@ -224,9 +224,10 @@ if (window.visualViewport) {
     const L = document.getElementById('lock'); if (!L) return;
     const kb = vv.height < window.innerHeight - 120;
     L.classList.toggle('kb', kb);
-    L.style.bottom = kb ? 'auto' : ''; L.style.height = kb ? vv.height + 'px' : ''; L.style.top = kb ? vv.offsetTop + 'px' : '';
+    // 一直用像素值写高度，这样键盘升降时 CSS 过渡才能生效（auto 和 px 之间不会有动画）
+    L.style.bottom = 'auto'; L.style.height = vv.height + 'px'; L.style.top = vv.offsetTop + 'px';
   };
-  vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit);
+  vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); fit();
 }
 pin.addEventListener('input', () => {
   pin.value = pin.value.replace(/\D/g, '').slice(0, 4);
