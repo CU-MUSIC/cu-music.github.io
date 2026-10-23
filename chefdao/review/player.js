@@ -115,6 +115,7 @@ document.body.innerHTML = `
   <div class="refname" id="refName" hidden></div>
   <section class="mst" id="mst" hidden></section>
   <aside class="plist" id="plist" hidden></aside>
+  <section class="fee" id="fee" hidden></section>
 
   <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
@@ -271,6 +272,41 @@ function prefetchOthers() {
 }
 // 项目封面：页头那块方形封面换成项目的封面图
 if (S.cover) { const art = document.querySelector('#app .head .art'); if (art) art.style.backgroundImage = 'url(' + API_BASE + S.cover + ')'; }
+/* ───────── 费用：每位歌手自己选人声制作和音频编辑，点「确定」；合计、定金、尾款跟着算。收了定金就锁定 ───────── */
+let Q = S.quote || null, feeOpen = null, feeOwner = null;
+const yuan = n => '¥' + n.toLocaleString('en-US');
+const pPrice = p => Q.menu.base + Q.menu.vocal[p.v][1] + Q.menu.edit[p.e][1];
+function renderFee() {
+  const el = $('#fee'); if (!Q) { el.hidden = true; el.innerHTML = ''; return; }
+  const total = Q.people.reduce((s, p) => s + pPrice(p), 0), dep = Math.round(total / 2), fin = total - dep;
+  const done = Q.people.filter(p => p.ok).length, lock = Q.dep;
+  if (feeOpen === null) feeOpen = !lock && done < Q.people.length;
+  const st = Q.fin ? '已结清' : Q.dep ? '尾款 ' + yuan(fin) + ' 待付' : done < Q.people.length ? '已确认 ' + done + ' / ' + Q.people.length + ' 位' : '定金 ' + yuan(dep) + ' 待付';
+  const opt = (k, i, j) => Q.menu[k].map((o, x) => `<button class="fo${x === j ? ' on' : ''}" data-k="${k}" data-i="${i}" data-x="${x}"${lock ? ' disabled' : ''}>${esc(o[0])}${o[1] ? `<i>+${o[1]}</i>` : ''}</button>`).join('');
+  const desc = o => o[2] ? `<div class="fd">${esc(o[2])}</div>` : '';
+  el.hidden = false; el.classList.toggle('open', feeOpen);
+  el.innerHTML = `<button class="fh press" id="feeH"><span>费用</span><b>${yuan(total)}</b><em>${st}</em><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="fb">`
+    + Q.people.map((p, i) => `<div class="fp${p.ok ? ' ok' : ''}"><div class="fn"><b>${esc(p.n)}</b><span>${yuan(pPrice(p))}</span></div>
+      <div class="fl">人声制作</div><div class="fg">${opt('vocal', i, p.v)}</div>${desc(Q.menu.vocal[p.v])}
+      <div class="fl">音频编辑</div><div class="fg">${opt('edit', i, p.e)}</div>${desc(Q.menu.edit[p.e])}
+      ${lock ? '' : `<button class="fok press" data-ok="${i}"${p.ok ? ' disabled' : ''}>${p.ok ? '已确定 ✓' : '确定'}</button>`}</div>`).join('')
+    + `<div class="ft"><div><span>基础混音</span><b>${yuan(Q.menu.base)} / 人</b></div><div><span>定金（开工）</span><b>${yuan(dep)}${Q.dep ? ' · 已收' : ''}</b></div><div><span>尾款（交付）</span><b>${yuan(fin)}${Q.fin ? ' · 已收' : ''}</b></div></div>`
+    + (Q.note ? `<div class="fnote">${esc(Q.note)}</div>` : '') + `<a class="fx" href="https://cumusic.work/chefdao/price" target="_blank" rel="noopener">价格明细 ›</a>`
+    + (feeOwner ? feeOwner(total) : '') + '</div>';
+}
+$('#fee').addEventListener('click', async e => {
+  if (e.target.closest('#feeH')) { feeOpen = !feeOpen; return renderFee(); }
+  const o = e.target.closest('.fo');
+  if (o && !Q.dep) { const p = Q.people[+o.dataset.i]; p[o.dataset.k === 'vocal' ? 'v' : 'e'] = +o.dataset.x; p.ok = false; return renderFee(); }
+  const ok = e.target.closest('[data-ok]'); if (!ok || !WK) return;
+  const i = +ok.dataset.ok, p = Q.people[i]; ok.disabled = true; ok.textContent = '保存中…';
+  try {
+    const j = await (await fetch(API_BASE + '/qpick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, i, v: p.v, e: p.e }) })).json();
+    if (j.quote) Q = j.quote;
+    if (j.ok) beacon(S.title + ' · ' + p.n + ' 确认费用', '<p><b>' + esc(meLabel()) + '</b> 确认了 <b>' + esc(p.n) + '</b>：' + esc(Q.menu.vocal[p.v][0]) + ' / ' + esc(Q.menu.edit[p.e][0]) + ' · ' + yuan(pPrice(p)) + '</p><p>《' + esc(S.title) + '》</p>');
+  } catch (err) {}
+  renderFee();
+});
 // 播放列表：同一个项目里的其他曲目（cypher 一首接一首），点了直接切过去（项目密码记着，不用再输）
 async function loadPlaylist() {
   if (!S.project) return;
@@ -290,7 +326,7 @@ async function loadPlaylist() {
 }
 function enterApp(quick) {
   setTimeout(prefetchOthers, 600);
-  loadPlaylist();
+  loadPlaylist(); renderFee();
   if (quick) {
     started = true; t0 = -1e9;   // 波形直接满格，不做长出来的动画
     $('#app').removeAttribute('aria-hidden'); $('#app').classList.add('in'); $('#lock').remove(); markSeg(); updateCta();
@@ -667,6 +703,32 @@ function ownerTools() {
     await copy(share[k]); const t = b.textContent; b.textContent = '已复制'; setTimeout(() => { b.textContent = t; }, 1500);
   }; };
   shareBtn('#ownShare', 'song'); shareBtn('#ownShareP', 'project');
+  // 费用单：按 Cypher 报价开一张，歌手从歌曲信息里来；客户自己选、点确定；你在这里标定金 / 尾款已收
+  const CYPHER = { base: 100, vocal: [['仅混音', 0, ''], ['执行向', 100, '按你的要求做效果：升降调、Stutter、反转、电话音、失真、加宽、Ad-lib 摆位、Double 对齐等'],
+      ['创意向', 160, '包含执行向，由制作方判断要不要加特殊效果、加在哪，设计人声层次和空间']],
+    edit: [['不需要', 0, ''], ['音准', 100, '只修音准（叠唱不超过 2 条）'], ['节奏', 100, '只对齐节奏（叠唱不超过 2 条）'], ['标准', 160, '音准 + 节奏都修，适合演唱比较稳的素材'], ['深度', 240, '跑调、破音、气声不稳较多时的大量精修']] };
+  const saveQ = async q => { try { await post('/radm/meta', { slug: S.slug, quote: q }); Q = q; feeOpen = true; renderFee(); busy(q ? '费用单已更新' : '费用单已删除'); } catch (e) { busy('没保存上，检查网络再试'); } };
+  feeOwner = () => `<div class="fown"><button data-own="dep">${Q.dep ? '撤销定金已收' : '定金已收'}</button><button data-own="fin">${Q.fin ? '撤销尾款已收' : '尾款已收'}</button><button data-own="people">改歌手</button><button data-own="del" class="dz">删除费用单</button></div>`;
+  $('#fee').addEventListener('click', e => {
+    const b = e.target.closest('[data-own]'); if (!b) return;
+    const k = b.dataset.own, q = JSON.parse(JSON.stringify(Q));
+    if (k === 'dep') q.dep = !q.dep;
+    if (k === 'fin') q.fin = !q.fin;
+    if (k === 'people') {
+      const v = prompt('这首歌的歌手，用逗号分开', q.people.map(p => p.n).join('、')); if (v === null) return;
+      const names = v.split(/\s*[,，、\/]\s*/).filter(Boolean);
+      q.people = names.map(n => q.people.find(p => p.n === n) || { n, v: 0, e: 0, ok: false });
+    }
+    if (k === 'del' && !confirm('删除这首歌的费用单？客户的选择也会清掉')) return;
+    saveQ(k === 'del' ? null : q);
+  });
+  const fb = document.createElement('button'); fb.className = 'press'; fb.textContent = '费用';
+  fb.onclick = () => {
+    if (Q) { feeOpen = true; renderFee(); $('#fee').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const v = prompt('开一张费用单（Cypher 报价，客户自己选）。歌手用逗号分开', names.join('、')); if (!v) return;
+    saveQ({ menu: CYPHER, people: v.split(/\s*[,，、\/]\s*/).filter(Boolean).map(n => ({ n, v: 0, e: 0, ok: false })), dep: false, fin: false, note: '' });
+  };
+  $('#ownPart').after(fb);
   // 段落：播放到某段开头点「＋ 段落」记下这里换谁唱；点上方的名字改名，清空就删掉这段
   const names = String(S.artist || '').split('、').filter(Boolean);
   const saveParts = async () => {
