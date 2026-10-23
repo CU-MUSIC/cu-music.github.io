@@ -41,6 +41,13 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .chips::-webkit-scrollbar{display:none}
 .chips button{flex-shrink:0;font-size:15px;padding:6px 14px;border-radius:999px;background:var(--fill);color:var(--text-2);white-space:nowrap}
 .chips button.on{background:var(--pearl);color:var(--ink)}
+.pmbox{margin:0 0 16px;padding:12px 14px;border-radius:14px;background:var(--fill)}
+.pmbox summary{font-size:15px;font-weight:600;cursor:pointer}
+.pmr{padding:10px 0;border-top:.5px solid var(--hair);margin-top:10px}.pmr.off{opacity:.55}
+.pmh{display:flex;align-items:baseline;gap:10px}.pmh b{font-size:17px;letter-spacing:.04em}.pmh span{font-size:13px;color:var(--text-2)}.pmh em{margin-left:auto;font-style:normal;font-size:12px;color:var(--text-3)}
+.pmm{font-size:12.5px;color:var(--text-3);margin-top:3px}
+.pma{display:flex;gap:6px;margin-top:8px}.pma button,.pmnew{font-size:13px;padding:6px 12px;border-radius:999px;background:var(--fill-2);color:var(--text)}
+.pma .dz{color:var(--red)}.pmnew{margin-top:12px}
 .acc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fill);font-size:14px}
 .acc span{font-size:11px;color:var(--text-3);border:.5px solid var(--hair);border-radius:6px;padding:0 6px;white-space:nowrap}
 .acc b{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -407,6 +414,7 @@ function render() {
   if (c) c.onclick = e => { if (e.target.dataset.s !== undefined) { song = e.target.dataset.s; render(); } };
   const lc = document.getElementById('lchips');
   if (lc) lc.onclick = e => { if (e.target.dataset.l !== undefined) { lis = e.target.dataset.l; render(); } };
+  root.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => promoAct(b.dataset.pm, b.dataset.code, b));
   const oc = document.getElementById('ochips');
   if (oc) oc.onclick = e => { if (e.target.dataset.f !== undefined) { ofilter = e.target.dataset.f; render(); } };
   root.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
@@ -896,12 +904,48 @@ async function editNote(lid) {
     render();
   } catch (e) { alert('没存上，检查网络再试'); }
 }
+// ── 优惠码：建、看、停用、删；链接带 ?code= 客户打开价格页就自动带入 ──
+let PROMOS = null, promoLoading = false;
+async function loadPromos() {
+  if (promoLoading) return; promoLoading = true;
+  try { PROMOS = (await api('/promo/list')).promos; } catch (e) { PROMOS = PROMOS || []; }
+  promoLoading = false; if (tab === 'orders') render();
+}
+const PRICE_URL = 'https://cumusic.work/chefdao/price/';
+const promoRule = p => (p.kind === 'pct' ? ((100 - p.value) / 10) + ' 折' : '立减 ¥' + p.value) + (p.min ? ' · 满 ¥' + p.min : '');
+function promoBox() {
+  if (PROMOS === null) { loadPromos(); return '<details class="pmbox"><summary>优惠码</summary><div class="dim" style="padding:8px 0">加载中…</div></details>'; }
+  const now = Date.now();
+  return `<details class="pmbox"${PROMOS.some(p => p.active) ? ' open' : ''}><summary>优惠码 · ${PROMOS.filter(p => p.active).length} 个在用</summary>
+    ${PROMOS.map(p => { const exp = p.expires && now > p.expires, full = p.max && p.used >= p.max, on = p.active && !exp && !full;
+      const url = PRICE_URL + '?code=' + p.code;
+      return `<div class="pmr${on ? '' : ' off'}"><div class="pmh"><b>${esc(p.code)}</b><span>${esc(promoRule(p))}</span><em>${on ? '可用' : !p.active ? '已停用' : exp ? '已过期' : '已领完'}</em></div>
+      <div class="pmm">已用 ${p.used}${p.max ? ' / ' + p.max : ' 次'}${p.expires ? ' · 到 ' + new Date(p.expires).toLocaleDateString('sv-SE') : ''}${p.note ? ' · ' + esc(p.note) : ''}</div>
+      <div class="pma"><button data-pm="copy" data-code="${esc(p.code)}" data-url="${esc(url)}">复制链接</button><button data-pm="toggle" data-code="${esc(p.code)}">${p.active ? '停用' : '启用'}</button><button data-pm="del" data-code="${esc(p.code)}" class="dz">删除</button></div></div>`; }).join('') || '<div class="dim" style="padding:8px 0">还没有优惠码</div>'}
+    <button class="pmnew" data-pm="new">＋ 新建优惠码</button></details>`;
+}
+async function promoAct(act, code, btn) {
+  try {
+    if (act === 'copy') { const url = PRICE_URL + '?code=' + code; await navigator.clipboard.writeText(url); btn.textContent = '已复制'; setTimeout(() => { btn.textContent = '复制链接'; }, 1500); return; }
+    if (act === 'toggle') { const p = PROMOS.find(x => x.code === code); await lib('/promo/save', { ...p, active: !p.active, expires: p.expires ? new Date(p.expires).toLocaleDateString('sv-SE') : '' }); }
+    if (act === 'del') { if (!confirm('删除优惠码 ' + code + '？已经用过的订单不受影响')) return; await lib('/promo/del', { code }); }
+    if (act === 'new') {
+      const v = prompt('格式：码, 折扣, 次数, 截止日期\n例：CYPHER, 9折, 20, 2026-11-30\n折扣写「9折」或「减50」；码留空自动生成；次数、截止可以不写', ''); if (v === null) return;
+      const [c, d, n, e] = v.split(/\s*[,，]\s*/); let kind = 'pct', value = 0, m;
+      if (m = /^(\d+(?:\.\d+)?)\s*折$/.exec(d || '')) value = Math.round((10 - +m[1]) * 10);
+      else if (m = /^(?:减|-)?\s*(\d+)\s*(?:元)?$/.exec(d || '')) { kind = 'off'; value = +m[1]; }
+      if (!(value > 0)) return alert('折扣没看懂，写「9折」或「减50」');
+      await lib('/promo/save', { code: c || '', kind, value, max: +n || 0, expires: /^\d{4}-\d{2}-\d{2}$/.test(e || '') ? e : '', active: true });
+    }
+    PROMOS = null; render();
+  } catch (e) { alert('没成功，检查网络再试'); }
+}
 function renderOrders() {
   if (!pdata) return '<div class="msg">订单读不到（接口还没部署？）</div>';
   const now = pdata.now, all = pdata.orders;
   const f = OFILTERS.find(x => x[0] === ofilter);
   const list = f ? all.filter(f[2]) : all;
-  return `<div class="chips" id="ochips"><button data-f="" class="${f ? '' : 'on'}">全部 ${all.length}</button>${OFILTERS.map(([k, t, fn]) =>
+  return promoBox() + `<div class="chips" id="ochips"><button data-f="" class="${f ? '' : 'on'}">全部 ${all.length}</button>${OFILTERS.map(([k, t, fn]) =>
       `<button data-f="${k}" class="${ofilter === k ? 'on' : ''}">${t} ${all.filter(fn).length}</button>`).join('')}</div>
   <div class="feed">${list.length ? list.map(o => {
     const st = stepsOf(o), L = st.length - 1, k = Math.min(o.stage || 0, L), url = o.code ? TRACK + o.code : '', dt = datesOf(o);
@@ -911,6 +955,7 @@ function renderOrders() {
     ${place('o' + o.sid) || place(o.sid) ? `<div class="wx">下单地点 <b>${esc(place('o' + o.sid) || place(o.sid))}</b></div>` : ''}
     <div class="wx">${o.wechat ? `微信 <b>${esc(o.wechat)}</b><button data-copy="${esc(o.wechat)}">复制</button>` : '微信没填（客户说已经加过你）'}</div>
     <div class="plan"><b>${esc(o.plan || '—')}</b>${o.total != null ? ' · <b>' + money(o.total, o.cur) + '</b>' : ''}</div>
+    ${o.promo ? `<div class="wx">优惠码 <b>${esc(o.promo)}</b> · −${money(o.discount || 0, o.cur)} · 应付 <b>${money((o.total || 0) - (o.discount || 0), o.cur)}</b></div>` : ''}
     ${o.note ? `<div class="note">${esc(o.note)}</div>` : ''}
     ${o.detail ? `<details data-id="${o.id}"><summary>完整报价单${o.lid ? ' · ' + (lnote(o.lid) && lnote(o.lid).name ? esc(lnote(o.lid).name) + ' ' : '访客 ') + esc(o.lid) : ''}${o.lang !== 'zh' ? ' · ' + esc(o.lang) : ''}${o.pushed ? '' : ' · 未推送'}</summary><pre>${esc(o.detail)}</pre></details>` : ''}
     ${o.code ? `<div class="stg">

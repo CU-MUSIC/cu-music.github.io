@@ -890,6 +890,13 @@ html.qbo-lock, html.qbo-lock body { overflow: hidden; }
 .qbo-f input:focus, .qbo-f textarea:focus { border-color: var(--green-line); }
 .qbo-plan { background: var(--green-fill); border: 0.5px solid var(--green-line); border-radius: 10px; padding: 11px 13px; font-size: 14.5px; font-weight: 600; color: var(--green-soft); line-height: 1.5; }
 .qbo-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.qbo-pr { display: flex; gap: 8px; }
+.qbo-pr input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: 0.06em; }
+.qbo-pr button { flex-shrink: 0; padding: 0 16px; border-radius: 10px; border: 0.5px solid var(--green-line); background: var(--green-fill); color: var(--green-soft); font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; }
+.qbo-pm { margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); min-height: 0; }
+.qbo-pm:empty { display: none; }
+.qbo-pm.ok { color: var(--green-soft); font-weight: 600; }
+.qbo-pm.err { color: var(--warn); }
 .qbo-ferr { margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: var(--warn); }
 .qbo-err { min-height: 0; font-size: 13.5px; line-height: 1.55; color: var(--warn); }
 .qbo-err:not(:empty) { margin: 2px 0 4px; }
@@ -5234,18 +5241,24 @@ var QBO_T = {
 		plan: "所选方案与估价", note: "备注", notePh: "想要的风格、参考曲、交付时间……", send: "提交订单", sending: "提交中…", cancel: "取消",
 		ok: "下单成功", okSub: "我会尽快加你微信。如果着急，可以直接加我：{w}", close: "好的",
 		okTrack: "这是你的专属进度链接：付款、开工、交付都会在这里更新。我会尽快加你微信确认付款。", copyLink: "复制链接", copied: "已复制 ✓", openLink: "打开进度页 →",
+		promo: "优惠码（选填）", promoPh: "有就填，没有可以不填", promoApply: "使用", promoOk: "已优惠 {off}，应付 {final}", promoErr: "优惠码暂时验证不了，稍后再试",
+		promo_none: "这个优惠码不存在或已停用", promo_expired: "这个优惠码已过期", promo_used: "这个优惠码已被领完", promo_total: "先选好方案，再使用优惠码", promo_cur: "这个优惠码只适用于人民币报价", promo_min: "订单满 ¥{min} 才能使用这个优惠码", promo_rate: "试得太频繁了，稍后再试",
 		errName: "请填写称呼", errWechat: "请填写正确的微信号（5–40 位字母、数字或 _ -）", errNet: "没提交上，检查网络再试一次；或直接加微信 {w}", errRate: "提交太频繁了，稍后再试；或直接加微信 {w}" },
 	en: { btn: "Place order", title: "Place your order", sub: "You'll get a private progress link right away. Payment happens on WeChat; work starts once I confirm it. You can also add me on WeChat: {w}.",
 		name: "Your name", namePh: "e.g. Alex", wechat: "WeChat ID / email (optional)", wechatPh: "Skip if we're already connected", song: "Song title", songPh: "Optional",
 		plan: "Selected plan & estimate", note: "Notes", notePh: "Style, references, deadline…", send: "Place order", sending: "Sending…", cancel: "Cancel",
 		ok: "Order placed", okSub: "I'll be in touch soon. In a hurry? Add me on WeChat: {w}", close: "OK",
 		okTrack: "This is your private progress link: payment, work and delivery all update here. I'll add you on WeChat to confirm payment.", copyLink: "Copy link", copied: "Copied ✓", openLink: "Open progress page →",
+		promo: "Promo code (optional)", promoPh: "Enter it if you have one", promoApply: "Apply", promoOk: "Discount {off}, you pay {final}", promoErr: "Couldn't verify the code, try again later",
+		promo_none: "This code doesn't exist or is no longer active", promo_expired: "This code has expired", promo_used: "This code has been fully claimed", promo_total: "Pick a plan first, then apply the code", promo_cur: "This code only applies to CNY quotes", promo_min: "Orders of ¥{min} or more only", promo_rate: "Too many tries, please wait a moment",
 		errName: "Please enter your name", errWechat: "Please enter a valid WeChat ID / email (5–40 characters)", errNet: "Couldn't send. Check your connection, or add WeChat {w}", errRate: "Too many attempts, try again later, or add WeChat {w}" },
 	ko: { btn: "주문하기", title: "주문하기", sub: "제출하면 바로 전용 진행 링크가 생성됩니다. 결제는 위챗으로 진행되며 입금 확인 후 작업을 시작합니다. 위챗 {w} 로 바로 추가하셔도 됩니다.",
 		name: "이름", namePh: "예: 민수", wechat: "위챗 ID / 이메일 (선택)", wechatPh: "이미 연락 중이면 비워 두셔도 됩니다", song: "곡 제목", songPh: "선택 사항",
 		plan: "선택한 구성과 예상 견적", note: "메모", notePh: "원하는 스타일, 레퍼런스, 납기…", send: "주문하기", sending: "보내는 중…", cancel: "취소",
 		ok: "주문 완료", okSub: "곧 연락드리겠습니다. 급하시면 위챗 {w} 로 추가해 주세요.", close: "확인",
 		okTrack: "전용 진행 링크입니다. 결제, 작업, 납품 상황이 여기에서 업데이트됩니다. 위챗으로 결제 확인 연락드리겠습니다.", copyLink: "링크 복사", copied: "복사됨 ✓", openLink: "진행 페이지 열기 →",
+		promo: "프로모션 코드 (선택)", promoPh: "있으면 입력해 주세요", promoApply: "적용", promoOk: "{off} 할인, 결제 금액 {final}", promoErr: "코드를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요",
+		promo_none: "존재하지 않거나 사용이 중지된 코드입니다", promo_expired: "만료된 코드입니다", promo_used: "모두 사용된 코드입니다", promo_total: "먼저 구성을 선택한 뒤 코드를 적용해 주세요", promo_cur: "이 코드는 위안화 견적에만 적용됩니다", promo_min: "¥{min} 이상 주문에만 사용할 수 있습니다", promo_rate: "시도가 너무 잦습니다. 잠시 후 다시 시도해 주세요",
 		errName: "이름을 입력해 주세요", errWechat: "올바른 위챗 ID / 이메일을 입력해 주세요 (5–40자)", errNet: "전송 실패. 네트워크를 확인하거나 위챗 {w} 로 연락 주세요", errRate: "요청이 너무 잦습니다. 잠시 후 다시 시도하거나 위챗 {w} 로 연락 주세요" }
 };
 function qbOrderT() { return QBO_T[currentLang] || QBO_T.zh; }
@@ -5276,6 +5289,7 @@ function qbOrderOpen() {
 		+ '<label class="qbo-f"><span>' + t.wechat + '</span><input id="qbo-wx" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + t.wechatPh + '" value="' + qbOrderEsc(saved.wechat) + '"></label>'
 		+ '<label class="qbo-f"><span>' + t.song + '</span><input id="qbo-song" maxlength="60" placeholder="' + t.songPh + '"></label>'
 		+ '<div class="qbo-f"><span>' + t.plan + '</span><div class="qbo-plan">' + qbOrderEsc(planTxt) + '</div></div>'
+		+ '<div class="qbo-f"><span>' + t.promo + '</span><div class="qbo-pr"><input id="qbo-promo" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="' + t.promoPh + '" value="' + qbOrderEsc(qbLsGet("cd_promo") || "") + '"><button type="button" id="qbo-promo-go">' + t.promoApply + '</button></div><div class="qbo-pm" id="qbo-pm" role="status"></div></div>'
 		+ '<label class="qbo-f"><span>' + t.note + '</span><textarea id="qbo-note" maxlength="500" rows="3" placeholder="' + t.notePh + '"></textarea></label>'
 		// 蜜罐：真人看不见也点不到，机器人会顺手填上
 		+ '<label class="qbo-hp" aria-hidden="true">Website<input id="qbo-hp" name="website" tabindex="-1" autocomplete="off"></label>'
@@ -5288,6 +5302,10 @@ function qbOrderOpen() {
 	requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("on"); }); });
 	qbOrderOpened = Date.now();
 	qbOrderLast = { plan: qbStatPlan(), total: total, sch: qbOrderSchedule() };
+	qbPromo = null;
+	var pgo = document.getElementById("qbo-promo-go"), pin = document.getElementById("qbo-promo");
+	if (pgo) pgo.onclick = function () { qbPromoApply(); };
+	if (pin) { pin.onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); qbPromoApply(); } }; if (pin.value.trim()) qbPromoApply(); }
 	qbStatHit("form");
 	document.addEventListener("keydown", qbOrderKey);
 	if (!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) setTimeout(function () { var f = document.getElementById(saved.name ? "qbo-song" : "qbo-name"); if (f) f.focus(); }, 80);
@@ -5297,6 +5315,26 @@ function qbStatPlanLocal() {
 	var z = I18N[currentLang].quote, s = qbState;
 	var name = s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
 	return (s.mode === "stems" ? z.modeStems : z.modeVocal) + " · " + name + " · " + s.count + z.countUnit;
+}
+// 优惠码：?code=XXX 打开价格页会记下，下单表单自动带入；折扣由服务端算，这里只是预览
+var qbPromo = null;
+(function () { try { var c = new URLSearchParams(location.search).get("code"); if (c) qbLsSet("cd_promo", c.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 20)); } catch (e) {} })();
+function qbPromoApply() {
+	var t = qbOrderT(), inp = document.getElementById("qbo-promo"), pm = document.getElementById("qbo-pm");
+	if (!inp || !pm) return;
+	var code = inp.value.trim().toUpperCase().replace(/[^A-Z0-9-]/g, ""), sym = { zh: "¥", en: "$", ko: "₩" }[currentLang] || "¥";
+	qbPromo = null; pm.className = "qbo-pm";
+	if (!code) { pm.textContent = ""; qbLsSet("cd_promo", ""); return; }
+	pm.textContent = "…";
+	fetch(QBS_API + "/promo?c=" + encodeURIComponent(code) + "&total=" + (qbOrderLast && qbOrderLast.total || 0) + "&lang=" + currentLang)
+		.then(function (r) { return r.json(); })
+		.then(function (j) {
+			if (!j.ok) { pm.className = "qbo-pm err"; pm.textContent = (t["promo_" + j.e] || t.promoErr).replace("{min}", j.min || ""); return; }
+			qbPromo = { code: j.code, off: j.off, final: j.final };
+			pm.className = "qbo-pm ok"; pm.textContent = t.promoOk.replace("{off}", sym + j.off.toLocaleString("en-US")).replace("{final}", sym + j.final.toLocaleString("en-US"));
+			qbLsSet("cd_promo", j.code);
+		})
+		.catch(function () { pm.className = "qbo-pm err"; pm.textContent = t.promoErr; });
 }
 function qbOrderKey(e) { if (e.key === "Escape") qbOrderClose(); }
 function qbOrderClose() {
@@ -5330,12 +5368,14 @@ function qbOrderSend(e) {
 	btn.disabled = true; btn.textContent = t.sending;
 	qbLsSet("cd_order_me", JSON.stringify({ name: name, wechat: wx }));
 	var detail = ""; try { detail = qbQuoteText(); } catch (x) {}
-	var body = JSON.stringify({ name: name, wechat: wx, song: v("qbo-song"), note: v("qbo-note"), website: v("qbo-hp"),
+	if (qbPromo) { var sy = { zh: "¥", en: "$", ko: "₩" }[currentLang] || "¥"; detail += "\n" + (currentLang === "zh" ? "优惠码 " : "Promo ") + qbPromo.code + " −" + sy + qbPromo.off + " → " + sy + qbPromo.final; }
+	var body = JSON.stringify({ name: name, wechat: wx, song: v("qbo-song"), note: v("qbo-note"), website: v("qbo-hp"), promo: qbPromo ? qbPromo.code : "",
 		plan: qbOrderLast.plan, total: qbOrderLast.total, sch: qbOrderLast.sch, detail: detail, lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
 	var fail = function (msg) { err.textContent = msg.replace("{w}", w); btn.disabled = false; btn.textContent = t.send; };
 	fetch(QBS_API + "/o", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
 		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
 		.then(function (j) {
+			if (!j.ok && j.e === "promo") { btn.disabled = false; btn.textContent = t.send; var pm2 = document.getElementById("qbo-pm"); qbPromo = null; if (pm2) { pm2.className = "qbo-pm err"; pm2.textContent = t["promo_" + j.why] || t.promoErr; } return; }
 			if (!j.ok) { if (j.e === "field") { btn.disabled = false; btn.textContent = t.send; return qbOrderFieldErr("qbo-wx", t.errWechat); } return fail(j.status === 429 ? t.errRate : t.errNet); }
 			qbStatHit("ordered");
 			var sh = document.querySelector("#qbo .qbo-sheet");
