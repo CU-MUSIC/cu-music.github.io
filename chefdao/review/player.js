@@ -222,7 +222,7 @@ if (window.visualViewport) {
   const vv = window.visualViewport;
   const fit = () => {
     const L = document.getElementById('lock'); if (!L) return;
-    const kb = vv.height < window.innerHeight * 0.82;
+    const kb = vv.height < window.innerHeight - 120;
     L.classList.toggle('kb', kb);
     L.style.bottom = kb ? 'auto' : ''; L.style.height = kb ? vv.height + 'px' : ''; L.style.top = kb ? vv.offsetTop + 'px' : '';
   };

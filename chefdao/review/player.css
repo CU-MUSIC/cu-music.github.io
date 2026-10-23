@@ -66,12 +66,13 @@ svg{display:block}
 .dots i.on{background:var(--text);border-color:var(--text);transform:scale(1.08)}
 .dots.shake{animation:shake .5s cubic-bezier(.36,.07,.19,.97)}
 @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(5px)}30%,50%,70%{transform:translateX(-10px)}40%,60%{transform:translateX(10px)}}
-.pin{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.pin{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;font-size:16px}   /* 16px：iPhone 聚焦时不自动放大页面 */
 /* 键盘弹出：封面缩小、间距收紧，保证歌名、提示和密码点都在键盘上方 */
-.lock.kb{justify-content:center;padding-top:12px;padding-bottom:12px}
-.lock.kb .art{width:72px;height:72px;border-radius:16px;margin-bottom:14px}
-.lock.kb h1{font-size:22px}
-.lock.kb .ask{margin-top:18px}
+/* 键盘弹出：内容贴着可见区域顶部排，封面缩小，密码点留在键盘上面 */
+.lock.kb{justify-content:flex-start;padding-top:max(20px,env(safe-area-inset-top));padding-bottom:12px}
+.lock.kb .art{width:56px;height:56px;border-radius:14px;margin-bottom:12px}
+.lock.kb h1{font-size:20px}
+.lock.kb .ask{margin-top:14px}
 .spin{width:20px;height:20px;border-radius:50%;border:2px solid var(--fill-3);border-top-color:var(--text);animation:spin .8s linear infinite;margin:18px auto 0;display:none}
 .lock.busy .spin{display:block}
 .lock.busy .dots{display:none}

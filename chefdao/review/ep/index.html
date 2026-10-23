@@ -43,7 +43,12 @@ h1{margin-top:6px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:
 .dots i.on{background:var(--text);border-color:var(--text);transform:scale(1.08)}
 .dots.shake{animation:sh .5s}
 @keyframes sh{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-.pin{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.pin{position:absolute;left:50%;bottom:0;opacity:0;width:1px;height:1px;pointer-events:none;font-size:16px}
+#gate{position:relative;display:flex;flex-direction:column;align-items:center}
+/* 键盘弹出：封面缩小、上下留白收紧，密码点留在键盘上面 */
+body.kb{padding-top:16px}
+body.kb .cv{width:96px;border-radius:12px}body.kb .cv::after{display:none}
+body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:16px}
 #list{width:100%}
 .list{width:100%;margin-top:30px;display:flex;flex-direction:column;border-top:.5px solid var(--hair)}
 .tr{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:15px 4px;border-bottom:.5px solid var(--hair);color:var(--text);text-decoration:none;text-align:left;
@@ -129,6 +134,16 @@ function tilt() {
 }
 const pin = document.getElementById('pin'), dots = [...document.querySelectorAll('#dots i')], ask = document.getElementById('ask');
 const focus = () => pin.focus({ preventScroll: true });
+// 手机键盘弹出时把页面收紧，密码点还挡着就往上滚一点
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  const fit = () => {
+    const g = document.getElementById('gate'), kb = !!g && vv.height < window.innerHeight - 120;
+    document.body.classList.toggle('kb', kb);
+    if (kb) requestAnimationFrame(() => { const r = g.getBoundingClientRect(), over = r.bottom - (vv.offsetTop + vv.height) + 20; if (over > 0) window.scrollBy(0, over); });
+  };
+  vv.addEventListener('resize', fit);
+}
 document.getElementById('dots').onclick = focus; m.onclick = e => { if (!e.target.closest('a')) focus(); };
 const ub64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 const dec = (key, s) => { const c = ub64(s); return crypto.subtle.decrypt({ name: 'AES-GCM', iv: c.subarray(0, 12) }, key, c.subarray(12)); };
