@@ -138,5 +138,5 @@ async function cuUpload(o) {
   bar(1);
   return { slug: prep.slug, title: prep.title, pass: prep.pass, ver, url: res.url, next: prep.next };
 }
-window.cuUpload = cuUpload; window.cuNameInfo = cuNameInfo;
+window.cuUpload = cuUpload; window.cuNameInfo = cuNameInfo; window.cuStage = cuStage;
 })();
