@@ -256,7 +256,7 @@ const m = /[#&]k=([\w-]+)/.exec(location.hash);
 if (m) { store.set('insights:key', m[1]); history.replaceState(null, '', location.pathname); }
 if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
 let KEY = store.get('insights:key');
-let days = +store.get('insights:days') || 30, song = '', data = null, pdata = null;
+let days = +store.get('insights:days') || 30, song = '', lis = '', data = null, pdata = null;
 let tab = store.get('insights:tab') || 'listen', ofilter = '';
 const TABS = [['lib', 'Library'], ['listen', '审听'], ['beat', '伴奏'], ['price', '价格页'], ['orders', '订单']];
 // 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
@@ -398,6 +398,8 @@ function render() {
   if (sg) sg.onclick = e => { const d = +e.target.dataset.d; if (d) { days = d; store.set('insights:days', d); render(); } };
   const c = document.getElementById('chips');
   if (c) c.onclick = e => { if (e.target.dataset.s !== undefined) { song = e.target.dataset.s; render(); } };
+  const lc = document.getElementById('lchips');
+  if (lc) lc.onclick = e => { if (e.target.dataset.l !== undefined) { lis = e.target.dataset.l; render(); } };
   const oc = document.getElementById('ochips');
   if (oc) oc.onclick = e => { if (e.target.dataset.f !== undefined) { ofilter = e.target.dataset.f; render(); } };
   root.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
@@ -454,9 +456,13 @@ function renderListen() {
   const s = series(rows, now);
   const listeners = new Set(rows.map(x => x.lid)).size;
 
+  // 听众筛选：只看某个人的动态（按最近听过排）
+  const people = [...new Map([...rows].sort((p, q) => q.updated - p.updated).map(x => [x.lid, x])).keys()];
+  if (lis && !people.includes(lis)) lis = '';
+  const nameOf = l => { const n = lnote(l); return n && n.name ? n.name : l; };
   // 按一次打开（sid）合并成一条动态
   const groups = new Map();
-  rows.forEach(x => { if (!groups.has(x.sid)) groups.set(x.sid, []); groups.get(x.sid).push(x); });
+  rows.filter(x => !lis || x.lid === lis).forEach(x => { if (!groups.has(x.sid)) groups.set(x.sid, []); groups.get(x.sid).push(x); });
   const feed = [...groups.values()].map(g => g.sort((p, q) => p.started - q.started))
     .sort((p, q) => Math.max(...q.map(x => x.updated)) - Math.max(...p.map(x => x.updated))).slice(0, 60);
 
@@ -468,6 +474,8 @@ function renderListen() {
     <div class="card"><div class="lb">听众</div><div class="n">${listeners}</div><div class="d">近 ${days} 天</div>${spark(s.listeners)}</div>
   </div>
   <div class="sect">最近动态<span>${feed.length ? '共 ' + groups.size + ' 次打开' : ''}</span></div>
+  ${people.length > 1 ? `<div class="chips" id="lchips"><button data-l="" class="${lis ? '' : 'on'}">所有听众</button>${people.map(l =>
+    `<button data-l="${esc(l)}" class="${lis === l ? 'on' : ''}">${esc(nameOf(l))}</button>`).join('')}</div>` : ''}
   <div class="feed">${feed.length ? feed.map(g => {
     const x = g[0], last = Math.max(...g.map(y => y.updated));
     return `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">

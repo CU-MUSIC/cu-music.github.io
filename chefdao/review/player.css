@@ -269,9 +269,9 @@ svg{display:block}
 }
 
 /* 刀大厨自己的设备：上传 / 删除版本 */
-.own{position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 12px;border:1px dashed var(--fill-3);border-radius:12px;font-size:13px;color:var(--text-2)}
+.own{position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding:10px 12px;border:1px dashed var(--fill-3);border-radius:12px;font-size:13px;color:var(--text-2)}
 .own[hidden]{display:none}
-.own span{flex:1;min-width:0}
+.own span{flex:1 1 100%;min-width:0}   /* 提示文字单独一行，按钮在下面一排排开，手机上不会被挤成竖排 */
 .own button{flex-shrink:0;font-size:13px;padding:6px 12px;border-radius:999px;background:var(--fill-2);color:var(--text)}
 .own::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:var(--p,0);background:var(--text);transition:width .25s}
 .own.busy button{opacity:.4;pointer-events:none}
