@@ -116,7 +116,7 @@ document.body.innerHTML = `
   <section class="mst" id="mst" hidden></section>
   <aside class="plist" id="plist" hidden></aside>
 
-  <div class="sect">评论<span class="r" id="tipline">听到想改的地方，直接写</span></div>
+  <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
     <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT">0:00</span></span>
     <textarea id="txt" rows="1" placeholder="留下评论…"></textarea>
@@ -1017,6 +1017,16 @@ if (location.hash === '#notme') store.del('review:me');   // 自己测试时用
 const ME = store.get('review:me') === '1';
 let lid = store.get('review:lid');
 if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.set('review:lid', lid); }
+// 听众自己留名字：看板和微信通知里显示名字而不是随机编号（你自己的设备不显示这个按钮）
+let myName = store.get('review:name') || '';
+const meLabel = () => myName ? myName + '（' + lid + '）' : '听众 ' + lid;
+const showMe = () => { $('#meName').textContent = myName ? '我是 ' + myName : '留个名字'; $('#meName').classList.toggle('set', !!myName); };
+showMe(); if (ME || store.get('insights:key')) $('#meName').hidden = true;
+$('#meName').onclick = () => {
+  const v = prompt('你的名字或 ID', myName); if (v === null) return;
+  myName = v.trim().slice(0, 30); store.set('review:name', myName); showMe();
+  if (WK) fetch(API_BASE + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, lid, name: myName }) }).catch(() => {});
+};
 const visits = (+store.get('review:visits:' + S.slug) || 0) + 1; store.set('review:visits:' + S.slug, visits);
 const ua = navigator.userAgent;
 // 来源：在哪个 App 里打开的（App 内置浏览器会在 UA 里留名字）；也认链接上的 ?from=xxx
@@ -1064,7 +1074,7 @@ a.addEventListener('ended', () => { st().ends++; });
 a.addEventListener('play', () => {
   const s = st(); if (s.pinged) return; s.pinged = true; track(vi);
   beacon('▶ 听众 ' + lid + ' 在听《' + S.title + '》' + cur.ver,
-    '<p><b>听众 ' + lid + '</b> 开始听 <b>《' + esc(S.title) + '》' + esc(cur.ver) + '</b></p><p>' + clock() + ' · ' + device + ' · 第 ' + visits + ' 次打开</p>');
+    '<p><b>' + esc(meLabel()) + '</b> 开始听 <b>《' + esc(S.title) + '》' + esc(cur.ver) + '</b></p><p>' + clock() + ' · ' + device + ' · 第 ' + visits + ' 次打开</p>');
 });
 const mmss = sec => Math.floor(sec / 60) + ' 分 ' + Math.round(sec % 60) + ' 秒';
 function report() {
@@ -1088,7 +1098,7 @@ function report() {
   });
   if (!parts.length) return;
   beacon('听众 ' + lid + ' · 《' + S.title + '》收听报告',
-    '<p><b>听众 ' + lid + '</b> · ' + clock() + ' · ' + device + '</p>' + parts.join(''));
+    '<p><b>' + esc(meLabel()) + '</b> · ' + clock() + ' · ' + device + '</p>' + parts.join(''));
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') report(); else loadReplies(); });
 setInterval(() => { if (!a.paused) track(vi); }, 30000);

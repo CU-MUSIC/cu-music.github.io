@@ -459,7 +459,7 @@ function renderListen() {
   // 听众筛选：只看某个人的动态（按最近听过排）
   const people = [...new Map([...rows].sort((p, q) => q.updated - p.updated).map(x => [x.lid, x])).keys()];
   if (lis && !people.includes(lis)) lis = '';
-  const nameOf = l => { const n = lnote(l); return n && n.name ? n.name : l; };
+  const nameOf = l => { const n = lnote(l); return (n && (n.name || n.self)) || l; };
   // 按一次打开（sid）合并成一条动态
   const groups = new Map();
   rows.filter(x => !lis || x.lid === lis).forEach(x => { if (!groups.has(x.sid)) groups.set(x.sid, []); groups.get(x.sid).push(x); });
@@ -861,7 +861,9 @@ async function rsAction(slug, act, btn) {
 function lnote(lid) { return ((data && data.listeners) || []).find(x => x.lid === lid) || null; }
 function who(lid, kind) {
   const n = lnote(lid);
-  return `<b class="ln" data-ln="${esc(lid)}">${n && n.name ? esc(n.name) + ' <span class="lid">' + esc(lid) + '</span>' : kind + ' ' + esc(lid) + ' <span class="lid add">＋备注</span>'}</b>`;
+  // 你写的备注名优先；没写就用听众自己在审听页留的名字
+  return `<b class="ln" data-ln="${esc(lid)}">${n && n.name ? esc(n.name) + ' <span class="lid">' + esc(lid) + '</span>'
+    : n && n.self ? esc(n.self) + ' <span class="lid">' + esc(lid) + ' · 自填</span>' : kind + ' ' + esc(lid) + ' <span class="lid add">＋备注</span>'}</b>`;
 }
 async function editNote(lid) {
   const n = lnote(lid) || { lid, name: '' };
