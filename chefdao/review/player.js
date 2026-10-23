@@ -92,7 +92,7 @@ document.body.innerHTML = `
       `<button class="vrow press" data-i="${i}"><span class="vn">${esc(V[i].ver)}</span><span class="hasdot"></span></button>`).join('')}</div>`).join('');
   })()}</section>
 
-  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span id="rem">-${fmt(cur.duration)}</span></div>
   <div class="transport">
@@ -146,12 +146,26 @@ const rk = (ver, t, m) => ver + '|' + (Math.round(t * 10) / 10) + '|' + m;
 const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 
 /* ───────── 加解密 ───────── */
-async function keyFor(pw) {
-  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: ub64(S.salt), iterations: S.iter, hash: 'SHA-256' },
+const OPEN = 'cu-open';   // 不设密码的歌用这个公开口令加密
+async function keyFor(pw, salt = S.salt) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw || OPEN), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: ub64(salt), iterations: S.iter, hash: 'SHA-256' },
     base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
 }
 const open = (key, u8) => crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.subarray(0, 12) }, key, u8.subarray(12));
+// 先当这首歌的密码试；不对再当项目密码试，用项目密钥解出这首歌自己的密码
+const PJ_KEY = S.project ? 'review:pj:' + S.project.slug : '';
+async function songKey(pw) {
+  let key = await keyFor(pw);
+  try { await open(key, ub64(S.check)); return { key, pw }; } catch (e) {}
+  const P = S.project; if (!P || !P.wrap || !P.salt) throw new Error('pw');
+  const pk = await keyFor(pw, P.salt);
+  await open(pk, ub64(P.check));
+  const spw = new TextDecoder().decode(await open(pk, ub64(P.wrap)));
+  key = await keyFor(spw); await open(key, ub64(S.check));
+  store.set(PJ_KEY, pw);
+  return { key, pw: spw };
+}
 
 /* ───────── 歌名：第一次输密码时先是模糊的，每输一位清楚一点；密码对了、要进入播放页的那一刻，快速闪一下乱码解出歌名 ─────────
    记住过密码的设备再打开，歌名直接清晰显示，不做这些效果 */
@@ -210,9 +224,8 @@ pin.addEventListener('input', () => {
 async function tryUnlock(pw, typed) {
   $('#lock').classList.add('busy'); pin.blur();
   try {
-    const key = await keyFor(pw);
-    await open(key, ub64(S.check));                       // 密码错会在这里抛错
-    store.set(PW_KEY, pw);
+    const { key, pw: spw } = await songKey(pw);           // 密码错会在这里抛错
+    store.set(PW_KEY, spw);
     document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
@@ -228,6 +241,8 @@ async function tryUnlock(pw, typed) {
   } catch (e) {
     $('#lock').classList.remove('busy');
     store.del(PW_KEY);
+    const pj = PJ_KEY && store.get(PJ_KEY);   // 记住的单曲密码过期了（比如项目改过密码）：再用记住的项目密码试一次
+    if (!typed && pj && pj !== pw) return tryUnlock(pj, false);
     scr.fail();
     if (typed) {
       $('#ask').textContent = '密码不对，再试一次'; $('#ask').classList.add('err');
@@ -586,17 +601,19 @@ function ownerTools() {
     const r = await fetch(live.api + path, { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({ ok: false })); if (!j.ok) throw new Error(j.e || r.status); return j;
   };
-  // 分享：一键复制「歌名 / 链接 / 密码」三行发给客户（有项目就发项目页）
-  let share = null;
-  fetch(live.api + '/lib', { headers: { Authorization: 'Bearer ' + key } }).then(r => r.json()).then(j => {
-    if (!j.ok) return;
-    const p = j.projects.find(x => x.tracks.some(t => t.slug === S.slug)), x = p || j.loose.find(y => y.slug === S.slug);
-    if (x) share = '《' + x.title + '》\n' + x.url + '\n密码 ' + x.pass;
+  // 分享：一键复制「歌名 / 链接 / 密码」三行发给客户。「分享」发这首歌；在多首的项目里另有「分享项目」
+  const share = {}, line = x => '《' + x.title + '》\n' + x.url + (x.pass ? '\n密码 ' + x.pass : '');
+  const get = p => fetch(live.api + p, { headers: { Authorization: 'Bearer ' + key } }).then(r => r.json());
+  get('/radm/list').then(j => { const x = j.ok && j.songs.find(y => y.slug === S.slug); if (x) share.song = line({ ...x, title: S.title }); }).catch(() => {});
+  get('/lib').then(j => {
+    const p = j.ok && j.projects.find(x => x.tracks.length > 1 && x.tracks.some(t => t.slug === S.slug));
+    if (p) { share.project = line(p); $('#ownShareP').hidden = false; $('#ownShare').textContent = '分享这首'; }
   }).catch(() => {});
-  $('#ownShare').onclick = async () => {
-    if (!share) return busy('还在读取链接，稍等再点');
-    await copy(share); const b = $('#ownShare'); b.textContent = '已复制'; setTimeout(() => { b.textContent = '分享'; }, 1500);
-  };
+  const shareBtn = (id, k) => { const b = $(id), label = b.textContent; b.onclick = async () => {
+    if (!share[k]) return busy('还在读取链接，稍等再点');
+    await copy(share[k]); const t = b.textContent; b.textContent = '已复制'; setTimeout(() => { b.textContent = t; }, 1500);
+  }; };
+  shareBtn('#ownShare', 'song'); shareBtn('#ownShareP', 'project');
   // 每个版本旁边一个「删除」
   document.querySelectorAll('.vrow').forEach(row => {
     const v = V[+row.dataset.i], x = document.createElement('span');
@@ -617,7 +634,7 @@ function ownerTools() {
     own.appendChild(x);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261022'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261023'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
@@ -1009,6 +1026,9 @@ setInterval(() => { if (!a.paused) track(vi); }, 30000);
 addEventListener('pagehide', report);
 
 /* 记住过密码就直接进 */
-const saved = store.get(PW_KEY);
-if (saved) tryUnlock(saved, false); else setTimeout(focusPin, 300);
+const saved = store.get(PW_KEY), pjSaved = PJ_KEY && store.get(PJ_KEY);
+if (S.open || (S.project && S.project.open && S.project.wrap && !saved)) tryUnlock('', false);   // 不设密码：直接进
+else if (saved) tryUnlock(saved, false);
+else if (pjSaved) tryUnlock(pjSaved, false);
+else setTimeout(focusPin, 300);
 })();

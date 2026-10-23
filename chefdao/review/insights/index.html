@@ -124,7 +124,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .pjlink button,.pjlink a{font-size:13px;padding:5px 12px;border-radius:999px;background:var(--fill-2);color:var(--text);text-decoration:none}
 .pjlink button{background:var(--pearl);color:var(--ink);font-weight:600}
 .pjtr{display:flex;flex-direction:column}
-.pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
+.pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
 .pjtr .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pjtr .t i{font-style:normal;color:var(--text-3);font-size:12px}
 .pjtr button{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
@@ -235,7 +235,7 @@ button.av{cursor:pointer;padding:0}
 </head>
 <body>
 <div class="wrap" id="root"></div>
-<script src="../upload.js?v=20261022"></script>
+<script src="../upload.js?v=20261023"></script>
 <script>
 (() => {
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
@@ -291,7 +291,7 @@ async function load() {
     const auth = { headers: { Authorization: 'Bearer ' + KEY } };
     const [r, r2, r3] = await Promise.all([fetch(API + '/q?days=90', auth), fetch(API + '/pq?days=90', auth).catch(() => null), fetch(API + '/radm/list', auth).catch(() => null)]);
     const j3 = r3 && r3.ok ? await r3.json().catch(() => null) : null;
-    try { const jl = await (await fetch(API + '/lib', auth)).json(); if (jl.ok) LIB = jl; } catch (e) {}
+    try { const jl = await (await fetch(API + '/lib', auth)).json(); if (jl.ok) { LIB = jl; setTimeout(ensureWraps, 1500); } } catch (e) {}
     if (j3 && j3.ok) RSONGS = j3.songs;
     if (r.status === 401) { store.del('insights:key'); KEY = null; return login(true); }
     const j = await r.json(); if (!j.ok) throw new Error();
@@ -707,6 +707,7 @@ async function lib(path, body, method) {
 async function libReload(open) {
   try { const j = await (await fetch(API + '/lib', { headers: { Authorization: 'Bearer ' + KEY } })).json(); if (j.ok) LIB = j; } catch (e) {}
   render(); if (open) openProject(open);
+  ensureWraps();
 }
 // 封面：浏览器里缩到 1200px 以内转 JPEG 再传
 async function shrink(file) {
@@ -724,12 +725,12 @@ function openProject(slug) {
     <div class="pjtop"><button type="button" class="pjcv" id="pjCv" title="换封面">${coverOf(p)}<span>换封面</span></button>
       <div class="pjf"><label>项目名<input type="text" id="pjT" value="${esc(p.title)}"></label><label>歌手<input type="text" id="pjA" value="${esc(p.artist || '')}" placeholder="多位用逗号分开，例如：阿杰, Uin"></label>
       <div class="row"><label>类型<select id="pjK">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}"${p.kind === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
-      <label>密码<input type="tel" id="pjP" maxlength="4" value="${esc(p.pass)}"></label></div></div></div>
+      <label>密码<input type="tel" id="pjP" maxlength="4" value="${esc(p.pass)}" placeholder="不设密码"></label></div></div></div>
     <input type="file" id="pjFile" accept="image/*" hidden>
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
     <div class="sect">曲目<span>${p.tracks.length} 首</span></div>
     <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i></span>
-      <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
+      <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-sh="${i}">分享</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
     <div class="msg2" id="pjMsg"></div>
     <div class="row"><button type="button" class="go" id="pjSave">保存</button><button type="button" class="ghost danger" id="pjDel">删除项目</button></div></div>`;
@@ -740,6 +741,14 @@ function openProject(slug) {
   const setTracks = async list => { try { await lib('/lib/tracks', { project: slug, songs: list }); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } };
   const order = p.tracks.map(t => t.slug);
   el.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const i = +b.dataset.mv, j = i + +b.dataset.d; [order[i], order[j]] = [order[j], order[i]]; setTracks(order); });
+  // 曲目单独分享：复制这首歌自己的链接和密码（打开项目时先把歌曲清单取好，点的时候直接复制）
+  const songsP = api('/radm/list').catch(() => null);
+  el.querySelectorAll('[data-sh]').forEach(b => b.onclick = async () => {
+    const t = p.tracks[+b.dataset.sh];
+    try { const x = (await songsP).songs.find(y => y.slug === t.slug); if (!x) throw 0;
+      await navigator.clipboard.writeText(shareText(x.title, x.url, x.pass)); b.textContent = '已复制'; setTimeout(() => { b.textContent = '分享'; }, 1500); }
+    catch (e) { msg('没复制成，检查网络再试', true); }
+  });
   el.querySelectorAll('[data-rn]').forEach(b => b.onclick = async () => {
     const t = p.tracks[+b.dataset.rn], v = prompt('歌名', t.title); if (!v || !v.trim() || v.trim() === t.title) return;
     try { await lib('/radm/meta', { slug: t.slug, title: v.trim() }); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); }
@@ -757,10 +766,10 @@ function openProject(slug) {
       const j = await r.json(); if (!j.ok) throw new Error(); await libReload(slug);
     } catch (e) { msg('封面没传上，换一张图或检查网络', true); }
   };
-  $p('pjCopy').onclick = () => { const t = '《' + $p('pjT').value + '》\n' + p.url + '\n密码 ' + $p('pjP').value;
+  $p('pjCopy').onclick = () => { const t = shareText($p('pjT').value, p.url, $p('pjP').value);
     const done = () => { $p('pjCopy').textContent = '已复制'; }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
   $p('pjSave').onclick = async () => {
-    if (!/^\d{4}$/.test($p('pjP').value)) return msg('密码要 4 位数字', true);
+    if (!/^(\d{4})?$/.test($p('pjP').value)) return msg('密码要 4 位数字，或者留空不设密码', true);
     try { const pw = $p('pjP').value, sec = pw !== p.pass ? await sealPass(pw) : {};
       await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.trim(), kind: $p('pjK').value, ...sec }); msg('已保存'); await libReload(slug); }
     catch (e) { msg('没保存上，检查网络再试', true); }
@@ -771,9 +780,32 @@ function openProject(slug) {
   };
 }
 // 项目密码校验块在浏览器里算（和审听页同一套 PBKDF2 → AES-GCM 'ok'），接口只存结果
+// 不设密码的歌 / 项目：用公开的固定口令加密，页面打开直接进
+const OPEN = 'cu-open';
+const shareText = (title, url, pass) => '《' + title + '》\n' + url + (pass ? '\n密码 ' + pass : '');
+const pbk = async (pass, salt, use) => crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 310000, hash: 'SHA-256' },
+  await crypto.subtle.importKey('raw', new TextEncoder().encode(pass || OPEN), 'PBKDF2', false, ['deriveKey']), { name: 'AES-GCM', length: 256 }, false, use);
+// 项目密码 → 单曲密码：每首歌的密码用项目密钥加密成 wrap，客户输对项目密码，每首歌都能直接进（项目改密码后自动重算）
+let wrapping = false;
+async function ensureWraps() {
+  if (wrapping || !LIB) return; wrapping = true;
+  try {
+    const todo = LIB.projects.filter(p => p.salt && p.tracks.some(t => !t.wrap)); if (!todo.length) return;
+    const pass = new Map((await api('/radm/list')).songs.map(x => [x.slug, x.pass]));
+    const ub = s => Uint8Array.from(atob(s), c => c.charCodeAt(0)), b64 = u8 => btoa(String.fromCharCode(...u8));
+    for (const p of todo) {
+      const key = await pbk(p.pass, ub(p.salt), ['encrypt']), wraps = [];
+      for (const t of p.tracks) if (!t.wrap && pass.has(t.slug)) {
+        const iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(pass.get(t.slug))));
+        const o = new Uint8Array(12 + ct.length); o.set(iv); o.set(ct, 12); wraps.push({ song: t.slug, wrap: b64(o) }); t.wrap = wraps[wraps.length - 1].wrap;
+      }
+      if (wraps.length) await lib('/lib/wrap', { project: p.slug, wraps });
+    }
+  } catch (e) {} finally { wrapping = false; }
+}
 async function sealPass(pass) {
   const salt = crypto.getRandomValues(new Uint8Array(16)), te = new TextEncoder();
-  const base = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  const base = await crypto.subtle.importKey('raw', te.encode(pass || OPEN), 'PBKDF2', false, ['deriveKey']);
   const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 310000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
   const iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, te.encode('ok')));
   const o = new Uint8Array(12 + ct.length); o.set(iv); o.set(ct, 12);
@@ -804,7 +836,7 @@ async function rsAction(slug, act, btn) {
     const j = await r.json(); if (!j.ok) throw new Error(); return j; };
   try {
     if (act === 'copy') {
-      const t = '《' + x.title + '》\n' + x.url + '\n密码 ' + x.pass;
+      const t = shareText(x.title, x.url, x.pass);
       const done = () => { btn.textContent = '已复制'; setTimeout(() => { btn.textContent = '复制链接和密码'; }, 1500); };
       return navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done();
     }
@@ -908,7 +940,7 @@ async function openUpload(opt) {
   const el = document.createElement('div'); el.className = 'up'; el.id = 'up';
   el.innerHTML = `<div class="up-s"><div class="up-h">${PJ ? '上传到《' + esc(PJ.title) + '》' : '上传审听版本'}<button type="button" id="upX">关闭</button></div>
     <label>歌<select id="upSong"><option value="">读取中…</option></select></label>
-    <div id="upNew" class="row" hidden><label>歌名<input type="text" id="upTitle" autocomplete="off"></label><label>审听密码（4 位）<input type="tel" id="upPass" maxlength="4" value="1688"></label></div>
+    <div id="upNew" class="row" hidden><label>歌名<input type="text" id="upTitle" autocomplete="off"></label><label>审听密码（4 位，留空不设密码）<input type="tel" id="upPass" maxlength="4" value="" placeholder="不设密码"></label></div>
     <div class="file" id="upPick"><b id="upFn">选择 bounce</b>m4a / mp3 / wav，手机上可以直接从 iCloud 选</div>
     <input type="file" id="upFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden>
     <div class="row"><label>版本<input type="text" id="upVer" placeholder="自动"></label><label>日期<input type="text" id="upDate" placeholder="今天"></label></div>
@@ -954,7 +986,7 @@ async function openUpload(opt) {
       bar(1); msg('');
       $u('upDone').innerHTML = `<div class="done"><b>《${esc(prep.title)}》${esc(ver)} 已上线</b><code>${esc(res.url)}</code><div>密码 <b>${esc(prep.pass)}</b></div>
         <button type="button" id="upCopy">复制链接和密码</button><div style="font-size:13px;color:var(--text-3)">到「订单」里把审听页选成这首歌，再推进到「待审听」</div></div>`;
-      $u('upCopy').onclick = () => { const t = '《' + prep.title + '》' + ver + '\n' + res.url + '\n密码 ' + prep.pass;
+      $u('upCopy').onclick = () => { const t = '《' + prep.title + '》' + ver + '\n' + res.url + (prep.pass ? '\n密码 ' + prep.pass : '');
         const done = () => { $u('upCopy').textContent = '已复制'; }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
       file = null; $u('upFn').textContent = '再传一个'; $u('upVer').value = ''; $u('upDate').value = '';
       list = (await api('/radm/list').catch(() => ({ songs: list }))).songs;

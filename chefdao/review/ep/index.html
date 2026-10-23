@@ -70,16 +70,21 @@ const pin = document.getElementById('pin'), dots = [...document.querySelectorAll
 const focus = () => pin.focus({ preventScroll: true });
 document.getElementById('dots').onclick = focus; m.onclick = e => { if (!e.target.closest('a')) focus(); };
 const ub64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-async function ok(pw) {
+const dec = (key, s) => { const c = ub64(s); return crypto.subtle.decrypt({ name: 'AES-GCM', iv: c.subarray(0, 12) }, key, c.subarray(12)); };
+async function ok(pw) {   // 密码对就返回项目密钥；不设密码的项目用公开口令
   try {
-    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw || 'cu-open'), 'PBKDF2', false, ['deriveKey']);
     const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: ub64(P.salt), iterations: P.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-    const c = ub64(P.check); await crypto.subtle.decrypt({ name: 'AES-GCM', iv: c.subarray(0, 12) }, key, c.subarray(12)); return true;
-  } catch (e) { return false; }
+    await dec(key, P.check); return key;
+  } catch (e) { return null; }
 }
-function open(pw) {
+async function open(pw, key) {
   ls.set('review:pj:' + slug, pw);
-  P.tracks.forEach(t => ls.set('review:pw:' + t.slug, pw));   // 点进每首歌不用再输密码
+  // 点进每首歌不用再输密码：用项目密钥解出每首歌自己的密码记下来
+  for (const t of P.tracks) {
+    let spw = pw; if (t.wrap) try { spw = new TextDecoder().decode(await dec(key, t.wrap)); } catch (e) {}
+    ls.set('review:pw:' + t.slug, spw);
+  }
   document.getElementById('gate').remove();
   document.getElementById('list').innerHTML = P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + '</span><span class="m">' + fmt(t.dur) + '</span></a>').join('') + '</div>'
@@ -91,13 +96,13 @@ pin.addEventListener('input', async () => {
   ask.classList.remove('err'); ask.textContent = '输入密码收听';
   if (pin.value.length < 4) return;
   const pw = pin.value; pin.blur();
-  if (await ok(pw)) return open(pw);
+  const key = await ok(pw); if (key) return open(pw, key);
   ask.textContent = '密码不对，再试一次'; ask.classList.add('err');
   const d = document.getElementById('dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
   setTimeout(() => { pin.value = ''; dots.forEach(x => x.classList.remove('on')); focus(); }, 420);
 });
-const saved = ls.get('review:pj:' + slug);
-if (saved && await ok(saved)) open(saved); else setTimeout(focus, 300);
+const saved = P.open ? '' : ls.get('review:pj:' + slug), sk = saved !== null && await ok(saved);
+if (sk) open(saved, sk); else setTimeout(focus, 300);
 })();
 </script>
 </body>

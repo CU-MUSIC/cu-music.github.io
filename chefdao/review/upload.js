@@ -102,7 +102,7 @@ async function cuUpload(o) {
   }
   if (ac.close) ac.close();
   step('加密…'); bar(.62);
-  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(prep.pass), 'PBKDF2', false, ['deriveKey']);
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(prep.pass || 'cu-open'), 'PBKDF2', false, ['deriveKey']);   // 不设密码：用公开口令
   const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64d(prep.salt), iterations: prep.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
   const seal = async u8 => { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, u8));
     const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return out; };
