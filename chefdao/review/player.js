@@ -824,7 +824,7 @@ async function clientFb() {
   try {
     const j = await (await fetch(API + '/q?days=365', { headers: { Authorization: 'Bearer ' + key } })).json();
     if (!j.ok) return;
-    const names = new Map((j.listeners || []).map(x => [x.lid, x.name]));
+    const names = new Map((j.listeners || []).map(x => [x.lid, x.name || x.self]));   // 你写的备注名，没有就用听众自己留的名字
     const items = [];
     (j.feedback || []).filter(f => f.slug === S.slug).forEach(f => {
       let cm = []; try { cm = JSON.parse(f.comments || '[]'); } catch (e) {}
@@ -855,6 +855,7 @@ async function clientFb() {
       tb.textContent = o.t == null ? '整体' : fmt(o.t);
       if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
       row.querySelector('.m').textContent = o.m;
+      const wb = document.createElement('div'); wb.className = 'cwho'; wb.textContent = o.who; row.querySelector('.m').prepend(wb);   // 谁写的
       if (o.t != null) {
         const k = rk(o.ver, o.t, o.m), acts = document.createElement('div'); acts.className = 'acts';
         acts.innerHTML = '<button class="press" data-a="reply">回复</button><button class="press" data-a="done">✓ 完成</button>';
