@@ -722,7 +722,7 @@ function openProject(slug) {
   const el = document.createElement('div'); el.className = 'up'; el.id = 'pj';
   el.innerHTML = `<div class="up-s pjs"><div class="up-h">项目<button type="button" id="pjX">关闭</button></div>
     <div class="pjtop"><button type="button" class="pjcv" id="pjCv" title="换封面">${coverOf(p)}<span>换封面</span></button>
-      <div class="pjf"><label>项目名<input type="text" id="pjT" value="${esc(p.title)}"></label><label>歌手<input type="text" id="pjA" value="${esc(p.artist || '')}" placeholder="例如：阿杰"></label>
+      <div class="pjf"><label>项目名<input type="text" id="pjT" value="${esc(p.title)}"></label><label>歌手<input type="text" id="pjA" value="${esc(p.artist || '')}" placeholder="多位用逗号分开，例如：阿杰, Uin"></label>
       <div class="row"><label>类型<select id="pjK">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}"${p.kind === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
       <label>密码<input type="tel" id="pjP" maxlength="4" value="${esc(p.pass)}"></label></div></div></div>
     <input type="file" id="pjFile" accept="image/*" hidden>
@@ -801,14 +801,14 @@ function renderSongs() {
 async function rsAction(slug, act, btn) {
   const x = RSONGS.find(y => y.slug === slug); if (!x) return;
   const post = async (path, body) => { const r = await fetch(API + path, { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const j = await r.json(); if (!j.ok) throw new Error(); };
+    const j = await r.json(); if (!j.ok) throw new Error(); return j; };
   try {
     if (act === 'copy') {
       const t = '《' + x.title + '》\n' + x.url + '\n密码 ' + x.pass;
       const done = () => { btn.textContent = '已复制'; setTimeout(() => { btn.textContent = '复制链接和密码'; }, 1500); };
       return navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done();
     }
-    if (act === 'artist') { const v = prompt('《' + x.title + '》的歌手（客户输对密码后看到「欢迎，歌手」）', x.artist || ''); if (v === null) return; await post('/radm/meta', { slug, artist: v.trim() }); x.artist = v.trim(); }
+    if (act === 'artist') { const v = prompt('《' + x.title + '》的歌手，多位用逗号分开（客户输对密码后看到「欢迎，歌手」）', x.artist || ''); if (v === null) return; const j = await post('/radm/meta', { slug, artist: v.trim() }); x.artist = j.artist ?? v.trim(); }
     if (act === 'title') { const v = prompt('歌名', x.title); if (!v || !v.trim()) return; await post('/radm/meta', { slug, title: v.trim() }); x.title = v.trim(); }
     if (act === 'drop') {
       if (prompt('删除《' + x.title + '》的审听页？所有版本都会删掉，链接失效，收听记录和评论保留。\n确认请输入歌名：') !== x.title) return;
