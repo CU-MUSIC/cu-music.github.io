@@ -424,3 +424,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .pli.on{color:var(--text);background:var(--fill)}.pli.on .n{color:var(--text)}
 @media(hover:hover){.pli:not(.on):hover{background:var(--fill);color:var(--text)}}
 @media(min-width:1180px){.plist{position:fixed;top:120px;left:calc(50% + 370px);width:270px;max-height:calc(100vh - 160px);overflow:auto;margin:0}}
+
+/* 播放列表切歌：解锁页不露面，页面元素不做进场动画 */
+.quick .lock{visibility:hidden}
+.quick .app>*{transition:none!important}

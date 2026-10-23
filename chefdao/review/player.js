@@ -11,6 +11,11 @@ const store = {
   del(k) { try { localStorage.removeItem(k) } catch (e) {} },
 };
 const PW_KEY = 'review:pw:' + S.slug;
+// 从播放列表切过来的：不出解锁页和任何进场动画，直接进播放页（之前在播就接着播）
+let QUICK = false, QUICK_PLAY = false;
+try { const q = JSON.parse(sessionStorage.getItem('review:quick') || 'null'); sessionStorage.removeItem('review:quick');
+  if (q && q.s === S.slug) { QUICK = true; QUICK_PLAY = !!q.play; document.documentElement.classList.add('quick'); } } catch (e) {}
+const noQuick = () => { QUICK = false; document.documentElement.classList.remove('quick'); };
 const cdate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? (+m[2]) + '月' + (+m[3]) + '日' : d; };
 const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户的参考曲
 const V = S.versions.filter(v => v.ver !== 'REF');
@@ -231,6 +236,7 @@ async function tryUnlock(pw, typed) {
     document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
+    if (QUICK) { enterApp(true); loadAudio(key); clientFb(); ownerTools(); loadReplies(); return; }
     splash();
     if (S.artist) { const by = $('#by'); by.classList.add('hi'); by.textContent = '欢迎，' + S.artist; }
     const minWait = new Promise(r => setTimeout(r, typed ? 900 : 650));
@@ -243,7 +249,8 @@ async function tryUnlock(pw, typed) {
   } catch (e) {
     $('#lock').classList.remove('busy');
     store.del(PW_KEY);
-    if (!typed && tries.length) return tryUnlock(tries.shift(), false);   // 记住的密码不对（比如项目改过密码）：换下一个记住的试
+    if (!typed && tries.length) return tryUnlock(tries.shift(), false);
+    noQuick();   // 自动解锁都没成：露出解锁页让客户输密码   // 记住的密码不对（比如项目改过密码）：换下一个记住的试
     scr.fail();
     if (typed) {
       $('#ask').textContent = '密码不对，再试一次'; $('#ask').classList.add('err');
@@ -271,18 +278,24 @@ async function loadPlaylist() {
     const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug, { cache: 'no-store' })).json();
     const T = j.ok ? j.project.tracks : []; if (T.length < 2) return;
     const el = $('#plist');
-    el.innerHTML = `<div class="plh"><span>${esc(j.project.title)}</span><i>${T.length} 首</i></div>` + T.map((t, i) => `<a class="pli press${t.slug === S.slug ? ' on' : ''}" href="${esc(t.url)}">
+    el.innerHTML = `<div class="plh"><span>${esc(j.project.title)}</span><i>${T.length} 首</i></div>` + T.map((t, i) => `<a class="pli press${t.slug === S.slug ? ' on' : ''}" href="${esc(t.url)}" data-s="${esc(t.slug)}">
       <span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)}${t.artist ? `<i>${esc(t.artist)}</i>` : ''}</span><span class="m">${fmt(t.dur)}</span></a>`).join('');
     el.hidden = false;
     el.onclick = e => {   // 同一个页面只换 # 不会刷新，手动刷新一下
       const l = e.target.closest('.pli'); if (!l) return; e.preventDefault(); if (l.classList.contains('on')) return;
+      try { sessionStorage.setItem('review:quick', JSON.stringify({ s: l.dataset.s, play: !a.paused })); } catch (err) {}
       const u = new URL(l.href); if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash;
     };
   } catch (e) {}
 }
-function enterApp() {
+function enterApp(quick) {
   setTimeout(prefetchOthers, 600);
   loadPlaylist();
+  if (quick) {
+    started = true; t0 = -1e9;   // 波形直接满格，不做长出来的动画
+    $('#app').removeAttribute('aria-hidden'); $('#app').classList.add('in'); $('#lock').remove(); markSeg(); updateCta();
+    requestAnimationFrame(() => requestAnimationFrame(noQuick)); return;
+  }
   // FLIP：解锁页的封面平滑移动、缩放到页头封面的位置
   const L = $('#lock'), from = L.querySelector('.art'), to = $('#app .head .art');
   $('#app').removeAttribute('aria-hidden');
@@ -346,6 +359,12 @@ async function loadAudio(key) {
   KEY = key;
   try {
     if (a.src) return;
+    if (QUICK) {   // 切歌：页面已经在了，音频在波形上显示进度，好了就能播
+      const src = await fetchVersion(vi, p => { $('#loading').textContent = '正在加载音频… ' + Math.round(p * 100) + '%'; });
+      a.src = src; $('#play').disabled = false; $('#loading').style.opacity = 0;
+      if (QUICK_PLAY) a.play().catch(() => {});
+      return;
+    }
     // 解锁：暗色轮廓上的亮环按官网节奏画出来，同时下载音频；下载慢时画线跟着减速，超过 0.8 秒才显示百分比
     const L = $('#lock'), mk = L.querySelector('.lmark'), t0 = performance.now(), st = { p: 0, done: false };
     if (await cacheGet(vi) !== null) st.fast = true;   // 本地已有：标志两倍速画完，直接进
@@ -1081,5 +1100,5 @@ const saved = store.get(PW_KEY);
 let tries = [...new Set([saved, PJ_KEY && store.get(PJ_KEY), PJ_KEY && store.get(PJ_KEY + ':last')].filter(Boolean))];
 if (S.open || (S.project && S.project.open && S.project.wrap && !saved)) tryUnlock('', false);   // 不设密码：直接进
 else if (tries.length) tryUnlock(tries.shift(), false);
-else setTimeout(focusPin, 300);
+else { noQuick(); setTimeout(focusPin, 300); }
 })();
