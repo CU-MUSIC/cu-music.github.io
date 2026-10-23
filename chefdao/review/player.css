@@ -501,3 +501,21 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .lock .art.lmark{transition:transform .6s var(--ios),opacity .35s var(--ios),width .42s var(--ios),height .42s var(--ios),margin .42s var(--ios)}
 .lock.kb .art.lmark{width:64px;height:64px}
 .lock.leaving .art.lmark{transition:transform .7s var(--ios),opacity .5s ease .2s}
+
+/* 展开版本：一条波形一个版本，一屏三个，上下滚动 */
+.vtog{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:13px;color:var(--text-2);padding:8px 10px;border-radius:999px;min-height:36px;touch-action:manipulation}
+.vtog svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;transition:transform .25s var(--ios)}
+.vtog.open svg{transform:rotate(180deg)}
+@media(hover:hover){.vtog:hover{color:var(--text)}}
+.vlist{margin-top:12px;border-radius:14px;background:var(--fill);overflow:hidden}
+.vlist[hidden]{display:none}
+.vscroll{max-height:calc(3 * 68px + 30px);overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y proximity;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.vlh{position:sticky;top:0;z-index:1;height:30px;line-height:30px;padding:0 14px;font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text-3);background:#171718;border-bottom:.5px solid var(--hair)}
+.vli{display:flex;align-items:center;gap:14px;width:100%;height:68px;padding:0 14px;text-align:left;scroll-snap-align:start;border-bottom:.5px solid var(--hair);transition:background-color .2s}
+.vli:last-child{border-bottom:0}
+.vli .vlt{flex:0 0 108px;display:flex;flex-direction:column;gap:2px;white-space:nowrap}
+.vli .vlt b{font-size:16px;font-weight:700;color:var(--text-2);transition:color .2s}
+.vli .vlt i{font-style:normal;font-size:11.5px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.vli canvas{flex:1;min-width:0;height:44px;display:block}
+.vli.on{background:var(--fill-2)}.vli.on .vlt b{color:var(--text)}
+@media(hover:hover){.vli:not(.on):hover{background:var(--fill-2)}}

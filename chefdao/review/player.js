@@ -23,8 +23,12 @@ const V = S.versions.filter(v => v.ver !== 'REF');
 const STAGE = { edit: '编辑', mix: '混音', master: '母带' };
 const stageOf = v => { const f = String(v.file || '').replace(/@ChefDao.*$/i, '').replace(/_/g, ' ');
   if (/\bpre-?master/i.test(f)) return 'mix';
-  const m = /\b(Edit|Mix|Master)\b/i.exec(f); return m ? m[1].toLowerCase() : ''; };
-const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + v.ver;
+  const m = /(?<![A-Za-z])(Edit|Mix|Master)(?![A-Za-z])/i.exec(f); return m ? m[1].toLowerCase() : ''; };   // Mix1、Mix 1、Mix_1 都认
+// 显示名：有阶段的按阶段内第几个数（混音 1、混音 2），没阶段的用 V 号。内部编号 V1、V2 全局唯一，评论、统计都按它认
+// 按阶段排：编辑在前、混音、母带在后；同阶段保持上传先后（排序稳定）。这样同阶段的版本总是连在一起分组
+{ const rank = { '': 0, edit: 1, mix: 2, master: 3 }; V.sort((x, y) => rank[stageOf(x)] - rank[stageOf(y)]); }
+const vlab = v => { const st = stageOf(v); return STAGE[st] ? String(V.filter(x => stageOf(x) === st).indexOf(v) + 1) : v.ver; };
+const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);
 const multiStage = new Set(V.map(stageOf)).size > 1;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
 const dataKey = i => 'review:' + S.slug + ':' + V[i].ver.toLowerCase();
@@ -100,8 +104,9 @@ document.body.innerHTML = `
     const groups = [];
     V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
     return groups.map(g => `<div class="vg">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${g.items.map(i =>
-      `<button class="vrow press" data-i="${i}"><span class="vn">${esc(V[i].ver)}</span><span class="hasdot"></span></button>`).join('')}</div>`).join('');
+      `<button class="vrow press" data-i="${i}"><span class="vn">${esc(vlab(V[i]))}</span><span class="hasdot"></span></button>`).join('')}</div>`).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
   })()}</section>
+  <section class="vlist" id="vlist" hidden></section>
 
   <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
@@ -665,12 +670,50 @@ new IntersectionObserver(([en]) => {
 }, { threshold: 0, rootMargin: '-40px 0px 0px 0px' }).observe($('#wave'));
 
 /* ───────── 版本切换 ───────── */
+/* ───────── 展开版本：每个版本一条波形，按阶段分组（编辑 / 混音 / 母带），一屏看三个，上下滚动，点一下切换 ───────── */
+let vlistBuilt = false;
+function drawPeaks(cv, pk, on) {
+  const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+  const gap = 2, bw = 2, n = Math.max(1, Math.floor((w + gap) / (bw + gap))), mid = h / 2; c.fillStyle = on ? '#ebe9e5' : 'rgba(236,234,230,.38)';
+  for (let k = 0; k < n; k++) {
+    const f = k / Math.max(1, n - 1) * (pk.length - 1), i = Math.floor(f), u = f - i, v = (pk[i] || 0) * (1 - u) + (pk[Math.min(pk.length - 1, i + 1)] || 0) * u;
+    const bh = Math.max(2, v * (h - 6)); c.beginPath(); c.roundRect ? c.roundRect(k * (bw + gap), mid - bh / 2, bw, bh, 1) : c.rect(k * (bw + gap), mid - bh / 2, bw, bh); c.fill();
+  }
+}
+function buildList() {
+  const el = $('#vlist'); if (!el) return;
+  const groups = []; V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
+  el.innerHTML = '<div class="vscroll">' + groups.map(g => (STAGE[g.st] ? `<div class="vlh">${STAGE[g.st]}</div>` : '')
+    + g.items.map(i => `<button class="vli press" data-i="${i}"><span class="vlt"><b>${esc(vlab(V[i]))}</b><i>${esc(cdate(V[i].date))} · ${fmt(V[i].duration)}</i></span><canvas></canvas></button>`).join('')).join('') + '</div>';
+  vlistBuilt = true; redrawList();
+}
+function redrawList() { document.querySelectorAll('#vlist .vli').forEach(b => drawPeaks(b.querySelector('canvas'), V[+b.dataset.i].peaks || [], +b.dataset.i === vi)); }
+function markList() {
+  if (!vlistBuilt) return;
+  document.querySelectorAll('#vlist .vli').forEach(b => { const on = +b.dataset.i === vi; if (b.classList.contains('on') !== on) { b.classList.toggle('on', on); drawPeaks(b.querySelector('canvas'), V[+b.dataset.i].peaks || [], on); } });
+}
+function setVlist(open) {
+  const el = $('#vlist'), t = $('#vtog'); if (!el) return;
+  el.hidden = !open; t.setAttribute('aria-expanded', open); t.classList.toggle('open', open); t.firstChild.textContent = open ? '收起' : '展开';
+  store.set('review:vlist', open ? '1' : '0');
+  if (open) {
+    if (!vlistBuilt) buildList(); else redrawList();
+    markList(); document.querySelectorAll('#vlist .vli').forEach(b => b.classList.toggle('on', +b.dataset.i === vi));
+    const sc = el.querySelector('.vscroll'), cur0 = sc.querySelector('.vli.on'); if (cur0) sc.scrollTop = Math.max(0, cur0.offsetTop - sc.clientHeight / 2 + cur0.offsetHeight / 2);
+  }
+}
+$('#vtog').onclick = () => setVlist($('#vlist').hidden);
+$('#vlist').addEventListener('click', e => { const b = e.target.closest('.vli'); if (b) switchTo(+b.dataset.i); });
+addEventListener('resize', () => { if (!$('#vlist').hidden) redrawList(); });
 function markSeg() {
   document.querySelectorAll('#seg .vrow').forEach(b => {
     const i = +b.dataset.i; let has = false;
     try { const d = JSON.parse(store.get(dataKey(i)) || '{}'); has = (d.notes || []).length > 0 || !!(d.overall || '').trim(); } catch (e) {}
     b.classList.toggle('has', has); b.classList.toggle('on', i === vi); b.setAttribute('aria-current', i === vi);
   });
+  if (typeof markList === 'function') markList();
 
 }
 function showMeta() {
@@ -795,9 +838,13 @@ function ownerTools() {
       await lib();
       const n = cuNameInfo(file.name);
       const next = 'V' + (V.reduce((m, v) => Math.max(m, parseInt(v.ver.slice(1)) || 0), 0) + 1);
-      const ver = n.ver || next;
-      if (V.some(v => v.ver === ver) && !confirm(ver + ' 已经有了，要覆盖吗？')) return;
-      if (!confirm('把「' + file.name + '」上传为《' + S.title + '》' + ver + '？')) return;
+      // 文件名里的 _V1_ 是每个阶段各自的编号：Mix V1 和 Edit V1 同号不算同一个版本，自动用下一个空号；同一阶段同号才问覆盖
+      const st = cuStage(n.raw), same = V.find(v => v.ver === n.ver);
+      const ver = n.ver && !(same && stageOf(same) !== st) ? n.ver : next;
+      const existing = V.find(v => v.ver === ver);
+      const lab = (STAGE[st] ? STAGE[st] + ' ' : '') + (existing ? vlab(existing) : String(V.filter(v => stageOf(v) === st).length + 1));
+      if (existing && !confirm('「' + lab + '」已经有了，要覆盖吗？')) return;
+      if (!confirm('把「' + file.name + '」上传为《' + S.title + '》' + (existing ? lab : (STAGE[st] ? STAGE[st] + ' ' + (V.filter(v => stageOf(v) === st).length + 1) : ver)) + '？')) return;
       own.classList.add('busy');
       const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, date: n.date, step: busy,
         bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });

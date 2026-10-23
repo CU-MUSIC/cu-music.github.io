@@ -12,8 +12,14 @@ function cuNameInfo(fn) {
   const m = raw.match(/_V(\d+)_(\d{2})(\d{2})$/);
   // 歌名去掉流程后缀：_premaster / _master / _mix / _edit / _bip / _bounce / _final / _demo 这类，以及结尾的 _2 编号
   const title = raw.replace(/_V\d+_\d{4}$/, '').replace(/@ChefDao.*$/i, '').trim().replace(/[_ ]\d+$/, '')
-    .replace(/([_\s-]+(pre-?master|master(ed)?|mix(down)?|edit|bip|bounce|final|print|stem[s]?|ref))+$/i, '').trim();
+    .replace(/([_\s-]+(pre-?master|master(ed)?|mix(down)?|edit|bip|bounce|final|print|stem[s]?|ref)\d*)+$/i, '').trim();
   return { raw, title, ver: m ? 'V' + (+m[1]) : '', date: m ? `${new Date().getFullYear()}-${m[2]}-${m[3]}` : '' };
+}
+// 文件名里的阶段：Edit / Mix / Master（premaster 算混音）。编号 V1、V2 是每个阶段各自从 1 数的，所以 Edit V1 和 Mix V1 同名不是同一个版本
+function cuStage(file) {
+  const f = String(file || '').replace(/@ChefDao.*$/i, '').replace(/_/g, ' ');
+  if (/\bpre-?master/i.test(f)) return 'mix';
+  const m = /(?<![A-Za-z])(Edit|Mix|Master)(?![A-Za-z])/i.exec(f); return m ? m[1].toLowerCase() : '';   // Mix1、Mix 1、Mix_1 都认
 }
 // WAV 头里的采样率（不是 WAV 返回 0）
 function wavRate(buf) {
@@ -108,7 +114,10 @@ async function cuUpload(o) {
     const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return out; };
   const blob = await seal(bytes);
   if (blob.length > 25 * 1048576) throw new Error('文件太大（超过 25MB），请导出 m4a 或 mp3 再传');
-  const ver = (String(o.ver || '').trim().toUpperCase().replace(/^(\d)/, 'V$1')) || prep.next;
+  let ver = (String(o.ver || '').trim().toUpperCase().replace(/^(\d)/, 'V$1')) || prep.next;
+  // 和已有版本同号、但阶段不同（Mix V1 撞上 Edit V1）：不覆盖，顺延成下一个空号
+  const clash = (prep.vers || []).find(x => x.ver === ver);
+  if (clash && cuStage(clash.file) !== cuStage(cuNameInfo(file.name).raw)) ver = prep.next;
   if (!/^(V\d{1,3}|REF)$/.test(ver)) throw new Error('版本要写成 V1、V2 这样');
   const fname = ver.toLowerCase() + '-' + [...crypto.getRandomValues(new Uint8Array(8))].map(b => 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 55]).join('') + '.bin';
   step('上传…'); bar(.7);
