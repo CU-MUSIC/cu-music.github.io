@@ -55,6 +55,17 @@ h1{margin-top:6px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:
 .tr .m{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
 @keyframes in{to{opacity:1;transform:none}}
 .empty{margin-top:30px;color:var(--text-3);font-size:14px}
+/* 收款情况（仅你可见） */
+.pay{margin-top:34px;padding:16px;border-radius:14px;border:1px dashed rgba(236,234,230,.16);text-align:left;font-variant-numeric:tabular-nums}
+.pyhd{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;color:var(--text-2)}.pyhd i{font-style:normal;font-weight:400;font-size:12px;color:var(--text-3)}
+.pysum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.pysum div{padding:10px 12px;border-radius:10px;background:var(--fill)}.pysum b{display:block;font-size:20px}.pysum span{font-size:12px;color:var(--text-3)}
+.pygo{margin-top:10px;padding:9px 12px;border-radius:10px;background:var(--fill-2);font-size:14px;color:var(--text-2)}
+.pygo.on{background:#e8e6e2;color:#121213;font-weight:600}
+.pyt{margin-top:14px}.pyh{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.pyr{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:baseline;padding:6px 0;border-bottom:.5px solid var(--hair);font-size:13.5px;color:var(--text-2)}
+.pyr .n{color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pyr .n i{font-style:normal;font-size:11.5px;color:var(--text-3)}
+.pyr .a{color:var(--text)}.pyr .ok{color:var(--text)}.pyr .due{color:#e2b26f}
 .boot{color:var(--text-3);font-size:15px;margin-top:30vh}
 </style>
 </head>
@@ -131,6 +142,27 @@ async function open(pw, key) {
   document.getElementById('list').innerHTML = P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + '</span><span class="m">' + fmt(t.dur) + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>';
+  if (ls.get('insights:key')) payPanel();
+}
+// 收款情况：只在你的设备（存了看板钥匙）显示。读每首歌的费用单，按人列出定金 / 尾款，定金收齐才开工
+async function payPanel() {
+  const qs = await Promise.all(P.tracks.map(t => fetch(API + '/rs?s=' + t.slug, { cache: 'no-store' }).then(r => r.json()).then(j => j.ok && j.song.quote ? { t, q: j.song.quote } : null).catch(() => null)));
+  const list = qs.filter(Boolean); if (!list.length) return;
+  const price = (q, p) => p.fix != null ? p.fix : q.menu.base + q.menu.vocal[p.v][1] + q.menu.edit[p.e][1];
+  const half = (q, p) => { const t = price(q, p), d = Math.min(t, p.da ?? Math.round(t / 2)); return [d, t - d]; };
+  let total = 0, got = 0, depDue = 0, nPeople = 0, nDep = 0, nOk = 0;
+  const blocks = list.map(({ t, q }) => '<div class="pyt"><div class="pyh">' + esc(t.title) + '</div>' + q.people.map(p => {
+    const [d, f] = half(q, p), all = d + f;
+    total += all; got += (p.dep ? d : 0) + (p.fin ? f : 0); nPeople++; if (p.dep) nDep++; else depDue += d; if (p.ok) nOk++;
+    return '<div class="pyr"><span class="n">' + esc(p.n) + (p.fix != null ? ' <i>' + esc(p.fixn) + '</i>' : p.ok ? '' : ' <i>未确认</i>') + '</span><span class="a">¥' + all + '</span>'
+      + '<span class="' + (p.dep ? 'ok' : 'due') + '">定 ¥' + d + (p.dep ? ' ✓' : '') + '</span><span class="' + (p.fin ? 'ok' : '') + '">尾 ¥' + f + (p.fin ? ' ✓' : '') + '</span></div>';
+  }).join('') + '</div>').join('');
+  const go = nDep === nPeople;
+  const el = document.createElement('section'); el.className = 'pay';
+  el.innerHTML = '<div class="pyhd"><span>收款情况</span><i>仅你可见</i></div>'
+    + '<div class="pysum"><div><b>¥' + got + '</b><span>已收 / ¥' + total + '</span></div><div><b>' + nDep + ' / ' + nPeople + '</b><span>定金已收（确认 ' + nOk + ' 位）</span></div></div>'
+    + '<div class="pygo' + (go ? ' on' : '') + '">' + (go ? '定金已收齐，可以开工' : '还差 ' + (nPeople - nDep) + ' 位定金 ¥' + depDue + '，收齐再开工') + '</div>' + blocks;
+  document.getElementById('list').appendChild(el);
 }
 pin.addEventListener('input', async () => {
   pin.value = pin.value.replace(/\D/g, '').slice(0, 4);

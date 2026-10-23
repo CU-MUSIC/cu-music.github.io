@@ -275,10 +275,11 @@ if (S.cover) { const art = document.querySelector('#app .head .art'); if (art) a
 /* ───────── 费用：每位歌手自己选人声制作和音频编辑，点「确定」；每人各付各的，定金 / 尾款各一半。收了这个人的定金，他的选择就锁定 ───────── */
 let Q = S.quote || null, feeOpen = null, feeOwner = null, feeOwnerP = null;
 const yuan = n => '¥' + n.toLocaleString('en-US');
-const pPrice = p => Q.menu.base + Q.menu.vocal[p.v][1] + Q.menu.edit[p.e][1];
+const hasFix = p => p.fix !== undefined && p.fix !== null;   // 单独报价（例如只做母带），不按菜单选
+const pPrice = p => hasFix(p) ? p.fix : Q.menu.base + Q.menu.vocal[p.v][1] + Q.menu.edit[p.e][1];
 function renderFee() {
   const el = $('#fee'); if (!Q) { el.hidden = true; el.innerHTML = ''; return; }
-  const half = p => { const t = pPrice(p), d = Math.round(t / 2); return [d, t - d]; };
+  const half = p => { const t = pPrice(p), d = Math.min(t, p.da ?? Math.round(t / 2)); return [d, t - d]; };
   const total = Q.people.reduce((s, p) => s + pPrice(p), 0), n = Q.people.length;
   const got = Q.people.reduce((s, p) => { const [d, f] = half(p); return s + (p.dep ? d : 0) + (p.fin ? f : 0); }, 0);
   const done = Q.people.filter(p => p.ok).length, paid = Q.people.filter(p => p.dep).length;
@@ -292,7 +293,9 @@ function renderFee() {
   const desc = o => o[2] ? `<div class="fd">${esc(o[2])}</div>` : '';
   el.hidden = false; el.classList.toggle('open', feeOpen);
   el.innerHTML = `<button class="fh press" id="feeH"><span>费用</span><b>${yuan(total)}</b><em>${st}</em><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="fb">`
-    + Q.people.map((p, i) => `<div class="fp${p.ok ? ' ok' : ''}"><div class="fn"><b>${esc(p.n)}</b><span>${yuan(pPrice(p))}</span></div>${pay(p)}
+    + Q.people.map((p, i) => hasFix(p) ? `<div class="fp ok"><div class="fn"><b>${esc(p.n)}</b><span>${yuan(pPrice(p))}</span></div>${pay(p)}
+      <div class="fl">服务</div><div class="fg"><span class="fo on">${esc(p.fixn)}</span></div>${feeOwnerP ? feeOwnerP(p, i) : ''}</div>`
+      : `<div class="fp${p.ok ? ' ok' : ''}"><div class="fn"><b>${esc(p.n)}</b><span>${yuan(pPrice(p))}</span></div>${pay(p)}
       <div class="fl">人声制作</div><div class="fg">${opt('vocal', i, p.v, p.dep)}</div>${desc(Q.menu.vocal[p.v])}
       <div class="fl">音频编辑</div><div class="fg">${opt('edit', i, p.e, p.dep)}</div>${desc(Q.menu.edit[p.e])}
       ${p.dep ? '' : `<button class="fok press" data-ok="${i}"${p.ok ? ' disabled' : ''}>${p.ok ? '已确定 ✓' : '确定'}</button>`}${feeOwnerP ? feeOwnerP(p, i) : ''}</div>`).join('')
@@ -715,11 +718,18 @@ function ownerTools() {
     edit: [['不需要', 0, ''], ['音准', 100, '只修音准（叠唱不超过 2 条）'], ['节奏', 100, '只对齐节奏（叠唱不超过 2 条）'], ['标准', 160, '音准 + 节奏都修，适合演唱比较稳的素材'], ['深度', 240, '跑调、破音、气声不稳较多时的大量精修']] };
   const saveQ = async q => { try { await post('/radm/meta', { slug: S.slug, quote: q }); Q = q; feeOpen = true; renderFee(); busy(q ? '费用单已更新' : '费用单已删除'); } catch (e) { busy('没保存上，检查网络再试'); } };
   feeOwner = () => `<div class="fown"><button data-own="people">改歌手</button><button data-own="del" class="dz">删除费用单</button></div>`;
-  feeOwnerP = (p, i) => `<div class="fown fownp"><button data-own="dep" data-i="${i}">${p.dep ? '撤销定金' : '定金已收'}</button><button data-own="fin" data-i="${i}">${p.fin ? '撤销尾款' : '尾款已收'}</button></div>`;
+  feeOwnerP = (p, i) => `<div class="fown fownp"><button data-own="dep" data-i="${i}">${p.dep ? '撤销定金' : '定金已收'}</button><button data-own="fin" data-i="${i}">${p.fin ? '撤销尾款' : '尾款已收'}</button><button data-own="fix" data-i="${i}">单独报价</button></div>`;
   $('#fee').addEventListener('click', e => {
     const b = e.target.closest('[data-own]'); if (!b) return;
     const k = b.dataset.own, q = JSON.parse(JSON.stringify(Q));
     if (k === 'dep' || k === 'fin') { const p = q.people[+b.dataset.i]; p[k] = !p[k]; if (k === 'dep' && p.dep) p.ok = true; }
+    if (k === 'fix') {   // 服务名, 总价, 定金（不填定金就是一半）；清空就恢复按菜单选
+      const p = q.people[+b.dataset.i], cur0 = hasFix(p) ? [p.fixn, p.fix, p.da ?? ''].join(', ') : '';
+      const v = prompt(p.n + ' 单独报价：服务名, 总价, 定金（定金不填就是一半）\n例如：仅母带, 50, 10　清空就恢复按菜单选', cur0); if (v === null) return;
+      const [fn, fx, fd] = v.split(/\s*[,，]\s*/);
+      if (!v.trim()) { delete p.fix; delete p.fixn; delete p.da; p.ok = false; }
+      else { p.fixn = fn || '单独报价'; p.fix = +fx || 0; if (fd !== undefined && fd !== '') p.da = +fd; else delete p.da; p.ok = true; }
+    }
     if (k === 'people') {
       const v = prompt('这首歌的歌手，用逗号分开', q.people.map(p => p.n).join('、')); if (v === null) return;
       const names = v.split(/\s*[,，、\/]\s*/).filter(Boolean);
