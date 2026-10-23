@@ -471,3 +471,4 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .fpay span{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--fill-2);color:var(--text-3);font-variant-numeric:tabular-nums}
 .fpay span.on{background:none;color:var(--text);box-shadow:0 0 0 1px var(--fill-3) inset}
 .fownp{margin-top:10px;padding-top:0;border-top:0}
+.fpay span.due{background:var(--pearl);color:var(--ink);font-weight:600}

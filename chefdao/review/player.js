@@ -283,9 +283,12 @@ function renderFee() {
   const got = Q.people.reduce((s, p) => { const [d, f] = half(p); return s + (p.dep ? d : 0) + (p.fin ? f : 0); }, 0);
   const done = Q.people.filter(p => p.ok).length, paid = Q.people.filter(p => p.dep).length;
   if (feeOpen === null) feeOpen = done < n;
-  const st = Q.people.every(p => p.fin) ? '已结清' : done < n ? '已确认 ' + done + ' / ' + n + ' 位' : '定金已收 ' + paid + ' / ' + n + ' 位';
+  const st = Q.people.every(p => p.fin) ? '已结清' : '已确认 ' + done + ' / ' + n + ' 位' + (paid ? ' · 定金已收 ' + paid + ' 位' : '');
   const opt = (k, i, j, lk) => Q.menu[k].map((o, x) => `<button class="fo${x === j ? ' on' : ''}" data-k="${k}" data-i="${i}" data-x="${x}"${lk ? ' disabled' : ''}>${esc(o[0])}${o[1] ? `<i>+${o[1]}</i>` : ''}</button>`).join('');
-  const pay = p => { const [d, f] = half(p); return `<div class="fpay"><span class="${p.dep ? 'on' : ''}">定金 ${yuan(d)}${p.dep ? ' · 已收' : ''}</span><span class="${p.fin ? 'on' : ''}">尾款 ${yuan(f)}${p.fin ? ' · 已收' : ''}</span></div>`; };
+  // 确定了就可以付这个人的定金，不用等别人；定金收了再显示尾款
+  const pay = p => { const [d, f] = half(p);
+    const dc = p.dep ? 'on' : p.ok ? 'due' : '', fc = p.fin ? 'on' : p.dep ? 'due' : '';
+    return `<div class="fpay"><span class="${dc}">定金 ${yuan(d)}${p.dep ? ' · 已收' : p.ok ? ' · 待付' : ''}</span><span class="${fc}">尾款 ${yuan(f)}${p.fin ? ' · 已收' : p.dep ? ' · 交付时付' : ''}</span></div>`; };
   const desc = o => o[2] ? `<div class="fd">${esc(o[2])}</div>` : '';
   el.hidden = false; el.classList.toggle('open', feeOpen);
   el.innerHTML = `<button class="fh press" id="feeH"><span>费用</span><b>${yuan(total)}</b><em>${st}</em><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="fb">`
