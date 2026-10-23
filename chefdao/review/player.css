@@ -519,3 +519,11 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .vli canvas{flex:1;min-width:0;height:44px;display:block}
 .vli.on{background:var(--fill-2)}.vli.on .vlt b{color:var(--text)}
 @media(hover:hover){.vli:not(.on):hover{background:var(--fill-2)}}
+
+/* 前面阶段的版本收成一颗药丸；当前阶段永远展开。点药丸展开 / 收起，切到旧版本时那一组自动展开 */
+.vpick .vg.old:not(.open) .vrow{display:none}
+.vsum{display:inline-flex;align-items:center;gap:2px;position:relative;font-size:13.5px;font-weight:600;padding:8px 10px 8px 13px;min-height:36px;border-radius:999px;background:var(--fill);color:var(--text-2);touch-action:manipulation}
+.vsum svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s var(--ios)}
+.vg.old.open .vsum svg{transform:rotate(90deg)}
+.vsum.has::after{content:"";position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;background:var(--text-2)}
+@media(hover:hover){.vsum:hover{color:var(--text)}}

@@ -103,8 +103,11 @@ document.body.innerHTML = `
     // 版本选择：按阶段一组一排小按钮「编辑 V1 V2 · 混音 V3」，当前版本高亮
     const groups = [];
     V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
-    return groups.map(g => `<div class="vg">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${g.items.map(i =>
-      `<button class="vrow press" data-i="${i}"><span class="vn">${esc(vlab(V[i]))}</span><span class="hasdot"></span></button>`).join('')}</div>`).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
+    // 到了后面的阶段，前面阶段的版本收成一颗药丸「编辑 · 6 版」，点开才展开；当前阶段永远是展开的
+    const RK = { '': 0, edit: 1, mix: 2, master: 3 }, top = Math.max(...groups.map(g => RK[g.st]));
+    return groups.map(g => { const old = STAGE[g.st] && RK[g.st] < top;
+      return `<div class="vg${old ? ' old' : ''}">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${old ? `<button class="vsum press" aria-expanded="false">${g.items.length} 版<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}${g.items.map(i =>
+      `<button class="vrow press" data-i="${i}"><span class="vn">${esc(vlab(V[i]))}</span><span class="hasdot"></span></button>`).join('')}</div>`; }).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
   })()}</section>
   <section class="vlist" id="vlist" hidden></section>
 
@@ -713,6 +716,10 @@ function markSeg() {
     try { const d = JSON.parse(store.get(dataKey(i)) || '{}'); has = (d.notes || []).length > 0 || !!(d.overall || '').trim(); } catch (e) {}
     b.classList.toggle('has', has); b.classList.toggle('on', i === vi); b.setAttribute('aria-current', i === vi);
   });
+  document.querySelectorAll('#seg .vg.old').forEach(g => {
+    if (g.querySelector('.vrow.on')) g.classList.add('open');
+    const s = g.querySelector('.vsum'); s.setAttribute('aria-expanded', g.classList.contains('open')); s.classList.toggle('has', !!g.querySelector('.vrow.has'));
+  });
   if (typeof markList === 'function') markList();
 
 }
@@ -1137,7 +1144,8 @@ async function switchTo(i) {
     applyGains();
   } catch (e) { $('#loading').textContent = '载入失败，请刷新重试'; }
 }
-$('#seg').addEventListener('click', e => { const b = e.target.closest('.vrow'); if (b) switchTo(+b.dataset.i); });
+$('#seg').addEventListener('click', e => { const s = e.target.closest('.vsum'); if (s) { s.parentElement.classList.toggle('open'); s.setAttribute('aria-expanded', s.parentElement.classList.contains('open')); return; }
+   const b = e.target.closest('.vrow'); if (b) switchTo(+b.dataset.i); });
 
 addEventListener('resize', markSeg);
 showMeta();
