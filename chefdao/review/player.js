@@ -128,7 +128,7 @@ document.body.innerHTML = `
   <div class="sect">我的评论<span class="n" id="n">0</span></div>
   <div class="group" id="list"></div>
   <div class="empty" id="empty">还没有评论，播放时随时写下来</div>
-  <section id="cfb" hidden><div class="sect">客户评论<span class="r" id="cfn"></span></div><div class="group" id="cfl"></div></section>
+  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><span class="r" id="cfn"></span></div><div class="group" id="cfl"></div></section>
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
@@ -845,10 +845,15 @@ async function clientFb() {
     cfbRender = () => {
     const box = $('#cfl'); box.innerHTML = '';
     const done = o => { const r = mine.get(rk(o.ver, o.t, o.m)); return !!(r && r.done); };
-    const all = list.filter(o => o.ver === cur.ver), here = all.filter(o => !done(o)).concat(all.filter(done));
-    const rows = []; let sep = false;
+    // 默认按时间点排、处理完的沉底；点「按歌手」就按人分组，每组里再按时间点排
+    const grp = store.get('review:cfbgroup') === '1', all = list.filter(o => o.ver === cur.ver);
+    const here = grp ? [...all].sort((x, y) => x.who.localeCompare(y.who, 'zh') || done(x) - done(y) || (x.t ?? 1e9) - (y.t ?? 1e9))
+      : all.filter(o => !done(o)).concat(all.filter(done));
+    box.classList.toggle('grouped', grp); $('#cgrp').classList.toggle('on', grp); $('#cgrp').setAttribute('aria-pressed', grp);
+    const rows = []; let sep = false, lastWho = null;
     here.forEach(o => {
-      if (!sep && done(o)) { sep = true; box.appendChild(doneSep()); }
+      if (grp && o.who !== lastWho) { lastWho = o.who; const h = document.createElement('div'); h.className = 'cgh'; h.textContent = o.who + ' · ' + here.filter(x => x.who === o.who).length + ' 条'; box.appendChild(h); }
+      if (!grp && !sep && done(o)) { sep = true; box.appendChild(doneSep()); }
       const row = document.createElement('div'); row.className = 'row';
       row.innerHTML = '<button class="t press"></button><div class="m"></div>';
       const tb = row.querySelector('.t');
@@ -881,6 +886,7 @@ async function clientFb() {
     $('#cfn').textContent = here.length ? here.length + ' 条 · ' + [...new Set(here.map(x => x.who))].join('、') : '这一版还没有';
     $('#cfb').hidden = false;
     };
+    $('#cgrp').onclick = () => { store.set('review:cfbgroup', store.get('review:cfbgroup') === '1' ? '0' : '1'); cfbRender(); };
     cfbRender();
   } catch (e) {}
 }
