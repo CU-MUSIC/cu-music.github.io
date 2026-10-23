@@ -125,7 +125,7 @@ document.body.innerHTML = `
   </div>
   <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
-    <button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+    <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
   <section class="mst" id="mst" hidden></section>
   <aside class="plist" id="plist" hidden></aside>
@@ -689,13 +689,14 @@ function buildList() {
   const el = $('#vlist'); if (!el) return;
   const groups = []; V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
   el.innerHTML = '<div class="vscroll">' + groups.map(g => (STAGE[g.st] ? `<div class="vlh">${STAGE[g.st]}</div>` : '')
-    + g.items.map(i => `<button class="vli press" data-i="${i}"><span class="vlt"><b>${esc(vlab(V[i]))}</b><i>${esc(cdate(V[i].date))} · ${fmt(V[i].duration)}</i></span><canvas></canvas></button>`).join('')).join('') + '</div>';
+    + g.items.map(i => `<div class="vli press" role="button" tabindex="0" data-i="${i}"><span class="vlt"><b>${esc(vlab(V[i]))}</b><i>${esc(cdate(V[i].date))} · ${fmt(V[i].duration)}</i></span><canvas></canvas><button class="vcmp" aria-label="拿这一版和当前版本对比">对比</button><em class="vab"></em></div>`).join('')).join('') + '</div>';
   vlistBuilt = true; redrawList();
 }
 function redrawList() { document.querySelectorAll('#vlist .vli').forEach(b => drawPeaks(b.querySelector('canvas'), V[+b.dataset.i].peaks || [], +b.dataset.i === vi)); }
 function markList() {
   if (!vlistBuilt) return;
-  document.querySelectorAll('#vlist .vli').forEach(b => { const on = +b.dataset.i === vi; if (b.classList.contains('on') !== on) { b.classList.toggle('on', on); drawPeaks(b.querySelector('canvas'), V[+b.dataset.i].peaks || [], on); } });
+  document.querySelectorAll('#vlist .vli').forEach(b => { const i = +b.dataset.i, on = i === vi; if (b.classList.contains('on') !== on) { b.classList.toggle('on', on); drawPeaks(b.querySelector('canvas'), V[i].peaks || [], on); }
+    b.classList.toggle('isb', i === CMP); b.querySelector('.vab').textContent = CMP >= 0 ? (on ? 'A' : i === CMP ? 'B' : '') : ''; });
 }
 function setVlist(open) {
   const el = $('#vlist'), t = $('#vtog'); if (!el) return;
@@ -708,7 +709,8 @@ function setVlist(open) {
   }
 }
 $('#vtog').onclick = () => setVlist($('#vlist').hidden);
-$('#vlist').addEventListener('click', e => { const b = e.target.closest('.vli'); if (b) switchTo(+b.dataset.i); });
+$('#vlist').addEventListener('click', e => { const b = e.target.closest('.vli'); if (!b) return; const i = +b.dataset.i; if (e.target.closest('.vcmp')) { if (i !== vi) startCmp(i); return; } switchTo(i); });
+$('#vlist').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('vli')) { e.preventDefault(); switchTo(+e.target.dataset.i); } });
 addEventListener('resize', () => { if (!$('#vlist').hidden) redrawList(); });
 function markSeg() {
   document.querySelectorAll('#seg .vrow').forEach(b => {
@@ -721,6 +723,7 @@ function markSeg() {
     const s = g.querySelector('.vsum'); s.setAttribute('aria-expanded', g.classList.contains('open')); s.classList.toggle('has', !!g.querySelector('.vrow.has'));
   });
   if (typeof markList === 'function') markList();
+  try { cmpFix(); } catch (e) {}   // 对比模式没初始化前（页面刚载入）不处理
 
 }
 function showMeta() {
@@ -1054,6 +1057,40 @@ function setAB(x) {
   if (!graph()) return;
   AB = x; applyGains();
 }
+/* ───────── 对比版本：把另一个版本当作 B，和当前版本（A）无缝来回切 ─────────
+   复用 REF 的同步播放：B 解码进内存，跟着 A 的位置播，切换只是两路音量交叉淡变，不中断。
+   对比时自动对齐响度（不然更响的那个总是显得更好听），退出对比恢复原来的设置。 */
+let CMP = -1, loudBefore = null;
+const abLabels = () => {
+  $('#abMix').textContent = CMP >= 0 ? vname(V[vi]) : '混音'; $('#abRef').textContent = CMP >= 0 ? vname(V[CMP]) : 'REF';
+  $('#cmp').textContent = CMP >= 0 ? '退出对比' : '对比上一版'; $('#cmp').classList.toggle('on', CMP >= 0);
+};
+async function startCmp(i, keep) {
+  if (i < 0 || i >= V.length || i === vi || !KEY) return;
+  const btn = $('#cmp'), keepAB = keep ? AB : null; CMP = i; btn.textContent = '加载中…'; graph();
+  try {
+    if (loudBefore === null) { loudBefore = LOUD; if (!LOUD) { LOUD = 'min'; } }
+    await Promise.all([measure(vi), measure(i)]);
+    const plain = await plainOf(i); if (CMP !== i) return;
+    await setRef(plain, vname(V[i]), LU[i]); if (CMP !== i) return;
+    $('#refName').textContent = '对比 · ' + vname(V[vi]) + ' ↔ ' + vname(V[i]) + (loudBefore ? '' : ' · 已对齐响度');
+    abLabels(); setAB(keepAB || 'ref'); markList();
+  } catch (e) { stopCmp(); }
+}
+function stopCmp() {
+  if (CMP < 0) return; CMP = -1; refStop(); refBuf = null; REF = null; refStats = null; AB = 'mix';
+  if (loudBefore !== null) { LOUD = loudBefore; loudBefore = null; }
+  if (refN && actx) refN.gain.value = 0;
+  $('#refName').hidden = true; if (!REFV) $('#ab').classList.remove('has'); $('#refPick').textContent = REFV ? '换 REF' : '＋ 加 REF'; abLabels(); applyGains(); markList(); if (mstOpen) showStats();
+}
+$('#cmp').onclick = () => {
+  if (CMP >= 0) return stopCmp();
+  const prev = vi > 0 ? vi - 1 : -1; if (prev < 0) { $('#refName').hidden = false; $('#refName').textContent = '这已经是最早的一版，没有更早的可以对比'; return; }
+  if (REF) { REF = null; refBuf = null; refStop(); }   // 你发的 REF 占着位置：对比期间先让出，退出后再点 REF 能重新载入
+  startCmp(prev);
+};
+// 当前版本切走后，B 如果正好变成当前版本，就换个邻近的版本当 B
+function cmpFix() { if (CMP < 0) return; if (CMP === vi) { const alt = vi > 0 ? vi - 1 : vi + 1; alt < V.length ? startCmp(alt, true) : stopCmp(); } else abLabels(); }
 $('#abMix').onclick = () => setAB('mix');
 $('#abRef').onclick = () => { if (REF) setAB('ref'); else if (REFV) loadShared(); };
 $('#refPick').onclick = () => { graph(); $('#refFile').click(); };
@@ -1067,7 +1104,7 @@ async function loadShared() {   // 你发给客户的 REF：和版本一样加�
 }
 if (REFV) { $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; }
 document.addEventListener('keydown', e => { if (e.code === 'KeyR' && !/TEXTAREA|INPUT/.test(e.target.tagName) && (REF || REFV)) { e.preventDefault(); AB === 'ref' ? setAB('mix') : (REF ? setAB('ref') : loadShared()); } });
-$('#loud').onclick = () => { LOUD = LMODES[(LMODES.indexOf(LOUD) + 1) % LMODES.length]; store.set('review:loud', LOUD || '0'); if (LOUD) { graph(); measureAll(); } applyGains(); };
+$('#loud').onclick = () => { loudBefore = null; LOUD = LMODES[(LMODES.indexOf(LOUD) + 1) % LMODES.length]; store.set('review:loud', LOUD || '0'); if (LOUD) { graph(); measureAll(); } applyGains(); };
 // 记住了开着：第一次点播放时（有用户手势）接上
 $('#play').addEventListener('click', () => { if ((LOUD || REF) && graph()) { if (LOUD) measureAll(); applyGains(); } }, true);
 applyGains();
@@ -1103,7 +1140,7 @@ async function showStats() {
   if (el.dataset.tok !== tok || !mstOpen) return;
   const col = (o, k) => o ? fx(o[k], k === 'corr' ? 2 : k === 'clip' ? 0 : 1) : '';
   const big = (lab, k, u, warn) => `<div class="mb${warn && warn(s[k]) ? ' warn' : ''}"><span>${lab}</span><b>${col(s, k)}</b><i>${u}</i>${r ? `<em>REF ${col(r, k)}</em>` : ''}</div>`;
-  el.innerHTML = `<div class="mhd"><span>${esc(vname(V[i]))}</span>${r ? '<span class="mref">REF</span>' : ''}</div>
+  el.innerHTML = `<div class="mhd"><span>${esc(vname(V[i]))}</span>${r ? '<span class="mref">' + (CMP >= 0 ? esc(vname(V[CMP])) : 'REF') + '</span>' : ''}</div>
     <div class="mbig">${big('整体响度', 'i', 'LUFS')}${big('真峰值', 'tp', 'dBTP', v => v > -1)}${big('动态 LRA', 'lra', 'LU')}</div>
     ${spark([{ s, cls: 'a' }].concat(r ? [{ s: r, cls: 'b' }] : []))}
     <div class="mtab">${MROW.map(([lab, k, u, warn]) => `<div class="${warn && warn(s[k]) ? 'warn' : ''}"><span>${lab}</span><b>${col(s, k)}<i>${u}</i></b>${r ? `<b class="r">${col(r, k)}</b>` : ''}</div>`).join('')}</div>

@@ -527,3 +527,12 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .vg.old.open .vsum svg{transform:rotate(90deg)}
 .vsum.has::after{content:"";position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;background:var(--text-2)}
 @media(hover:hover){.vsum:hover{color:var(--text)}}
+
+/* 对比版本：版本列表里每行的「对比」，A / B 标记 */
+.loud.on#cmp{background:var(--pearl);color:var(--ink)}
+.vli{cursor:pointer}
+.vcmp{flex-shrink:0;font-size:12px;padding:5px 10px;border-radius:999px;background:var(--fill-3);color:var(--text-2);touch-action:manipulation}
+.vli.on .vcmp{display:none}
+.vab{flex-shrink:0;width:18px;font-style:normal;font-size:12px;font-weight:700;color:var(--text);text-align:center}
+.vab:empty{display:none}
+.vli.isb{background:var(--fill-2)}.vli.isb .vcmp{display:none}
