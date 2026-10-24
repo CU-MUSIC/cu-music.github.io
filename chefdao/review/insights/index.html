@@ -518,7 +518,7 @@ const money = (v, cur) => (SYM[cur] || '') + Math.round(v).toLocaleString('en-US
 const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
 const contacted = x => x.copy > 0 || x.contact > 0 || x.ordered > 0;
 const SRCNAME = { threads: 'Threads', ig: 'Instagram', ins: 'Instagram', instagram: 'Instagram', xhs: '小红书', xiaohongshu: '小红书', dy: '抖音', douyin: '抖音',
-  wx: '微信', wechat: '微信', fb: 'Facebook', x: 'X', yt: 'YouTube', kakao: 'KakaoTalk' };
+  wx: '微信', wechat: '微信', moments: '朋友圈', pyq: '朋友圈', group: '微信群', fb: 'Facebook', x: 'X', yt: 'YouTube', kakao: 'KakaoTalk' };
 function srcOf(x) {
   let u = null; try { u = JSON.parse(x.utm || 'null'); } catch (e) {}
   if (u && u.source) return SRCNAME[u.source.toLowerCase()] || u.source;
