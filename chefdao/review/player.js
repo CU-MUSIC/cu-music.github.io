@@ -1073,7 +1073,7 @@ async function startCmp(i, keep) {
     await Promise.all([measure(vi), measure(i)]);
     const plain = await plainOf(i); if (CMP !== i) return;
     await setRef(plain, vname(V[i]), LU[i]); if (CMP !== i) return;
-    $('#refName').textContent = '对比 · ' + vname(V[vi]) + ' ↔ ' + vname(V[i]) + (loudBefore ? '' : ' · 已对齐响度');
+    $('#refName').textContent = '对比 · ' + vname(V[vi]) + ' ↔ ' + vname(V[i]) + (loudBefore ? '' : ' · 已对齐响度') + (matchMedia('(hover:hover)').matches ? ' · 按 R 切换' : '');
     abLabels(); setAB(keepAB || 'ref'); markList();
   } catch (e) { stopCmp(); }
 }
