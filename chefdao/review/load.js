@@ -9,8 +9,10 @@
   const fail = t => { const b = document.getElementById('boot'); if (b) b.textContent = t; };
   if (!slug) return fail('链接不完整，请向刀大厨要完整链接');
   try {
-    const r = await fetch(API + '/rs?s=' + slug, { cache: 'no-store' });
+    let owner = null; try { owner = localStorage.getItem('insights:key'); } catch (e) {}   // 你自己的设备带着看板钥匙，归档的项目也能看
+    const r = await fetch(API + '/rs?s=' + slug, { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} });
     const j = await r.json();
+    if (!j.ok && j.e === 'archived') return fail('此项目已归档');
     if (!j.ok) return fail('找不到这首歌，请向刀大厨确认链接');
     j.song.versions.forEach(v => { if (v.audio.startsWith('/')) v.audio = API + v.audio; });
     if (!j.song.versions.length) return fail('这首歌暂时没有可以听的版本');

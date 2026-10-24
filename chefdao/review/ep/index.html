@@ -99,8 +99,12 @@ const KIND = { single: 'Single', ep: 'EP', album: 'Album' };
 const CU = '<svg viewBox="272 164 456 456"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
 if (!slug) { m.innerHTML = '<div class="boot">链接不完整，请向刀大厨要完整链接</div>'; return; }
 let P;
-try { const j = await (await fetch(API + '/pj?s=' + slug, { cache: 'no-store' })).json(); if (!j.ok) throw 0; P = j.project; }
-catch (e) { m.innerHTML = '<div class="boot">找不到这个项目，请向刀大厨确认链接</div>'; return; }
+let archived = false;
+try { let owner = null; try { owner = localStorage.getItem('insights:key'); } catch (e) {}
+  const j = await (await fetch(API + '/pj?s=' + slug, { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} })).json();
+  if (j.e === 'archived') archived = true;
+  if (!j.ok) throw 0; P = j.project; }
+catch (e) { m.innerHTML = '<div class="boot">' + (archived ? '此项目已归档' : '找不到这个项目，请向刀大厨确认链接') + '</div>'; return; }
 document.title = P.title;
 setTimeout(tilt, 0);
 // 访问记录：打开了项目页记一次（0 打开了），输对密码再记一次（1 查看了）。你自己的设备（存了看板钥匙）不记

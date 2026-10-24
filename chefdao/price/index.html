@@ -1509,11 +1509,11 @@ var I18N = {
 			depositNoteNew: "新客首单 7:3：用了立减优惠，定金 70% 开工，交付时补齐 30% 尾款。",
 			memberFastNote: "8 折仅适用于标准交付价，加急费不参与折扣。",
 			memberTitle: "刀门会员价", memberHelp: "点这里看刀门会员详情", memberSub: "混音与制作人费 8 折 · 加速通道 · 终身有效", memberLine: "刀门会员 · 8 折",
-			memberFee: 99, memOnLine: "刀门会员已启用 · 混音 8 折 · {d}交付",
+			memberFee: 99, memberCap: 300, memberCapTag: " · 单笔最多减 ¥300", memOnLine: "刀门会员已启用 · 混音 8 折 · {d}交付",
 			memOff: "非会员 ›", memAlready: "创始会员 ›",
 			memberPerNote: "折扣按主唱逐位算，非会员不受影响。",
 			mState0: "非会员", mState1: "创始会员", mState2: "本单加入", joinLine: "加入刀门",
-			memClosedNote: "刀门入会通道已关闭。已加入的创始会员，混音 8 折与加速通道终身有效，照常兑现。",
+			memClosedNote: "刀门入会通道已关闭。已加入的创始会员，混音 8 折与加速通道终身有效，照常兑现；自 2027 年 1 月 1 日起，每单会员折扣合计最多减 ¥300。",
 			pbYesMain: "加入刀门 {fee}，本单立省 {save}",
 			pbYesSub: "8 折终身有效 · <span class=\"qb-hl\">交付快{fast}</span> · 点此加入 ›",
 			pbNoMain: "加入刀门 {fee}，<span class=\"qb-hl\">交付快{fast}</span>",
@@ -1719,7 +1719,7 @@ var I18N = {
 				perksLabel: "创始会员权益",
 				perks: [
 					{ t: "加速通道", d: "标准 10–12 工作日 → 创始会员 <strong>6–9 工作日</strong>，最快一周交付。同一单里只要有一位是创始会员，整单都走加速。" },
-					{ t: "混音终身 8 折", d: "混音标准交付价与制作人费终身 8 折（不含录音；加急附加费不在折扣范围）。在上方报价计算器把自己标成创始会员即可预览。" },
+					{ t: "混音终身 8 折", d: "混音标准交付价与制作人费终身 8 折（不含录音；加急附加费不在折扣范围）。自 2027 年 1 月 1 日起，每单会员折扣合计最多减 ¥300。在上方报价计算器把自己标成创始会员即可预览。" },
 					{ t: "持续输出", d: "前沿录音混音技术、工程思路、实战经验，定期更新。" },
 					{ t: "每周作品点评", d: "每周一次，不间断。练习作品、demo、已发布单曲、商业项目均可交流。" }
 				]
@@ -2111,11 +2111,11 @@ var I18N = {
 			depositNoteNew: "First order 70 / 30: with the first-order discount, a 70% deposit starts the work and the 30% balance is due on delivery.",
 			memberFastNote: "The 20% discount applies to the standard price only — not the rush fee.",
 			memberTitle: "Daomen member price", memberHelp: "See Daomen membership details", memberSub: "20% off mixing & producer fee · fast lane · for life", memberLine: "Daomen member · 20% off",
-			memberFee: 15, memOnLine: "Daomen member active · 20% off · delivery in {d}",
+			memberFee: 15, memberCap: 45, memberCapTag: " · capped at $45", memOnLine: "Daomen member active · 20% off · delivery in {d}",
 			memOff: "Non-member ›", memAlready: "Founding member ›",
 			memberPerNote: "The discount applies per vocalist; non-members are unaffected.",
 			mState0: "Not a member", mState1: "Founding member", mState2: "Join now", joinLine: "Join Daomen",
-			memClosedNote: "Daomen is closed to new members. Founding members keep 20% off mixing and the fast lane for life.",
+			memClosedNote: "Daomen is closed to new members. Founding members keep 20% off mixing and the fast lane for life; from 1 Jan 2027 the member discount on a single order is capped at $45.",
 			pbYesMain: "Join Daomen for {fee}, save {save} on this order",
 			pbYesSub: "20% off for life · <span class=\"qb-hl\">{fast} faster</span> · tap to join ›",
 			pbNoMain: "Join Daomen for {fee}, <span class=\"qb-hl\">{fast} faster</span>",
@@ -2709,11 +2709,11 @@ var I18N = {
 			depositNoteNew: "첫 주문 7:3: 첫 주문 할인 적용 시 계약금 70%로 착수, 납품 시 잔금 30% 결제.",
 			memberFastNote: "20% 할인은 표준 가격에만 적용되며, 긴급 요금은 할인 대상이 아닙니다.",
 			memberTitle: "刀门 회원가", memberHelp: "刀门 멤버십 자세히 보기", memberSub: "믹싱·프로듀서 20% 할인 · 패스트 레인 · 평생", memberLine: "刀门 회원 · 20% 할인",
-			memberFee: 20000, memOnLine: "刀门 회원 적용 중 · 20% 할인 · {d} 납품",
+			memberFee: 20000, memberCap: 60000, memberCapTag: " · 최대 ₩60,000", memOnLine: "刀门 회원 적용 중 · 20% 할인 · {d} 납품",
 			memOff: "회원이 아닙니다 ›", memAlready: "창립 회원 ›",
 			memberPerNote: "할인은 보컬별로 적용되며 비회원에게는 영향이 없습니다.",
 			mState0: "비회원", mState1: "창립 회원", mState2: "지금 가입", joinLine: "刀门 가입",
-			memClosedNote: "刀门 가입이 마감되었습니다. 이미 가입하신 창립 회원은 믹싱 20% 할인과 패스트 레인이 평생 유지됩니다.",
+			memClosedNote: "刀门 가입이 마감되었습니다. 이미 가입하신 창립 회원은 믹싱 20% 할인과 패스트 레인이 평생 유지됩니다. 2027년 1월 1일부터 주문 1건당 회원 할인은 최대 ₩60,000입니다.",
 			pbYesMain: "{fee} 가입, 이번 주문에서 {save} 절약",
 			pbYesSub: "평생 20% 할인 · <span class=\"qb-hl\">납품 {fast} 단축</span> · 탭하여 가입 ›",
 			pbNoMain: "{fee} 가입, <span class=\"qb-hl\">납품 {fast} 단축</span>",
@@ -3197,6 +3197,9 @@ var qbState = qbDefaultState();
 var PRODUCER_RATE = 0.5;
 // 刀门会员折扣率（8 折 = 省 20%），按主唱逐位计算：只有会员/本单加入的那份享折扣
 var MEMBER_OFF = 0.2;
+// 会员折扣单笔封顶：2027-01-01 起，一单里所有会员折扣加起来最多减 q.memberCap（和已公告的 2027 年价格调整一起生效）
+var MEMBER_CAP_FROM = new Date("2027-01-01T00:00:00+08:00").getTime();
+function qbMemberCapOn() { return Date.now() >= MEMBER_CAP_FROM; }
 // 每位主唱的混音毛价份额：共同部分（基础/分轨 + 多主唱混音 + 和声）平摊，人声制作与音编各归各
 function qbGrossShares(q, count, base, mixExtra, harmPrice) {
 	var shared = base + mixExtra + harmPrice, arr = [];
@@ -3777,6 +3780,15 @@ function qbCompute(q) {
 		memDisc.push(di);
 		if (mst > 0) { memCount++; discount += di; }
 	}
+	// 单笔封顶：折扣总额超过上限就按比例缩，逐人取整后余数补给前面的人，保证加起来正好等于上限
+	var capped = false;
+	if (qbMemberCapOn() && q.memberCap && discount > q.memberCap) {
+		var capSum = 0, capRem;
+		for (var ci = 0; ci < memDisc.length; ci++) { memDisc[ci] = Math.floor(memDisc[ci] * q.memberCap / discount); capSum += memDisc[ci]; }
+		capRem = q.memberCap - capSum;
+		for (var cj = 0; cj < memDisc.length && capRem > 0; cj++) if (memDisc[cj] > 0) { memDisc[cj]++; capRem--; }
+		discount = q.memberCap; capped = true;
+	}
 	// 本单加入刀门：会员费按人计入总价（一次性，权益终身）
 	var joinFee = joinCount * q.memberFee;
 	// 快速通道：加急费 = 工作基数 ×档位费率（本身不打折）；速度是可选付费项，不是默认承诺
@@ -3812,7 +3824,7 @@ function qbCompute(q) {
 	return { base: base, baseItem: baseItem, from: (stems && baseItem.from) || !!qbState.taste, tasteFee: qbState.taste ? Math.min(deposit, qbTasteFee()) : 0, harmony: harmony, count: count,
 		mixExtra: mixExtra, prodTotal: prodTotal, prodCounts: prodCounts, maxProd: maxProd,
 		editTotal: editTotal, editCounts: editCounts,
-		gross: gross, gShares: gShares, workBase: workBase, discount: discount, memDisc: memDisc, newbie: newbie,
+		gross: gross, gShares: gShares, workBase: workBase, discount: discount, capped: capped, memDisc: memDisc, newbie: newbie,
 		memCount: memCount, joinCount: joinCount, joinFee: joinFee,
 		fast: fast, rush: rush, rushRate: rushRate, producer: producer,
 		mixTotal: mixTotal, recDeposit: recDeposit, rec: rec, recOpt: recOpt, recH: recH, recPerk: recPerk, memBeatsPerk: memBeatsPerk,
@@ -4364,7 +4376,7 @@ function renderQuoteBuilder() {
 			lines += '<div class="qb-bd-line discount"><span>' + q.recPerkLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.recPerk) + '</span></div>';
 		}
 		if (c.discount > 0) {
-			lines += '<div class="qb-bd-line discount"><span>' + q.memberLine + (c.memCount > 1 ? ' × ' + c.memCount : "") + '</span><span class="qb-bd-val">−' + qbFmt(q, c.discount) + '</span></div>';
+			lines += '<div class="qb-bd-line discount"><span>' + q.memberLine + (c.memCount > 1 ? ' × ' + c.memCount : "") + (c.capped ? q.memberCapTag : "") + '</span><span class="qb-bd-val">−' + qbFmt(q, c.discount) + '</span></div>';
 		}
 		if (c.joinFee > 0) {
 			lines += '<div class="qb-bd-line"><span>' + q.joinLine + (c.joinCount > 1 ? ' × ' + c.joinCount : "") + '</span><span class="qb-bd-val">+' + qbFmt(q, c.joinFee) + '</span></div>';
@@ -4645,7 +4657,7 @@ function qbQuoteText() {
 	if (c.rec > 0) item("+" + qbFmt(q, c.rec), q.recLine + " · " + c.recOpt.name, qbFmt(q, c.recOpt.rate) + "/" + q.recHrUnitShort + " × " + c.recH);
 	if (c.recPerk > 0) item("−" + qbFmt(q, c.recPerk), q.recPerkLine);
 	if (c.joinFee > 0) item("+" + qbFmt(q, c.joinFee), q.joinLine, per(q.memberFee, c.joinCount));
-	if (c.discount > 0) item("−" + qbFmt(q, c.discount), q.memberLine, c.memCount > 1 ? c.memCount + q.countUnit : "");
+	if (c.discount > 0) item("−" + qbFmt(q, c.discount), q.memberLine + (c.capped ? q.memberCapTag : ""), c.memCount > 1 ? c.memCount + q.countUnit : "");
 	if (c.newbie > 0) item("−" + qbFmt(q, c.newbie), q.newbieLine);
 	L.push(HH);
 	L.push("▍" + q.totalLabel + "　" + qbFmt(q, c.total) + sfx);
