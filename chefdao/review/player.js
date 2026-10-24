@@ -166,6 +166,8 @@ const a = $('#a');
 let PUSH = '', WK = '', notes = [], locked = null;
 // 刀大厨对评论的回复 / 完成标记：键 = 版本|时间点(0.1 秒)|内容
 let REPLIES = new Map();
+let ONOTES = [];   // 刀大厨自己的评论（歌手端显示，来自 /cr）
+const IS_OWNER = !!store.get('insights:key');
 const rk = (ver, t, m) => ver + '|' + (Math.round(t * 10) / 10) + '|' + m;
 const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 
@@ -509,6 +511,7 @@ function draw(now) {
   // 评论标记
   ctx.fillStyle = 'rgba(236,234,230,.95)';
   notes.forEach(o => { const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 2.5, 0, 7); ctx.fill(); });
+  if (!IS_OWNER && ONOTES.length) { ctx.strokeStyle = 'rgba(236,234,230,.95)'; ctx.lineWidth = 1.2; ONOTES.forEach(o => { if (o.ver !== cur.ver) return; const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 3, 0, 7); ctx.stroke(); }); }
   // 播放头
   if (tt > 0 || !a.paused) { ctx.fillStyle = '#ebe9e5'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - 1, 2, 2, h - 10, 1) : ctx.rect(px - 1, 2, 2, h - 10); ctx.fill(); }
 
@@ -580,7 +583,16 @@ function loadNotes() {
 loadNotes();
 let syncT = 0;
 const save = () => { store.set(dataKey(vi), JSON.stringify({ notes, overall: $('#overall').value })); markSeg();
-  clearTimeout(syncT); syncT = setTimeout(() => track(vi, true), 1500); };
+  clearTimeout(syncT); syncT = setTimeout(() => track(vi, true), 1500); ownerPush(vi); };
+// 你自己的评论默认同步给歌手：每次改动后把这个版本的评论整批发到服务端（歌手输对密码后在评论区看到「刀大厨」）
+let ownT = {};
+function ownerPush(i, now) {
+  if (!IS_OWNER || !window.SONG_LIVE) return;
+  const ver = V[i].ver, list = (() => { try { return (JSON.parse(store.get(dataKey(i)) || '{}').notes || []).map(o => ({ t: o.t, m: o.m })); } catch (e) { return []; } })();
+  clearTimeout(ownT[ver]);
+  ownT[ver] = setTimeout(() => { fetch(window.SONG_LIVE.api + '/on', { method: 'POST', headers: { Authorization: 'Bearer ' + store.get('insights:key'), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug: S.slug, ver, notes: list }), keepalive: true }).catch(() => {}); }, now ? 0 : 900);
+}
 const grow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
 
 txt.addEventListener('input', () => {
@@ -622,6 +634,7 @@ async function loadReplies() {
     const j = await (await fetch(API_BASE + '/cr?s=' + S.slug + '&k=' + encodeURIComponent(WK), { cache: 'no-store' })).json();
     if (!j.ok) return;
     REPLIES = new Map(j.replies.map(x => [rk(x.ver, x.t, x.m), x]));
+    ONOTES = j.onotes || [];
     render();
   } catch (e) {}
 }
@@ -644,7 +657,20 @@ function render(newId) {
     };
     list.appendChild(row);
   });
-  $('#n').textContent = notes.length; $('#empty').hidden = notes.length > 0;
+  const ow = IS_OWNER ? [] : ONOTES.filter(o => o.ver === cur.ver);
+  if (ow.length) {
+    const hd = document.createElement('div'); hd.className = 'donesep'; hd.textContent = '刀大厨的评论'; list.insertBefore(hd, list.firstChild);
+    let at = hd.nextSibling;
+    ow.forEach(o => {
+      const row = document.createElement('div'); row.className = 'row ow';
+      row.innerHTML = '<button class="t press"></button><div class="m"></div>';
+      row.querySelector('.t').textContent = fmt(o.t);
+      row.querySelector('.t').onclick = () => { seek(o.t); if (a.paused && !$('#play').disabled) a.play(); };
+      row.querySelector('.m').textContent = o.m;
+      list.insertBefore(row, at);
+    });
+  }
+  $('#n').textContent = notes.length; $('#empty').hidden = notes.length > 0 || ow.length > 0;
 }
 $('#overall').addEventListener('input', () => { save(); updateCta(); grow($('#overall')); });
 
@@ -776,6 +802,8 @@ async function jumpTo(ver, t) {
 }
 /* 刀大厨自己的设备（存了看板钥匙）+ 在线版本的歌：像 Samply 一样拖文件上传新版本、删版本 */
 function ownerTools() {
+  // 打开页面时，把这首歌各版本里已有的评论补同步一次（之后每次改动自动同步）
+  V.forEach((v, i) => { try { if ((JSON.parse(store.get(dataKey(i)) || '{}').notes || []).length) ownerPush(i, true); } catch (e) {} });
   const live = window.SONG_LIVE, key = store.get('insights:key');
   if (!live || !key) return;
   const own = $('#own'); own.hidden = false;
