@@ -112,6 +112,8 @@ try { let owner = null; try { owner = localStorage.getItem('insights:key'); } ca
   if (!j.ok) throw 0; P = j.project; }
 catch (e) { return pjErr(archived ? 'archived' : 'missing'); }
 document.title = P.title;
+if (P.archived) { const d = document.createElement('div'); d.textContent = '已归档 · 客户打不开，只有你的设备能看';
+  d.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99;padding:6px 14px;border-radius:99px;background:rgba(232,201,138,.16);border:1px solid rgba(232,201,138,.4);color:#e8c98a;font:500 13px/1.4 -apple-system,"PingFang SC",sans-serif;white-space:nowrap;pointer-events:none'; document.body.appendChild(d); }
 setTimeout(tilt, 0);
 // 访问记录：打开了项目页记一次（0 打开了），输对密码再记一次（1 查看了）。你自己的设备（存了看板钥匙）不记
 const sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
