@@ -959,7 +959,7 @@ async function loadPromos() {
   promoLoading = false; if (tab === 'orders') render();
 }
 const PRICE_URL = 'https://cumusic.work/chefdao/price/';
-const promoRule = p => (p.kind === 'pct' ? ((100 - p.value) / 10) + ' 折' : '立减 ¥' + p.value) + (p.min ? ' · 满 ¥' + p.min : '');
+const promoRule = p => (p.kind === 'pct' ? ((100 - p.value) / 10) + ' 折' : '立减 ¥' + p.value) + (p.min ? ' · 满 ¥' + p.min : '') + (p.aud === 'mem' ? ' · 会员回购码' : ' · 朋友圈码');
 function promoBox() {
   if (PROMOS === null) { loadPromos(); return '<details class="pmbox"><summary>优惠码</summary><div class="dim" style="padding:8px 0">加载中…</div></details>'; }
   const now = Date.now();
@@ -977,12 +977,12 @@ async function promoAct(act, code, btn) {
     if (act === 'toggle') { const p = PROMOS.find(x => x.code === code); await lib('/promo/save', { ...p, active: !p.active, expires: p.expires ? new Date(p.expires).toLocaleDateString('sv-SE') : '' }); }
     if (act === 'del') { if (!confirm('删除优惠码 ' + code + '？已经用过的订单不受影响')) return; await lib('/promo/del', { code }); }
     if (act === 'new') {
-      const v = prompt('格式：码, 折扣, 次数, 截止日期\n例：CYPHER, 9折, 20, 2026-11-30\n折扣写「9折」或「减50」；码留空自动生成；次数、截止可以不写', ''); if (v === null) return;
-      const [c, d, n, e] = v.split(/\s*[,，]\s*/); let kind = 'pct', value = 0, m;
-      if (m = /^(\d+(?:\.\d+)?)\s*折$/.exec(d || '')) value = Math.round((10 - +m[1]) * 10);
-      else if (m = /^(?:减|-)?\s*(\d+)\s*(?:元)?$/.exec(d || '')) { kind = 'off'; value = +m[1]; }
-      if (!(value > 0)) return alert('折扣没看懂，写「9折」或「减50」');
-      await lib('/promo/save', { code: c || '', kind, value, max: +n || 0, expires: /^\d{4}-\d{2}-\d{2}$/.test(e || '') ? e : '', active: true });
+      const v = prompt('格式：码, 立减, 次数, 截止日期, 满额, 类型\n例：NOV, 减80, 5, 2026-11-30, 满500, 朋友圈\n立减写「减80」（只做立减，不做打折）；类型写「朋友圈」（非会员，和新客立减二选一）或「会员」（老会员回购，可叠加 8 折）\n码留空自动生成；次数、截止、满额、类型可以不写（类型默认朋友圈）', ''); if (v === null) return;
+      const [c, d, n, e, mn, ty] = v.split(/\s*[,，]\s*/); let value = 0, m;
+      if (m = /^(?:减|-)?\s*(\d+)\s*(?:元)?$/.exec(d || '')) value = +m[1];
+      if (!(value > 0)) return alert('立减金额没看懂，写「减80」');
+      const min = (m = /(\d+)/.exec(mn || '')) ? +m[1] : 0;
+      await lib('/promo/save', { code: c || '', kind: 'off', value, min, aud: /会员/.test(ty || '') ? 'mem' : 'std', max: +n || 0, expires: /^\d{4}-\d{2}-\d{2}$/.test(e || '') ? e : '', active: true });
     }
     PROMOS = null; render();
   } catch (e) { alert('没成功，检查网络再试'); }
