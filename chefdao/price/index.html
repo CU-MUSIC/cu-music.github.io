@@ -444,11 +444,17 @@
 		.qbm-seg { display: flex; gap: 8px; flex-wrap: wrap; }
 		.qbm-seg button { flex: 1 1 130px; min-height: 42px; border-radius: 10px; border: 1px solid rgba(var(--ink), 0.16); background: none; color: inherit; font: inherit; font-size: 14px; cursor: pointer; }
 		.qbm-seg button.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.09); font-weight: 650; }
-		.qbm-n, .qbm-t { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-		.qbm-n > div { display: flex; align-items: center; gap: 14px; }
-		.qbm-n button { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(var(--ink), 0.2); background: none; color: inherit; font-size: 20px; cursor: pointer; }
-		.qbm-n button:disabled { opacity: .3; cursor: default; }
-		.qbm-n b { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
+		.qbm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+		.qbm-c { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border-radius: 10px; border: 1px solid rgba(var(--ink), 0.16); background: none; color: inherit; font: inherit; cursor: pointer; }
+		.qbm-c b { font-size: 15px; font-weight: 650; } .qbm-c span { font-size: 13px; color: rgba(var(--ink), 0.62); font-variant-numeric: tabular-nums; }
+		.qbm-c.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.1); } .qbm-c.on span { color: inherit; }
+		.qbm-more { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; border-radius: 10px; border: 1px dashed rgba(var(--ink), 0.22); background: none; color: inherit; font: inherit; font-size: 14px; cursor: pointer; width: 100%; }
+		.qbm-more.on { border-style: solid; border-color: var(--green-line); cursor: default; }
+		.qbm-more > div { display: flex; align-items: center; gap: 14px; }
+		.qbm-more button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(var(--ink), 0.2); background: none; color: inherit; font-size: 18px; cursor: pointer; }
+		.qbm-more button:disabled { opacity: .3; cursor: default; }
+		.qbm-t { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+		.qbm-t > div { display: flex; flex-direction: column; gap: 2px; } .qbm-t em { font-style: normal; font-size: 13px; color: rgba(var(--ink), 0.6); }
 		.qbm-t b { font-size: 24px; font-variant-numeric: tabular-nums; }
 		.qb-newbie.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.07); }
 		.qb-newbie.on .qb-switch { background: var(--green-soft); }
@@ -5292,9 +5298,9 @@ function qbOrderEsc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, fu
 // 面向 EP／专辑统一、实体压制、他方混音；混音价里已含简易母带，不另收。套餐按一次交来的整批算，不参与优惠码
 var QBM = { zh: { unit: 200, ep: 780, album: 1560, extra: 130 }, en: { unit: 30, ep: 115, album: 230, extra: 20 }, ko: { unit: 40000, ep: 155000, album: 310000, extra: 26000 } };
 var QBM_T = {
-	zh: { title: "母带套餐", sub: "一次交来的整批作品按首数封顶，不用逐首算。", st: "立体声母带", sm: "分轨母带", songs: "首数", unit: "首", total: "合计", avg: "均价 {v} / 首", cap1: "≤ 6 首封顶 {v}", cap2: "≤ 12 首封顶 {v}", cap3: "13 首起每多 1 首 +{v}", cta: "下单母带", note: "按一次交来的整批计价；不参与优惠码。", plan: "母带 · {t} · {n} 首" },
-	en: { title: "Mastering bundles", sub: "Priced per batch of songs with a cap, so you don't add it up song by song.", st: "Stereo mastering", sm: "Stem mastering", songs: "Songs", unit: "", total: "Total", avg: "{v} per song on average", cap1: "Up to 6 songs capped at {v}", cap2: "Up to 12 songs capped at {v}", cap3: "From 13 songs, each extra +{v}", cta: "Order mastering", note: "Priced per batch delivered together; promo codes don't apply.", plan: "Mastering · {t} · {n} songs" },
-	ko: { title: "마스터링 패키지", sub: "한 번에 맡기는 곡 수에 따라 상한가가 적용됩니다.", st: "스테레오 마스터링", sm: "스템 마스터링", songs: "곡 수", unit: "곡", total: "합계", avg: "곡당 평균 {v}", cap1: "6곡까지 상한 {v}", cap2: "12곡까지 상한 {v}", cap3: "13곡부터 곡당 +{v}", cta: "마스터링 주문", note: "한 번에 전달하는 묶음 기준 가격이며 프로모션 코드는 적용되지 않습니다.", plan: "마스터링 · {t} · {n}곡" }
+	zh: { title: "母带套餐", sub: "一次交来的整批作品按首数封顶，不用逐首算。", st: "立体声母带", sm: "分轨母带", songs: "首数", unit: "首", more: "13 首以上", per: "每多 1 首", total: "合计", avg: "均价 {v} / 首", cap1: "≤ 6 首封顶 {v}", cap2: "≤ 12 首封顶 {v}", cap3: "13 首起每多 1 首 +{v}", cta: "下单母带", note: "按一次交来的整批计价；不参与优惠码。", plan: "母带 · {t} · {n} 首" },
+	en: { title: "Mastering bundles", sub: "Priced per batch of songs with a cap, so you don't add it up song by song.", st: "Stereo mastering", sm: "Stem mastering", songs: "Songs", unit: "", more: "13+ songs", per: "extra song", total: "Total", avg: "{v} per song on average", cap1: "Up to 6 songs capped at {v}", cap2: "Up to 12 songs capped at {v}", cap3: "From 13 songs, each extra +{v}", cta: "Order mastering", note: "Priced per batch delivered together; promo codes don't apply.", plan: "Mastering · {t} · {n} songs" },
+	ko: { title: "마스터링 패키지", sub: "한 번에 맡기는 곡 수에 따라 상한가가 적용됩니다.", st: "스테레오 마스터링", sm: "스템 마스터링", songs: "곡 수", unit: "곡", more: "13곡 이상", per: "곡 추가", total: "합계", avg: "곡당 평균 {v}", cap1: "6곡까지 상한 {v}", cap2: "12곡까지 상한 {v}", cap3: "13곡부터 곡당 +{v}", cta: "마스터링 주문", note: "한 번에 전달하는 묶음 기준 가격이며 프로모션 코드는 적용되지 않습니다.", plan: "마스터링 · {t} · {n}곡" }
 };
 var qbMast = { stem: false, n: 6 }, qbMO = null;
 function qbMasterPrice(lang, stem, n) {
@@ -5306,16 +5312,21 @@ function qbMasterPrice(lang, stem, n) {
 }
 function qbMasterHtml() {
 	var q = I18N[currentLang].quote, t = QBM_T[currentLang] || QBM_T.zh, c = QBM[currentLang] || QBM.zh, k = qbMast.stem ? 2 : 1, n = qbMast.n;
-	var tot = qbMasterPrice(currentLang, qbMast.stem, n);
+	var tot = qbMasterPrice(currentLang, qbMast.stem, n), chips = "";
+	// 1–12 首每个数字直接标出价格；13 首起用 ± 加减
+	for (var i = 1; i <= 12; i++) chips += '<button type="button" class="qbm-c' + (n === i ? " on" : "") + '" onclick="qbMSet(\'pick\',' + i + ')"><b>' + i + t.unit + '</b><span>' + qbFmt(q, qbMasterPrice(currentLang, qbMast.stem, i)) + '</span></button>';
+	var more = n > 12
+		? '<div class="qbm-more on"><span>' + t.more + '</span><div><button type="button" aria-label="-" onclick="qbMSet(\'n\',-1)">−</button><b>' + n + t.unit + '</b><button type="button" aria-label="+" onclick="qbMSet(\'n\',1)"' + (n >= 40 ? " disabled" : "") + '>+</button></div></div>'
+		: '<button type="button" class="qbm-more" onclick="qbMSet(\'pick\',13)"><span>' + t.more + '</span><span>+' + qbFmt(q, c.extra * k) + ' / ' + t.per + '</span></button>';
 	return '<div class="price-card qbm" style="margin-top:12px"><div class="qbm-h"><b>' + t.title + '</b><span>' + t.sub + '</span></div>'
 		+ '<div class="qbm-seg"><button type="button" class="' + (qbMast.stem ? "" : "on") + '" onclick="qbMSet(\'stem\',0)">' + t.st + '</button><button type="button" class="' + (qbMast.stem ? "on" : "") + '" onclick="qbMSet(\'stem\',1)">' + t.sm + '</button></div>'
-		+ '<div class="qbm-n"><span>' + t.songs + '</span><div><button type="button" aria-label="-" onclick="qbMSet(\'n\',-1)"' + (n <= 1 ? " disabled" : "") + '>−</button><b>' + n + t.unit + '</b><button type="button" aria-label="+" onclick="qbMSet(\'n\',1)"' + (n >= 40 ? " disabled" : "") + '>+</button></div></div>'
-		+ '<div class="qbm-t"><span>' + t.total + '</span><b>' + qbFmt(q, tot) + '</b></div>'
-		+ '<div class="qbm-s">' + t.avg.replace("{v}", qbFmt(q, Math.round(tot / n))) + ' · ' + t.cap1.replace("{v}", qbFmt(q, c.ep * k)) + ' · ' + t.cap2.replace("{v}", qbFmt(q, c.album * k)) + ' · ' + t.cap3.replace("{v}", qbFmt(q, c.extra * k)) + '</div>'
+		+ '<div class="qbm-grid">' + chips + '</div>' + more
+		+ '<div class="qbm-t"><div><span>' + t.total + ' · ' + n + t.unit + '</span><em>' + t.avg.replace("{v}", qbFmt(q, Math.round(tot / n))) + '</em></div><b>' + qbFmt(q, tot) + '</b></div>'
+		+ '<div class="qbm-s">' + t.cap1.replace("{v}", qbFmt(q, c.ep * k)) + ' · ' + t.cap2.replace("{v}", qbFmt(q, c.album * k)) + '</div>'
 		+ '<button class="book-cta" type="button" onclick="qbMasterOrder()">' + t.cta + '</button><div class="qbm-s">' + t.note + '</div></div>';
 }
 function qbMSet(k, v) {
-	if (k === "stem") qbMast.stem = !!v; else qbMast.n = Math.max(1, Math.min(40, qbMast.n + v));
+	if (k === "stem") qbMast.stem = !!v; else if (k === "pick") qbMast.n = v; else qbMast.n = Math.max(13, Math.min(40, qbMast.n + v));
 	var m = document.getElementById("qbm-mount"); if (m) m.innerHTML = qbMasterHtml();
 }
 function qbMasterOrder() {
