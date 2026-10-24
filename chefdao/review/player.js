@@ -127,7 +127,7 @@ document.body.innerHTML = `
   </div>
   <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
-    <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+    <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="loopBtn" aria-pressed="false">循环</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
   <section class="mst" id="mst" hidden></section>
   <aside class="plist" id="plist" hidden></aside>
@@ -476,6 +476,7 @@ function renderParts() {
 $('#parts').addEventListener('click', e => { const b = e.target.closest('.pt'); if (b) onPart(+b.dataset.i); });
 a.addEventListener('loadedmetadata', renderParts);
 renderParts();
+let LOOP = { a: null, b: null };   // 循环一段：点「循环」设起点，再点设终点，再点取消；快捷键 L
 function draw(now) {
   if (!started && $('#app').classList.contains('in')) { started = true; t0 = now; }
   const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
@@ -496,6 +497,12 @@ function draw(now) {
     ctx.roundRect ? ctx.roundRect(x, mid - bh / 2, bw, bh, bw / 2) : ctx.rect(x, mid - bh / 2, bw, bh);
     ctx.fill();
   }
+  // 循环区间
+  if (LOOP.a !== null) {
+    const x1 = LOOP.a / dur() * w, x2 = (LOOP.b === null ? LOOP.a : LOOP.b) / dur() * w;
+    ctx.fillStyle = 'rgba(236,234,230,.13)'; ctx.fillRect(x1, 0, Math.max(2, x2 - x1), h);
+    ctx.fillStyle = 'rgba(236,234,230,.75)'; ctx.fillRect(x1, 0, 1.5, h); if (LOOP.b !== null) ctx.fillRect(x2 - 1.5, 0, 1.5, h);
+  }
   // 段落分界线
   ctx.fillStyle = 'rgba(236,234,230,.22)';
   PARTS.forEach(p => { if (p.t > .5) ctx.fillRect(Math.round(p.t / dur() * w), 0, 1, h); });
@@ -513,6 +520,28 @@ function draw(now) {
 }
 const frac = e => { const r = cv.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
 const seek = t => { a.currentTime = Math.min(dur(), Math.max(0, t)); lastT = a.currentTime; lastAt = performance.now(); };
+const loopBtn = $('#loopBtn');
+function loopUi() {
+  const on = LOOP.b !== null;
+  loopBtn.textContent = on ? '循环 ' + fmt(LOOP.a) + '–' + fmt(LOOP.b) + ' ×' : LOOP.a !== null ? '设终点 · 起点 ' + fmt(LOOP.a) : '循环';
+  loopBtn.setAttribute('aria-pressed', on);
+}
+function loopStep() {                       // 无 → 设起点 → 设终点（开始循环）→ 取消
+  const t = Math.round(curTime() * 10) / 10;
+  if (LOOP.b !== null) LOOP = { a: null, b: null };
+  else if (LOOP.a === null) LOOP.a = t;
+  else if (t - LOOP.a >= 1) { LOOP.b = t; seek(LOOP.a); if (a.paused && !$('#play').disabled) $('#play').click(); }
+  else LOOP = { a: null, b: null };         // 终点离起点不到 1 秒：当作取消
+  loopUi();
+}
+loopBtn.onclick = loopStep;
+// 播放中越过终点就回到起点；手动拖到终点之后不拉回
+let loopPrev = 0;
+setInterval(() => {
+  const t = a.currentTime;
+  if (LOOP.b !== null && !a.paused && loopPrev < LOOP.b && t >= LOOP.b && t - loopPrev < 0.6) seek(LOOP.a);
+  loopPrev = a.currentTime;
+}, 40);
 let drag = false;
 cv.addEventListener('pointerdown', e => { drag = true; cv.setPointerCapture(e.pointerId); seek(frac(e) * dur()); });
 box.addEventListener('pointermove', e => {
@@ -538,6 +567,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Space') { e.preventDefault(); toggle(); }
   if (e.code === 'ArrowLeft') seek(a.currentTime - 5);
   if (e.code === 'ArrowRight') seek(a.currentTime + 5);
+  if (e.code === 'KeyL' && !e.metaKey && !e.ctrlKey) loopStep();
   if (/^Digit[1-9]$/.test(e.code) && V[+e.code.slice(5) - 1]) switchTo(+e.code.slice(5) - 1);
 });
 
