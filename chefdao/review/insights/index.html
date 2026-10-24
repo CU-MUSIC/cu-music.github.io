@@ -272,7 +272,7 @@ if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
 let KEY = store.get('insights:key');
 let days = +store.get('insights:days') || 30, song = '', lis = '', data = null, pdata = null;
 let tab = store.get('insights:tab') || 'listen', ofilter = '';
-const TABS = [['lib', 'Library'], ['listen', '审听'], ['beat', '伴奏'], ['price', '价格页'], ['orders', '订单']];
+const TABS = [['lib', 'Library'], ['listen', '审听'], ['beat', '伴奏'], ['home', '主页'], ['price', '价格页'], ['orders', '订单']];
 // 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
 const SNAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
 // 推进按钮上写的是「进入这一步」的动作
@@ -404,7 +404,7 @@ function render() {
   const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div>
     ${tab === 'orders' || tab === 'lib' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
-  root.innerHTML = head + (tab === 'lib' ? renderLib() : tab === 'beat' ? renderBeat() : tab === 'price' ? renderPrice() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
+  root.innerHTML = head + (tab === 'lib' ? renderLib() : tab === 'beat' ? renderBeat() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
   document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
@@ -545,7 +545,7 @@ function rank(list, n) {
   const max = Math.max(1, ...list.map(r => r.n));
   return list.slice(0, n).map(r => `<div class="rk"><b>${esc(r.k)}</b><span>${r.right}</span><div class="bar"><i style="width:${r.n / max * 100}%"></i></div></div>`).join('');
 }
-const POS = { top: '页面顶部', end: '页面底部', order: '下单表单', faq: '常见问题', recording: '录音', mixing: '混音 & 母带', booking: '预约（报价器外）', creation: '词曲 & 编曲',
+const POS = { intro: '开场页', works: '作品', about: '关于', top: '页面顶部', end: '页面底部', order: '下单表单', faq: '常见问题', recording: '录音', mixing: '混音 & 母带', booking: '预约（报价器外）', creation: '词曲 & 编曲',
   direction: '项目制作人', projectlead: '项目负责人', course: '混音教学', daomen: '刀门会员', flow: '制作流程',
   'q:all': '报价器', 'q:rec': '报价器 · 推荐', 'q:mode': '报价器 · 类型', 'q:stems': '报价器 · 轨数', 'q:preset': '报价器 · 选套餐', 'q:count': '报价器 · 人数',
   'q:prod': '报价器 · 人声制作', 'q:edit': '报价器 · 音编', 'q:harmony': '报价器 · 和声', 'q:extra': '报价器 · 加项', 'q:perks': '报价器 · 权益', 'q:lane': '报价器 · 档期', 'q:summary': '报价器 · 报价单' };
@@ -553,7 +553,7 @@ const pos = k => POS[k] || k || '—';
 function renderTrace(rows) {
   const tr = new Map((pdata.trace || []).map(t => [t.sid, t]));
   const sess = rows.map(x => ({ x, t: tr.get(x.sid) })).filter(o => o.t);
-  if (!sess.length) return '<div class="blk"><div class="sect">卡点分析</div><div class="empty">新版价格页上线后开始收集</div></div>';
+  if (!sess.length) return '<div class="blk"><div class="sect">卡点分析</div><div class="empty">这段时间还没有停留数据</div></div>';
   const dwell = new Map(), left = new Map(); let nLeft = 0, scSum = 0;
   sess.forEach(({ x, t }) => {
     let d = {}; try { d = JSON.parse(t.dwell || '{}') || {}; } catch (e) {}
@@ -574,7 +574,7 @@ function renderTrace(rows) {
 function renderPrice() {
   if (!pdata) return '<div class="msg">价格页数据读不到（接口还没部署？）</div>';
   const now = pdata.now, since = now - days * 864e5;
-  const rows = pdata.events.filter(x => x.started >= since);
+  const rows = pdata.events.filter(x => x.started >= since && x.page !== 'home');
   if (!rows.length) return '<div class="empty">近 ' + days + ' 天价格页还没有访问记录</div>';
   const day0 = new Date(now); day0.setHours(0, 0, 0, 0);
   const start = day0.getTime() - (days - 1) * 864e5;
@@ -627,6 +627,53 @@ function renderPrice() {
     ${x.plan && (x.picked || x.quoted) ? `<div class="ver"><div class="t"><b>${esc(x.plan)}</b><span>${x.total != null ? money(x.total, x.cur) : '—'}</span></div>
       <div>${x.quoted ? '<span class="tag">看到报价</span>' : ''}${x.copy ? '<span class="tag hot">复制报价' + (x.copy > 1 ? ' ×' + x.copy : '') + '</span>' : ''}${x.contact ? '<span class="tag hot">点联系</span>' : ''}${x.share ? '<span class="tag">分享</span>' : ''}${x.form && !x.ordered ? '<span class="tag">打开表单没提交</span>' : ''}${x.ordered ? '<span class="tag hot">提交需求</span>' : ''}</div></div>`
       : '<div class="facts">只看了看，没动选项</div>'}
+  </div></div>`).join('')}</div>`;
+}
+
+// ── 主页：cumusic.work/chefdao 的访问（/pq 的 page_events，page = home）──
+// 字段含义：picked = 点了 ENTER / 回访直接进入，quoted = 看过 ABOUT，copy = 复制微信，contact = 点 PRICING，share = 点 Playlist，form = 点了专辑，picks = 点了哪些专辑
+function renderHome() {
+  if (!pdata) return '<div class="msg">主页数据读不到（接口还没部署？）</div>';
+  const now = pdata.now, since = now - days * 864e5;
+  const rows = pdata.events.filter(x => x.started >= since && x.page === 'home');
+  if (!rows.length) return '<div class="empty">近 ' + days + ' 天主页还没有访问记录（新埋点上线后开始收集）</div>';
+  const day0 = new Date(now); day0.setHours(0, 0, 0, 0);
+  const start = day0.getTime() - (days - 1) * 864e5;
+  const opens = new Array(days).fill(0), acts = new Array(days).fill(0);
+  const act = x => x.copy > 0 || x.contact > 0;
+  rows.forEach(x => { const i = Math.floor((x.started - start) / 864e5); if (i >= 0 && i < days) { opens[i]++; if (act(x)) acts[i]++; } });
+  const n = rows.length, visitors = new Set(rows.map(x => x.lid)).size;
+  const durs = rows.map(x => x.dur).sort((a, b) => a - b), med = durs[Math.floor(durs.length / 2)] || 0;
+  const nIn = rows.filter(x => x.picked).length, nAbout = rows.filter(x => x.quoted).length, nAlb = rows.filter(x => x.form > 0).length;
+  const nPrice = rows.filter(x => x.contact > 0).length, nWx = rows.filter(x => x.copy > 0).length, nSp = rows.filter(x => x.share > 0).length;
+  const step = (label, v, note) => `<div class="fn"><div class="t"><b>${label}</b><span>${v} · ${pct(v, n)}%${note ? ' · ' + note : ''}</span></div><div class="bar"><i style="width:${pct(v, n)}%"></i></div></div>`;
+  const albums = new Map();
+  rows.forEach(x => { let p = {}; try { p = JSON.parse(x.picks || '{}') || {}; } catch (e) {} Object.keys(p).forEach(k => { const v = albums.get(k) || { k, n: 0, who: 0 }; v.n += p[k]; v.who++; albums.set(k, v); }); });
+  const albList = [...albums.values()].sort((a, b) => b.n - a.n).map(v => ({ k: v.k, n: v.n, right: v.n + ' 次点击 · ' + v.who + ' 人' }));
+  const srcs = new Map(); rows.forEach(x => { const k = srcOf(x); const v = srcs.get(k) || { k, n: 0, act: 0 }; v.n++; if (act(x)) v.act++; srcs.set(k, v); });
+  const srcList = [...srcs.values()].sort((a, b) => b.n - a.n).map(v => ({ k: v.k, n: v.n, right: v.n + ' 次' + (v.act ? ' · ' + v.act + ' 次联系/看价格' : '') }));
+  const recent = rows.slice().sort((a, b) => b.updated - a.updated).slice(0, 40);
+  return `
+  <div class="cards">
+    <div class="card"><div class="lb">打开次数</div><div class="n">${n}</div><div class="d">${visitors} 位访客 · 停留中位 ${mins(med)}</div>${spark(opens)}</div>
+    <div class="card"><div class="lb">看价格 / 加微信</div><div class="n">${rows.filter(act).length}</div><div class="d">转化 ${pct(rows.filter(act).length, n)}% · 点 PRICING ${nPrice} · 复制微信 ${nWx}</div>${spark(acts)}</div>
+  </div>
+  <div class="blk"><div class="sect">漏斗<span>近 ${days} 天</span></div><div class="funnel">
+    ${step('打开主页', n)}
+    ${step('进入站点', nIn, '点 ENTER 或回访直接进')}
+    ${step('看了 ABOUT', nAbout)}
+    ${step('点了专辑', nAlb)}
+    ${step('点 PRICING', nPrice, '去了价格页')}
+    ${step('复制微信号', nWx, '点 Playlist ' + nSp)}
+  </div></div>
+  ${pdata.trace && pdata.trace.length ? renderTrace(rows) : ''}
+  <div class="blk"><div class="sect">最多人点的专辑</div><div class="rank">${albList.length ? rank(albList, 10) : '<div class="empty">还没人点专辑</div>'}</div></div>
+  <div class="blk"><div class="sect">来源</div><div class="rank">${rank(srcList, 8)}</div></div>
+  <div class="sect">最近访问<span>${recent.length} 条</span></div>
+  <div class="feed">${recent.map(x => `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
+    <div class="who">${who(x.lid, '访客')}<time>${when(x.updated, now)}</time></div>
+    <div class="dev">${esc(x.device || '设备')}${x.visit > 1 ? ' · 第 ' + x.visit + ' 次打开' : ''} · 停留 ${mins(x.dur)} · ${esc(srcOf(x))}${place(x.sid, x.country) ? ' · ' + esc(place(x.sid, x.country)) : ''}</div>
+    <div>${x.picked ? '<span class="tag">进入站点</span>' : '<span class="tag">只看了开场页</span>'}${x.quoted ? '<span class="tag">看了 ABOUT</span>' : ''}${x.form ? '<span class="tag">点专辑' + (x.form > 1 ? ' ×' + x.form : '') + '</span>' : ''}${x.contact ? '<span class="tag hot">点 PRICING</span>' : ''}${x.copy ? '<span class="tag hot">复制微信</span>' : ''}${x.share ? '<span class="tag">点 Playlist</span>' : ''}</div>
   </div></div>`).join('')}</div>`;
 }
 

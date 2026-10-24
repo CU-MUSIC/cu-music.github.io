@@ -1245,6 +1245,7 @@ function initFloatContact() {
 
 /* ========= Reveal content ========= */
 function revealContent() {
+  if (typeof hs !== 'undefined') hs.entered();
   document.body.style.overflow = 'auto';
   document.body.style.overflowX = 'hidden';
   document.getElementById('works-section').style.display = 'block';
@@ -1355,6 +1356,77 @@ function enterSite() {
     revealContent();
   }, 1000);
 }
+
+/* ========= 匿名访问统计 ========= */
+// 写到 stats.cumusic.work/p（看板 chefdao/review/insights/ 的「主页」）：只有匿名编号、停留、点了什么，不收任何个人信息。
+// 编号沿用审听页的 review:lid；打开过看板的设备（review:me）不统计。
+const hs = (() => {
+  const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const off = ls.get('review:me') === '1';
+  let lid = ls.get('review:lid');
+  if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); ls.set('review:lid', lid); }
+  let sid = ''; while (sid.length < 12) sid += Math.random().toString(36).slice(2);
+  const visit = (+ls.get('cd_hv') || 0) + 1; ls.set('cd_hv', String(visit));
+  const sp = new URLSearchParams(location.search), utm = {};
+  ['source', 'medium', 'campaign', 'content', 'term'].forEach(k => { const v = sp.get('utm_' + k); if (v) utm[k] = v.slice(0, 60); });
+  const ua = navigator.userAgent;
+  let device = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '其他';
+  const app = /Barcelona/i.test(ua) ? 'Threads' : /Instagram/i.test(ua) ? 'Instagram' : /FBAN|FBAV|FB_IAB/i.test(ua) ? 'Facebook' : /MicroMessenger/i.test(ua) ? '微信'
+    : /xhsdiscover|XiaoHongShu/i.test(ua) ? '小红书' : /aweme|BytedanceWebview|douyin/i.test(ua) ? '抖音' : /musical_ly|TikTok/i.test(ua) ? 'TikTok' : /Weibo/i.test(ua) ? '微博'
+    : / QQ\//.test(ua) ? 'QQ' : /KAKAOTALK/i.test(ua) ? 'KakaoTalk' : /NAVER\(inapp/i.test(ua) ? 'NAVER' : / Line\//.test(ua) ? 'LINE' : /Twitter/i.test(ua) ? 'X' : '';
+  if (app) device += ' · ' + app;
+  const from = (sp.get('from') || '').replace(/[^\w一-鿿-]/g, '').slice(0, 30);
+  if (from && !utm.source) utm.source = from;
+  const ref = document.referrer && document.referrer.indexOf(location.origin) !== 0 ? document.referrer : '';
+  const st = { off, sid: sid.slice(0, 12), lid, visit, utm, ref, device, shown: Date.now(), dur: 0, picked: 0, quoted: 0, copy: 0, contact: 0, share: 0, form: 0,
+    albums: {}, dw: {}, last: '', sc: 0, dirty: true, timer: 0 };
+  const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+  const clock = () => { if (st.shown) { st.dur += (Date.now() - st.shown) / 1000; st.shown = document.visibilityState === 'visible' ? Date.now() : 0; } };
+  const send = () => {
+    if (st.off || !st.dirty) return;
+    clock(); st.dirty = false;
+    const body = JSON.stringify({ page: 'home', sid: st.sid, lid, visit, dur: Math.round(st.dur * 10) / 10, lang: 'zh', device, ref, utm,
+      picked: st.picked, quoted: st.quoted, steps: 0, picks: st.albums, copy: st.copy, contact: st.contact, share: st.share, form: st.form, ordered: 0,
+      dw: st.dw, last: st.last, sc: st.sc });
+    try { fetch(API + '/p', { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'text/plain' } }).catch(() => {}); } catch (e) {}
+  };
+  const soon = ms => { clearTimeout(st.timer); st.timer = setTimeout(send, ms); };
+  // 此刻停在哪：开场 / 作品 / 关于
+  const where = () => {
+    if (document.getElementById('intro-overlay')) return 'intro';
+    const ab = document.getElementById('about-section');
+    return ab && ab.style.display === 'block' ? 'about' : 'works';
+  };
+  setInterval(() => {
+    if (st.off || document.visibilityState !== 'visible') return;
+    const k = where(), d = document.documentElement;
+    st.dw[k] = (st.dw[k] || 0) + 1; st.last = k;
+    const sc = Math.round((window.scrollY + window.innerHeight) / Math.max(1, d.scrollHeight) * 100);
+    if (sc > st.sc) st.sc = Math.min(100, sc);
+    st.dirty = true;
+  }, 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') { if (!st.shown) st.shown = Date.now(); } else { st.dirty = true; send(); }
+  });
+  window.addEventListener('pagehide', () => { st.dirty = true; send(); });
+  setInterval(() => { if (document.visibilityState === 'visible') { st.dirty = true; send(); } }, 30000);
+  // 点了什么
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a, #float-contact, .nav-link[data-tab]');
+    if (!a) return;
+    if (a.id === 'float-contact') st.copy++;
+    else if (a.dataset && a.dataset.tab === 'about') st.quoted = 1;
+    else if (a.classList.contains('pricing-btn') || /\/chefdao\/price/.test(a.getAttribute('href') || '')) st.contact++;
+    else if (/spotify\.com/.test(a.getAttribute('href') || '')) st.share++;
+    else if (a.closest('.album-row, .album-compact')) {
+      const t = a.closest('.album-row, .album-compact').querySelector('.title, .album-compact-title');
+      const k = ((t && t.textContent) || '专辑').trim().slice(0, 40);
+      st.albums[k] = (st.albums[k] || 0) + 1; st.form++;
+    } else return;
+    st.dirty = true; soon(800);
+  }, true);
+  return { entered() { if (!st.picked) { st.picked = 1; st.dirty = true; soon(800); } } };
+})();
 
 /* ========= Init ========= */
 // Private browsing (notably iOS Safari) can throw on localStorage access
