@@ -955,20 +955,20 @@ html.qbo-lock, html.qbo-lock body { overflow: hidden; }
 var CONTACT = { wechat: "Cookdao" };
 var SITE_URL = "cumusic.work/chefdao/price";
 // ── 排期设置 ─────────────────────────────────────────────
-// 标准：stdMin–stdMax 工作日（周日休息，跳过）；加急：rushMin–rushMax 自然日（含周日，加班）
+// 标准：stdMin–stdMax 工作日（周六、周日休息，跳过）；加急：rushMin–rushMax 自然日，日历上周末不可选
 // 交付日期全自动现算，平时零维护；真排爆了才把 backlogDays 调大几天，标准区间自动整体顺延
-// memberMin/Max：刀门加速通道的工作日区间。6 个工作日（跳周日）正好是一周。
+// memberMin/Max：刀门加速通道的工作日区间。2026-10-24 起双休：一周 = 5 个工作日，6 个工作日 = 一周零一天，对外说「约一周」。
 // ── 排期 ────────────────────────────────────────────────────
 // capacity：档期状态，平时只改这一个数。
-//   0 = 正常   1 = 有点满（+6 工作日 = 整推一周）   2 = 满档（+12 工作日 = 整推两周）
+//   0 = 正常   1 = 有点满（+5 工作日 = 整推一周）   2 = 满档（+10 工作日 = 整推两周）
 // ⚠️ 满档也照常给具体日期——绝不设「无期限」档位。没有截止日的活等于永远不做，
 //    还会一直占着心理带宽。想更快的客户走加急，那才是加急费该起作用的时候。
 var SCHEDULE = {
 	stdMin: 10, stdMax: 12, memberMin: 6, memberMax: 9, rushMin: 3, rushMax: 5,
 	backlogDays: 0,
-	// 周日不算工作日，所以 +6 正好是整推一周、+12 正好两周——比 +5/+10 好算也好解释。
+	// 双休（周六周日不算工作日）：+5 正好是整推一周、+10 正好两周。
 	capacity: 0,
-	capacityDays: [0, 6, 12],
+	capacityDays: [0, 5, 10],
 	// 到期日：过了这天自动回到「正常」。设 capacity 时必须一起设，别留空。
 	// 存在的意义是防止「档期紧」变成永久状态——排期满是暂时的，忘了关就等于停业。
 	// 2026-08-20 排期已排空，手动改回 0（capacity 为 0 时 capacityUntil 不生效，留空即可）。
@@ -986,7 +986,7 @@ function qbCapLevel() {
 }
 // 顺延了多久，用「周」说——跟交付时间同一套口径
 function qbCapWeekLabel(q) {
-	var w = Math.max(1, Math.round(qbCapDays() / 6));
+	var w = Math.max(1, Math.round(qbCapDays() / 5));
 	return (q.weekNames && q.weekNames[w - 1]) || q.weekN.replace("{w}", w);
 }
 function qbCapCard(q) {
@@ -1005,11 +1005,11 @@ function qbAddWorkdays(n) {
 	var d = new Date(), added = 0;
 	while (added < n) {
 		d.setDate(d.getDate() + 1);
-		if (d.getDay() !== 0) added++; // 0 = 周日，休息不计
+		if (d.getDay() !== 0 && d.getDay() !== 6) added++; // 周六、周日休息，不计
 	}
 	return d;
 }
-function qbAddDays(n) { // 自然日，含周日
+function qbAddDays(n) { // 自然日，含周末
 	var d = new Date();
 	d.setDate(d.getDate() + n);
 	return d;
@@ -1248,12 +1248,12 @@ function qbCalHtml(q) {
 	start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
 	var end = new Date(winB); end.setDate(end.getDate() + 7);
 	var head = "";
-	for (var w = 0; w < 7; w++) head += '<div class="qb-cal-wd' + (w === 6 ? " off" : "") + '">' + q.calWeek[w] + '</div>';
+	for (var w = 0; w < 7; w++) head += '<div class="qb-cal-wd' + (w >= 5 ? " off" : "") + '">' + q.calWeek[w] + '</div>';
 	var cells = "", cur = new Date(start), guard = 0;
 	while (cur <= end && guard++ < 120) {
 		var iso = qbFmtISO(cur), diff = Math.round((cur - today) / 86400000);
 		var cls = "qb-cal-d", tip = "", pick = false;
-		if (cur.getDay() === 0) { cls += " off"; tip = q.calOffTip; }
+		if (cur.getDay() === 0 || cur.getDay() === 6) { cls += " off"; tip = q.calOffTip; }
 		else if (diff < 0) cls += " past";
 		else {
 			var rr = qbRushRate(diff - cut);
@@ -1264,8 +1264,8 @@ function qbCalHtml(q) {
 				if (rr > 0) tip = "+" + Math.round(rr * 100) + "%";
 			}
 		}
-		// 周日不交付，别把它框进交付窗口——客户会以为交付日落在周日
-		if (cur >= winA && cur <= winB && cur.getDay() !== 0) cls += " win";
+		// 周末不交付，别把它框进交付窗口——客户会以为交付日落在周末
+		if (cur >= winA && cur <= winB && cur.getDay() !== 0 && cur.getDay() !== 6) cls += " win";
 		if (diff === 0) cls += " today";
 		if (qbState.targetDate === iso) cls += " sel";
 		var n = cur.getDate();
@@ -1300,16 +1300,16 @@ function qbBaseMax() { return qbHasMember() ? SCHEDULE.memberMax : SCHEDULE.stdM
 // 承诺给客户看的工作日区间（不含积压与 18:00 顺延，那两项只影响日期）
 function qbStdSpan() { return (qbBaseMin() + qbCapDays()) + "–" + (qbBaseMax() + qbCapDays()); }
 // 交付时间对外一律按「周」说：一周 / 两周 / 三周。
-// 「10–12 个工作日」要客户自己心算跨不跨周日，没人算得动；
+// 「10–12 个工作日」要客户自己心算跨不跨周末，没人算得动；
 // 具体是哪几天，日历上的绿框已经画出来了，不用再写一遍数字。
-// 一周 = 6 个工作日（周日休息），所以除以 6 向上取整。
-function qbWeeks() { return Math.max(1, Math.ceil((qbBaseMin() + qbCapDays()) / 6)); }
+// 一周 = 5 个工作日（周六周日休息），所以除以 5 四舍五入：10 → 两周，6 → 约一周（实际一周零一天，日历上的框是准的）。
+function qbWeeks() { return Math.max(1, Math.round((qbBaseMin() + qbCapDays()) / 5)); }
 function qbMemWeekLabel(q) {
-	var w = Math.max(1, Math.ceil((SCHEDULE.memberMin + qbCapDays()) / 6));
+	var w = Math.max(1, Math.round((SCHEDULE.memberMin + qbCapDays()) / 5));
 	return (q.weekNames && q.weekNames[w - 1]) || q.weekN.replace("{w}", w);
 }
 function qbStdWeekLabel(q) {
-	var w = Math.max(1, Math.ceil((SCHEDULE.stdMin + qbCapDays()) / 6));
+	var w = Math.max(1, Math.round((SCHEDULE.stdMin + qbCapDays()) / 5));
 	return (q.weekNames && q.weekNames[w - 1]) || q.weekN.replace("{w}", w);
 }
 function qbWeekLabel(q) {
@@ -1468,7 +1468,7 @@ var I18N = {
 			laneStdSub: "{n} · {r}", laneRushSub: "3–5 天 · {r}",
 			weekNames: ["一周", "两周", "三周", "四周", "五周", "六周"], weekN: "{w} 周", weekOne: "一周",
 			calWeek: ["一", "二", "三", "四", "五", "六", "日"],
-			calOffTip: "休", calLgBand: "预计交付", calLgWin: "无加急费", calLgRush: "加急 · 越早越贵", calLgOff: "周日休息", calLgBlocked: "太近，需私信",
+			calOffTip: "休", calLgBand: "预计交付", calLgWin: "无加急费", calLgRush: "加急 · 越早越贵", calLgOff: "周末休息", calLgBlocked: "太近，需私信",
 			calStdHint: "绿框是预计交付的日子。想更早，直接点日历上的日期。",
 			dateConfirm: "确认 {d} · 继续 ↓",
 			djFree: "感觉太慢？加入刀门 · 这天就不用加急费了",
@@ -1476,7 +1476,7 @@ var I18N = {
 			djSub: "会员优先排期，本单立省 {s} · 点此加入 ›",
 			laneStdGhost: "{n} · 当前不可选",
 			laneFast: "刀门会员走加速通道，{m}交付，比标准快整整一周；",
-			laneNote: "标准 {n}（周日休息，一周按 6 个工作日算）。具体交付日看日历上的绿框。{fastline}同一单里有一位会员，整单都加速。<br><br>工期自「素材齐全且方向确认版通过」当日起算，非自付定金起算。<br><br>指定更早的交付日期即按紧急度计加急费，越近越高；3 天内请私信确认。",
+			laneNote: "标准 {n}（周末休息，一周按 5 个工作日算）。具体交付日看日历上的绿框。{fastline}同一单里有一位会员，整单都加速。<br><br>工期自「素材齐全且方向确认版通过」当日起算，非自付定金起算。<br><br>指定更早的交付日期即按紧急度计加急费，越近越高；3 天内请私信确认。",
 			rushName: "加急费", laneSpecSub: "选具体日期 · 现算",
 			laneDatePrompt: "选择期望交付日期，自动计算加急费。",
 			laneDaysLeft: "距今 {d} 天", laneNoRush: "落在标准区间 · 无需加急费",
@@ -1766,9 +1766,9 @@ var I18N = {
 				a: "每一版都走同一个节奏：<strong>你 24 小时内反馈，我 24 小时内改完</strong>。",
 				list: [
 					"<strong>你</strong>：每个版本交付后 24 小时内给意见，听完整首、攒成一条发我",
-					"<strong>我</strong>：收到意见后 24 小时内交付修改版（周日休息，顺延到周一）",
+					"<strong>我</strong>：收到意见后 24 小时内交付修改版（周末休息，顺延到周一）",
 					"<strong>你超过 24 小时未反馈</strong>：交付日期按超出的天数顺延；加急项目自动转为标准排期，加急费不退",
-					"<strong>超过 72 小时仍无反馈</strong>（周日不计）：视为无意见，进入母带交付流程，按成品结清尾款；之后的改动按「交付后微调」计费",
+					"<strong>超过 72 小时仍无反馈</strong>（周末不计）：视为无意见，进入母带交付流程，按成品结清尾款；之后的改动按「交付后微调」计费",
 					"<strong>加急单我超过 24 小时未交付修改版</strong>（非你方原因）：每超 1 天，尾款减 ¥50，上限为加急费"
 				]
 			},
@@ -2070,7 +2070,7 @@ var I18N = {
 			laneStdSub: "{n} · {r}", laneRushSub: "3–5 days · {r}",
 			weekNames: ["1 week", "2 weeks", "3 weeks", "4 weeks", "5 weeks", "6 weeks"], weekN: "{w} weeks", weekOne: "a week",
 			calWeek: ["M", "T", "W", "T", "F", "S", "S"],
-			calOffTip: "off", calLgBand: "Delivery window", calLgWin: "No rush fee", calLgRush: "Rush · earlier costs more", calLgOff: "Sunday off", calLgBlocked: "Too soon — message to confirm",
+			calOffTip: "off", calLgBand: "Delivery window", calLgWin: "No rush fee", calLgRush: "Rush · earlier costs more", calLgOff: "Weekends off", calLgBlocked: "Too soon — message to confirm",
 			calStdHint: "The outlined days mark the delivery window. Tap any date for an earlier delivery.",
 			dateConfirm: "Confirm {d} · continue ↓",
 			djFree: "Too slow? Join Daomen — no rush fee on this date",
@@ -2078,7 +2078,7 @@ var I18N = {
 			djSub: "Members get scheduling priority. Saves {s} on this order · tap to join ›",
 			laneStdGhost: "{n} · unavailable now",
 			laneFast: "Daomen members take the fast lane — delivery in {m}, a full week ahead of standard; ",
-			laneNote: "Standard turnaround {n} (closed Sun; a week counts as 6 working days). The outlined days on the calendar are the delivery window. {fastline}one member on the order moves the whole order up.<br><br>The clock starts the day the material is complete and the direction check is signed off, not the day the deposit lands.<br><br>An earlier date adds a rush fee that scales with urgency: the closer, the higher. Under 3 days, message to confirm.",
+			laneNote: "Standard turnaround {n} (closed weekends; a week counts as 5 working days). The outlined days on the calendar are the delivery window. {fastline}one member on the order moves the whole order up.<br><br>The clock starts the day the material is complete and the direction check is signed off, not the day the deposit lands.<br><br>An earlier date adds a rush fee that scales with urgency: the closer, the higher. Under 3 days, message to confirm.",
 			rushName: "Rush fee", laneSpecSub: "Pick a date · auto-priced",
 			laneDatePrompt: "Choose a target delivery date. The rush fee is calculated automatically.",
 			laneDaysLeft: "{d} days out", laneNoRush: "Within the standard window · no rush fee",
@@ -2367,9 +2367,9 @@ var I18N = {
 				a: "Every version runs on the same clock: <strong>you reply within 24 hours, I revise within 24 hours</strong>.",
 				list: [
 					"<strong>You</strong>: send notes within 24 hours of each version — listen through, one message",
-					"<strong>Me</strong>: the revised version within 24 hours of your notes (closed Sundays; rolls to Monday)",
+					"<strong>Me</strong>: the revised version within 24 hours of your notes (closed weekends; rolls to Monday)",
 					"<strong>You reply after 24 hours</strong>: delivery moves back by the extra days; rush orders drop to standard scheduling, rush fee not refunded",
-					"<strong>No reply after 72 hours</strong> (Sundays not counted): taken as no further notes — the project moves to mastering and delivery, and the balance is due",
+					"<strong>No reply after 72 hours</strong> (weekends not counted): taken as no further notes — the project moves to mastering and delivery, and the balance is due",
 					"<strong>Rush orders only — I'm over 24 hours on a revision</strong> (not caused by you): $8 off the balance per day, capped at the rush fee"
 				]
 			},
@@ -2668,7 +2668,7 @@ var I18N = {
 			laneStdSub: "{n} · {r}", laneRushSub: "3–5일 · {r}",
 			weekNames: ["1주", "2주", "3주", "4주", "5주", "6주"], weekN: "{w}주", weekOne: "1주",
 			calWeek: ["월", "화", "수", "목", "금", "토", "일"],
-			calOffTip: "휴", calLgBand: "납품 예정", calLgWin: "긴급 요금 없음", calLgRush: "긴급 · 빠를수록 비쌈", calLgOff: "일요일 휴무", calLgBlocked: "너무 촉박 · 문의",
+			calOffTip: "휴", calLgBand: "납품 예정", calLgWin: "긴급 요금 없음", calLgRush: "긴급 · 빠를수록 비쌈", calLgOff: "주말 휴무", calLgBlocked: "너무 촉박 · 문의",
 			calStdHint: "테두리 표시가 납품 예정일입니다. 더 빠르게 원하시면 날짜를 눌러 주세요.",
 			dateConfirm: "{d} 확정 · 계속 ↓",
 			djFree: "너무 느리신가요? 刀门 가입 시 이 날짜는 긴급 요금이 없습니다",
@@ -2676,7 +2676,7 @@ var I18N = {
 			djSub: "회원 우선 배정 · 이 주문에서 {s} 절약 · 탭하여 가입 ›",
 			laneStdGhost: "{n} · 현재 선택 불가",
 			laneFast: "刀门 회원은 패스트 레인 — {m} 납품으로 표준보다 정확히 일주일 빠릅니다; ",
-			laneNote: "표준 {n}(일요일 휴무, 1주 = 영업일 6일). 정확한 납품일은 달력의 테두리 표시를 확인해 주세요. {fastline}한 주문에 회원이 한 명만 있어도 전체가 빨라집니다.<br><br>기간은 소스가 완비되고 방향 확인본이 승인된 날부터 산정되며, 계약금 입금일 기준이 아닙니다.<br><br>더 이른 날짜를 지정하면 긴급도에 따라 요금이 붙고, 가까울수록 높아집니다. 3일 이내는 문의해 주세요.",
+			laneNote: "표준 {n}(주말 휴무, 1주 = 영업일 5일). 정확한 납품일은 달력의 테두리 표시를 확인해 주세요. {fastline}한 주문에 회원이 한 명만 있어도 전체가 빨라집니다.<br><br>기간은 소스가 완비되고 방향 확인본이 승인된 날부터 산정되며, 계약금 입금일 기준이 아닙니다.<br><br>더 이른 날짜를 지정하면 긴급도에 따라 요금이 붙고, 가까울수록 높아집니다. 3일 이내는 문의해 주세요.",
 			rushName: "긴급 요금", laneSpecSub: "날짜 선택 · 자동 계산",
 			laneDatePrompt: "희망 납품일을 선택하면 긴급 요금이 자동 계산됩니다.",
 			laneDaysLeft: "{d}일 후", laneNoRush: "표준 범위 내 · 긴급 요금 없음",
@@ -2965,9 +2965,9 @@ var I18N = {
 				a: "모든 버전은 같은 리듬입니다: <strong>24시간 안에 의견, 24시간 안에 수정</strong>.",
 				list: [
 					"<strong>고객</strong>: 각 버전 납품 후 24시간 이내에 의견 — 곡 전체를 듣고 한 번에",
-					"<strong>저</strong>: 의견을 받은 뒤 24시간 이내에 수정본 전달 (일요일 휴무, 월요일로 순연)",
+					"<strong>저</strong>: 의견을 받은 뒤 24시간 이내에 수정본 전달 (주말 휴무, 월요일로 순연)",
 					"<strong>24시간을 넘겨 의견을 주시면</strong>: 넘긴 일수만큼 납품일 순연. 급행 프로젝트는 일반 일정으로 전환되며 급행비는 환불되지 않습니다",
-					"<strong>72시간이 지나도 의견이 없으면</strong> (일요일 제외): 의견 없음으로 간주하고 마스터링·납품 절차로 넘어가며 잔금을 정산합니다",
+					"<strong>72시간이 지나도 의견이 없으면</strong> (주말 제외): 의견 없음으로 간주하고 마스터링·납품 절차로 넘어가며 잔금을 정산합니다",
 					"<strong>급행 프로젝트에서 제가 24시간을 넘기면</strong> (고객 사유 제외): 하루당 잔금 ₩10,000 차감, 상한은 급행비"
 				]
 			},
@@ -4262,7 +4262,7 @@ function renderQuoteBuilder() {
 		html += qbRow("perks", idx.perks, q.perksLabel, '<div class="qb-perks">' + perksBody + '</div>', "", q.hints.perks);
 	}
 
-	// 交付日期：标准 stdMin–stdMax 工作日（跳周日）+积压；加急 rushMin–rushMax 自然日（含周日）
+	// 交付日期：标准 stdMin–stdMax 工作日（跳周末）+积压；加急 rushMin–rushMax 自然日（周末不可选）
 	// 晚 18:00 后下单当天排不进，cut=1 让整体顺延一天
 	var cut = qbCutoff();
 	var stdRange = qbFmtRange(qbAddWorkdays(qbStdMinDays()), qbAddWorkdays(qbStdMaxDays()), currentLang);
@@ -4283,7 +4283,7 @@ function renderQuoteBuilder() {
 		if (qbIsFull()) {
 			var ghost = '<div class="qb-seg-btn ghost" aria-disabled="true">'
 				+ '<span class="qb-seg-name">' + q.lanes[0].name + '</span>'
-				+ '<span class="qb-seg-price">' + q.laneStdGhost.replace("{n}", (q.weekNames && q.weekNames[Math.max(1, Math.ceil(qbBaseMin() / 6)) - 1]) || q.weekN.replace("{w}", Math.max(1, Math.ceil(qbBaseMin() / 6)))) + '</span></div>';
+				+ '<span class="qb-seg-price">' + q.laneStdGhost.replace("{n}", (q.weekNames && q.weekNames[Math.max(1, Math.round(qbBaseMin() / 5)) - 1]) || q.weekN.replace("{w}", Math.max(1, Math.round(qbBaseMin() / 5)))) + '</span></div>';
 			laneBody = '<div class="qb-seg two">' + ghost + relaxBtn + '</div>'
 				+ '<div class="qb-seg one">' + specBtn + '</div>'
 				+ qbCapCard(q);

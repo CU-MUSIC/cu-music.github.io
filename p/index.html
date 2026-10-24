@@ -100,7 +100,7 @@ function show(d) {
     $('sub').textContent = '有疑问请微信联系 ' + WECHAT;
   } else {
     const on = x => x ? md(x, true) : '';
-    const weeks = d.lane === 'rush' && d.target ? on(d.target) + ' 交付' : d.lane === 'member' ? '约一周交付' : d.wdMax ? '约' + ['一', '两', '三', '四'][Math.min(3, Math.ceil(d.wdMax / 6) - 1)] + '周交付' : '';
+    const weeks = d.lane === 'rush' && d.target ? on(d.target) + ' 交付' : d.lane === 'member' ? '约一周交付' : d.wdMax ? '约' + ['一', '两', '三', '四'][Math.min(3, Math.round(d.wdMax / 5) - 1)] + '周交付' : '';
     $('st').textContent = NAME[key];
     $('sub').textContent = {
       pay: '订单已确认，付款后安排排期' + (weeks ? ' · ' + weeks : ''),
