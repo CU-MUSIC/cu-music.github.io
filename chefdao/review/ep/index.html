@@ -97,14 +97,20 @@ const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { ret
 const fmt = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 const KIND = { single: 'Single', ep: 'EP', album: 'Album' };
 const CU = '<svg viewBox="272 164 456 456"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
-if (!slug) { m.innerHTML = '<div class="boot">链接不完整，请向刀大厨要完整链接</div>'; return; }
+const PJ_MSG = { incomplete: ['链接不完整', '请核对链接是否完整，或联系发送方获取新链接。'], missing: ['未找到该项目', '链接可能有误或已失效，请联系发送方确认。'], archived: ['此项目已归档', '该项目已完成交付并归档，如需回看请联系发送方。'] };
+function pjErr(k) {
+  const x = PJ_MSG[k];
+  m.innerHTML = '<div style="text-align:center;max-width:320px;margin:30vh auto 0;padding:0 24px"><div style="color:#d8d6d2;display:flex;justify-content:center;opacity:.9">' + CU.replace('<svg ', '<svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="30" stroke-linecap="round" ') + '</div>'
+    + '<div style="margin-top:22px;font-size:17px;font-weight:600;color:#e6e4e0">' + x[0] + '</div><div style="margin-top:8px;font-size:14px;line-height:1.7;color:#8a8886">' + x[1] + '</div></div>';
+}
+if (!slug) { return pjErr('incomplete'); }
 let P;
 let archived = false;
 try { let owner = null; try { owner = localStorage.getItem('insights:key'); } catch (e) {}
   const j = await (await fetch(API + '/pj?s=' + slug, { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} })).json();
   if (j.e === 'archived') archived = true;
   if (!j.ok) throw 0; P = j.project; }
-catch (e) { m.innerHTML = '<div class="boot">' + (archived ? '此项目已归档' : '找不到这个项目，请向刀大厨确认链接') + '</div>'; return; }
+catch (e) { return pjErr(archived ? 'archived' : 'missing'); }
 document.title = P.title;
 setTimeout(tilt, 0);
 // 访问记录：打开了项目页记一次（0 打开了），输对密码再记一次（1 查看了）。你自己的设备（存了看板钥匙）不记
