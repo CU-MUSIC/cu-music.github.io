@@ -807,6 +807,16 @@ function ownerTools() {
   const live = window.SONG_LIVE, key = store.get('insights:key');
   if (!live || !key) return;
   const own = $('#own'); own.hidden = false;
+  // 当前项目的聆听情况：和项目页同一份数据，挂在管理条下面
+  (async () => {
+    try {
+      const lj = await fetch(live.api + '/lib', { headers: { Authorization: 'Bearer ' + key } }).then(r => r.json());
+      const pj = lj.ok && lj.projects.find(x => x.tracks.some(t => t.slug === S.slug));
+      const slugs = pj ? pj.tracks.map(t => t.slug) : [S.slug], title = pj && pj.tracks.length > 1 ? pj.title : S.title;
+      await new Promise((ok, no) => { if (window.cuListenStats) return ok(); const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261025b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+      window.cuListenStats({ api: live.api, key, slugs, title, mount: el => own.after(el) });
+    } catch (e) {}
+  })();
   // 点歌名直接改名（客户那边同步变）
   const h = $('#vfile'); h.classList.add('editable'); h.title = '点一下改歌名';
   h.onclick = async () => {
