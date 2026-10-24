@@ -5296,18 +5296,20 @@ function qbOrderEsc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, fu
 
 // ── 母带套餐：每首单曲价累加，到封顶价就不再涨（≤6 首一档，≤12 首一档，13 首起每首另计）。分轨是立体声的 2 倍
 // 面向 EP／专辑统一、实体压制、他方混音；混音价里已含简易母带，不另收。套餐按一次交来的整批算，不参与优惠码
-var QBM = { zh: { unit: 200, ep: 780, album: 1560, extra: 130 }, en: { unit: 30, ep: 115, album: 230, extra: 20 }, ko: { unit: 40000, ep: 155000, album: 310000, extra: 26000 } };
+var QBM = { zh: { unit: 200, mini: 500, ep: 780, album: 1560, extra: 130 }, en: { unit: 30, mini: 75, ep: 115, album: 230, extra: 20 }, ko: { unit: 40000, mini: 100000, ep: 155000, album: 310000, extra: 26000 } };
 var QBM_T = {
-	zh: { title: "母带套餐", sub: "一次交来的整批作品按首数封顶，不用逐首算。", st: "立体声母带", sm: "分轨母带", songs: "首数", unit: "首", more: "13 首以上", per: "每多 1 首", total: "合计", avg: "均价 {v} / 首", cap1: "≤ 6 首封顶 {v}", cap2: "≤ 12 首封顶 {v}", cap3: "13 首起每多 1 首 +{v}", cta: "下单母带", note: "EP、专辑含 Intro / Outro 免费处理。按一次交来的整批计价；不参与优惠码。", plan: "母带 · {t} · {n} 首" },
-	en: { title: "Mastering bundles", sub: "Priced per batch of songs with a cap, so you don't add it up song by song.", st: "Stereo mastering", sm: "Stem mastering", songs: "Songs", unit: "", more: "13+ songs", per: "extra song", total: "Total", avg: "{v} per song on average", cap1: "Up to 6 songs capped at {v}", cap2: "Up to 12 songs capped at {v}", cap3: "From 13 songs, each extra +{v}", cta: "Order mastering", note: "EPs and albums include free Intro / Outro processing. Priced per batch delivered together; promo codes don't apply.", plan: "Mastering · {t} · {n} songs" },
-	ko: { title: "마스터링 패키지", sub: "한 번에 맡기는 곡 수에 따라 상한가가 적용됩니다.", st: "스테레오 마스터링", sm: "스템 마스터링", songs: "곡 수", unit: "곡", more: "13곡 이상", per: "곡 추가", total: "합계", avg: "곡당 평균 {v}", cap1: "6곡까지 상한 {v}", cap2: "12곡까지 상한 {v}", cap3: "13곡부터 곡당 +{v}", cta: "마스터링 주문", note: "EP·앨범은 인트로/아웃트로 처리가 무료로 포함됩니다. 한 번에 전달하는 묶음 기준 가격이며 프로모션 코드는 적용되지 않습니다.", plan: "마스터링 · {t} · {n}곡" }
+	zh: { title: "母带套餐", sub: "首数越多，每首越便宜。", st: "立体声母带", sm: "分轨母带", songs: "首数", unit: "首", more: "13 首以上", per: "每多 1 首", total: "合计", avg: "均价 {v} / 首", cap0: "3 首 {v}", cap1: "6 首封顶 {v}", cap2: "12 首封顶 {v}", cap3: "13 首起每多 1 首 +{v}", cta: "下单母带", note: "EP、专辑含 Intro / Outro 免费处理 · 一次交来的整批计价 · 不参与优惠码", plan: "母带 · {t} · {n} 首" },
+	en: { title: "Mastering bundles", sub: "The more songs, the less each one costs.", st: "Stereo mastering", sm: "Stem mastering", songs: "Songs", unit: "", more: "13+ songs", per: "extra song", total: "Total", avg: "{v} per song on average", cap0: "3 songs {v}", cap1: "6 songs capped at {v}", cap2: "12 songs capped at {v}", cap3: "From 13 songs, each extra +{v}", cta: "Order mastering", note: "EPs and albums include free Intro / Outro processing. Priced per batch delivered together; promo codes don't apply.", plan: "Mastering · {t} · {n} songs" },
+	ko: { title: "마스터링 패키지", sub: "곡 수가 많을수록 곡당 가격이 낮아집니다.", st: "스테레오 마스터링", sm: "스템 마스터링", songs: "곡 수", unit: "곡", more: "13곡 이상", per: "곡 추가", total: "합계", avg: "곡당 평균 {v}", cap0: "3곡 {v}", cap1: "6곡 상한 {v}", cap2: "12곡 상한 {v}", cap3: "13곡부터 곡당 +{v}", cta: "마스터링 주문", note: "EP·앨범은 인트로/아웃트로 처리가 무료로 포함됩니다. 한 번에 전달하는 묶음 기준 가격이며 프로모션 코드는 적용되지 않습니다.", plan: "마스터링 · {t} · {n}곡" }
 };
 var qbMast = { stem: false, n: 6 }, qbMO = null;
 function qbMasterPrice(lang, stem, n) {
 	var c = QBM[lang] || QBM.zh, k = stem ? 2 : 1, price;
-	if (n <= 6) price = Math.min(n * c.unit, c.ep);
-	else if (n <= 12) price = Math.min(c.ep + (n - 6) * c.unit, c.album);
-	else price = c.album + (n - 12) * c.extra;
+	if (n > 12) price = c.album + (n - 12) * c.extra;
+	else {   // 三层封顶：≤3 首 mini、≤6 首 EP、≤12 首专辑；两档之间 = 前一档封顶价 + 每多一首单曲价
+		price = n * c.unit;
+		[[3, c.mini], [6, c.ep], [12, c.album]].forEach(function (x) { price = Math.min(price, n <= x[0] ? x[1] : x[1] + (n - x[0]) * c.unit); });
+	}
 	return price * k;
 }
 function qbMasterHtml() {
@@ -5322,7 +5324,7 @@ function qbMasterHtml() {
 		+ '<div class="qbm-seg"><button type="button" class="' + (qbMast.stem ? "" : "on") + '" onclick="qbMSet(\'stem\',0)">' + t.st + '</button><button type="button" class="' + (qbMast.stem ? "on" : "") + '" onclick="qbMSet(\'stem\',1)">' + t.sm + '</button></div>'
 		+ '<div class="qbm-grid">' + chips + '</div>' + more
 		+ '<div class="qbm-t"><div><span>' + t.total + ' · ' + n + t.unit + '</span><em>' + t.avg.replace("{v}", qbFmt(q, Math.round(tot / n))) + '</em></div><b>' + qbFmt(q, tot) + '</b></div>'
-		+ '<div class="qbm-s">' + t.cap1.replace("{v}", qbFmt(q, c.ep * k)) + ' · ' + t.cap2.replace("{v}", qbFmt(q, c.album * k)) + '</div>'
+		+ '<div class="qbm-s">' + t.cap0.replace("{v}", qbFmt(q, c.mini * k)) + ' · ' + t.cap1.replace("{v}", qbFmt(q, c.ep * k)) + ' · ' + t.cap2.replace("{v}", qbFmt(q, c.album * k)) + '</div>'
 		+ '<button class="book-cta" type="button" onclick="qbMasterOrder()">' + t.cta + '</button><div class="qbm-s">' + t.note + '</div></div>';
 }
 function qbMSet(k, v) {
