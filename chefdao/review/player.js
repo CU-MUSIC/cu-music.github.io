@@ -21,12 +21,14 @@ const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户
 const V = S.versions.filter(v => v.ver !== 'REF');
 // 版本名精简：「舞步 Edit @ChefDao_V2_1018」→「编辑 V2」；按文件名里的 Edit / Mix / Master 分阶段，编辑在前、混音在后
 const STAGE = { edit: '编辑', mix: '混音', master: '母带' };
-const stageOf = v => { const f = String(v.file || '').replace(/@ChefDao.*$/i, '').replace(/_/g, ' ');
+const stageOf = v => { if (v.stage) return v.stage === 'none' ? '' : v.stage;   // 手动改过类别的优先
+  const f = String(v.file || '').replace(/@ChefDao.*$/i, '').replace(/_/g, ' ');
   if (/\bpre-?master/i.test(f)) return 'mix';
   const m = /(?<![A-Za-z])(Edit|Mix|Master)(?![A-Za-z])/i.exec(f); return m ? m[1].toLowerCase() : ''; };   // Mix1、Mix 1、Mix_1 都认
 // 显示名：有阶段的按阶段内第几个数（混音 1、混音 2），没阶段的用 V 号。内部编号 V1、V2 全局唯一，评论、统计都按它认
 // 按阶段排：编辑在前、混音、母带在后；同阶段保持上传先后（排序稳定）。这样同阶段的版本总是连在一起分组
-{ const rank = { '': 0, edit: 1, mix: 2, master: 3 }; V.sort((x, y) => rank[stageOf(x)] - rank[stageOf(y)]); }
+{ const rank = { '': 0, edit: 1, mix: 2, master: 3 }, at = new Map(V.map((v, i) => [v, i]));
+  V.sort((x, y) => rank[stageOf(x)] - rank[stageOf(y)] || (x.ord || 1e3 + at.get(x)) - (y.ord || 1e3 + at.get(y))); }
 const vlab = v => { const st = stageOf(v); return STAGE[st] ? String(V.filter(x => stageOf(x) === st).indexOf(v) + 1) : v.ver; };
 const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);
 const multiStage = new Set(V.map(stageOf)).size > 1;
@@ -832,13 +834,31 @@ function ownerTools() {
       catch (err) { busy('没删掉，检查网络再试'); }
     };
     row.appendChild(x);
+    const ed = document.createElement('span');
+    ed.className = 'vdel vedit'; ed.setAttribute('role', 'button'); ed.setAttribute('aria-label', '改类别和序号 ' + v.ver); ed.textContent = '✎';
+    ed.onclick = e => { e.stopPropagation(); editVer(v); };
+    row.insertBefore(ed, x);
   });
+  // 改类别和序号：类别 1 编辑 2 混音 3 母带 0 无；序号 = 在这个类别里排第几（别的版本自动顺延）
+  const editVer = async v => {
+    const names = { edit: 1, mix: 2, master: 3 }, cs = stageOf(v);
+    const a = prompt('《' + S.title + '》' + vname(v) + ' 的类别\n1 编辑　2 混音　3 母带　0 不分类', String(names[cs] || 0)); if (a === null) return;
+    const st = { 0: 'none', 1: 'edit', 2: 'mix', 3: 'master' }[a.trim()]; if (!st) { busy('类别只能填 0、1、2、3'); return; }
+    const inStage = V.filter(x => x !== v && stageOf(x) === (st === 'none' ? '' : st));
+    const cur = cs === (st === 'none' ? '' : st) ? V.filter(x => stageOf(x) === cs).indexOf(v) + 1 : inStage.length + 1;
+    const b = prompt('在「' + (st === 'none' ? '不分类' : STAGE[st]) + '」里排第几（1 = 最前，现有 ' + inStage.length + ' 个其他版本）', String(cur)); if (b === null) return;
+    const pos = Math.max(1, Math.min(inStage.length + 1, Math.round(+b) || cur));
+    inStage.splice(pos - 1, 0, v);
+    try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: inStage.map((x, i) => ({ ver: x.ver, stage: x === v ? st : undefined, ord: i + 1 })) }); location.reload(); }
+    catch (err) { busy('没保存上，检查网络再试'); }
+  };
   if (V.length < 2) $('#seg').hidden = true;   // 只剩一版时列表本来就不显示，删除按钮放到上传条里
   if (V.length === 1) {
     const x = document.createElement('button'); x.className = 'press'; x.textContent = '删除 ' + V[0].ver;
     x.onclick = async () => { if (!confirm('删除《' + S.title + '》' + V[0].ver + '？这是唯一的版本，删了客户就听不到了')) return;
       try { await post('/radm/del', { slug: S.slug, ver: V[0].ver }); location.reload(); } catch (e) { busy('没删掉，检查网络再试'); } };
     own.appendChild(x);
+    const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
   const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261024'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
