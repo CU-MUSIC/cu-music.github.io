@@ -125,6 +125,9 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s}
 .lcard:hover .lc{transform:scale(1.02)}
+.lcard.arch{opacity:.55}.lcard.arch:hover{opacity:.9}
+.archbar{display:flex;justify-content:space-between;align-items:center;width:100%;margin:22px 0 14px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06));color:var(--text-2,inherit);font-size:14px}
+.archbar span{color:var(--text-3)}
 .lc svg{width:42%;height:42%}.lc svg path{fill:none;stroke:#e8e6e2;stroke-width:36;stroke-linecap:round}
 .lloose{display:flex;flex-direction:column;gap:6px;font-size:15px;margin-bottom:24px}
 .lloose div{display:flex;justify-content:space-between}.lloose a{color:var(--text-2);font-size:13px}
@@ -445,6 +448,7 @@ function render() {
   root.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => editNote(b.dataset.ln));
   root.querySelectorAll('.lcard[data-p]').forEach(b => b.onclick = () => openProject(b.dataset.p));
   const ln = document.getElementById('lNew'); if (ln) ln.onclick = newProject;
+  const la = document.getElementById('lArch'); if (la) la.onclick = () => { showArch = !showArch; render(); };
   const rsm = document.getElementById('rsm'); if (rsm) rsm.ontoggle = () => { songsOpen = rsm.open; };
   root.querySelectorAll('[data-rs]').forEach(b => b.onclick = () => rsAction(b.closest('.rs').dataset.slug, b.dataset.rs, b));
   root.querySelectorAll('.cmr[data-go]').forEach(row => row.onclick = e => {
@@ -776,10 +780,14 @@ let LIB = { projects: [], loose: [] };
 const KINDS = { single: '单曲', ep: 'EP', album: '专辑' };
 const CUSVG = '<svg viewBox="272 164 456 456" aria-hidden="true"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
 const coverOf = p => p.cover ? `<div class="lc" style="background-image:url(${esc(API + p.cover)})"></div>` : `<div class="lc">${CUSVG}</div>`;
+let showArch = false;
 function renderLib() {
-  return `<div class="lbar"><span>${LIB.projects.length} 个项目</span><button class="go" id="lNew">＋ 新项目</button></div>
-  <div class="lgrid">${LIB.projects.map(p => `<button class="lcard" data-p="${esc(p.slug)}">${coverOf(p)}
-    <b>${esc(p.title)}</b><span>${esc(p.artist || '未填歌手')} · ${KINDS[p.kind] || 'EP'}${p.tracks.length > 1 ? ' · ' + p.tracks.length + ' 首' : ''}</span></button>`).join('')}</div>
+  const act = LIB.projects.filter(p => !p.archived), arch = LIB.projects.filter(p => p.archived);
+  const card = (p, a) => `<button class="lcard${a ? ' arch' : ''}" data-p="${esc(p.slug)}">${coverOf(p)}
+    <b>${esc(p.title)}</b><span>${esc(p.artist || '未填歌手')} · ${KINDS[p.kind] || 'EP'}${p.tracks.length > 1 ? ' · ' + p.tracks.length + ' 首' : ''}</span></button>`;
+  return `<div class="lbar"><span>${act.length} 个项目</span><button class="go" id="lNew">＋ 新项目</button></div>
+  <div class="lgrid">${act.map(p => card(p, false)).join('')}</div>
+  ${arch.length ? `<button class="archbar" id="lArch">已归档 ${arch.length} 个<span>${showArch ? '收起' : '展开'}</span></button>${showArch ? `<div class="lgrid">${arch.map(p => card(p, true)).join('')}</div>` : ''}` : ''}
   ${LIB.loose.length ? `<div class="sect">未归入项目<span>${LIB.loose.length}</span></div><div class="lloose">${LIB.loose.map(x => `<div>《${esc(x.title)}》<a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a></div>`).join('')}</div>` : ''}`;
 }
 async function lib(path, body, method) {
@@ -815,7 +823,7 @@ function openProject(slug) {
       <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-sh="${i}">分享</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
     <div class="msg2" id="pjMsg"></div>
-    <div class="row"><button type="button" class="go" id="pjSave">保存</button><button type="button" class="ghost danger" id="pjDel">删除项目</button></div></div>`;
+    <div class="row"><button type="button" class="go" id="pjSave">保存</button><button type="button" class="ghost" id="pjArch">${p.archived ? '取消归档' : '归档'}</button><button type="button" class="ghost danger" id="pjDel">删除项目</button></div></div>`;
   document.body.appendChild(el);
   const $p = id => document.getElementById(id), msg = (t, e) => { $p('pjMsg').textContent = t; $p('pjMsg').className = 'msg2' + (e ? ' err' : ''); };
   const close = () => el.remove();
@@ -855,6 +863,9 @@ function openProject(slug) {
     try { const pw = $p('pjP').value, sec = pw !== p.pass ? await sealPass(pw) : {};
       await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.trim(), kind: $p('pjK').value, ...sec }); msg('已保存'); await libReload(slug); }
     catch (e) { msg('没保存上，检查网络再试', true); }
+  };
+  $p('pjArch').onclick = async () => {
+    try { await lib('/lib/archive', { slug, on: !p.archived }); close(); await libReload(); } catch (e) { msg('没成功，检查网络再试', true); }
   };
   $p('pjDel').onclick = async () => {
     if (prompt('删除项目《' + p.title + '》？里面的歌和审听链接都还在，只是不再属于这个项目。\n确认请输入项目名：') !== p.title) return;
