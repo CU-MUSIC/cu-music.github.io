@@ -103,14 +103,47 @@ function pjErr(k) {
   m.innerHTML = '<div style="text-align:center;max-width:320px;margin:30vh auto 0;padding:0 24px"><div style="color:#d8d6d2;display:flex;justify-content:center;opacity:.9">' + CU.replace('<svg ', '<svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="30" stroke-linecap="round" ') + '</div>'
     + '<div style="margin-top:22px;font-size:17px;font-weight:600;color:#e6e4e0">' + x[0] + '</div><div style="margin-top:8px;font-size:14px;line-height:1.7;color:#8a8886">' + x[1] + '</div></div>';
 }
+// 申请制项目：客户填 ID 提交申请，等你批准；批准后这页自动进入（每 6 秒问一次）
+const apDevice = () => { const x = navigator.userAgent; return (/iPhone|iPad/.test(x) ? 'iPhone' : /Android/.test(x) ? '安卓' : /Mac/.test(x) ? 'Mac' : /Windows/.test(x) ? 'Windows' : '设备') + (/MicroMessenger/i.test(x) ? ' · 微信' : /xhsdiscover|XiaoHongShu/i.test(x) ? ' · 小红书' : /aweme|douyin/i.test(x) ? ' · 抖音' : ''); };
+function approvalGate(info) {
+  const name0 = ls.get('review:ap:name') || '', st = info.state;
+  const cover = info.project.cover ? ' style="background-image:url(' + API + info.project.cover + ')"' : '';
+  const stage = (st === 'pending') ? ['申请已提交', '批准后这个页面会自动打开，请保持页面开启，或稍后再回来。']
+    : (st === 'denied' || st === 'revoked') ? ['申请未通过', '如有疑问，请联系发送方。'] : null;
+  m.innerHTML = '<div class="cv"' + cover + '>' + (info.project.cover ? '' : CU) + '</div><h1>' + esc(info.project.title) + '</h1>'
+    + (stage
+      ? '<div class="ask" style="margin-top:28px">' + stage[0] + '</div><div style="margin:10px auto 0;max-width:300px;font-size:14px;line-height:1.7;color:var(--text-3)">' + stage[1] + '</div>'
+      : '<div class="ask" style="margin-top:28px">此项目需申请后查看</div>'
+        + '<form id="apf" style="margin:18px auto 0;max-width:300px;display:flex;flex-direction:column;gap:12px"><input id="apn" maxlength="40" autocomplete="off" placeholder="你的 ID（艺名或微信号）" value="' + esc(name0) + '" style="padding:13px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-size:16px;text-align:center">'
+        + '<button style="padding:13px;border-radius:12px;border:0;background:#eeeee6;color:#0e0e0f;font:inherit;font-weight:600;font-size:16px;cursor:pointer">申请查看</button><div id="ape" style="min-height:18px;font-size:13px;color:#e8a89a"></div></form>');
+  const poll = () => fetch(API + '/pj?s=' + slug + '&tok=' + tok, { cache: 'no-store' }).then(r => r.json()).then(j => { if (j.ok) location.reload(); else if (j.state === 'denied' || j.state === 'revoked') approvalGate(j); }).catch(() => {});
+  if (st === 'pending') setInterval(poll, 6000);
+  const f = document.getElementById('apf'); if (!f) return;
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const n = document.getElementById('apn').value.trim(), err = document.getElementById('ape'); if (!n) { err.textContent = '请填写你的 ID'; return; }
+    ls.set('review:ap:name', n); err.textContent = '';
+    try {
+      const r = await fetch(API + '/ap/req', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project: slug, tok, name: n, device: apDevice(), lid: ls.get('review:lid') || '' }) });
+      const j = await r.json();
+      if (!j.ok) { err.textContent = r.status === 429 ? '提交太频繁，请稍后再试' : '提交失败，请检查网络后重试'; return; }
+      if (j.state === 'approved') return location.reload();
+      approvalGate({ ...info, state: j.state });
+    } catch (x) { err.textContent = '提交失败，请检查网络后重试'; }
+  };
+}
 if (!slug) { return pjErr('incomplete'); }
 let P;
 let archived = false;
+// 浏览器凭证：申请制项目靠它认这台设备（批准后才放行），本机随机生成，换设备或清数据要重新申请
+const tok = (() => { let t = ls.get('review:tok'); if (!t || !/^[A-Za-z0-9]{24,64}$/.test(t)) { t = ''; const a = crypto.getRandomValues(new Uint8Array(32)); for (const b of a) t += 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 56]; ls.set('review:tok', t); } return t; })();
+let approvalInfo = null;
 try { let owner = null; try { owner = localStorage.getItem('insights:key'); } catch (e) {}
-  const j = await (await fetch(API + '/pj?s=' + slug, { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} })).json();
+  const j = await (await fetch(API + '/pj?s=' + slug + '&tok=' + tok, { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} })).json();
   if (j.e === 'archived') archived = true;
+  if (j.e === 'approval') approvalInfo = j;
   if (!j.ok) throw 0; P = j.project; }
-catch (e) { return pjErr(archived ? 'archived' : 'missing'); }
+catch (e) { if (approvalInfo) return approvalGate(approvalInfo); return pjErr(archived ? 'archived' : 'missing'); }
 document.title = P.title;
 if (P.archived) { const d = document.createElement('div'); d.textContent = '已归档 · 客户打不开，只有你的设备能看';
   d.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99;padding:6px 14px;border-radius:99px;background:rgba(232,201,138,.16);border:1px solid rgba(232,201,138,.4);color:#e8c98a;font:500 13px/1.4 -apple-system,"PingFang SC",sans-serif;white-space:nowrap;pointer-events:none'; document.body.appendChild(d); }
@@ -228,7 +261,7 @@ function progPanel() {
 }
 // 收款情况：只在你的设备（存了看板钥匙）显示。读每首歌的费用单，按人列出定金 / 尾款，定金收齐才开工
 async function payPanel() {
-  const qs = await Promise.all(P.tracks.map(t => fetch(API + '/rs?s=' + t.slug, { cache: 'no-store' }).then(r => r.json()).then(j => j.ok && j.song.quote ? { t, q: j.song.quote } : null).catch(() => null)));
+  const qs = await Promise.all(P.tracks.map(t => fetch(API + '/rs?s=' + t.slug + '&tok=' + tok, { cache: 'no-store' }).then(r => r.json()).then(j => j.ok && j.song.quote ? { t, q: j.song.quote } : null).catch(() => null)));
   const list = qs.filter(Boolean); if (!list.length) return;
   const price = (q, p) => p.fix != null ? p.fix : q.menu.base + q.menu.vocal[p.v][1] + q.menu.edit[p.e][1];
   const half = (q, p) => { const t = price(q, p), d = Math.min(t, p.da ?? Math.round(t / 2)); return [d, t - d]; };
@@ -259,7 +292,7 @@ pin.addEventListener('input', async () => {
   const d = document.getElementById('dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
   setTimeout(() => { pin.value = ''; dots.forEach(x => x.classList.remove('on')); focus(); }, 420);
 });
-const saved = P.open ? '' : ls.get('review:pj:' + slug), sk = saved !== null && await ok(saved);
+const saved = P.auto || (P.open ? '' : ls.get('review:pj:' + slug)), sk = saved !== null && await ok(saved);   // 申请制：批准后服务端给的密码直接解锁
 if (sk) open(saved, sk); else setTimeout(focus, 300);
 })();
 </script>

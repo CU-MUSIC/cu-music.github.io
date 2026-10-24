@@ -13,21 +13,25 @@
     missing: ['未找到该曲目', '链接可能有误或已失效，请联系发送方确认。'],
     empty: ['暂无可播放的版本', '该曲目尚未上传可试听的版本。'],
     net: ['网络连接异常', '请检查网络后刷新页面。'],
-    archived: ['此项目已归档', '该项目已完成交付并归档，如需回看请联系发送方。']
+    archived: ['此项目已归档', '该项目已完成交付并归档，如需回看请联系发送方。'],
+    approval: ['需要申请后查看', '该曲目属于需批准才能查看的项目。']
   };
-  const fail = k => {
+  const fail = (k, link) => {
     const b = document.getElementById('boot'); if (!b) return;
     const m = MSG[k] || [k, ''];
     b.innerHTML = '<div style="text-align:center;max-width:320px;padding:0 24px"><div style="color:#d8d6d2;display:flex;justify-content:center;opacity:.9">' + MARK + '</div>'
       + '<div style="margin-top:22px;font-size:17px;font-weight:600;color:#e6e4e0;letter-spacing:.01em">' + m[0] + '</div>'
-      + (m[1] ? '<div style="margin-top:8px;font-size:14px;line-height:1.7;color:#8a8886">' + m[1] + '</div>' : '') + '</div>';
+      + (m[1] ? '<div style="margin-top:8px;font-size:14px;line-height:1.7;color:#8a8886">' + m[1] + '</div>' : '')
+      + (link ? '<a href="' + link + '" style="display:inline-block;margin-top:18px;padding:10px 20px;border-radius:99px;background:#eeeee6;color:#0e0e0f;font-size:14px;font-weight:600;text-decoration:none">去项目页申请</a>' : '') + '</div>';
   };
   if (!slug) return fail('incomplete');
   try {
     let owner = null; try { owner = localStorage.getItem('insights:key'); } catch (e) {}   // 你自己的设备带着看板钥匙，归档的项目也能看
-    const r = await fetch(API + '/rs?s=' + slug, { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} });
+    let tok = ''; try { tok = localStorage.getItem('review:tok') || ''; } catch (e) {}
+    const r = await fetch(API + '/rs?s=' + slug + (tok ? '&tok=' + tok : ''), { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} });
     const j = await r.json();
     if (!j.ok && j.e === 'archived') return fail('archived');
+    if (!j.ok && j.e === 'approval') return fail('approval', j.project && j.project.url);
     if (!j.ok) return fail('missing');
     j.song.versions.forEach(v => { if (v.audio.startsWith('/')) v.audio = API + v.audio; });
     if (!j.song.versions.length) return fail('empty');

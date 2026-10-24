@@ -125,6 +125,12 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s}
 .lcard:hover .lc{transform:scale(1.02)}
+.rqbox{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.rqr{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06))}
+.rqi{min-width:0;display:flex;flex-direction:column;gap:2px}.rqi b{font-size:15px}.rqi span{font-size:12.5px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rqa{display:flex;align-items:center;gap:8px;flex-shrink:0}.rqa em{font-style:normal;font-size:12.5px;color:var(--text-3)}
+.rqa button{padding:6px 12px;border-radius:99px;background:var(--pearl);color:var(--ink);font-size:13px;font-weight:600}.rqa button.dz{background:none;color:var(--red);border:1px solid var(--line,rgba(255,255,255,.18))}
+.rqold summary{padding:8px 4px;font-size:13px;color:var(--text-3);cursor:pointer}
 .lcard.arch{opacity:.55}.lcard.arch:hover{opacity:.9}
 .archbar{display:flex;justify-content:space-between;align-items:center;width:100%;margin:22px 0 14px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06));color:var(--text-2,inherit);font-size:14px}
 .archbar span{color:var(--text-3)}
@@ -449,6 +455,7 @@ function render() {
   root.querySelectorAll('.lcard[data-p]').forEach(b => b.onclick = () => openProject(b.dataset.p));
   const ln = document.getElementById('lNew'); if (ln) ln.onclick = newProject;
   const la = document.getElementById('lArch'); if (la) la.onclick = () => { showArch = !showArch; render(); };
+  root.querySelectorAll('[data-rq]').forEach(b => b.onclick = () => reqAct(b.dataset.id, b.dataset.rq));
   const rsm = document.getElementById('rsm'); if (rsm) rsm.ontoggle = () => { songsOpen = rsm.open; };
   root.querySelectorAll('[data-rs]').forEach(b => b.onclick = () => rsAction(b.closest('.rs').dataset.slug, b.dataset.rs, b));
   root.querySelectorAll('.cmr[data-go]').forEach(row => row.onclick = e => {
@@ -780,7 +787,20 @@ let LIB = { projects: [], loose: [] };
 const KINDS = { single: '单曲', ep: 'EP', album: '专辑' };
 const CUSVG = '<svg viewBox="272 164 456 456" aria-hidden="true"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
 const coverOf = p => p.cover ? `<div class="lc" style="background-image:url(${esc(API + p.cover)})"></div>` : `<div class="lc">${CUSVG}</div>`;
-let showArch = false;
+let showArch = false, REQS = null;
+async function loadReqs() { try { const j = await api('/ap/list'); REQS = j.reqs || []; } catch (e) { REQS = REQS || []; } if (tab === 'lib') render(); }
+const reqWhen = t => { const d = new Date(t), p = n => String(n).padStart(2, '0'); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); };
+function renderReqs() {
+  if (REQS === null) { loadReqs(); return ''; }
+  if (!REQS.length) return '';
+  const pend = REQS.filter(r => r.status === 'pending'), rest = REQS.filter(r => r.status !== 'pending');
+  const ST = { approved: '已批准', denied: '已拒绝', revoked: '已撤销' };
+  const row = r => `<div class="rqr"><div class="rqi"><b>${esc(r.name)}</b><span>${esc(r.title || '项目')} · ${esc(r.device || '设备')}${r.city || r.country ? ' · ' + esc(r.city || r.country) : ''} · ${reqWhen(r.created)}</span></div>
+    <div class="rqa">${r.status === 'pending' ? `<button data-rq="approved" data-id="${r.id}">批准</button><button data-rq="denied" data-id="${r.id}" class="dz">拒绝</button>`
+      : `<em>${ST[r.status] || r.status}</em>${r.status === 'approved' ? `<button data-rq="revoked" data-id="${r.id}" class="dz">撤销</button>` : `<button data-rq="approved" data-id="${r.id}">改为批准</button>`}`}</div></div>`;
+  return `<div class="sect">审听申请<span>${pend.length ? '待批准 ' + pend.length : '无待批准'}</span></div><div class="rqbox">${pend.map(row).join('')}${rest.length ? `<details class="rqold"><summary>已处理 ${rest.length}</summary>${rest.map(row).join('')}</details>` : ''}</div>`;
+}
+async function reqAct(id, status) { try { await lib('/ap/decide', { id: +id, status }); REQS = null; render(); } catch (e) { alert('没成功，检查网络再试'); } }
 function renderLib() {
   const act = LIB.projects.filter(p => !p.archived), arch = LIB.projects.filter(p => p.archived);
   const card = (p, a) => `<button class="lcard${a ? ' arch' : ''}" data-p="${esc(p.slug)}">${coverOf(p)}
@@ -788,6 +808,7 @@ function renderLib() {
   return `<div class="lbar"><span>${act.length} 个项目</span><button class="go" id="lNew">＋ 新项目</button></div>
   <div class="lgrid">${act.map(p => card(p, false)).join('')}</div>
   ${arch.length ? `<button class="archbar" id="lArch">已归档 ${arch.length} 个<span>${showArch ? '收起' : '展开'}</span></button>${showArch ? `<div class="lgrid">${arch.map(p => card(p, true)).join('')}</div>` : ''}` : ''}
+  ${renderReqs()}
   ${LIB.loose.length ? `<div class="sect">未归入项目<span>${LIB.loose.length}</span></div><div class="lloose">${LIB.loose.map(x => `<div>《${esc(x.title)}》<a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a></div>`).join('')}</div>` : ''}`;
 }
 async function lib(path, body, method) {
@@ -815,7 +836,8 @@ function openProject(slug) {
     <div class="pjtop"><button type="button" class="pjcv" id="pjCv" title="换封面">${coverOf(p)}<span>换封面</span></button>
       <div class="pjf"><label>项目名<input type="text" id="pjT" value="${esc(p.title)}"></label><label>歌手<input type="text" id="pjA" value="${esc(p.artist || '')}" placeholder="多位用逗号分开，例如：阿杰, Uin"></label>
       <div class="row"><label>类型<select id="pjK">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}"${p.kind === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
-      <label>密码<input type="tel" id="pjP" maxlength="4" value="${esc(p.pass)}" placeholder="不设密码"></label></div></div></div>
+      <label>密码<input type="tel" id="pjP" maxlength="4" value="${esc(p.pass)}" placeholder="不设密码"></label></div>
+      <label>审听方式<select id="pjM"><option value="pass"${p.mode === 'approve' ? '' : ' selected'}>密码（默认）</option><option value="approve"${p.mode === 'approve' ? ' selected' : ''}>申请制：客户填 ID，你批准</option></select></label></div></div>
     <input type="file" id="pjFile" accept="image/*" hidden>
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
     <div class="sect">曲目<span>${p.tracks.length} 首</span></div>
@@ -861,7 +883,7 @@ function openProject(slug) {
   $p('pjSave').onclick = async () => {
     if (!/^(\d{4})?$/.test($p('pjP').value)) return msg('密码要 4 位数字，或者留空不设密码', true);
     try { const pw = $p('pjP').value, sec = pw !== p.pass ? await sealPass(pw) : {};
-      await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.trim(), kind: $p('pjK').value, ...sec }); msg('已保存'); await libReload(slug); }
+      await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.trim(), kind: $p('pjK').value, mode: $p('pjM').value, ...sec }); msg('已保存'); await libReload(slug); }
     catch (e) { msg('没保存上，检查网络再试', true); }
   };
   $p('pjArch').onclick = async () => {

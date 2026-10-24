@@ -337,7 +337,7 @@ $('#fee').addEventListener('click', async e => {
 async function loadPlaylist() {
   if (!S.project) return;
   try {
-    const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug, { cache: 'no-store' })).json();
+    const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug + '&tok=' + (store.get('review:tok') || ''), { cache: 'no-store' })).json();
     const T = j.ok ? j.project.tracks : []; if (T.length < 2) return;
     const el = $('#plist');
     el.innerHTML = `<div class="plh"><span>${esc(j.project.title)}</span><i>${T.length} 首</i></div>` + T.map((t, i) => `<a class="pli press${t.slug === S.slug ? ' on' : ''}" href="${esc(t.url)}" data-s="${esc(t.slug)}">
@@ -1348,7 +1348,7 @@ addEventListener('pagehide', report);
 /* 记住过密码就直接进 */
 // 自动解锁：这首歌记住的密码 → 记住的项目密码 → 同项目上一首用过的密码，依次试
 const saved = store.get(PW_KEY);
-let tries = [...new Set([saved, PJ_KEY && store.get(PJ_KEY), PJ_KEY && store.get(PJ_KEY + ':last')].filter(Boolean))];
+let tries = [...new Set([S.auto, saved, PJ_KEY && store.get(PJ_KEY), PJ_KEY && store.get(PJ_KEY + ':last')].filter(Boolean))];   // S.auto：申请制项目批准后服务端给的密码
 if (S.open || (S.project && S.project.open && S.project.wrap && !saved)) tryUnlock('', false);   // 不设密码：直接进
 else if (tries.length) tryUnlock(tries.shift(), false);
 else { noQuick(); setTimeout(focusPin, 300); }
