@@ -437,6 +437,19 @@
 		/* 入会通道关闭：这一行不是「可以点的选项」，压成纯说明 */
 		.mj-row.closed { opacity: 0.72; }
 		.mj-row.closed .mj-main { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+		.qbm { display: flex; flex-direction: column; gap: 12px; }
+		.qbm-h { display: flex; flex-direction: column; gap: 4px; }
+		.qbm-h b { font-size: 16px; } .qbm-h span, .qbm-s { font-size: 13px; line-height: 1.6; color: rgba(var(--ink), 0.6); }
+		.qbm-seg { display: flex; gap: 8px; flex-wrap: wrap; }
+		.qbm-seg button { flex: 1 1 130px; min-height: 42px; border-radius: 10px; border: 1px solid rgba(var(--ink), 0.16); background: none; color: inherit; font: inherit; font-size: 14px; cursor: pointer; }
+		.qbm-seg button.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.09); font-weight: 650; }
+		.qbm-n, .qbm-t { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+		.qbm-n > div { display: flex; align-items: center; gap: 14px; }
+		.qbm-n button { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(var(--ink), 0.2); background: none; color: inherit; font-size: 20px; cursor: pointer; }
+		.qbm-n button:disabled { opacity: .3; cursor: default; }
+		.qbm-n b { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
+		.qbm-t b { font-size: 24px; font-variant-numeric: tabular-nums; }
 		.qb-newbie.on { border-color: var(--green-line); background: rgba(var(--green-ink), 0.07); }
 		.qb-newbie.on .qb-switch { background: var(--green-soft); }
 		.qb-newbie.on .qb-switch::after { transform: translateX(14px); background: var(--green-deep); }
@@ -4841,6 +4854,7 @@ function renderMixIntro(svc) {
 	for (var i = 0; i < m.length; i++) ms += row(m[i].label, m[i].price);
 	return '<div class="price-card">' + mix + '</div>'
 		+ (ms ? '<div class="price-card" style="margin-top:12px">' + ms + '</div>' : '')
+		+ '<div id="qbm-mount">' + qbMasterHtml() + '</div>'
 		+ '<button class="book-cta" onclick="bookGo(\'mix\')">' + t.bookMix + '</button>';
 }
 // 从介绍区 / 开屏进入预约：先把第 01 步（录音）定好，再带到对应位置
@@ -5273,10 +5287,48 @@ function qbOrderSchedule() {
 }
 var qbOrderOpened = 0, qbOrderLast = null;
 function qbOrderEsc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+// ── 母带套餐：每首单曲价累加，到封顶价就不再涨（≤6 首一档，≤12 首一档，13 首起每首另计）。分轨是立体声的 2 倍
+// 面向 EP／专辑统一、实体压制、他方混音；混音价里已含简易母带，不另收。套餐按一次交来的整批算，不参与优惠码
+var QBM = { zh: { unit: 200, ep: 780, album: 1560, extra: 130 }, en: { unit: 30, ep: 115, album: 230, extra: 20 }, ko: { unit: 40000, ep: 155000, album: 310000, extra: 26000 } };
+var QBM_T = {
+	zh: { title: "母带套餐", sub: "一次交来的整批作品按首数封顶，不用逐首算。", st: "立体声母带", sm: "分轨母带", songs: "首数", unit: "首", total: "合计", avg: "均价 {v} / 首", cap1: "≤ 6 首封顶 {v}", cap2: "≤ 12 首封顶 {v}", cap3: "13 首起每多 1 首 +{v}", cta: "下单母带", note: "按一次交来的整批计价；不参与优惠码。", plan: "母带 · {t} · {n} 首" },
+	en: { title: "Mastering bundles", sub: "Priced per batch of songs with a cap, so you don't add it up song by song.", st: "Stereo mastering", sm: "Stem mastering", songs: "Songs", unit: "", total: "Total", avg: "{v} per song on average", cap1: "Up to 6 songs capped at {v}", cap2: "Up to 12 songs capped at {v}", cap3: "From 13 songs, each extra +{v}", cta: "Order mastering", note: "Priced per batch delivered together; promo codes don't apply.", plan: "Mastering · {t} · {n} songs" },
+	ko: { title: "마스터링 패키지", sub: "한 번에 맡기는 곡 수에 따라 상한가가 적용됩니다.", st: "스테레오 마스터링", sm: "스템 마스터링", songs: "곡 수", unit: "곡", total: "합계", avg: "곡당 평균 {v}", cap1: "6곡까지 상한 {v}", cap2: "12곡까지 상한 {v}", cap3: "13곡부터 곡당 +{v}", cta: "마스터링 주문", note: "한 번에 전달하는 묶음 기준 가격이며 프로모션 코드는 적용되지 않습니다.", plan: "마스터링 · {t} · {n}곡" }
+};
+var qbMast = { stem: false, n: 6 }, qbMO = null;
+function qbMasterPrice(lang, stem, n) {
+	var c = QBM[lang] || QBM.zh, k = stem ? 2 : 1, price;
+	if (n <= 6) price = Math.min(n * c.unit, c.ep);
+	else if (n <= 12) price = Math.min(c.ep + (n - 6) * c.unit, c.album);
+	else price = c.album + (n - 12) * c.extra;
+	return price * k;
+}
+function qbMasterHtml() {
+	var q = I18N[currentLang].quote, t = QBM_T[currentLang] || QBM_T.zh, c = QBM[currentLang] || QBM.zh, k = qbMast.stem ? 2 : 1, n = qbMast.n;
+	var tot = qbMasterPrice(currentLang, qbMast.stem, n);
+	return '<div class="price-card qbm" style="margin-top:12px"><div class="qbm-h"><b>' + t.title + '</b><span>' + t.sub + '</span></div>'
+		+ '<div class="qbm-seg"><button type="button" class="' + (qbMast.stem ? "" : "on") + '" onclick="qbMSet(\'stem\',0)">' + t.st + '</button><button type="button" class="' + (qbMast.stem ? "on" : "") + '" onclick="qbMSet(\'stem\',1)">' + t.sm + '</button></div>'
+		+ '<div class="qbm-n"><span>' + t.songs + '</span><div><button type="button" aria-label="-" onclick="qbMSet(\'n\',-1)"' + (n <= 1 ? " disabled" : "") + '>−</button><b>' + n + t.unit + '</b><button type="button" aria-label="+" onclick="qbMSet(\'n\',1)"' + (n >= 40 ? " disabled" : "") + '>+</button></div></div>'
+		+ '<div class="qbm-t"><span>' + t.total + '</span><b>' + qbFmt(q, tot) + '</b></div>'
+		+ '<div class="qbm-s">' + t.avg.replace("{v}", qbFmt(q, Math.round(tot / n))) + ' · ' + t.cap1.replace("{v}", qbFmt(q, c.ep * k)) + ' · ' + t.cap2.replace("{v}", qbFmt(q, c.album * k)) + ' · ' + t.cap3.replace("{v}", qbFmt(q, c.extra * k)) + '</div>'
+		+ '<button class="book-cta" type="button" onclick="qbMasterOrder()">' + t.cta + '</button><div class="qbm-s">' + t.note + '</div></div>';
+}
+function qbMSet(k, v) {
+	if (k === "stem") qbMast.stem = !!v; else qbMast.n = Math.max(1, Math.min(40, qbMast.n + v));
+	var m = document.getElementById("qbm-mount"); if (m) m.innerHTML = qbMasterHtml();
+}
+function qbMasterOrder() {
+	var q = I18N[currentLang].quote, t = QBM_T[currentLang] || QBM_T.zh, tot = qbMasterPrice(currentLang, qbMast.stem, qbMast.n);
+	var label = t.plan.replace("{t}", qbMast.stem ? t.sm : t.st).replace("{n}", qbMast.n);
+	var zh = QBM_T.zh.plan.replace("{t}", qbMast.stem ? QBM_T.zh.sm : QBM_T.zh.st).replace("{n}", qbMast.n);
+	qbMO = { total: tot, label: label + " · " + qbFmt(q, tot), plan: zh, detail: zh + "\n" + qbFmt(q, tot) };
+	qbOrderOpen();
+}
 function qbOrderOpen() {
-	var t = qbOrderT(), q = I18N[currentLang].quote, total = qbStatTotal(), from = false;
-	try { from = qbCompute(q).from; } catch (e) {}
-	var planTxt = qbStatPlanLocal() + (total === null ? "" : " · " + qbFmt(q, total) + (from ? "+" : ""));
+	var t = qbOrderT(), q = I18N[currentLang].quote, total = qbMO ? qbMO.total : qbStatTotal(), from = false;
+	if (!qbMO) { try { from = qbCompute(q).from; } catch (e) {} }
+	var planTxt = qbMO ? qbMO.label : qbStatPlanLocal() + (total === null ? "" : " · " + qbFmt(q, total) + (from ? "+" : ""));
 	var saved = {}; try { saved = JSON.parse(qbLsGet("cd_order_me") || "{}") || {}; } catch (e) {}
 	var w = CONTACT.wechat;
 	var el = document.getElementById("qbo");
@@ -5301,10 +5353,11 @@ function qbOrderOpen() {
 	document.documentElement.classList.add("qbo-lock");
 	requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("on"); }); });
 	qbOrderOpened = Date.now();
-	var cc = null; try { cc = qbCompute(q); } catch (e) {}
-	qbOrderLast = { plan: qbStatPlan(), total: total, sch: qbOrderSchedule(),
+	var cc = null; if (!qbMO) { try { cc = qbCompute(q); } catch (e) {} }
+	qbOrderLast = { plan: qbMO ? qbMO.plan : qbStatPlan(), total: total, sch: qbMO ? { edit: false } : qbOrderSchedule(), kind: qbMO ? "master" : "",
 		mem: cc ? cc.memCount : 0, old: cc ? cc.memCount - cc.joinCount : 0, nb: cc && currentLang === "zh" ? cc.newbie : 0 };
 	qbPromo = null;
+	if (qbMO) { var pf = document.getElementById("qbo-promo"); if (pf && pf.closest(".qbo-f")) pf.closest(".qbo-f").remove(); }
 	var pgo = document.getElementById("qbo-promo-go"), pin = document.getElementById("qbo-promo");
 	if (pgo) pgo.onclick = function () { qbPromoApply(); };
 	if (pin) { pin.onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); qbPromoApply(); } }; if (pin.value.trim()) qbPromoApply(); }
@@ -5341,6 +5394,7 @@ function qbPromoApply() {
 }
 function qbOrderKey(e) { if (e.key === "Escape") qbOrderClose(); }
 function qbOrderClose() {
+	qbMO = null;
 	var el = document.getElementById("qbo");
 	document.removeEventListener("keydown", qbOrderKey);
 	document.documentElement.classList.remove("qbo-lock");
@@ -5370,10 +5424,10 @@ function qbOrderSend(e) {
 	qbOrderFieldErr(); err.textContent = "";
 	btn.disabled = true; btn.textContent = t.sending;
 	qbLsSet("cd_order_me", JSON.stringify({ name: name, wechat: wx }));
-	var detail = ""; try { detail = qbQuoteText(); } catch (x) {}
+	var detail = ""; try { detail = qbMO ? qbMO.detail : qbQuoteText(); } catch (x) {}
 	if (qbPromo) { var sy = { zh: "¥", en: "$", ko: "₩" }[currentLang] || "¥"; detail += "\n" + (currentLang === "zh" ? "优惠码 " : "Promo ") + qbPromo.code + " −" + sy + qbPromo.off + " → " + sy + qbPromo.final; }
 	var body = JSON.stringify({ name: name, wechat: wx, song: v("qbo-song"), note: v("qbo-note"), website: v("qbo-hp"), promo: qbPromo ? qbPromo.code : "",
-		plan: qbOrderLast.plan, total: qbOrderLast.total, sch: qbOrderLast.sch, mem: qbOrderLast.mem, old: qbOrderLast.old, nb: qbOrderLast.nb, detail: detail, lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
+		plan: qbOrderLast.plan, total: qbOrderLast.total, sch: qbOrderLast.sch, mem: qbOrderLast.mem, old: qbOrderLast.old, nb: qbOrderLast.nb, kind: qbOrderLast.kind, detail: detail, lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
 	var fail = function (msg) { err.textContent = msg.replace("{w}", w); btn.disabled = false; btn.textContent = t.send; };
 	fetch(QBS_API + "/o", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
 		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
