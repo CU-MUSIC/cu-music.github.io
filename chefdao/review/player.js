@@ -511,7 +511,7 @@ function draw(now) {
   // 评论标记
   ctx.fillStyle = 'rgba(236,234,230,.95)';
   notes.forEach(o => { const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 2.5, 0, 7); ctx.fill(); });
-  if (!IS_OWNER && ONOTES.length) { ctx.strokeStyle = 'rgba(236,234,230,.95)'; ctx.lineWidth = 1.2; ONOTES.forEach(o => { if (o.ver !== cur.ver) return; const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 3, 0, 7); ctx.stroke(); }); }
+  if (!IS_OWNER && ONOTES.length) { ctx.fillStyle = '#3f8a68'; ONOTES.forEach(o => { if (o.ver !== cur.ver) return; const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 3, 0, 7); ctx.fill(); }); }
   // 播放头
   if (tt > 0 || !a.paused) { ctx.fillStyle = '#ebe9e5'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - 1, 2, 2, h - 10, 1) : ctx.rect(px - 1, 2, 2, h - 10); ctx.fill(); }
 

@@ -201,7 +201,9 @@ svg{display:block}
   font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:1px}
 .row .t:hover{background:rgba(236,234,230,.18)}
 .row .m{flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.55;padding-top:2px}
-.row.ow .m::before{content:"刀大厨";display:inline-block;margin-right:8px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--accent-2)}
+.row.ow .m::before{content:"刀大厨";display:inline-block;margin-right:8px;padding:1px 8px;border-radius:99px;background:#2f6b4f;font-size:12px;font-weight:600;letter-spacing:.04em;color:#f1f0ea;vertical-align:1px}
+.row.ow .t{background:rgba(47,107,79,.38);color:#bfe3cf}
+.row.ow .t:hover{background:rgba(47,107,79,.6)}
 .row .x{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--text-3);opacity:.7}
 .row .x svg{width:12px;height:12px;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 .row .x:hover{background:var(--fill-2);color:var(--text);opacity:1}
