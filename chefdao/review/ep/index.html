@@ -48,7 +48,8 @@ h1{margin-top:6px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:
 /* 键盘弹出：封面缩小、上下留白收紧，密码点留在键盘上面 */
 body{transition:padding-top .42s cubic-bezier(.32,.72,0,1)}
 .cv{transition:width .42s cubic-bezier(.32,.72,0,1),border-radius .42s cubic-bezier(.32,.72,0,1)}
-.cv::after{transition:opacity .3s ease}
+.cv::after{transition:opacity .6s ease}
+.cv:not(.ld)::after{opacity:0}   /* 封面图没加载完之前不显示下面的柔光：那时它拿的是灰底渐变，会闪一块怪色 */
 .kind,h1,.ask{transition:margin .42s cubic-bezier(.32,.72,0,1),font-size .42s cubic-bezier(.32,.72,0,1)}
 body.kb{padding-top:16px}
 body.kb .cv{width:96px;border-radius:12px}body.kb .cv::after{opacity:0}
@@ -164,6 +165,8 @@ m.innerHTML = '<div class="cv"' + (P.cover ? ' style="background-image:url(' + A
   + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '')
   + '<div id="gate"><div class="ask" id="ask">输入密码收听</div><div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>'
   + '<input class="pin" id="pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="密码"></div><div id="list"></div>';
+// 封面图加载完才亮起下面的柔光；没有封面的项目不显示柔光
+if (P.cover) { const cvEl = m.querySelector('.cv'), im = new Image(); im.onload = () => cvEl && cvEl.classList.add('ld'); im.src = API + P.cover; }
 // 封面立体转动：电脑跟鼠标，手机跟陀螺仪（以拿手机的初始角度为准，慢慢回正）。iPhone 要在第一次点屏幕时允许「运动与方向」
 function tilt() {
   const cv = m.querySelector('.cv'); if (!cv || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
