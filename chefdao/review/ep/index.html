@@ -145,6 +145,7 @@ try { let owner = null; try { owner = localStorage.getItem('insights:key'); } ca
   if (!j.ok) throw 0; P = j.project; }
 catch (e) { if (approvalInfo) return approvalGate(approvalInfo); return pjErr(archived ? 'archived' : 'missing'); }
 document.title = P.title;
+if (P.cover) { const sc = document.createElement('script'); sc.src = '../tint.js?v=20261025d'; sc.onload = () => window.cuTint(API + P.cover); document.head.appendChild(sc); }
 if (P.archived) { const d = document.createElement('div'); d.textContent = '已归档 · 客户打不开，只有你的设备能看';
   d.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99;padding:6px 14px;border-radius:99px;background:rgba(232,201,138,.16);border:1px solid rgba(232,201,138,.4);color:#e8c98a;font:500 13px/1.4 -apple-system,"PingFang SC",sans-serif;white-space:nowrap;pointer-events:none'; document.body.appendChild(d); }
 setTimeout(tilt, 0);

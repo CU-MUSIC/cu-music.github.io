@@ -291,6 +291,7 @@ function prefetchOthers() {
 }
 // 项目封面：页头那块方形封面换成项目的封面图
 if (S.cover) { const art = document.querySelector('#app .head .art'); if (art) art.style.backgroundImage = 'url(' + API_BASE + S.cover + ')'; }
+if (S.cover) { const sc = document.createElement('script'); sc.src = '../tint.js?v=20261025d'; sc.onload = () => window.cuTint(API_BASE + S.cover); document.head.appendChild(sc); }
 /* ───────── 费用：每位歌手自己选人声制作和音频编辑，点「确定」；每人各付各的，定金 / 尾款各一半。收了这个人的定金，他的选择就锁定 ───────── */
 let Q = S.quote || null, feeOpen = null, feeOwner = null, feeOwnerP = null;
 const yuan = n => '¥' + n.toLocaleString('en-US');
