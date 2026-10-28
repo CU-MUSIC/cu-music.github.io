@@ -344,8 +344,18 @@ async function loadPlaylist() {
     const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug + '&tok=' + (store.get('review:tok') || ''), { cache: 'no-store' })).json();
     const T = j.ok ? j.project.tracks : []; if (T.length < 2) return;
     const el = $('#plist');
-    el.innerHTML = `<div class="plh"><span>${esc(j.project.title)}</span><i>${T.length} 首</i></div>` + T.map((t, i) => `<a class="pli press${t.slug === S.slug ? ' on' : ''}" href="${esc(t.url)}" data-s="${esc(t.slug)}">
-      <span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)}${t.artist ? `<i>${esc(t.artist)}</i>` : ''}</span><span class="m">${fmt(t.dur)}</span></a>`).join('');
+    // 本曲歌手的歌排最前（当前这首置顶），其他歌手的放后面；没标歌手就按项目顺序
+    const names = String(S.artist || '').split(/[、,，\/]/).map(x => x.trim().toLowerCase()).filter(Boolean);
+    const same = t => names.length && String(t.artist || '').split(/[、,，\/]/).some(x => names.includes(x.trim().toLowerCase()));
+    const row = (t, i) => `<a class="pli press${t.slug === S.slug ? ' on' : ''}" href="${esc(t.url)}" data-s="${esc(t.slug)}">
+      <span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)}${t.artist ? `<i>${esc(t.artist)}</i>` : ''}</span><span class="m">${fmt(t.dur)}</span></a>`;
+    const idx = new Map(T.map((t, i) => [t, i])), mine = names.length ? T.filter(same) : [], rest = names.length ? T.filter(t => !same(t)) : T;
+    mine.sort((x, y) => (y.slug === S.slug) - (x.slug === S.slug));
+    el.innerHTML = `<button type="button" class="plh"><span>${esc(j.project.title)}</span><i>${T.length} 首<b class="plc"></b></i></button>`
+      + (mine.length ? `<div class="plg">${esc(S.artist)}</div>` + mine.map(t => row(t, idx.get(t))).join('') + (rest.length ? '<div class="plg">其他</div>' : '') : '')
+      + rest.map(t => row(t, idx.get(t))).join('');
+    if (matchMedia('(max-width:1179px)').matches) el.classList.add('collapsed');   // 窄屏默认收起，只留一行标题；宽屏浮在右侧
+    el.querySelector('.plh').onclick = () => el.classList.toggle('collapsed');
     el.hidden = false;
     el.onclick = e => {   // 同一个页面只换 # 不会刷新，手动刷新一下
       const l = e.target.closest('.pli'); if (!l) return; e.preventDefault(); if (l.classList.contains('on')) return;
