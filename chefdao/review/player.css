@@ -564,3 +564,6 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 #cfb.fold #cfl,#cfb.fold .cgh{display:none}
 #cfb .sect::after{content:'▾';margin-left:8px;color:var(--text-3);font-size:11px}#cfb.fold .sect::after{content:'▸'}
 #colorsPanel.fold>:not(.cph){display:none}
+
+/* 软刷新 / 切歌后淡入 */
+@keyframes qfade{from{opacity:0}to{opacity:1}}

@@ -11,10 +11,21 @@ const store = {
   del(k) { try { localStorage.removeItem(k) } catch (e) {} },
 };
 const PW_KEY = 'review:pw:' + S.slug;
+// 软刷新：上传 / 删除 / 调序之后不再露出解锁页和进场动画——淡出 → 重载 → 直接回到刚才的版本、播放位置和滚动位置，再淡入
+function softReload(ver) {
+  try { sessionStorage.setItem('review:quick', JSON.stringify({ s: S.slug, play: !a.paused, ver: ver || (cur && cur.ver), t: ver ? 0 : curTime(), y: scrollY })); } catch (e) {}
+  document.body.style.transition = 'opacity .16s'; document.body.style.opacity = '0'; setTimeout(() => location.reload(), 170);
+}
+function quickRestore() {
+  const q = QSTATE; if (!q) return; QSTATE = null;
+  const go = async () => { try { const i = q.ver ? V.findIndex(v => v.ver === q.ver) : -1; if (i >= 0 && i !== vi) await switchTo(i); if (q.t > 0) seek(q.t); if (q.y) scrollTo(0, q.y); } catch (e) {} };
+  if (a.readyState >= 1) setTimeout(go, 200); else a.addEventListener('loadedmetadata', () => setTimeout(go, 150), { once: true });
+}
 // 从播放列表切过来的：不出解锁页和任何进场动画，直接进播放页（之前在播就接着播）
-let QUICK = false, QUICK_PLAY = false;
+let QUICK = false, QUICK_PLAY = false, QSTATE = null;   // QSTATE：软刷新前的版本 / 位置 / 滚动，刷新后接着回到那里
 try { const q = JSON.parse(sessionStorage.getItem('review:quick') || 'null'); sessionStorage.removeItem('review:quick');
-  if (q && q.s === S.slug) { QUICK = true; QUICK_PLAY = !!q.play; document.documentElement.classList.add('quick'); } } catch (e) {}
+  if (q && q.s === S.slug) { QUICK = true; QUICK_PLAY = !!q.play; QSTATE = q; document.documentElement.classList.add('quick'); } } catch (e) {}
+if (QUICK) document.body.style.animation = 'qfade .3s ease both';   // 软刷新 / 切歌回来：淡入
 const noQuick = () => { QUICK = false; document.documentElement.classList.remove('quick'); };
 const cdate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? (+m[2]) + '月' + (+m[3]) + '日' : d; };
 const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户的参考曲
@@ -258,7 +269,7 @@ async function tryUnlock(pw, typed) {
     document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
-    if (QUICK) { enterApp(true); loadAudio(key); clientFb(); ownerTools(); loadReplies(); return; }
+    if (QUICK) { enterApp(true); loadAudio(key); clientFb(); ownerTools(); loadReplies(); quickRestore(); return; }
     splash();
     if (S.artist) { const by = $('#by'); by.classList.add('hi'); by.textContent = '欢迎，' + S.artist; }
     const minWait = new Promise(r => setTimeout(r, typed ? 900 : 650));
@@ -361,7 +372,8 @@ async function loadPlaylist() {
     el.onclick = e => {   // 同一个页面只换 # 不会刷新，手动刷新一下
       const l = e.target.closest('.pli'); if (!l) return; e.preventDefault(); if (l.classList.contains('on')) return;
       try { sessionStorage.setItem('review:quick', JSON.stringify({ s: l.dataset.s, play: !a.paused })); } catch (err) {}
-      const u = new URL(l.href); if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash;
+      document.body.style.transition = 'opacity .14s'; document.body.style.opacity = '0';
+      const u = new URL(l.href); setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
     };
   } catch (e) {}
 }
@@ -1044,7 +1056,7 @@ function ownerTools() {
     x.onclick = async e => {
       e.stopPropagation();
       if (!confirm('删除《' + S.title + '》' + v.ver + '？客户将看不到这个版本，删了不能恢复')) return;
-      try { busy('正在删除 ' + v.ver + '…'); await post('/radm/del', { slug: S.slug, ver: v.ver }); location.reload(); }
+      try { busy('正在删除 ' + v.ver + '…'); await post('/radm/del', { slug: S.slug, ver: v.ver }); softReload(); }
       catch (err) { busy('没删掉，检查网络再试'); }
     };
     row.appendChild(x);
@@ -1063,14 +1075,14 @@ function ownerTools() {
     const b = prompt('在「' + (st === 'none' ? '不分类' : STAGE[st]) + '」里排第几（1 = 最前，现有 ' + inStage.length + ' 个其他版本）', String(cur)); if (b === null) return;
     const pos = Math.max(1, Math.min(inStage.length + 1, Math.round(+b) || cur));
     inStage.splice(pos - 1, 0, v);
-    try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: inStage.map((x, i) => ({ ver: x.ver, stage: x === v ? st : undefined, ord: i + 1 })) }); location.reload(); }
+    try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: inStage.map((x, i) => ({ ver: x.ver, stage: x === v ? st : undefined, ord: i + 1 })) }); softReload(); }
     catch (err) { busy('没保存上，检查网络再试'); }
   };
   if (V.length < 2) $('#seg').hidden = true;   // 只剩一版时列表本来就不显示，删除按钮放到上传条里
   if (V.length === 1) {
     const x = document.createElement('button'); x.className = 'press'; x.textContent = '删除 ' + V[0].ver;
     x.onclick = async () => { if (!confirm('删除《' + S.title + '》' + V[0].ver + '？这是唯一的版本，删了客户就听不到了')) return;
-      try { await post('/radm/del', { slug: S.slug, ver: V[0].ver }); location.reload(); } catch (e) { busy('没删掉，检查网络再试'); } };
+      try { await post('/radm/del', { slug: S.slug, ver: V[0].ver }); softReload(); } catch (e) { busy('没删掉，检查网络再试'); } };
     own.appendChild(x);
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
@@ -1092,8 +1104,8 @@ function ownerTools() {
       own.classList.add('busy');
       const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, date: n.date, step: busy,
         bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
-      busy('《' + S.title + '》' + r.ver + ' 已上线，正在刷新…');
-      setTimeout(() => location.reload(), 800);
+      busy('《' + S.title + '》' + r.ver + ' 已上线');
+      setTimeout(() => softReload(r.ver), 300);
     } catch (e) { own.classList.remove('busy'); busy(/HTTP|^[a-z]+$/.test(e.message) ? '没传成功（' + e.message + '），再试一次' : e.message); }
   }
   // 发给客户的 REF：和版本一样加密上传，客户的审听页就能直接切换对比
@@ -1105,13 +1117,13 @@ function ownerTools() {
     if (!confirm('把「' + f.name + '」作为《' + S.title + '》的 REF 发给客户？')) return;
     try { await lib(); own.classList.add('busy');
       await cuUpload({ api: live.api, key, file: f, slug: S.slug, ver: 'REF', step: busy, bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
-      busy('REF 已上线，正在刷新…'); setTimeout(() => location.reload(), 800);
+      busy('REF 已上线'); setTimeout(() => softReload(), 300);
     } catch (e) { own.classList.remove('busy'); busy(e.message); }
   };
   if (REFV) {
     const xb = document.createElement('button'); xb.className = 'press'; xb.textContent = '删除 REF';
     xb.onclick = async () => { if (!confirm('删除发给客户的 REF？')) return;
-      try { await post('/radm/del', { slug: S.slug, ver: 'REF' }); location.reload(); } catch (e) { busy('没删掉，检查网络再试'); } };
+      try { await post('/radm/del', { slug: S.slug, ver: 'REF' }); softReload(); } catch (e) { busy('没删掉，检查网络再试'); } };
     own.appendChild(xb);
   }
   $('#ownPick').onclick = () => $('#ownFile').click();
