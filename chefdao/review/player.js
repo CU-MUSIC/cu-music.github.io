@@ -355,6 +355,7 @@ async function loadPlaylist() {
   try {
     const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug + '&tok=' + (store.get('review:tok') || ''), { cache: 'no-store' })).json();
     const T = j.ok ? j.project.tracks : []; if (T.length < 2) return;
+    askName(new Set(T.flatMap(t => String(t.artist || '').split(/[、,，\/&]/).map(x => x.trim()).filter(Boolean))).size > 1);
     const el = $('#plist');
     // 本曲歌手的歌排最前（当前这首置顶），其他歌手的放后面；没标歌手就按项目顺序
     const names = String(S.artist || '').split(/[、,，\/]/).map(x => x.trim().toLowerCase()).filter(Boolean);
@@ -1524,6 +1525,21 @@ $('#meName').onclick = () => {
   myName = v.trim().slice(0, 30); store.set('review:name', myName); showMe();
   if (WK) fetch(API_BASE + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, lid, name: myName }) }).catch(() => {});
 };
+// 多歌手的项目：进来先填艺名，不填不能往下；你自己的设备不受影响
+function askName(multi) {
+  if (!multi || myName || ME || store.get('insights:key') || document.getElementById('nameGate')) return;
+  const ov = document.createElement('div'); ov.id = 'nameGate';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(14,15,17,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)';
+  ov.innerHTML = '<form style="width:100%;max-width:300px;text-align:center"><div style="font-size:19px;font-weight:600;color:#e6e4e0">你的艺名</div>'
+    + '<input id="ovn" maxlength="30" autocomplete="off" placeholder="例如 DTox" style="margin-top:18px;width:100%;box-sizing:border-box;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#e6e4e0;font:inherit;font-size:16px;text-align:center;outline:none">'
+    + '<button type="submit" style="margin-top:14px;width:100%;padding:13px;border-radius:12px;border:0;background:#e6e4e0;color:#15171a;font:inherit;font-size:16px;font-weight:600;cursor:pointer">进入</button></form>';
+  document.body.appendChild(ov);
+  const inp = ov.querySelector('#ovn');
+  ov.querySelector('form').onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim().slice(0, 30); if (!v) { inp.focus(); return; }
+    myName = v; store.set('review:name', v); showMe(); ov.remove();
+    if (WK) fetch(API_BASE + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, lid, name: v }) }).catch(() => {}); };
+  setTimeout(() => inp.focus(), 100);
+}
 const visits = (+store.get('review:visits:' + S.slug) || 0) + 1; store.set('review:visits:' + S.slug, visits);
 const ua = navigator.userAgent;
 // 来源：在哪个 App 里打开的（App 内置浏览器会在 UA 里留名字）；也认链接上的 ?from=xxx
