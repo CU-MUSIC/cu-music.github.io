@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="/chefdao/assets/insights-180.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/chefdao/assets/insights-32.png">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="CU">
 <style>
 /* 审听 Insights 看板：和审听页同一套黑白 token */
 :root{
@@ -269,7 +270,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261028.1722';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261028.1817';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
