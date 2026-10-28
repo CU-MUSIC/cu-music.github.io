@@ -114,7 +114,7 @@ document.body.innerHTML = `
   })()}</section>
   <section class="vlist" id="vlist" hidden></section>
 
-  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -495,6 +495,27 @@ function singerColors(names, saved) {   // 返回 { 名字: '#rrggbb' }：设过
 }
 const SINGERS = singerColors(String(S.artist || '').split(/[、,，]/).map(x => x.trim()).filter(Boolean).concat((S.parts || []).map(p => p.n)).filter((x, i, a) => x && a.indexOf(x) === i), S.singers || {});
 const colorOf = n => SINGERS[n] || '';
+/* ───────── BPM 与小节：你的设备上测一次，波形标出小节线；加段落时自动吸附到小节 ───────── */
+let BPM = S.bpmInfo || null;   // { bpm, off, n }
+const barLen = () => BPM ? 60 / BPM.bpm * BPM.n : 0;
+const snapBar = t => { if (!BPM) return t; const L = barLen(), k = Math.round((t - BPM.off) / L); return Math.max(0, Math.round((BPM.off + k * L) * 10) / 10); };
+const barNo = t => BPM ? Math.floor((t - BPM.off) / barLen() + 1e-6) + 1 : 0;
+// 从音频里估 BPM：能量包络 → 起音 → 自相关；再找第一拍的位置
+function estimateBpm(ch, sr) {
+  const hop = 512, n = Math.floor(ch.length / hop), env = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let e = 0; for (let j = 0; j < hop; j++) { const v = ch[i * hop + j]; e += v * v; } env[i] = Math.sqrt(e / hop); }
+  const on = new Float32Array(n); for (let i = 1; i < n; i++) on[i] = Math.max(0, env[i] - env[i - 1]);
+  const fps = sr / hop, lo = Math.round(fps * 60 / 180), hi = Math.round(fps * 60 / 70);
+  const ac = L => { let s = 0; for (let i = L; i < n; i++) s += on[i] * on[i - L]; return s / (n - L || 1); };
+  const sc = new Float64Array(hi * 4 + 2).fill(-1), get = L => (sc[L] >= 0 ? sc[L] : (sc[L] = L < n - 1 ? ac(L) : 0));
+  let best = 0, bl = 0;
+  for (let L = lo; L <= hi; L++) { let s = get(L) + .5 * get(2 * L) + .25 * get(4 * L); const bpm0 = 60 * fps / L; if (bpm0 < 85 || bpm0 > 175) s *= .85; if (s > best) { best = s; bl = L; } }
+  if (!bl) return null;
+  const y0 = get(bl - 1), y1 = get(bl), y2 = get(bl + 1), den = y0 - 2 * y1 + y2, shift = den ? .5 * (y0 - y2) / den : 0;   // 抛物线插值，BPM 不再卡在整数帧上
+  const per = bl + Math.max(-.5, Math.min(.5, shift)), bpm = Math.round(60 * fps / per * 10) / 10; let bo = 0, bs = -1;
+  for (let o = 0; o < Math.round(per); o++) { let s = 0; for (let i = o; i < n; i += per) s += on[Math.round(i)] || 0; if (s > bs) { bs = s; bo = o; } }
+  return { bpm, off: Math.round(bo / fps * 1000) / 1000, n: 4 };
+}
 let PARTS = (S.parts || []).slice().sort((x, y) => x.t - y.t), partNow = -2;
 let onPart = i => { seek(PARTS[i].t); if (a.paused && !$('#play').disabled) $('#play').click(); };
 const partAt = t => { let k = -1; PARTS.forEach((p, i) => { if (p.t <= t + .05) k = i; }); return k; };
@@ -528,6 +549,8 @@ function draw(now) {
     ctx.roundRect ? ctx.roundRect(x, mid - bh / 2, bw, bh, bw / 2) : ctx.rect(x, mid - bh / 2, bw, bh);
     ctx.fill();
   }
+  // 小节线：每小节一条细线，每 4 小节稍亮
+  if (BPM && barLen() * w / dur() > 5) { const L = barLen(); for (let k = 0, x0 = BPM.off; x0 < dur(); k++, x0 = BPM.off + k * L) { const x = Math.round(x0 / dur() * w); ctx.fillStyle = k % 4 === 0 ? 'rgba(236,234,230,.16)' : 'rgba(236,234,230,.06)'; ctx.fillRect(x, 0, 1, h); } }
   // 循环区间
   if (LOOP.a !== null) {
     const x1 = LOOP.a / dur() * w, x2 = (LOOP.b === null ? LOOP.a : LOOP.b) / dur() * w;
@@ -580,7 +603,7 @@ box.addEventListener('pointermove', e => {
   hover = frac(e); box.classList.add('hov');
   const tip = box.querySelector('.tip'), w = cv.clientWidth;
   const near = notes.find(o => Math.abs(o.t / dur() * w - hover * w) < 7);
-  tip.textContent = near ? fmt(near.t) + ' · ' + (near.m.length > 16 ? near.m.slice(0, 16) + '…' : near.m) : fmt(hover * dur());
+  tip.textContent = near ? fmt(near.t) + ' · ' + (near.m.length > 16 ? near.m.slice(0, 16) + '…' : near.m) : fmt(hover * dur()) + (BPM ? ' · 第 ' + barNo(hover * dur()) + ' 小节' : '');
   tip.classList.toggle('note', !!near);
   tip.style.left = Math.min(w - tip.offsetWidth / 2, Math.max(tip.offsetWidth / 2, hover * w)) + 'px';
   if (drag) seek(hover * dur());
@@ -941,9 +964,24 @@ function ownerTools() {
     };
     draw(); $('#own').after(box);
   };
+  $('#ownBpm').onclick = async () => {
+    const cur0 = BPM ? BPM.bpm + '  第一拍 ' + BPM.off + 's  ' + BPM.n + ' 拍/小节' : '还没测';
+    const mode = prompt('BPM（' + cur0 + '）\n输入「测」自动检测当前版本；或直接输入数字，如 92；输入 0 清除', BPM ? String(BPM.bpm) : '测'); if (mode === null) return;
+    try {
+      let x = null;
+      if (mode.trim() === '测') {
+        busy('正在测 BPM…'); const buf = await decodeBuf((await plainOf(vi)).slice(0)); x = estimateBpm(buf.getChannelData(0), buf.sampleRate);
+        if (!x) return busy('没测出来，手动输入 BPM 试试');
+        const adj = prompt('测到 BPM ' + x.bpm + '，第一拍在 ' + x.off + ' 秒。可以改 BPM，确认就直接点好', String(x.bpm)); if (adj === null) return; x.bpm = +adj || x.bpm;
+      } else if (+mode > 0) { const sec = prompt('第一拍在第几秒（鼓第一下 / 节拍起点，没概念就填 0）', BPM ? String(BPM.off) : '0'); if (sec === null) return; x = { bpm: +mode, off: Math.max(0, +sec || 0), n: 4 }; }
+      else x = null;
+      if (x) { const nb = prompt('每小节几拍（默认 4）', String(x.n)); if (nb === null) return; x.n = [2, 3, 4, 5, 6, 7].includes(+nb) ? +nb : 4; }
+      await post('/radm/meta', { slug: S.slug, bpm: x }); BPM = x; busy(x ? 'BPM ' + x.bpm + ' 已保存，波形上有小节线，加段落会吸附到小节' : 'BPM 已清除');
+    } catch (e) { busy('没成功，检查网络再试'); }
+  };
   $('#ownPart').onclick = () => {
-    const t = Math.round(curTime() * 10) / 10, k = PARTS.filter(p => p.t < t).length;
-    const v = prompt(fmt(t) + ' 开始这段是谁' + (names.length ? '（歌手：' + names.join('、') + '）' : ''), names[k] || '');
+    const t = snapBar(Math.round(curTime() * 10) / 10), k = PARTS.filter(p => p.t < t).length;   // 有 BPM 就吸附到最近的小节线
+    const v = prompt(fmt(t) + (BPM ? '（第 ' + barNo(t) + ' 小节）' : '') + ' 开始这段是谁' + (names.length ? '（歌手：' + names.join('、') + '）' : '') + '\n也可以写歌曲分段：Intro / Verse / Hook / Bridge / Outro', names[k] || '');
     if (!v || !v.trim()) return;
     PARTS = PARTS.filter(p => Math.abs(p.t - t) > .3).concat({ t, n: v.trim() }).sort((x, y) => x.t - y.t); renderParts(); saveParts();
   };
