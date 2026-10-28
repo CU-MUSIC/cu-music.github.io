@@ -507,7 +507,8 @@ function singerColors(names, saved) {   // 返回 { 名字: '#rrggbb' }：设过
   return out;
 }
 const SINGERS = singerColors(String(S.artist || '').split(/[、,，]/).map(x => x.trim()).filter(Boolean).concat((S.parts || []).map(p => p.n)).filter((x, i, a) => x && a.indexOf(x) === i), S.singers || {});
-const colorOf = n => SINGERS[n] || '';
+const MULTI = Object.keys(SINGERS).filter(n => !/^(intro|verse|hook|chorus|bridge|outro|pre|drop|interlude|前奏|主歌|副歌|桥段|尾奏)/i.test(n)).length > 1;   // 只有一位歌手就不分颜色
+const colorOf = n => (MULTI ? SINGERS[n] || '' : '');
 /* ───────── BPM 与小节：你的设备上测一次，波形标出小节线；加段落时自动吸附到小节 ───────── */
 let BPM = S.bpmInfo || null;   // { bpm, off, n }
 const barLen = () => BPM ? 60 / BPM.bpm * BPM.n : 0;
@@ -1013,6 +1014,7 @@ function ownerTools() {
     try { await post('/radm/meta', { slug: S.slug, parts: PARTS }); busy('段落已保存，客户那边同步显示'); } catch (e) { busy('段落没保存上，检查网络再试'); }
   };
   // 歌手颜色面板：自动配色、手动换色、上传微信头像取主色（只存颜色，头像不上传）
+  $('#ownColors').hidden = !MULTI;
   $('#ownColors').onclick = () => {
     const names = Object.keys(SINGERS); if (!names.length) return busy('这首歌还没有歌手，先在项目里填歌手或加段落');
     const old = document.getElementById('colorsPanel'); if (old) return old.remove();
