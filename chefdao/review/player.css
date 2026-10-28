@@ -604,11 +604,10 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .okundo{border:0;background:none;color:var(--text-2);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:4px 2px}
 
 /* 进度条透视：当前阶段最宽最亮，前后的阶段越远越窄、越暗、越糊 */
-.spbar{align-items:end}
+.spbar{align-items:start}
+.spbar span{line-height:16px;height:25px}
 .spbar span{transition:opacity .2s}
 .spbar span.k0{font-size:13px}
 .spbar span.k1{font-size:10.5px;opacity:.75;text-overflow:clip}
 .spbar span.k2{font-size:10px;opacity:.5;filter:blur(.35px);text-overflow:clip}
 .spbar span.k3{font-size:9.5px;opacity:.32;filter:blur(.7px);text-overflow:clip}
-.spbar span.k0 i{height:4px}
-.spbar span.k2 i,.spbar span.k3 i{height:2px}
