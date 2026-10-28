@@ -173,7 +173,22 @@ document.addEventListener('click', ev => { if (!ev.target.closest || !ev.target.
   const v = prompt('你的名字或 ID', myName); if (v === null) return;
   myName = v.trim().slice(0, 30); ls.set('review:name', myName); showMe();
   fetch(API + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, lid, name: myName }) }).catch(() => {}); });
-new MutationObserver(showMe).observe(m, { childList: true }); 
+new MutationObserver(showMe).observe(m, { childList: true });
+// 多歌手的项目（Cypher 这类）：进来先填艺名，不填不能往下；你自己的设备不受影响
+const singerSet = new Set((P.tracks || []).flatMap(t => String(t.artist || '').split(/[、,，/&]/).map(x => x.trim()).filter(Boolean)));
+if (singerSet.size > 1 && !myName && !ls.get('insights:key') && ls.get('review:me') !== '1') {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(14,15,17,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)';
+  ov.innerHTML = '<form style="width:100%;max-width:300px;text-align:center"><div style="font-size:19px;font-weight:600;color:#e6e4e0">你的艺名</div>'
+    + '<input id="ovn" maxlength="30" autocomplete="off" placeholder="例如 DTox" style="margin-top:18px;width:100%;box-sizing:border-box;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#e6e4e0;font:inherit;font-size:16px;text-align:center;outline:none">'
+    + '<button type="submit" style="margin-top:14px;width:100%;padding:13px;border-radius:12px;border:0;background:#e6e4e0;color:#15171a;font:inherit;font-size:16px;font-weight:600;cursor:pointer">进入</button></form>';
+  document.body.appendChild(ov);
+  const f = ov.querySelector('form'), inp = ov.querySelector('#ovn');
+  f.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim().slice(0, 30); if (!v) { inp.focus(); return; }
+    myName = v; ls.set('review:name', v); showMe(); ov.remove();
+    fetch(API + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, lid, name: v }) }).catch(() => {}); };
+  setTimeout(() => inp.focus(), 100);
+} 
 
 m.innerHTML = '<div class="cv"' + (P.cover ? ' style="background-image:url(' + API + P.cover + ')"' : '') + '>' + (P.cover ? '' : CU) + '</div>'
   + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '') + '<button class="mename" id="meName"></button>'
