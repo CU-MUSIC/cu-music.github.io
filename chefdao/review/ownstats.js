@@ -62,9 +62,16 @@
         + (singers.length > 1 && scope === 'all' ? '<div class="chips"><button data-s="" class="' + (pick ? '' : 'on') + '">全部</button>' + singers.map(n => '<button data-s="' + esc(n) + '" class="' + (pick === n ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div>' : '')
         + (list.length || opened.size
           ? '<div class="sum">' + list.length + ' 位听众 · ' + totalPlays + ' 次播放 · 共 ' + mins(totalSec) + (opened.size ? ' · ' + opened.size + ' 位只打开没听' : '') + '</div>'
-            + list.slice(0, 12).map(a => '<div class="r"><div><b>' + esc(names.get(a.lid) || '听众 ' + a.lid) + '</b><small>听 ' + a.plays + ' 次 · ' + mins(a.sec) + (a.ends ? ' · 听完 ' + a.ends + ' 次' : '') + (a.vers.size > 1 ? ' · ' + a.vers.size + ' 个版本' : '') + (a.notes ? ' · 写了 ' + a.notes + ' 条评论' : '') + (a.device ? ' · ' + esc(a.device) : '') + (a.g ? '<br><span style="color:var(--accent-2,#9cc9b2)">反复听的是 ' + esc(a.g.name) + ' 的段落（平均的 ' + a.g.ratio.toFixed(1) + ' 倍），可能就是' + esc(a.g.name) + '</span>' : '') + '</small></div><em>' + ago(a.last, now) + '</em></div>').join('')
-            + [...opened.values()].slice(0, 6).map(a => '<div class="r"><div><b>' + esc(names.get(a.lid) || '听众 ' + a.lid) + '</b><small>只打开了页面，没有播放' + (a.device ? ' · ' + esc(a.device) : '') + '</small></div><em>' + ago(a.updated, now) + '</em></div>').join('')
+            + list.slice(0, 12).map(a => '<div class="r"><div><b class="nm" data-lid="' + a.lid + '" title="点击设置这位听众是谁" style="cursor:pointer;border-bottom:1px dotted currentColor">' + esc(names.get(a.lid) || '听众 ' + a.lid) + '</b><small>听 ' + a.plays + ' 次 · ' + mins(a.sec) + (a.ends ? ' · 听完 ' + a.ends + ' 次' : '') + (a.vers.size > 1 ? ' · ' + a.vers.size + ' 个版本' : '') + (a.notes ? ' · 写了 ' + a.notes + ' 条评论' : '') + (a.device ? ' · ' + esc(a.device) : '') + (a.g ? '<br><span style="color:var(--accent-2,#9cc9b2)">反复听的是 ' + esc(a.g.name) + ' 的段落（平均的 ' + a.g.ratio.toFixed(1) + ' 倍），可能就是' + esc(a.g.name) + '</span>' : '') + '</small></div><em>' + ago(a.last, now) + '</em></div>').join('')
+            + [...opened.values()].slice(0, 6).map(a => '<div class="r"><div><b class="nm" data-lid="' + a.lid + '" title="点击设置这位听众是谁" style="cursor:pointer;border-bottom:1px dotted currentColor">' + esc(names.get(a.lid) || '听众 ' + a.lid) + '</b><small>只打开了页面，没有播放' + (a.device ? ' · ' + esc(a.device) : '') + '</small></div><em>' + ago(a.updated, now) + '</em></div>').join('')
           : '<div class="e">还没有人听过</div>');
+      el.querySelectorAll('.nm').forEach(b => b.onclick = async () => {
+        const lid = b.dataset.lid, ls = (j.listeners || []).find(l => l.lid === lid) || { lid, name: '', note: '', self: '' };
+        const v = prompt('这位听众是谁（' + lid + (ls.self && ls.self !== ls.name ? '，自己写的：' + ls.self : '') + '）\n清空就恢复默认', ls.name || ls.self || ''); if (v === null) return;
+        const name = v.trim().slice(0, 30);
+        try { const r = await (await fetch(o.api + '/lnote', { method: 'POST', headers: { Authorization: 'Bearer ' + o.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ lid, name, note: ls.note || '' }) })).json(); if (!r.ok) return; } catch (e) { return; }
+        ls.name = name; if (!(j.listeners || []).includes(ls)) (j.listeners = j.listeners || []).push(ls); draw();
+      });
       el.querySelector('.hd').onclick = () => { fold = !fold; store.set(fk, fold ? '1' : '0'); el.classList.toggle('fold', fold); el.querySelector('.hd b').textContent = fold ? '展开' : '收起'; };
       el.querySelectorAll('.chips button').forEach(b => b.onclick = () => { if (b.dataset.sc) { scope = b.dataset.sc; pick = ''; pickL = ''; } else if (b.dataset.l !== undefined) pickL = b.dataset.l; else pick = b.dataset.s; draw(); });
     }
