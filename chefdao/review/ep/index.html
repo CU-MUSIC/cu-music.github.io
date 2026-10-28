@@ -71,7 +71,7 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .tr .t em.pg{display:flex;align-items:center;gap:8px;font-style:normal;font-weight:500;font-size:12px;color:var(--text-2);margin-top:6px}
 .pg .bar{display:inline-flex;gap:3px}.pg .bar s{width:12px;height:3px;border-radius:2px;background:rgba(236,234,230,.14)}
 .pg .bar s.d{background:rgba(236,234,230,.55)}.pg .bar s.c{background:#e8e6e2}
-.pgr{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:.5px solid var(--hair);font-size:13.5px}
+.pgr{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:.5px solid var(--hair);font-size:13.5px}
 .pgr .n{color:var(--text);min-width:0;overflow-wrap:anywhere;line-height:1.35}
 .pay select,.pay input[type=date]{font:inherit;font-size:13px;color:var(--text);background:var(--fill-2);border:0;border-radius:8px;padding:6px 8px;color-scheme:dark}
 .pgall{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--text-3)}
@@ -293,22 +293,25 @@ function progPanel() {
     const g = t.prog || { s: -1, due: '' };
     return '<div class="pgr"><span class="n">' + esc(t.title) + '</span><select data-i="' + i + '"><option value="-1"' + (g.s < 0 ? ' selected' : '') + '>不显示</option>'
       + ORDER.map(k => '<option value="' + k + '"' + (g.s === k ? ' selected' : '') + '>' + STAGES[k] + '</option>').join('') + '</select>'
-      + '<input type="date" data-i="' + i + '" value="' + esc(g.due || '') + '" aria-label="预计交付"></div>';
+      + '<input type="date" data-i="' + i + '" value="' + esc(g.due || '') + '" aria-label="预计交付">'
+      + '<input type="number" class="rn" data-r="' + i + '" min="0" max="99" value="' + (g.r || 0) + '" title="修改轮数：修改中显示「第 N 轮」，待审听显示「第 N+1 轮」" aria-label="修改轮数" style="width:44px;text-align:center"></div>';
   }).join('') + '<div class="pgall"><span>全部改成</span><select id="pgAll"><option value="">选择阶段</option>' + ORDER.map(k => '<option value="' + k + '">' + STAGES[k] + '</option>').join('') + '</select></div>';
   document.getElementById('list').appendChild(el);
-  const save = async (i, s, due) => {
-    const t = P.tracks[i], oldS = t.prog ? t.prog.s : -1, rr = ((t.prog && t.prog.r) || 0) + (s === 7 && oldS !== 7 ? 1 : 0);   // 每进入一次「修改中」算一轮
+  const save = async (i, s, due, rManual) => {
+    const t = P.tracks[i], oldS = t.prog ? t.prog.s : -1, rr = rManual !== undefined ? rManual : ((t.prog && t.prog.r) || 0) + (s === 7 && oldS !== 7 ? 1 : 0);   // 每进入一次「修改中」算一轮
     const prog = s < 0 ? null : { s, due, r: rr, at: (t.prog && t.prog.at) || {} };
     try {
       const r = await fetch(API + '/radm/meta', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: t.slug, prog }) });
       if (!(await r.json()).ok) throw 0;
       t.prog = prog && { ...prog, at: { ...prog.at, [s]: (prog.at[s] || Date.now()) } };
+      const rn = el.querySelector('input[data-r="' + i + '"]'); if (rn && prog) rn.value = prog.r;
       const row = document.querySelectorAll('.tr')[i], old = row && row.querySelector('.pg');
       if (row) { if (old) old.remove(); row.querySelector('.t').insertAdjacentHTML('beforeend', progTag(t.prog)); }
     } catch (e) { alert('没改成，检查网络再试'); }
   };
   el.querySelectorAll('select[data-i]').forEach(x => x.onchange = () => save(+x.dataset.i, +x.value, el.querySelector('input[data-i="' + x.dataset.i + '"]').value));
   el.querySelectorAll('input[data-i]').forEach(x => x.onchange = () => { const sel = el.querySelector('select[data-i="' + x.dataset.i + '"]'); if (+sel.value >= 0) save(+x.dataset.i, +sel.value, x.value); });
+  el.querySelectorAll('input[data-r]').forEach(x => x.onchange = () => { const i = +x.dataset.r, sel = el.querySelector('select[data-i="' + i + '"]'); if (+sel.value < 0) return; save(i, +sel.value, el.querySelector('input[data-i="' + i + '"][type=date]').value, Math.max(0, Math.min(99, Math.round(+x.value) || 0))); });
   el.querySelector('#pgAll').onchange = e => { const v = e.target.value; if (v === '') return;
     el.querySelectorAll('select[data-i]').forEach(x => { x.value = v; save(+x.dataset.i, +v, el.querySelector('input[data-i="' + x.dataset.i + '"]').value); }); e.target.value = ''; };
 }
