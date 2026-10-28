@@ -74,6 +74,7 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .pay select,.pay input[type=date]{font:inherit;font-size:13px;color:var(--text);background:var(--fill-2);border:0;border-radius:8px;padding:6px 8px;color-scheme:dark}
 .pgall{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--text-3)}
 /* 收款情况（仅你可见） */
+.pyhd{cursor:pointer;user-select:none}.pyhd span::after{content:' ▾';color:var(--text-3);font-size:11px}.pay.fold>:not(.pyhd){display:none}.pay.fold .pyhd span::after{content:' ▸'}
 .pay{margin-top:34px;padding:16px;border-radius:14px;border:1px dashed rgba(236,234,230,.16);text-align:left;font-variant-numeric:tabular-nums}
 .pyhd{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;color:var(--text-2)}.pyhd i{font-style:normal;font-weight:400;font-size:12px;color:var(--text-3)}
 .pysum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
@@ -230,11 +231,17 @@ async function open(pw, key) {
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + md(t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>';
   if (ls.get('insights:key')) { progPanel(); payPanel();
-    const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261028b';
+    const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261028c';
     sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), tracks: P.tracks.map(t => ({ slug: t.slug, artist: t.artist })), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
     document.head.appendChild(sc); }
 }
 // 进度：和订单进度一样的六个阶段。客户在曲目列表里看到每首歌走到哪；你在下面的「进度」面板里改
+// 管理面板（进度、收款情况、聆听情况）都可以点标题折叠，折叠状态记在本机
+{ const fs = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const fk = sec => 'review:fold:' + ((sec.querySelector('.pyhd span, .hd span') || {}).textContent || '').replace(/(展开|收起)$/, '').trim();
+  const restore = () => document.querySelectorAll('.pay').forEach(sec => { if (sec.dataset.fr) return; sec.dataset.fr = '1'; if (fs.get(fk(sec)) === '1') sec.classList.add('fold'); });
+  new MutationObserver(restore).observe(document.body, { childList: true, subtree: true });
+  document.addEventListener('click', ev => { const h = ev.target.closest('.pyhd'); if (!h || ev.target.closest('button,input,select,a')) return; const sec = h.parentElement; sec.classList.toggle('fold'); fs.set(fk(sec), sec.classList.contains('fold') ? '1' : '0'); }); }
 const STAGES = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付', '人声制作中', '修改中'];   // 下标 = 存的编号：0–5 沿用旧编号，6 人声制作（算在混音里），7 修改中（算在审听里）
 const BAR = [0, 1, 2, 3, 4, 5, 3, 4], ORDER = [0, 1, 2, 6, 3, 4, 7, 5];   // 进度条 6 格：来回修改、人声制作都不让进度条后退
 const stageText = g => STAGES[g.s] + (g.s === 7 ? ' · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? ' · 第 ' + (g.r + 1) + ' 轮' : '');

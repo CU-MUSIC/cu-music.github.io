@@ -890,7 +890,7 @@ function ownerTools() {
       const lj = await fetch(live.api + '/lib', { headers: { Authorization: 'Bearer ' + key } }).then(r => r.json());
       const pj = lj.ok && lj.projects.find(x => x.tracks.some(t => t.slug === S.slug));
       const slugs = pj ? pj.tracks.map(t => t.slug) : [S.slug], title = pj && pj.tracks.length > 1 ? pj.title : S.title;
-      await new Promise((ok, no) => { if (window.cuListenStats) return ok(); const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261028b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+      await new Promise((ok, no) => { if (window.cuListenStats) return ok(); const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261028c'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
       window.cuListenStats({ api: live.api, key, slugs, current: S.slug, tracks: pj ? pj.tracks : [{ slug: S.slug, artist: S.artist }], title, mount: el => own.after(el) });
     } catch (e) {}
   })();
@@ -963,9 +963,10 @@ function ownerTools() {
     const old = document.getElementById('colorsPanel'); if (old) return old.remove();
     const box = document.createElement('div'); box.id = 'colorsPanel';
     box.style.cssText = 'margin:10px 0;padding:12px 14px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:10px;font-size:14px';
-    const draw = () => { box.innerHTML = names.map(n => `<div style="display:flex;align-items:center;gap:10px"><input type="color" data-n="${esc(n)}" value="${SINGERS[n]}" style="width:34px;height:34px;border:0;padding:0;background:none;border-radius:50%"><b style="flex:1;font-weight:600">${esc(n)}</b><label class="press" style="cursor:pointer;font-size:13px;color:var(--text-2)">头像取色<input type="file" accept="image/*" data-av="${esc(n)}" hidden></label></div>`).join('')
+    const draw = () => { box.innerHTML = '<div class="cph" style="display:flex;justify-content:space-between;cursor:pointer;font-weight:600"><span>歌手颜色</span><i style="font-style:normal;color:var(--text-3);font-size:12px">' + (box.classList.contains('fold') ? '展开' : '收起') + '</i></div>' + names.map(n => `<div style="display:flex;align-items:center;gap:10px"><input type="color" data-n="${esc(n)}" value="${SINGERS[n]}" style="width:34px;height:34px;border:0;padding:0;background:none;border-radius:50%"><b style="flex:1;font-weight:600">${esc(n)}</b><label class="press" style="cursor:pointer;font-size:13px;color:var(--text-2)">头像取色<input type="file" accept="image/*" data-av="${esc(n)}" hidden></label></div>`).join('')
       + '<div style="display:flex;gap:8px"><button class="press" id="clrSave">保存</button><button class="press" id="clrAuto">重新自动配色</button></div>'; bind(); };
     const bind = () => {
+      box.querySelector('.cph').onclick = () => { box.classList.toggle('fold'); draw(); };
       box.querySelectorAll('input[type=color]').forEach(i => i.oninput = () => { SINGERS[i.dataset.n] = i.value; renderParts(); });
       box.querySelectorAll('input[data-av]').forEach(f => f.onchange = async () => {
         const file = f.files[0]; if (!file) return; const n = f.dataset.av;
@@ -983,7 +984,7 @@ function ownerTools() {
       box.querySelector('#clrSave').onclick = async () => { try { await post('/radm/meta', { slug: S.slug, singers: SINGERS }); busy('歌手颜色已保存，歌手那边同步显示'); } catch (e) { busy('没保存上，检查网络再试'); } };
       box.querySelector('#clrAuto').onclick = () => { names.forEach(n => delete S.singers?.[n]); Object.assign(SINGERS, singerColors(names, {})); draw(); renderParts(); };
     };
-    draw(); $('#own').after(box);
+    box.classList.add('fold'); draw(); $('#own').after(box);   // 不常用：默认折叠
   };
   $('#ownBpm').onclick = async () => {
     const cur0 = BPM ? BPM.bpm + '  第一拍 ' + BPM.off + 's  ' + BPM.n + ' 拍/小节' : '还没测';
@@ -1178,6 +1179,8 @@ async function clientFb() {
     $('#cfn').textContent = here.length ? here.length + ' 条 · ' + [...new Set(here.map(x => x.who))].join('、') : '这一版还没有';
     $('#cfb').hidden = false;
     };
+    { const hd = $('#cfb .sect'); if (store.get('review:fold:cfb') === '1') $('#cfb').classList.add('fold');
+      if (!hd.dataset.f) { hd.dataset.f = '1'; hd.style.cursor = 'pointer'; hd.addEventListener('click', ev => { if (ev.target.closest('button')) return; $('#cfb').classList.toggle('fold'); store.set('review:fold:cfb', $('#cfb').classList.contains('fold') ? '1' : '0'); }); } }
     $('#cgrp').onclick = () => { store.set('review:cfbgroup', store.get('review:cfbgroup') === '1' ? '0' : '1'); cfbRender(); };
     cfbRender();
   } catch (e) {}

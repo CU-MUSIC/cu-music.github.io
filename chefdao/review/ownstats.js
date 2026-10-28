@@ -19,7 +19,7 @@
     const el = document.createElement('section'); el.className = 'ols'; o.mount(el);
     const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
     const fk = 'review:ols:fold', singers = [...new Set((o.tracks || []).flatMap(t => String(t.artist || '').split(/[、,，]/).map(x => x.trim()).filter(Boolean)))];
-    let pick = '', fold = store.get(fk) === '1'; el.classList.toggle('fold', fold);   // 折叠状态记在本机
+    let pick = '', fold = store.get(fk) !== '0';   // 不是特别重要：默认折叠，展开过就记住 el.classList.toggle('fold', fold);   // 折叠状态记在本机
     const slugsOf = n => new Set((o.tracks || []).filter(t => String(t.artist || '').split(/[、,，]/).some(x => x.trim() === n)).map(t => t.slug));
     let set = new Set(o.slugs), last = null, scope = o.current ? 'track' : 'all';   // 歌曲页默认只看这首歌，可切到整个项目
     async function load() {
