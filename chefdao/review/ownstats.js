@@ -56,9 +56,11 @@
       const addGeo = (l, sid) => { const g = geoBy.get(sid); if (!g) return; const lab = g.city || g.region || g.country || ''; if (lab) (lg.get(l) || lg.set(l, new Set()).get(l)).add(lab + (g.country && g.city ? ' ' + g.country : '')); if (g.org && (g.city || g.region)) (lo.get(l) || lo.set(l, new Set()).get(l)).add(g.org + '|' + (g.city || g.region)); };
       (j.rows || []).forEach(r => addGeo(r.lid, r.sid)); (j.access || []).forEach(a => addGeo(a.lid, a.sid));
       const nm = l => names.get(l) || '';
-      const merge = arr => { const out = [], idx = new Map();   // 起了同一个名字的编号并成一位听众
-        arr.forEach(a => { const n = nm(a.lid), k = n ? 'n:' + n : 'l:' + a.lid, t0 = idx.get(k);
-          if (!t0) { const t = Object.assign({}, a, { lids: [a.lid], vers: new Set(a.vers || []), devs: new Set(a.device ? [a.device] : []) }); idx.set(k, t); out.push(t); return; }
+      const merge = arr => { const out = [];   // 起了同一个名字、又在同一个城市的编号并成一位听众
+        arr.forEach(a => { const n = nm(a.lid), mine = lg.get(a.lid) || new Set();
+          // 同名且在同一个城市（或其中一方没有地区记录）才合并：客户不会一直换城市，不同城市的同名当作不同的人
+          const t0 = n && out.find(t => nm(t.lids[0]) === n && (() => { const g = gset(t, lg); return !g.size || !mine.size || [...mine].some(x => g.has(x)); })());
+          if (!t0) { const t = Object.assign({}, a, { lids: [a.lid], vers: new Set(a.vers || []), devs: new Set(a.device ? [a.device] : []) }); out.push(t); return; }
           t0.lids.push(a.lid); t0.plays = (t0.plays || 0) + (a.plays || 0); t0.sec = (t0.sec || 0) + (a.sec || 0); t0.ends = (t0.ends || 0) + (a.ends || 0); t0.notes = (t0.notes || 0) + (a.notes || 0);
           (a.vers || []).forEach(v => t0.vers.add(v)); if (a.device) t0.devs.add(a.device); if ((a.last || a.updated || 0) > (t0.last || t0.updated || 0)) { t0.last = a.last; t0.updated = a.updated; } if (a.g && (!t0.g || a.g.ratio > t0.g.ratio)) t0.g = a.g; });
         return out; };
@@ -66,7 +68,7 @@
       const geoTxt = a => { const g = [...gset(a, lg)]; return g.length ? ' · 📍' + esc(g.join('、')) : ''; };
       const gnames = [...new Set([...by.values()].map(a => a.g && a.g.name).filter(Boolean))];
       const list0 = merge([...by.values()]).sort((x, y) => y.last - x.last);
-      const openedArr = merge([...opened.values()]).filter(a => !list0.some(l => l.lids.some(x => a.lids.includes(x)) || (nm(a.lids[0]) && nm(a.lids[0]) === nm(l.lids[0]))));
+      const openedArr = merge([...opened.values()]).filter(a => !list0.some(l => l.lids.some(x => a.lids.includes(x)) || (nm(a.lids[0]) && nm(a.lids[0]) === nm(l.lids[0]) && (() => { const x = gset(a, lg), y = gset(l, lg); return !x.size || !y.size || [...x].some(z => y.has(z)); })())));
       const all = list0.concat(openedArr);   // 同一个网络（运营商 + 城市）出现的不同编号放到一起，提示可能是同一人
       all.forEach(a => { a.net = gset(a, lo); }); const peers = a => all.filter(b => b !== a && !nm(a.lids[0]) && [...a.net].some(k => b.net.has(k)));
       const hint = a => { const ps = peers(a); return ps.length ? '<br><span style="color:var(--accent-2,#9cc9b2)">同一网络，可能和 ' + ps.slice(0, 2).map(b => esc(nm(b.lids[0]) || '听众 ' + b.lids[0])).join('、') + ' 是同一人</span>' : ''; };
