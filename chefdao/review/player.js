@@ -1562,7 +1562,7 @@ function askName(multi) {
   const ov = document.createElement('div'); ov.id = 'nameGate';
   ov.style.cssText = 'position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(14,15,17,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)';
   ov.innerHTML = '<form style="width:100%;max-width:300px;text-align:center"><div style="font-size:19px;font-weight:600;color:#e6e4e0">你的艺名</div>'
-    + '<input id="ovn" maxlength="30" autocomplete="off" placeholder="例如 DTox" style="margin-top:18px;width:100%;box-sizing:border-box;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#e6e4e0;font:inherit;font-size:16px;text-align:center;outline:none">'
+    + '<input id="ovn" maxlength="30" autocomplete="off" placeholder="例如 Kanye" style="margin-top:18px;width:100%;box-sizing:border-box;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#e6e4e0;font:inherit;font-size:16px;text-align:center;outline:none">'
     + '<button type="submit" style="margin-top:14px;width:100%;padding:13px;border-radius:12px;border:0;background:#e6e4e0;color:#15171a;font:inherit;font-size:16px;font-weight:600;cursor:pointer">进入</button></form>';
   document.body.appendChild(ov);
   const inp = ov.querySelector('#ovn');
