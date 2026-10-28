@@ -160,6 +160,7 @@ document.body.innerHTML = `
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
+  <div class="okbar" id="okbar" hidden></div>
 </main>
 
 <div class="dock">
@@ -810,7 +811,26 @@ $('#overall').addEventListener('change', () => drawOverall());
 
 /* ───────── 发送 ───────── */
 const hud = (msg, ms = 2600) => { const h = $('#hud'); h.textContent = msg; h.classList.add('show'); clearTimeout(hud.t); hud.t = setTimeout(() => h.classList.remove('show'), ms); };
+// 艺人确认当前版本没有问题、可以准备交付（按版本记，换了新版本要重新确认；你自己的设备不显示按钮，只显示谁确认了）
+const OKS = {}; let okLoaded = false, okAll = null;
+async function renderOk() {
+  const bar = $('#okbar'); if (!bar || !WK) return;
+  const owner = ME || !!store.get('insights:key');
+  if (owner) {
+    if (okAll === null) { okAll = []; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug, { headers: { Authorization: 'Bearer ' + store.get('insights:key') }, cache: 'no-store' })).json(); okAll = j.all || []; } catch (e) {} }
+    const mine = okAll.filter(x => x.ver === cur.ver); bar.hidden = !mine.length; bar.className = 'okbar done';
+    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ''; return;
+  }
+  if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid, { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); } catch (e) {} }
+  const v = cur.ver, on = !!OKS[v]; bar.hidden = false; bar.className = 'okbar' + (on ? ' done' : '');
+  bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题，可以准备交付</span><button type="button" class="okundo">撤回</button>' : '<button type="button" class="okbtn">✓ 这一版没有问题了，可以准备交付</button>';
+  const set = async flag => { if (flag) OKS[v] = Date.now(); else delete OKS[v]; renderOk();
+    try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: flag ? 1 : 0 }) }); } catch (e) {} };
+  const b1 = bar.querySelector('.okbtn'); if (b1) b1.onclick = () => set(true);
+  const b2 = bar.querySelector('.okundo'); if (b2) b2.onclick = () => set(false);
+}
 function updateCta() {
+  renderOk();
   const has = notes.length || $('#overall').value.trim();
   $('#cta').classList.toggle('show', false);   // 取消「发送给刀大厨」：评论写完自动同步，你那边直接收到通知
   $('#cta').classList.toggle('compact', $('#mini').classList.contains('show'));
@@ -1467,7 +1487,7 @@ async function switchTo(i) {
   if (i === vi || !KEY) return;
   const token = ++switching, t = a.currentTime, playing = !a.paused;
   save();
-  vi = i; cur = V[i]; showStats();
+  vi = i; cur = V[i]; showStats(); renderOk();
   P0 = P; P = cur.peaks; morphAt = performance.now();
   loadNotes(); render(); updateCta(); showMeta(); markSeg(); renderParts(); if (cfbRender) cfbRender();
   // 已经在后台备好的版本：直接换，不出 CU 动画，接着原来的位置播
