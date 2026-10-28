@@ -517,6 +517,24 @@ function estimateBpm(ch, sr) {
   for (let o = 0; o < Math.round(per); o++) { let s = 0; for (let i = o; i < n; i += per) s += on[Math.round(i)] || 0; if (s > bs) { bs = s; bo = o; } }
   return { bpm, off: Math.round(bo / fps * 1000) / 1000, n: 4 };
 }
+// 重拍对齐：找 kick（低频）第一次稳定进入的位置，把它当作第 K 小节的第一拍（常见 9 或 17），再用后面所有 kick 微调 BPM
+function findKick(ch, sr, bpm0) {
+  const a = 1 - Math.exp(-2 * Math.PI * 150 / sr), hop = 256, n = Math.floor(ch.length / hop), env = new Float32Array(n); let y = 0;
+  for (let i = 0; i < n; i++) { let e = 0; for (let j = 0; j < hop; j++) { y += a * (ch[i * hop + j] - y); e += y * y; } env[i] = Math.sqrt(e / hop); }
+  const on = new Float32Array(n); for (let i = 1; i < n; i++) on[i] = Math.max(0, env[i] - env[i - 1]);
+  const fps = sr / hop, mx = Math.max(...on) || 1;
+  const bestAt = (c, w) => { let b = Math.max(0, Math.round(c - w)), v = -1; for (let i = Math.max(0, Math.round(c - w)); i <= Math.min(n - 1, Math.round(c + w)); i++) if (on[i] > v) { v = on[i]; b = i; } return [b, v]; };
+  const per0 = 60 * fps / bpm0, w = Math.max(2, per0 * .12);
+  const S = i => { let s = 0; for (let m = 0; m < 4; m++) s += bestAt(i + m * per0, w)[1]; return s; };
+  let smax = 0; for (let i = 0; i < n - per0 * 4; i += 2) smax = Math.max(smax, S(i));
+  let first = -1; for (let i = 0; i < n - per0 * 4; i++) if (S(i) >= smax * .55 && on[i] > mx * .2) { first = i; break; }
+  if (first < 0) return null;
+  const k0 = bestAt(first, per0 * .3)[0];
+  let bb = bpm0, bs = -1;   // 用 kick 把 BPM 微调到最准：以第一个 kick 为锚，看后面 64 拍落在 kick 上的总强度
+  for (let b = bpm0 - 1.5; b <= bpm0 + 1.5; b += .02) { const per = 60 * fps / b; let s = 0; for (let m = 0; m < 64; m++) { const c = k0 + m * per; if (c >= n) break; s += bestAt(c, 1.5)[1]; } if (s > bs) { bs = s; bb = b; } }
+  return { bpm: Math.round(bb * 100) / 100, kickT: Math.round(k0 / fps * 1000) / 1000 };
+}
+const KSET = [1, 5, 9, 13, 17, 25, 33];
 let PARTS = (S.parts || []).slice().sort((x, y) => x.t - y.t), partNow = -2;
 let onPart = i => { seek(PARTS[i].t); if (a.paused && !$('#play').disabled) $('#play').click(); };
 const partAt = t => { let k = -1; PARTS.forEach((p, i) => { if (p.t <= t + .05) k = i; }); return k; };
@@ -992,9 +1010,16 @@ function ownerTools() {
     try {
       let x = null;
       if (mode.trim() === '测') {
-        busy('正在测 BPM…'); const buf = await decodeBuf((await plainOf(vi)).slice(0)); x = estimateBpm(buf.getChannelData(0), buf.sampleRate);
+        busy('正在测 BPM…'); const buf = await decodeBuf((await plainOf(vi)).slice(0)), ch0 = buf.getChannelData(0); x = estimateBpm(ch0, buf.sampleRate);
         if (!x) return busy('没测出来，手动输入 BPM 试试');
-        const adj = prompt('测到 BPM ' + x.bpm + '，第一拍在 ' + x.off + ' 秒。可以改 BPM，确认就直接点好', String(x.bpm)); if (adj === null) return; x.bpm = +adj || x.bpm;
+        const kk = findKick(ch0, buf.sampleRate, x.bpm);   // 以 kick 进入的位置为重拍
+        if (kk) {
+          const L = 240 / kk.bpm, guessK = KSET.reduce((b, k) => Math.abs(k - (kk.kickT / L + 1)) < Math.abs(b - (kk.kickT / L + 1)) ? k : b, 9);
+          const ans = prompt('测到 BPM ' + kk.bpm + '，kick 从 ' + fmt(kk.kickT) + ' 进入。\n这是第几小节的第一拍？（常见 9 或 17）', String(guessK)); if (ans === null) return;
+          const K = Math.max(1, Math.round(+ans) || guessK); x = { bpm: kk.bpm, off: Math.max(0, Math.round((kk.kickT - (K - 1) * L) * 1000) / 1000), n: 4 };
+        } else {
+          const adj = prompt('测到 BPM ' + x.bpm + '，第一拍在 ' + x.off + ' 秒。可以改 BPM，确认就直接点好', String(x.bpm)); if (adj === null) return; x.bpm = +adj || x.bpm;
+        }
       } else if (+mode > 0) { const sec = prompt('第一拍在第几秒（鼓第一下 / 节拍起点，没概念就填 0）', BPM ? String(BPM.off) : '0'); if (sec === null) return; x = { bpm: +mode, off: Math.max(0, +sec || 0), n: 4 }; }
       else x = null;
       if (x) { const nb = prompt('每小节几拍（默认 4）', String(x.n)); if (nb === null) return; x.n = [2, 3, 4, 5, 6, 7].includes(+nb) ? +nb : 4; }
