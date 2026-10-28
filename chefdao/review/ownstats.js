@@ -52,25 +52,46 @@
         if ((r.updated || r.started) >= a.last) { a.last = r.updated || r.started; a.device = r.device || a.device; } by.set(r.lid, a); });
       const opened = new Map(); (j.access || []).filter(a => set.has(a.slug)).forEach(a => { if (!by.has(a.lid)) { const c = opened.get(a.lid); if (!c || a.updated > c.updated) opened.set(a.lid, a); } });
       by.forEach(a => { let best = null; Object.entries(a.bins).forEach(([sl, h]) => { if (!set.has(sl)) return; const g = guess(h.bins, h.dur, partsCache[sl]); if (g && (!best || g.ratio > best.ratio)) best = g; }); a.g = best; });
+      const geoBy = new Map((j.geo || []).map(g => [g.sid, g])), lg = new Map(), lo = new Map();   // 听众编号 → 出现过的地区 / 网络
+      const addGeo = (l, sid) => { const g = geoBy.get(sid); if (!g) return; const lab = g.city || g.region || g.country || ''; if (lab) (lg.get(l) || lg.set(l, new Set()).get(l)).add(lab + (g.country && g.city ? ' ' + g.country : '')); if (g.org && (g.city || g.region)) (lo.get(l) || lo.set(l, new Set()).get(l)).add(g.org + '|' + (g.city || g.region)); };
+      (j.rows || []).forEach(r => addGeo(r.lid, r.sid)); (j.access || []).forEach(a => addGeo(a.lid, a.sid));
+      const nm = l => names.get(l) || '';
+      const merge = arr => { const out = [], idx = new Map();   // 起了同一个名字的编号并成一位听众
+        arr.forEach(a => { const n = nm(a.lid), k = n ? 'n:' + n : 'l:' + a.lid, t0 = idx.get(k);
+          if (!t0) { const t = Object.assign({}, a, { lids: [a.lid], vers: new Set(a.vers || []), devs: new Set(a.device ? [a.device] : []) }); idx.set(k, t); out.push(t); return; }
+          t0.lids.push(a.lid); t0.plays = (t0.plays || 0) + (a.plays || 0); t0.sec = (t0.sec || 0) + (a.sec || 0); t0.ends = (t0.ends || 0) + (a.ends || 0); t0.notes = (t0.notes || 0) + (a.notes || 0);
+          (a.vers || []).forEach(v => t0.vers.add(v)); if (a.device) t0.devs.add(a.device); if ((a.last || a.updated || 0) > (t0.last || t0.updated || 0)) { t0.last = a.last; t0.updated = a.updated; } if (a.g && (!t0.g || a.g.ratio > t0.g.ratio)) t0.g = a.g; });
+        return out; };
+      const gset = (a, m) => { const o = new Set(); a.lids.forEach(l => (m.get(l) || []).forEach(x => o.add(x))); return o; };
+      const geoTxt = a => { const g = [...gset(a, lg)]; return g.length ? ' · 📍' + esc(g.join('、')) : ''; };
       const gnames = [...new Set([...by.values()].map(a => a.g && a.g.name).filter(Boolean))];
-      const list0 = [...by.values()].sort((x, y) => y.last - x.last);
+      const list0 = merge([...by.values()]).sort((x, y) => y.last - x.last);
+      const openedArr = merge([...opened.values()]).filter(a => !list0.some(l => l.lids.some(x => a.lids.includes(x)) || (nm(a.lids[0]) && nm(a.lids[0]) === nm(l.lids[0]))));
+      const all = list0.concat(openedArr);   // 同一个网络（运营商 + 城市）出现的不同编号放到一起，提示可能是同一人
+      all.forEach(a => { a.net = gset(a, lo); }); const peers = a => all.filter(b => b !== a && !nm(a.lids[0]) && [...a.net].some(k => b.net.has(k)));
+      const hint = a => { const ps = peers(a); return ps.length ? '<br><span style="color:var(--accent-2,#9cc9b2)">同一网络，可能和 ' + ps.slice(0, 2).map(b => esc(nm(b.lids[0]) || '听众 ' + b.lids[0])).join('、') + ' 是同一人</span>' : ''; };
+      const devTxt = a => (a.devs && a.devs.size ? ' · ' + esc([...a.devs].join(' / ')) : '') + geoTxt(a);
       const list = scope === 'track' && pickL ? list0.filter(a => pickL === '未识别' ? !a.g : a.g && a.g.name === pickL) : list0;
       const totalSec = list.reduce((s, a) => s + a.sec, 0), totalPlays = list.reduce((s, a) => s + a.plays, 0);
       el.innerHTML = '<div class="hd"><span>聆听情况<b>' + (fold ? '展开' : '收起') + '</b></span><i>仅你可见 · ' + esc(scope === 'track' ? '这首歌' : pick || o.title || '当前项目') + '</i></div>'
         + (o.current && o.slugs.length > 1 ? '<div class="chips"><button data-sc="track" class="' + (scope === 'track' ? 'on' : '') + '">本曲</button><button data-sc="all" class="' + (scope === 'all' ? 'on' : '') + '">整个项目</button></div>' : '')
         + (scope === 'track' && gnames.length ? '<div class="chips"><button data-l="" class="' + (pickL ? '' : 'on') + '">全部听众</button>' + gnames.map(n => '<button data-l="' + esc(n) + '" class="' + (pickL === n ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '<button data-l="未识别" class="' + (pickL === '未识别' ? 'on' : '') + '">未识别</button></div>' : '')
         + (singers.length > 1 && scope === 'all' ? '<div class="chips"><button data-s="" class="' + (pick ? '' : 'on') + '">全部</button>' + singers.map(n => '<button data-s="' + esc(n) + '" class="' + (pick === n ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div>' : '')
-        + (list.length || opened.size
-          ? '<div class="sum">' + list.length + ' 位听众 · ' + totalPlays + ' 次播放 · 共 ' + mins(totalSec) + (opened.size ? ' · ' + opened.size + ' 位只打开没听' : '') + '</div>'
-            + list.slice(0, 12).map(a => '<div class="r"><div><b class="nm" data-lid="' + a.lid + '" title="点击设置这位听众是谁" style="cursor:pointer;border-bottom:1px dotted currentColor">' + esc(names.get(a.lid) || '听众 ' + a.lid) + '</b><small>听 ' + a.plays + ' 次 · ' + mins(a.sec) + (a.ends ? ' · 听完 ' + a.ends + ' 次' : '') + (a.vers.size > 1 ? ' · ' + a.vers.size + ' 个版本' : '') + (a.notes ? ' · 写了 ' + a.notes + ' 条评论' : '') + (a.device ? ' · ' + esc(a.device) : '') + (a.g ? '<br><span style="color:var(--accent-2,#9cc9b2)">反复听的是 ' + esc(a.g.name) + ' 的段落（平均的 ' + a.g.ratio.toFixed(1) + ' 倍），可能就是' + esc(a.g.name) + '</span>' : '') + '</small></div><em>' + ago(a.last, now) + '</em></div>').join('')
-            + [...opened.values()].slice(0, 6).map(a => '<div class="r"><div><b class="nm" data-lid="' + a.lid + '" title="点击设置这位听众是谁" style="cursor:pointer;border-bottom:1px dotted currentColor">' + esc(names.get(a.lid) || '听众 ' + a.lid) + '</b><small>只打开了页面，没有播放' + (a.device ? ' · ' + esc(a.device) : '') + '</small></div><em>' + ago(a.updated, now) + '</em></div>').join('')
+        + (list.length || openedArr.length
+          ? '<div class="sum">' + list.length + ' 位听众 · ' + totalPlays + ' 次播放 · 共 ' + mins(totalSec) + (openedArr.length ? ' · ' + openedArr.length + ' 位只打开没听' : '') + '</div>'
+            + list.slice(0, 12).map(a => '<div class="r"><div><b class="nm" data-lid="' + a.lids.join(',') + '" title="点击设置这位听众是谁" style="cursor:pointer;border-bottom:1px dotted currentColor">' + esc(nm(a.lids[0]) || '听众 ' + a.lids.join(' / ')) + '</b><small>听 ' + a.plays + ' 次 · ' + mins(a.sec) + (a.ends ? ' · 听完 ' + a.ends + ' 次' : '') + (a.vers.size > 1 ? ' · ' + a.vers.size + ' 个版本' : '') + (a.notes ? ' · 写了 ' + a.notes + ' 条评论' : '') + devTxt(a) + (a.g ? '<br><span style="color:var(--accent-2,#9cc9b2)">反复听的是 ' + esc(a.g.name) + ' 的段落（平均的 ' + a.g.ratio.toFixed(1) + ' 倍），可能就是' + esc(a.g.name) + '</span>' : '') + '' + hint(a) + '</small></div><em>' + ago(a.last, now) + '</em></div>').join('')
+            + openedArr.slice(0, 6).map(a => '<div class="r"><div><b class="nm" data-lid="' + a.lids.join(',') + '" title="点击设置这位听众是谁" style="cursor:pointer;border-bottom:1px dotted currentColor">' + esc(nm(a.lids[0]) || '听众 ' + a.lids.join(' / ')) + '</b><small>只打开了页面，没有播放' + devTxt(a) + '' + hint(a) + '</small></div><em>' + ago(a.updated, now) + '</em></div>').join('')
           : '<div class="e">还没有人听过</div>');
       el.querySelectorAll('.nm').forEach(b => b.onclick = async () => {
-        const lid = b.dataset.lid, ls = (j.listeners || []).find(l => l.lid === lid) || { lid, name: '', note: '', self: '' };
-        const v = prompt('这位听众是谁（' + lid + (ls.self && ls.self !== ls.name ? '，自己写的：' + ls.self : '') + '）\n清空就恢复默认', ls.name || ls.self || ''); if (v === null) return;
+        const lids = b.dataset.lid.split(','), ls = (j.listeners || []).find(l => l.lid === lids[0]) || { lid: lids[0], name: '', note: '', self: '' };
+        const v = prompt('这位听众是谁（' + lids.join(' / ') + (ls.self && ls.self !== ls.name ? '，自己写的：' + ls.self : '') + '）\n起同一个名字的设备会合并显示；清空就恢复默认', ls.name || ls.self || ''); if (v === null) return;
         const name = v.trim().slice(0, 30);
-        try { const r = await (await fetch(o.api + '/lnote', { method: 'POST', headers: { Authorization: 'Bearer ' + o.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ lid, name, note: ls.note || '' }) })).json(); if (!r.ok) return; } catch (e) { return; }
-        ls.name = name; if (!(j.listeners || []).includes(ls)) (j.listeners = j.listeners || []).push(ls); draw();
+        for (const lid of lids) {
+          const l = (j.listeners || []).find(x => x.lid === lid) || { lid, name: '', note: '', self: '' };
+          try { const r = await (await fetch(o.api + '/lnote', { method: 'POST', headers: { Authorization: 'Bearer ' + o.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ lid, name, note: l.note || '' }) })).json(); if (!r.ok) return; } catch (e) { return; }
+          l.name = name; if (!(j.listeners || []).includes(l)) (j.listeners = j.listeners || []).push(l);
+        }
+        draw();
       });
       el.querySelector('.hd').onclick = () => { fold = !fold; store.set(fk, fold ? '1' : '0'); el.classList.toggle('fold', fold); el.querySelector('.hd b').textContent = fold ? '展开' : '收起'; };
       el.querySelectorAll('.chips button').forEach(b => b.onclick = () => { if (b.dataset.sc) { scope = b.dataset.sc; pick = ''; pickL = ''; } else if (b.dataset.l !== undefined) pickL = b.dataset.l; else pick = b.dataset.s; draw(); });
