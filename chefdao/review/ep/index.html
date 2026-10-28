@@ -36,6 +36,8 @@ main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;align-item
 .kind{margin-top:26px;font-size:12px;letter-spacing:.16em;color:var(--text-3);text-transform:uppercase}
 h1{margin-top:6px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:-.02em}
 .ar{margin-top:4px;color:var(--text-2);font-size:15px}
+.mename{margin-top:10px;font:inherit;font-size:12.5px;padding:3px 12px;border-radius:999px;border:0;background:rgba(255,255,255,.08);color:var(--text-2);cursor:pointer}
+.mename.set{background:none}
 .ask{margin-top:34px;color:var(--text-2);font-size:15px;min-height:1.6em}
 .ask.err{color:var(--red)}
 .dots{display:flex;gap:22px;margin-top:16px;padding:10px;cursor:text}
@@ -165,8 +167,16 @@ const accessPing = state => {
   fetch(API + '/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify({ sid, lid, kind: 'ep', slug, state, device, visit: nv }) }).catch(() => {});
 };
 accessPing(0);
+let myName = ls.get('review:name') || '';
+const showMe = () => { const b = document.getElementById('meName'); if (!b) return; b.textContent = myName ? '我是 ' + myName : '留个名字'; b.classList.toggle('set', !!myName); };
+document.addEventListener('click', ev => { if (!ev.target.closest || !ev.target.closest('#meName')) return;
+  const v = prompt('你的名字或 ID', myName); if (v === null) return;
+  myName = v.trim().slice(0, 30); ls.set('review:name', myName); showMe();
+  fetch(API + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, lid, name: myName }) }).catch(() => {}); });
+new MutationObserver(showMe).observe(m, { childList: true }); 
+
 m.innerHTML = '<div class="cv"' + (P.cover ? ' style="background-image:url(' + API + P.cover + ')"' : '') + '>' + (P.cover ? '' : CU) + '</div>'
-  + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '')
+  + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '') + '<button class="mename" id="meName"></button>'
   + '<div id="gate"><div class="ask" id="ask">输入密码收听</div><div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>'
   + '<input class="pin" id="pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="密码"></div><div id="list"></div>';
 // 封面图加载完才亮起下面的柔光；没有封面的项目不显示柔光

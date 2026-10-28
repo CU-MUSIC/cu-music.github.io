@@ -1518,7 +1518,7 @@ if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.se
 let myName = store.get('review:name') || '';
 const meLabel = () => myName ? myName + '（' + lid + '）' : '听众 ' + lid;
 const showMe = () => { $('#meName').textContent = myName ? '我是 ' + myName : '留个名字'; $('#meName').classList.toggle('set', !!myName); };
-showMe(); if (ME || store.get('insights:key')) $('#meName').hidden = true;
+showMe();
 $('#meName').onclick = () => {
   const v = prompt('你的名字或 ID', myName); if (v === null) return;
   myName = v.trim().slice(0, 30); store.set('review:name', myName); showMe();
