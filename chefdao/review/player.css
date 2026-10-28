@@ -591,3 +591,6 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 #partbar button{padding:4px 11px;border-radius:99px;background:var(--fill-2);color:var(--text-2);font-size:12.5px}
 #partbar .pbn button.on{background:var(--pearl);color:var(--ink)}#partbar .pbn button[style*="--pc"]{box-shadow:inset 0 0 0 1px var(--pc)}
 #partbar .pbt span{font-size:12.5px;color:var(--text-3);margin-right:4px;font-variant-numeric:tabular-nums}#partbar .dz{color:var(--red)}
+
+/* 取消「发送给刀大厨」：评论自动同步，不再有发送按钮 */
+#cta{display:none!important}

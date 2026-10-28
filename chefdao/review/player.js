@@ -810,7 +810,7 @@ $('#overall').addEventListener('change', () => drawOverall());
 const hud = (msg, ms = 2600) => { const h = $('#hud'); h.textContent = msg; h.classList.add('show'); clearTimeout(hud.t); hud.t = setTimeout(() => h.classList.remove('show'), ms); };
 function updateCta() {
   const has = notes.length || $('#overall').value.trim();
-  $('#cta').classList.toggle('show', !!has && $('#app').classList.contains('in'));
+  $('#cta').classList.toggle('show', false);   // 取消「发送给刀大厨」：评论写完自动同步，你那边直接收到通知
   $('#cta').classList.toggle('compact', $('#mini').classList.contains('show'));
   $('#badge').textContent = notes.length;
   if (!$('#cta').classList.contains('ok')) $('#ctaT').textContent = PUSH ? '发送给刀大厨' : '复制反馈';
