@@ -235,24 +235,27 @@ async function open(pw, key) {
     document.head.appendChild(sc); }
 }
 // 进度：和订单进度一样的六个阶段。客户在曲目列表里看到每首歌走到哪；你在下面的「进度」面板里改
-const STAGES = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付'];
+const STAGES = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付', '人声制作中', '修改中'];   // 下标 = 存的编号：0–5 沿用旧编号，6 人声制作（算在混音里），7 修改中（算在审听里）
+const BAR = [0, 1, 2, 3, 4, 5, 3, 4], ORDER = [0, 1, 2, 6, 3, 4, 7, 5];   // 进度条 6 格：来回修改、人声制作都不让进度条后退
+const stageText = g => STAGES[g.s] + (g.s === 7 ? ' · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? ' · 第 ' + (g.r + 1) + ' 轮' : '');
 const md = d => { const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || ''); return m ? (+m[1]) + '月' + (+m[2]) + '日' : ''; };
 function progTag(g) {
   if (!g) return '';
-  return '<em class="pg"><span class="bar">' + STAGES.map((_, i) => '<s class="' + (i < g.s ? 'd' : i === g.s ? 'c' : '') + '"></s>').join('') + '</span>'
-    + STAGES[g.s] + (g.s < 5 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
+  return '<em class="pg"><span class="bar">' + [0, 1, 2, 3, 4, 5].map(i => '<s class="' + (i < BAR[g.s] ? 'd' : i === BAR[g.s] ? 'c' : '') + '"></s>').join('') + '</span>'
+    + stageText(g) + (g.s !== 5 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
 }
 function progPanel() {
   const key = ls.get('insights:key'), el = document.createElement('section'); el.className = 'pay';
   el.innerHTML = '<div class="pyhd"><span>进度</span><i>仅你可见 · 改了客户马上看到</i></div>' + P.tracks.map((t, i) => {
     const g = t.prog || { s: -1, due: '' };
     return '<div class="pgr"><span class="n">' + esc(t.title) + '</span><select data-i="' + i + '"><option value="-1"' + (g.s < 0 ? ' selected' : '') + '>不显示</option>'
-      + STAGES.map((n, k) => '<option value="' + k + '"' + (g.s === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select>'
+      + ORDER.map(k => '<option value="' + k + '"' + (g.s === k ? ' selected' : '') + '>' + STAGES[k] + '</option>').join('') + '</select>'
       + '<input type="date" data-i="' + i + '" value="' + esc(g.due || '') + '" aria-label="预计交付"></div>';
-  }).join('') + '<div class="pgall"><span>全部改成</span><select id="pgAll"><option value="">选择阶段</option>' + STAGES.map((n, k) => '<option value="' + k + '">' + n + '</option>').join('') + '</select></div>';
+  }).join('') + '<div class="pgall"><span>全部改成</span><select id="pgAll"><option value="">选择阶段</option>' + ORDER.map(k => '<option value="' + k + '">' + STAGES[k] + '</option>').join('') + '</select></div>';
   document.getElementById('list').appendChild(el);
   const save = async (i, s, due) => {
-    const t = P.tracks[i], prog = s < 0 ? null : { s, due, at: (t.prog && t.prog.at) || {} };
+    const t = P.tracks[i], oldS = t.prog ? t.prog.s : -1, rr = ((t.prog && t.prog.r) || 0) + (s === 7 && oldS !== 7 ? 1 : 0);   // 每进入一次「修改中」算一轮
+    const prog = s < 0 ? null : { s, due, r: rr, at: (t.prog && t.prog.at) || {} };
     try {
       const r = await fetch(API + '/radm/meta', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: t.slug, prog }) });
       if (!(await r.json()).ok) throw 0;

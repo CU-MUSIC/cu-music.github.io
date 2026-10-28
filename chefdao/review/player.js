@@ -97,9 +97,10 @@ document.body.innerHTML = `
   </header>
   ${(() => {   // 进度：项目页里改的阶段，这里只显示
     const g = S.prog; if (!g || !(g.s >= 0)) return '';
-    const ST = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付'];
-    return `<div class="sprog"><div class="spbar">${ST.map((n, i) => `<span class="${i < g.s ? 'd' : i === g.s ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
-      + (g.s < 5 && g.due ? `<div class="spdue">预计 ${cdate(g.due)} 交付</div>` : '') + '</div>';
+    const BAR = [0, 1, 2, 3, 4, 5, 3, 4], cur = BAR[g.s] ?? 0;   // 人声制作并入混音、修改中并入审听：来回修改进度条不后退
+    const ST = ['待付款', '准备中', '编辑中', g.s === 6 ? '人声制作中' : '混音中', g.s === 7 ? '修改中 · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? '待审听 · 第 ' + (g.r + 1) + ' 轮' : '待审听', '已交付'];
+    return `<div class="sprog"><div class="spbar">${ST.map((n, i) => `<span class="${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
+      + (g.s !== 5 && g.due ? `<div class="spdue">预计 ${cdate(g.due)} 交付</div>` : '') + '</div>';
   })()}
   <section class="vpick" id="seg"${V.length > 1 ? '' : ' hidden'}>${(() => {
     // 版本选择：按阶段一组一排小按钮「编辑 V1 V2 · 混音 V3」，当前版本高亮
