@@ -360,6 +360,19 @@ document.addEventListener('click', e => { const b = e.target.closest('#rfb'); if
   addEventListener('touchmove', e => { if (y0 === null) return; const d = e.touches[0].clientY - y0;
     if (d > 20) { if (!tip) { tip = document.createElement('div'); tip.className = 'ptr'; document.body.appendChild(tip); } tip.textContent = d > 90 ? '松开刷新' : '下拉刷新'; } else if (tip) { tip.remove(); tip = null; } }, { passive: true });
   addEventListener('touchend', e => { if (y0 !== null && tip && tip.textContent === '松开刷新') { tip.textContent = '刷新中…'; location.reload(); } else if (tip) { tip.remove(); tip = null; } y0 = null; }, { passive: true }); }
+
+// 独立应用窗口里：点「打开」等链接留在窗口里（不再跳到 Chrome）；检测到页面有新版本时提示刷新
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[target=_blank]'); if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey) return;
+  let u; try { u = new URL(a.href); } catch (x) { return; }
+  if ((matchMedia('(display-mode: standalone)').matches || navigator.standalone) && u.origin === location.origin && u.pathname.startsWith('/chefdao/review/')) { e.preventDefault(); location.href = a.href; }
+});
+{ const fnv = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const sig = async () => { try { return fnv(await (await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' })).text()); } catch (e) { return null; } };
+  let base = null; sig().then(s => { base = s; });
+  const check = async () => { if (document.visibilityState !== 'visible' || base === null || document.getElementById('newver')) return; const s = await sig();
+    if (s !== null && s !== base) { const b = document.createElement('button'); b.id = 'newver'; b.textContent = '有新版本，点这里刷新'; b.style.cssText = 'position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99;padding:10px 18px;border-radius:99px;background:#ebe9e5;color:#121213;font:600 14px -apple-system,"PingFang SC",sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)'; b.onclick = () => location.reload(); document.body.appendChild(b); } };
+  setInterval(check, 3 * 60 * 1000); document.addEventListener('visibilitychange', check); }
 async function load() {
   if (!KEY) return login();
   if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';

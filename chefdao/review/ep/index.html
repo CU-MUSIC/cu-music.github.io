@@ -93,6 +93,9 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 <script>
 (async () => {
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+// 在独立应用窗口里打开审听页：左上角给一个返回看板的小标签（只有你自己的设备才有）
+try { if (matchMedia('(display-mode: standalone)').matches && localStorage.getItem('insights:key')) { const bk = document.createElement('a'); bk.href = '/chefdao/review/insights/'; bk.textContent = '‹ Insights';
+  bk.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:12px;z-index:98;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.1);color:#d8d6d2;font:500 13px -apple-system,"PingFang SC",sans-serif;text-decoration:none;backdrop-filter:blur(8px)'; document.body.appendChild(bk); } } catch (e) {}
 const slug = location.hash.slice(1).replace(/[^a-z0-9]/g, ''), m = document.getElementById('m');
 const esc = x => String(x || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
