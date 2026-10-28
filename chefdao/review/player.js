@@ -27,6 +27,17 @@ try { const q = JSON.parse(sessionStorage.getItem('review:quick') || 'null'); se
   if (q && q.s === S.slug) { QUICK = true; QUICK_PLAY = !!q.play; QSTATE = q; document.documentElement.classList.add('quick'); } } catch (e) {}
 if (QUICK) document.body.style.animation = 'qfade .3s ease both';   // 软刷新 / 切歌回来：淡入
 const noQuick = () => { QUICK = false; document.documentElement.classList.remove('quick'); };
+// 时间显示：近的用相对时间（刚刚 / N 分钟前 / N 小时前 / 昨天 14:32 / N 天前），早的写具体日期和时间；只有日期没有时间的旧版本只显示日期
+const relTime = (ts, date) => {
+  const p = n => String(n).padStart(2, '0'), now = new Date();
+  if (!ts && date) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date); if (!m) return date; const d = new Date(+m[1], +m[2] - 1, +m[3]), n = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - d) / 864e5);
+    return n <= 0 ? '今天' : n === 1 ? '昨天' : n < 7 ? n + ' 天前' : (d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '年' : '') + (d.getMonth() + 1) + '月' + d.getDate() + '日'; }
+  if (!ts) return '';
+  const d = new Date(ts), s = Math.floor((now - d) / 1000), hm = p(d.getHours()) + ':' + p(d.getMinutes()), n = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+  if (s < 45) return '刚刚'; if (s < 3600) return Math.max(1, Math.round(s / 60)) + ' 分钟前'; if (s < 6 * 3600 && n === 0) return Math.round(s / 3600) + ' 小时前';
+  if (n === 0) return '今天 ' + hm; if (n === 1) return '昨天 ' + hm; if (n < 7) return n + ' 天前 ' + hm;
+  return (d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '年' : '') + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + hm;
+};
 const cdate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? (+m[2]) + '月' + (+m[3]) + '日' : d; };
 const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户的参考曲
 const V = S.versions.filter(v => v.ver !== 'REF');
@@ -901,7 +912,7 @@ function buildList() {
   const el = $('#vlist'); if (!el) return;
   const groups = []; V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
   el.innerHTML = '<div class="vscroll">' + groups.map(g => (STAGE[g.st] ? `<div class="vlh">${STAGE[g.st]}</div>` : '')
-    + g.items.map(i => `<div class="vli press" role="button" tabindex="0" data-i="${i}"><span class="vlt"><b>${esc(vlab(V[i]))}</b><i>${esc(cdate(V[i].date))} · ${fmt(V[i].duration)}</i></span><canvas></canvas><button class="vcmp" aria-label="拿这一版和当前版本对比">对比</button><em class="vab"></em></div>`).join('')).join('') + '</div>';
+    + g.items.map(i => `<div class="vli press" role="button" tabindex="0" data-i="${i}"><span class="vlt"><b>${esc(vlab(V[i]))}</b><i>${esc(relTime(V[i].ts, V[i].date))} · ${fmt(V[i].duration)}</i></span><canvas></canvas><button class="vcmp" aria-label="拿这一版和当前版本对比">对比</button><em class="vab"></em></div>`).join('')).join('') + '</div>';
   vlistBuilt = true; redrawList();
 }
 function redrawList() { document.querySelectorAll('#vlist .vli').forEach(b => drawPeaks(b.querySelector('canvas'), V[+b.dataset.i].peaks || [], +b.dataset.i === vi)); }
@@ -942,7 +953,7 @@ function showMeta() {
   // 大字是歌名，小字是当前版本和日期
   const tag = fmtTag(vi);
   const latest = V.reduce((m, v) => (v.date && v.date > m ? v.date : m), '');
-  $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + cdate(cur.date) + (latest && latest !== cur.date ? ' · 曲目更新 ' + cdate(latest) : '')) + (tag ? '<span class="ftag' + (tag === 'Lossless' ? ' ll' : '') + '">' + esc(tag) + '</span>' : '');
+  $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + relTime(cur.ts, cur.date) + (latest && latest !== cur.date ? ' · 曲目更新 ' + cdate(latest) : '')) + (tag ? '<span class="ftag' + (tag === 'Lossless' ? ' ll' : '') + '">' + esc(tag) + '</span>' : '');
   $('#mt').textContent = S.title + ' · ' + cur.ver;
 }
 let switching = 0;
