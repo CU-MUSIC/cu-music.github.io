@@ -270,7 +270,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261028.1825';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261028.1829';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -326,7 +326,7 @@ async function setupPush() {
   const ok = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   let reg = null, sub = null, msg = '', prefs = null, open = false;
   const PT = [['order', '新订单'], ['apply', '审听申请'], ['fb', '歌手发来评论'], ['reply', '评论里的回复'], ['listen', '有人第一次听（默认关）'], ['promo', '优惠码被领取 / 被使用']];
-  const defPrefs = () => ({ types: { order: 1, apply: 1, fb: 1, reply: 1, listen: 0, promo: 1 }, proj: {}, dnd: { on: 0, from: '23:00', to: '08:00' }, tz: -new Date().getTimezoneOffset() });
+  const defPrefs = () => ({ types: { order: 1, apply: 1, fb: 1, reply: 1, listen: 1, promo: 1 }, proj: {}, dnd: { on: 1, from: '22:00', to: '10:00' }, tz: -new Date().getTimezoneOffset() });
   if (!ok || (iOS && !standalone)) msg = iOS ? '要收通知：用 Safari 点分享 → 添加到主屏幕，再从主屏幕图标打开' : '';
   else { reg = await navigator.serviceWorker.register('sw.js').catch(() => null); sub = reg && await reg.pushManager.getSubscription(); }
   const sync = async (p) => { try { const j = await (await fetch(API + '/pushsub', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint, prefs: p }) })).json(); if (j.prefs) prefs = j.prefs; } catch (e) {} };
@@ -343,7 +343,7 @@ async function setupPush() {
         + '<div class="nt">免打扰</div><label><input type="checkbox" id="nDnd"' + (prefs.dnd.on ? ' checked' : '') + '>开启</label><span class="ntm"><input type="time" id="nFrom" value="' + prefs.dnd.from + '"> 到 <input type="time" id="nTo" value="' + prefs.dnd.to + '"></span>'
         + '<div class="nh">免打扰时段内的通知不会推送，不补发（微信推送不受影响）。时间按这台设备的时区算。</div></div>' : '') : '手机通知未开启 <button id="nOn">开启通知</button>';
     const ns = document.getElementById('nSet'); if (ns) ns.onclick = () => { open = !open; window.__pushDraw(); };
-    if (open) { const save = () => { const p = { types: {}, dnd: { on: document.getElementById('nDnd').checked ? 1 : 0, from: document.getElementById('nFrom').value || '23:00', to: document.getElementById('nTo').value || '08:00' }, tz: -new Date().getTimezoneOffset() };
+    if (open) { const save = () => { const p = { types: {}, dnd: { on: document.getElementById('nDnd').checked ? 1 : 0, from: document.getElementById('nFrom').value || '22:00', to: document.getElementById('nTo').value || '10:00' }, tz: -new Date().getTimezoneOffset() };
         bar.querySelectorAll('[data-t]').forEach(c => { p.types[c.dataset.t] = c.checked ? 1 : 0; }); p.proj = {};
         bar.querySelectorAll('[data-p]').forEach(c => { const o = p.proj[c.dataset.p] || (p.proj[c.dataset.p] = { c: 1, l: 1, a: 1 }); o[c.dataset.g] = c.checked ? 1 : 0; }); prefs = p; sync(p); };
       bar.querySelectorAll('input').forEach(x => x.onchange = save); }
