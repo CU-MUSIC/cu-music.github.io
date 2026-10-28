@@ -126,7 +126,9 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s}
 .lcard:hover .lc{transform:scale(1.02)}
-.nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.nbar .nset{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:6px;color:var(--text-2)}.nbar .nset label{display:flex;align-items:center;gap:8px;font-size:13px}.nbar .nt{margin-top:4px;font-size:11.5px;letter-spacing:.08em;color:var(--text-3)}.nbar .nh{font-size:11.5px;color:var(--text-3)}.nbar .ntm{display:flex;align-items:center;gap:6px;font-size:13px}.nbar input[type=time]{background:var(--fill-2);color:var(--text);border:0;border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;color-scheme:dark}
+.nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.rfb{margin-left:auto;margin-right:10px;width:34px;height:34px;border-radius:50%;background:var(--fill-2);color:var(--text-2);font-size:18px;line-height:1}.rfb.spin{animation:rfspin .7s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
+.ptr{position:fixed;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 14px;border-radius:99px;background:var(--fill-3,rgba(255,255,255,.16));color:var(--text);font-size:12.5px;z-index:99;pointer-events:none}
+.nbar .nset{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:6px;color:var(--text-2)}.nbar .nset label{display:flex;align-items:center;gap:8px;font-size:13px}.nbar .nt{margin-top:4px;font-size:11.5px;letter-spacing:.08em;color:var(--text-3)}.nbar .nh{font-size:11.5px;color:var(--text-3)}.nbar .ntm{display:flex;align-items:center;gap:6px;font-size:13px}.nbar input[type=time]{background:var(--fill-2);color:var(--text);border:0;border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;color-scheme:dark}
 .nbar button{margin-left:8px;padding:3px 10px;border-radius:99px;background:var(--fill-2);color:var(--text);font-size:12px}
 .rqbox{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
 .rqr{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06))}
@@ -346,6 +348,14 @@ async function setupPush() {
   };
   window.__pushDraw();
 }
+
+// 主屏幕图标打开没有浏览器地址栏：右上角有刷新按钮，页面顶部往下拉也能刷新（都是整页重载，同时拿到最新代码）
+document.addEventListener('click', e => { const b = e.target.closest('#rfb'); if (b) { b.classList.add('spin'); setTimeout(() => location.reload(), 150); } });
+{ let y0 = null, tip = null;
+  addEventListener('touchstart', e => { y0 = scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; }, { passive: true });
+  addEventListener('touchmove', e => { if (y0 === null) return; const d = e.touches[0].clientY - y0;
+    if (d > 20) { if (!tip) { tip = document.createElement('div'); tip.className = 'ptr'; document.body.appendChild(tip); } tip.textContent = d > 90 ? '松开刷新' : '下拉刷新'; } else if (tip) { tip.remove(); tip = null; } }, { passive: true });
+  addEventListener('touchend', e => { if (y0 !== null && tip && tip.textContent === '松开刷新') { tip.textContent = '刷新中…'; location.reload(); } else if (tip) { tip.remove(); tip = null; } y0 = null; }, { passive: true }); }
 async function load() {
   if (!KEY) return login();
   if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';
@@ -450,7 +460,7 @@ function render() {
   // 每分钟自动刷新时，保留展开着的报价单
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
-  const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div>
+  const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div><button class="rfb" id="rfb" aria-label="刷新" title="刷新">⟳</button>
     ${tab === 'orders' || tab === 'lib' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="nbar" id="nbar" hidden></div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
