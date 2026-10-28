@@ -32,7 +32,7 @@
     const el = document.createElement('section'); el.className = 'ols'; o.mount(el);
     const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
     const fk = 'review:ols:fold', singers = [...new Set((o.tracks || []).flatMap(t => String(t.artist || '').split(/[、,，]/).map(x => x.trim()).filter(Boolean)))];
-    let pick = '', fold = store.get(fk) !== '0';   // 不是特别重要：默认折叠，展开过就记住 el.classList.toggle('fold', fold);   // 折叠状态记在本机
+    let pick = '', pickL = '', fold = store.get(fk) !== '0';   // 不是特别重要：默认折叠，展开过就记住 el.classList.toggle('fold', fold);   // 折叠状态记在本机
     const slugsOf = n => new Set((o.tracks || []).filter(t => String(t.artist || '').split(/[、,，]/).some(x => x.trim() === n)).map(t => t.slug));
     const partsCache = {};
     const partsOf = async sl => { if (partsCache[sl]) return partsCache[sl]; try { const j = await (await fetch(o.api + '/rs?s=' + sl, { headers: { Authorization: 'Bearer ' + o.key } })).json(); return (partsCache[sl] = j.ok ? (j.song.parts || []) : []); } catch (e) { return []; } };
@@ -52,9 +52,13 @@
         if ((r.updated || r.started) >= a.last) { a.last = r.updated || r.started; a.device = r.device || a.device; } by.set(r.lid, a); });
       const opened = new Map(); (j.access || []).filter(a => set.has(a.slug)).forEach(a => { if (!by.has(a.lid)) { const c = opened.get(a.lid); if (!c || a.updated > c.updated) opened.set(a.lid, a); } });
       by.forEach(a => { let best = null; Object.entries(a.bins).forEach(([sl, h]) => { if (!set.has(sl)) return; const g = guess(h.bins, h.dur, partsCache[sl]); if (g && (!best || g.ratio > best.ratio)) best = g; }); a.g = best; });
-      const list = [...by.values()].sort((x, y) => y.last - x.last), totalSec = list.reduce((s, a) => s + a.sec, 0), totalPlays = list.reduce((s, a) => s + a.plays, 0);
+      const gnames = [...new Set([...by.values()].map(a => a.g && a.g.name).filter(Boolean))];
+      const list0 = [...by.values()].sort((x, y) => y.last - x.last);
+      const list = scope === 'track' && pickL ? list0.filter(a => pickL === '未识别' ? !a.g : a.g && a.g.name === pickL) : list0;
+      const totalSec = list.reduce((s, a) => s + a.sec, 0), totalPlays = list.reduce((s, a) => s + a.plays, 0);
       el.innerHTML = '<div class="hd"><span>聆听情况<b>' + (fold ? '展开' : '收起') + '</b></span><i>仅你可见 · ' + esc(scope === 'track' ? '这首歌' : pick || o.title || '当前项目') + '</i></div>'
         + (o.current && o.slugs.length > 1 ? '<div class="chips"><button data-sc="track" class="' + (scope === 'track' ? 'on' : '') + '">本曲</button><button data-sc="all" class="' + (scope === 'all' ? 'on' : '') + '">整个项目</button></div>' : '')
+        + (scope === 'track' && gnames.length ? '<div class="chips"><button data-l="" class="' + (pickL ? '' : 'on') + '">全部听众</button>' + gnames.map(n => '<button data-l="' + esc(n) + '" class="' + (pickL === n ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '<button data-l="未识别" class="' + (pickL === '未识别' ? 'on' : '') + '">未识别</button></div>' : '')
         + (singers.length > 1 && scope === 'all' ? '<div class="chips"><button data-s="" class="' + (pick ? '' : 'on') + '">全部</button>' + singers.map(n => '<button data-s="' + esc(n) + '" class="' + (pick === n ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div>' : '')
         + (list.length || opened.size
           ? '<div class="sum">' + list.length + ' 位听众 · ' + totalPlays + ' 次播放 · 共 ' + mins(totalSec) + (opened.size ? ' · ' + opened.size + ' 位只打开没听' : '') + '</div>'
@@ -62,7 +66,7 @@
             + [...opened.values()].slice(0, 6).map(a => '<div class="r"><div><b>' + esc(names.get(a.lid) || '听众 ' + a.lid) + '</b><small>只打开了页面，没有播放' + (a.device ? ' · ' + esc(a.device) : '') + '</small></div><em>' + ago(a.updated, now) + '</em></div>').join('')
           : '<div class="e">还没有人听过</div>');
       el.querySelector('.hd').onclick = () => { fold = !fold; store.set(fk, fold ? '1' : '0'); el.classList.toggle('fold', fold); el.querySelector('.hd b').textContent = fold ? '展开' : '收起'; };
-      el.querySelectorAll('.chips button').forEach(b => b.onclick = () => { if (b.dataset.sc) { scope = b.dataset.sc; pick = ''; } else pick = b.dataset.s; draw(); });
+      el.querySelectorAll('.chips button').forEach(b => b.onclick = () => { if (b.dataset.sc) { scope = b.dataset.sc; pick = ''; pickL = ''; } else if (b.dataset.l !== undefined) pickL = b.dataset.l; else pick = b.dataset.s; draw(); });
     }
     await load();
     setInterval(() => { if (document.visibilityState === 'visible') load(); }, 60000);
