@@ -51,7 +51,7 @@
         try { const b = typeof r.bins === 'string' ? JSON.parse(r.bins) : r.bins; if (Array.isArray(b)) { const h = a.bins[r.slug] || (a.bins[r.slug] = { bins: new Array(b.length).fill(0), dur: r.dur || 0 }); b.forEach((x, i) => { h.bins[i] = (h.bins[i] || 0) + (x || 0); }); if (r.dur) h.dur = Math.max(h.dur, r.dur); } } catch (e) {}
         if ((r.updated || r.started) >= a.last) { a.last = r.updated || r.started; a.device = r.device || a.device; } by.set(r.lid, a); });
       const opened = new Map(); (j.access || []).filter(a => set.has(a.slug)).forEach(a => { if (!by.has(a.lid)) { const c = opened.get(a.lid); if (!c || a.updated > c.updated) opened.set(a.lid, a); } });
-      by.forEach(a => { let best = null; Object.entries(a.bins).forEach(([sl, h]) => { if (!set.has(sl)) return; const g = guess(h.bins, h.dur, partsCache[sl]); if (g && (!best || g.ratio > best.ratio)) best = g; }); a.g = best; });
+      by.forEach(a => { let best = null; Object.entries(a.bins).forEach(([sl, h]) => { if (!set.has(sl)) return; const g = guess(h.bins, h.dur, partsCache[sl]); if (g && (!best || g.ratio > best.ratio)) best = g; }); a.g = names.get(a.lid) ? null : best; });   // 自己填了艺名、或你起了名字的听众，不再推断是谁
       const geoBy = new Map((j.geo || []).map(g => [g.sid, g])), lg = new Map(), lo = new Map();   // 听众编号 → 出现过的地区 / 网络
       const addGeo = (l, sid) => { const g = geoBy.get(sid); if (!g) return; const lab = g.city || g.region || g.country || ''; if (lab) (lg.get(l) || lg.set(l, new Set()).get(l)).add(lab + (g.country && g.city ? ' ' + g.country : '')); if (g.org && (g.city || g.region)) (lo.get(l) || lo.set(l, new Set()).get(l)).add(g.org + '|' + (g.city || g.region)); };
       (j.rows || []).forEach(r => addGeo(r.lid, r.sid)); (j.access || []).forEach(a => addGeo(a.lid, a.sid));
@@ -73,7 +73,7 @@
       all.forEach(a => { a.net = gset(a, lo); }); const peers = a => all.filter(b => b !== a && !nm(a.lids[0]) && [...a.net].some(k => b.net.has(k)));
       const hint = a => { const ps = peers(a); return ps.length ? '<br><span style="color:var(--accent-2,#9cc9b2)">同一网络，可能和 ' + ps.slice(0, 2).map(b => esc(nm(b.lids[0]) || '听众 ' + b.lids[0])).join('、') + ' 是同一人</span>' : ''; };
       const devTxt = a => (a.devs && a.devs.size ? ' · ' + esc([...a.devs].join(' / ')) : '') + geoTxt(a);
-      const list = scope === 'track' && pickL ? list0.filter(a => pickL === '未识别' ? !a.g : a.g && a.g.name === pickL) : list0;
+      const list = scope === 'track' && pickL ? list0.filter(a => pickL === '未识别' ? !a.g && !nm(a.lids[0]) : (a.g && a.g.name === pickL) || nm(a.lids[0]) === pickL) : list0;
       const totalSec = list.reduce((s, a) => s + a.sec, 0), totalPlays = list.reduce((s, a) => s + a.plays, 0);
       el.innerHTML = '<div class="hd"><span>聆听情况<b>' + (fold ? '展开' : '收起') + '</b></span><i>仅你可见 · ' + esc(scope === 'track' ? '这首歌' : pick || o.title || '当前项目') + '</i></div>'
         + (o.current && o.slugs.length > 1 ? '<div class="chips"><button data-sc="track" class="' + (scope === 'track' ? 'on' : '') + '">本曲</button><button data-sc="all" class="' + (scope === 'all' ? 'on' : '') + '">整个项目</button></div>' : '')
