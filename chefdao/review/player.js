@@ -788,7 +788,8 @@ function markSeg() {
 function showMeta() {
   // 大字是歌名，小字是当前版本和日期
   const tag = fmtTag(vi);
-  $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + cdate(cur.date)) + (tag ? '<span class="ftag' + (tag === 'Lossless' ? ' ll' : '') + '">' + esc(tag) + '</span>' : '');
+  const latest = V.reduce((m, v) => (v.date && v.date > m ? v.date : m), '');
+  $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + cdate(cur.date) + (latest && latest !== cur.date ? ' · 曲目更新 ' + cdate(latest) : '')) + (tag ? '<span class="ftag' + (tag === 'Lossless' ? ' ll' : '') + '">' + esc(tag) + '</span>' : '');
   $('#mt').textContent = S.title + ' · ' + cur.ver;
 }
 let switching = 0;
