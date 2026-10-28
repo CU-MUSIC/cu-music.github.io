@@ -10,7 +10,7 @@
       + '.ols .r{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:.5px solid var(--hair,rgba(255,255,255,.1));font-size:13.5px}'
       + '.ols .r b{font-weight:600}.ols .r small{display:block;margin-top:2px;font-size:12px;color:var(--text-3,#8a8886)}.ols .r em{font-style:normal;white-space:nowrap;font-size:12px;color:var(--text-3,#8a8886)}'
       + '.ols .e{padding:10px 0;font-size:13px;color:var(--text-3,#8a8886)}'
-      + '.ols .hd{cursor:pointer;user-select:none}.ols .hd b{font-weight:400;color:var(--text-3,#8a8886);margin-left:8px;font-size:12px}.ols .chips{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 8px}.ols .chips button{padding:4px 11px;border-radius:99px;background:var(--fill-2,rgba(255,255,255,.08));color:var(--text-2,#b8b6b2);font-size:12.5px}.ols .chips button.on{background:var(--pearl,#ebe9e5);color:var(--ink,#121213)}.ols.fold>:not(.hd){display:none}';
+      + '.ols .hd{cursor:pointer;user-select:none}.ols .hd b{font-weight:400;color:var(--text-3,#8a8886);margin-left:8px;font-size:12px}.ols .chips{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 8px}.ols .chips button{padding:4px 11px;border-radius:99px;background:var(--fill-2,rgba(255,255,255,.08));color:var(--text-2,#b8b6b2);font-size:12.5px}.ols .chips button.on{background:var(--pearl,#ebe9e5);color:var(--ink,#121213)}.ols.fold>:not(.hd){display:none}@media(min-width:1180px){.ols.side{position:fixed;top:120px;right:calc(50% + 350px);width:270px;max-height:calc(100vh - 160px);overflow:auto;margin:0;z-index:20;box-shadow:0 12px 40px -16px rgba(0,0,0,.6)}}';
     document.head.appendChild(st);
   }
   const ago = (t, now) => { const d = Math.floor((now - t) / 864e5), m = Math.floor((now - t) / 6e4); return d >= 1 ? (d === 1 ? '昨天' : d + ' 天前') : m < 2 ? '刚刚' : m < 60 ? m + ' 分钟前' : Math.floor(m / 60) + ' 小时前'; };
@@ -29,7 +29,7 @@
     return r.length > 1 && r[0][1] >= 1.4 && r[0][1] >= r[1][1] * 1.15 ? { name: r[0][0], ratio: r[0][1] } : null;
   }
   window.cuListenStats = async function (o) {
-    const el = document.createElement('section'); el.className = 'ols'; o.mount(el);
+    const el = document.createElement('section'); el.className = 'ols' + (o.side ? ' side' : ''); o.mount(el);
     const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
     const fk = 'review:ols:fold', singers = [...new Set((o.tracks || []).flatMap(t => String(t.artist || '').split(/[、,，]/).map(x => x.trim()).filter(Boolean)))];
     let pick = '', pickL = '', fold = store.get(fk) !== '0';   // 不是特别重要：默认折叠，展开过就记住 el.classList.toggle('fold', fold);   // 折叠状态记在本机
