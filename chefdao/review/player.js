@@ -750,7 +750,7 @@ function thread(row, ver, tm, m, canReply) {
       + (canReply || ms.length ? '<div class="tin"><input maxlength="300" placeholder="回复刀大厨…"><button type="button">发送</button></div>' : '');
     const inp = box.querySelector('input'); if (!inp) return;
     const send = async () => { const v = inp.value.trim(); if (!v || !WK) return; inp.disabled = true;
-      try { const r = await fetch(API_BASE + '/cm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver, t: tm, m, text: v }) });
+      try { const r = await fetch(API_BASE + '/cm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver, t: tm, m, text: v, lid }) });
         const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver, t: Math.round(tm * 10) / 10, m, who: 'c', text: v, ts: j.ts || Date.now() }); draw(); }
       catch (e) { inp.disabled = false; hud('没发出去，检查网络再试'); } };
     box.querySelector('button').onclick = send; inp.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); send(); } };
