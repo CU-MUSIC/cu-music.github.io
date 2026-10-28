@@ -230,8 +230,8 @@ async function open(pw, key) {
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + md(t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>';
   if (ls.get('insights:key')) { progPanel(); payPanel();
-    const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261025b';
-    sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
+    const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261028a';
+    sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), tracks: P.tracks.map(t => ({ slug: t.slug, artist: t.artist })), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
     document.head.appendChild(sc); }
 }
 // 进度：和订单进度一样的六个阶段。客户在曲目列表里看到每首歌走到哪；你在下面的「进度」面板里改
