@@ -417,6 +417,9 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .pt{position:absolute;top:0;height:24px;padding:0 6px;border-left:1.5px solid var(--fill-3);background:none;text-align:left;font-size:12.5px;font-weight:500;color:var(--text-3);transition:color .2s,border-color .2s}
 .pt span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:24px}
 .pt.on{color:var(--text);border-color:var(--text)}
+.pt[style*="--pc"]{border-left-color:var(--pc);background:linear-gradient(90deg,color-mix(in srgb,var(--pc) 16%,transparent),transparent 85%)}
+.pt[style*="--pc"] span{color:color-mix(in srgb,var(--pc) 70%,var(--text-2))}
+.pt[style*="--pc"].on{border-left-color:var(--pc)}
 @media(hover:hover){.pt:hover{color:var(--text-2)}}
 .times .pnow{flex:1;text-align:center;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 10px}
 

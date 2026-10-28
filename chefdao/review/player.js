@@ -114,7 +114,7 @@ document.body.innerHTML = `
   })()}</section>
   <section class="vlist" id="vlist" hidden></section>
 
-  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -479,13 +479,30 @@ function amp(f, now) {                    // f: 0..N-1，带入场动画
   return v * ease(k);
 }
 /* ───────── 段落：波形上方标出每段是谁唱（cypher），播放时高亮当前这段。你的设备上可以加、改、删 ───────── */
+/* ───────── 歌手颜色：自动配（名字决定色相，同一首歌里的歌手互相错开，不重复），或用头像取色 ───────── */
+const hsl2hex = (h, s, l) => { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return '#' + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join(''); };
+const hex2h = hex => { const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  if (mx === mn) return 0; const d = mx - mn, h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (h * 60 + 360) % 360; };
+const hueGap = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
+function singerColors(names, saved) {   // 返回 { 名字: '#rrggbb' }：设过的保留，没设的按名字自动配并避开已用色相
+  const out = {}, used = [];
+  names.forEach(n => { if (saved && /^#[0-9a-f]{6}$/i.test(saved[n] || '')) { out[n] = saved[n]; used.push(hex2h(saved[n])); } });
+  names.forEach(n => { if (out[n]) return; let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 360;
+    for (let i = 0; i < 36 && used.some(u => hueGap(u, h) < 34); i++) h = (h + 47) % 360;
+    used.push(h); out[n] = hsl2hex(h, 46, 64); });
+  return out;
+}
+const SINGERS = singerColors(String(S.artist || '').split(/[、,，]/).map(x => x.trim()).filter(Boolean).concat((S.parts || []).map(p => p.n)).filter((x, i, a) => x && a.indexOf(x) === i), S.singers || {});
+const colorOf = n => SINGERS[n] || '';
 let PARTS = (S.parts || []).slice().sort((x, y) => x.t - y.t), partNow = -2;
 let onPart = i => { seek(PARTS[i].t); if (a.paused && !$('#play').disabled) $('#play').click(); };
 const partAt = t => { let k = -1; PARTS.forEach((p, i) => { if (p.t <= t + .05) k = i; }); return k; };
 function renderParts() {
   const el = $('#parts'); el.hidden = !PARTS.length; partNow = -2;
   el.innerHTML = PARTS.map((p, i) => { const s = Math.min(1, p.t / dur()), e = Math.min(1, (PARTS[i + 1] ? PARTS[i + 1].t : dur()) / dur());
-    return `<button class="pt press" data-i="${i}" style="left:${(s * 100).toFixed(2)}%;width:${(Math.max(0, e - s) * 100).toFixed(2)}%" title="${esc(fmt(p.t) + ' ' + p.n)}"><span>${esc(p.n)}</span></button>`; }).join('');
+    const c = colorOf(p.n);
+    return `<button class="pt press" data-i="${i}" style="left:${(s * 100).toFixed(2)}%;width:${(Math.max(0, e - s) * 100).toFixed(2)}%${c ? ';--pc:' + c : ''}" title="${esc(fmt(p.t) + ' ' + p.n)}"><span>${esc(p.n)}</span></button>`; }).join('');
 }
 $('#parts').addEventListener('click', e => { const b = e.target.closest('.pt'); if (b) onPart(+b.dataset.i); });
 a.addEventListener('loadedmetadata', renderParts);
@@ -519,7 +536,7 @@ function draw(now) {
   }
   // 段落分界线
   ctx.fillStyle = 'rgba(236,234,230,.22)';
-  PARTS.forEach(p => { if (p.t > .5) ctx.fillRect(Math.round(p.t / dur() * w), 0, 1, h); });
+  PARTS.forEach(p => { if (p.t > .5) { const c = colorOf(p.n); ctx.fillStyle = c ? c + 'aa' : 'rgba(236,234,230,.22)'; ctx.fillRect(Math.round(p.t / dur() * w), 0, 1.5, h); } });
   // 评论标记
   ctx.fillStyle = 'rgba(236,234,230,.95)';
   notes.forEach(o => { const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 2.5, 0, 7); ctx.fill(); });
@@ -895,6 +912,34 @@ function ownerTools() {
   const names = String(S.artist || '').split('、').filter(Boolean);
   const saveParts = async () => {
     try { await post('/radm/meta', { slug: S.slug, parts: PARTS }); busy('段落已保存，客户那边同步显示'); } catch (e) { busy('段落没保存上，检查网络再试'); }
+  };
+  // 歌手颜色面板：自动配色、手动换色、上传微信头像取主色（只存颜色，头像不上传）
+  $('#ownColors').onclick = () => {
+    const names = Object.keys(SINGERS); if (!names.length) return busy('这首歌还没有歌手，先在项目里填歌手或加段落');
+    const old = document.getElementById('colorsPanel'); if (old) return old.remove();
+    const box = document.createElement('div'); box.id = 'colorsPanel';
+    box.style.cssText = 'margin:10px 0;padding:12px 14px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:10px;font-size:14px';
+    const draw = () => { box.innerHTML = names.map(n => `<div style="display:flex;align-items:center;gap:10px"><input type="color" data-n="${esc(n)}" value="${SINGERS[n]}" style="width:34px;height:34px;border:0;padding:0;background:none;border-radius:50%"><b style="flex:1;font-weight:600">${esc(n)}</b><label class="press" style="cursor:pointer;font-size:13px;color:var(--text-2)">头像取色<input type="file" accept="image/*" data-av="${esc(n)}" hidden></label></div>`).join('')
+      + '<div style="display:flex;gap:8px"><button class="press" id="clrSave">保存</button><button class="press" id="clrAuto">重新自动配色</button></div>'; bind(); };
+    const bind = () => {
+      box.querySelectorAll('input[type=color]').forEach(i => i.oninput = () => { SINGERS[i.dataset.n] = i.value; renderParts(); });
+      box.querySelectorAll('input[data-av]').forEach(f => f.onchange = async () => {
+        const file = f.files[0]; if (!file) return; const n = f.dataset.av;
+        try { const bmp = await createImageBitmap(file), c = document.createElement('canvas'); c.width = c.height = 32; c.getContext('2d').drawImage(bmp, 0, 0, 32, 32);
+          const d = c.getContext('2d').getImageData(0, 0, 32, 32).data; let sx = 0, sy = 0, w = 0, R = 0, G = 0, B = 0, cnt = 0;
+          for (let i = 0; i < d.length; i += 4) { const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+            if (mx < .15 || sat < .15) continue; const h = hex2h('#' + [d[i], d[i + 1], d[i + 2]].map(x => x.toString(16).padStart(2, '0')).join('')), wt = sat * sat * mx;
+            sx += Math.cos(h * Math.PI / 180) * wt; sy += Math.sin(h * Math.PI / 180) * wt; w += wt; cnt++; }
+          if (!cnt) return busy('头像里没有明显的颜色，换一张或手动选色');
+          let h = (Math.atan2(sy, sx) * 180 / Math.PI + 360) % 360;
+          for (let k = 0; k < 36 && names.some(m => m !== n && hueGap(hex2h(SINGERS[m]), h) < 34); k++) h = (h + 47) % 360;   // 和别的歌手错开
+          SINGERS[n] = hsl2hex(h, 52, 62); draw(); renderParts(); busy(n + ' 的颜色已取好，点保存');
+        } catch (e) { busy('读不了这张头像'); }
+      });
+      box.querySelector('#clrSave').onclick = async () => { try { await post('/radm/meta', { slug: S.slug, singers: SINGERS }); busy('歌手颜色已保存，歌手那边同步显示'); } catch (e) { busy('没保存上，检查网络再试'); } };
+      box.querySelector('#clrAuto').onclick = () => { names.forEach(n => delete S.singers?.[n]); Object.assign(SINGERS, singerColors(names, {})); draw(); renderParts(); };
+    };
+    draw(); $('#own').after(box);
   };
   $('#ownPart').onclick = () => {
     const t = Math.round(curTime() * 10) / 10, k = PARTS.filter(p => p.t < t).length;
