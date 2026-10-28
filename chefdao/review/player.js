@@ -620,13 +620,15 @@ function add() {
 $('#add').onclick = add;
 txt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover:hover)').matches) { e.preventDefault(); add(); } });
 
+const tstr = ms => { const d = new Date(ms), p = n => String(n).padStart(2, '0'); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); };
 // 「已处理」分隔线（参考 Samply 的 Completed）
 function doneSep() { const d = document.createElement('div'); d.className = 'donesep'; d.textContent = '已处理'; return d; }
 // 评论行加上「刀大厨：回复」和「✓ 已处理」
 function decorate(row, r) {
   row.classList.toggle('done', !!(r && r.done));
-  row.querySelectorAll('.rp,.dn').forEach(x => x.remove());
+  row.querySelectorAll('.rp,.dn,.rd').forEach(x => x.remove());
   const m = row.querySelector('.m'); if (!r) return;
+  if (r.read) { const d = document.createElement('span'); d.className = 'rd'; d.textContent = '已读'; if (r.read_at) d.title = '刀大厨 ' + tstr(r.read_at) + ' 看过'; m.appendChild(d); }
   if (r.done) { const d = document.createElement('span'); d.className = 'dn'; d.textContent = '✓ 已处理'; m.appendChild(d); }
   if (r.reply) { const p = document.createElement('div'); p.className = 'rp'; p.innerHTML = '<b>刀大厨</b>'; p.appendChild(document.createTextNode(r.reply)); m.appendChild(p); }
 }
@@ -652,6 +654,7 @@ function render(newId) {
     const t = row.querySelector('.t'); t.textContent = fmt(o.t);
     t.onclick = () => { seek(o.t); if (a.paused && !$('#play').disabled) a.play(); };
     row.querySelector('.m').textContent = o.m;
+    if (o.id) { const ts = document.createElement('span'); ts.className = 'ts'; ts.textContent = tstr(o.id); row.querySelector('.m').appendChild(ts); }   // 评论发表时间
     decorate(row, REPLIES.get(rk(cur.ver, o.t, o.m)));
     row.querySelector('.x').onclick = () => {
       row.classList.add('out');
@@ -1025,7 +1028,7 @@ async function clientFb() {
       tb.textContent = o.t == null ? '整体' : fmt(o.t);
       if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
       row.querySelector('.m').textContent = o.m;
-      const wb = document.createElement('div'); wb.className = 'cwho'; wb.textContent = o.who; row.querySelector('.m').prepend(wb);   // 谁写的
+      const wb = document.createElement('div'); wb.className = 'cwho'; wb.textContent = o.who + (o.at ? ' · ' + tstr(o.at) : ''); row.querySelector('.m').prepend(wb);   // 谁写的 · 什么时候
       if (o.t != null) {
         const k = rk(o.ver, o.t, o.m), acts = document.createElement('div'); acts.className = 'acts';
         acts.innerHTML = '<button class="press" data-a="reply">回复</button><button class="press" data-a="done">✓ 完成</button>';
@@ -1036,7 +1039,7 @@ async function clientFb() {
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
-            if (!j.reply && !j.done) mine.delete(k); else mine.set(k, { reply: j.reply, done: j.done });
+            if (!j.reply && !j.done && !j.read) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read });
             cfbRender();
           } catch (e) { alert('没存上，检查网络再试'); }
         };
@@ -1048,6 +1051,11 @@ async function clientFb() {
       box.appendChild(row);
     });
     rows.forEach(f => f());
+    // 你打开这一版就算看过：把没标已读的评论标上，客户那边显示「已读」
+    all.filter(o => o.t != null && !(mine.get(rk(o.ver, o.t, o.m)) || {}).read).forEach(o => {
+      const k = rk(o.ver, o.t, o.m); mine.set(k, { ...(mine.get(k) || {}), read: 1 });
+      fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, read: true }) }).catch(() => { const r = mine.get(k); if (r) r.read = 0; });
+    });
     $('#cfn').textContent = here.length ? here.length + ' 条 · ' + [...new Set(here.map(x => x.who))].join('、') : '这一版还没有';
     $('#cfb').hidden = false;
     };
