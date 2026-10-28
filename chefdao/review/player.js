@@ -121,7 +121,8 @@ document.body.innerHTML = `
     const g = S.prog; if (!g || !(g.s >= 0)) return '';
     const BAR = [0, 1, 2, 3, 4, 5, 3, 4], cur = BAR[g.s] ?? 0;   // 人声制作并入混音、修改中并入审听：来回修改进度条不后退
     const ST = ['待付款', '准备中', '编辑中', g.s === 6 ? '人声制作中' : '混音中', g.s === 7 ? '修改中 · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? '待审听 · 第 ' + (g.r + 1) + ' 轮' : '待审听', '已交付'];
-    return `<div class="sprog"><div class="spbar">${ST.map((n, i) => `<span class="${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
+    const W = [3.4, 1, .7, .55];   // 当前阶段占最宽，离得越远越窄（透视感）
+    return `<div class="sprog"><div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
       + (g.s !== 5 && g.due ? `<div class="spdue">预计 ${cdate(g.due)} 交付</div>` : '') + '</div>';
   })()}
   <section class="vpick" id="seg"${V.length > 1 ? '' : ' hidden'}>${(() => {
