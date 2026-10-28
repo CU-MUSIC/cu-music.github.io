@@ -126,7 +126,8 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s}
 .lcard:hover .lc{transform:scale(1.02)}
-.nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.nbar button{margin-left:8px;padding:3px 10px;border-radius:99px;background:var(--fill-2);color:var(--text);font-size:12px}
+.nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.nbar .nset{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:6px;color:var(--text-2)}.nbar .nset label{display:flex;align-items:center;gap:8px;font-size:13px}.nbar .nt{margin-top:4px;font-size:11.5px;letter-spacing:.08em;color:var(--text-3)}.nbar .nh{font-size:11.5px;color:var(--text-3)}.nbar .ntm{display:flex;align-items:center;gap:6px;font-size:13px}.nbar input[type=time]{background:var(--fill-2);color:var(--text);border:0;border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;color-scheme:dark}
+.nbar button{margin-left:8px;padding:3px 10px;border-radius:99px;background:var(--fill-2);color:var(--text);font-size:12px}
 .rqbox{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
 .rqr{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06))}
 .rqi{min-width:0;display:flex;flex-direction:column;gap:2px}.rqi b{font-size:15px}.rqi span{font-size:12.5px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -315,23 +316,33 @@ const VAPID_PUB = 'BO3vEYEyLagnI1Ts843KbJhNsQKh-cRRAze32JEsaqwWFlqnfgDMoi2l6OyJG
 async function setupPush() {
   const iOS = /iPhone|iPad/.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const ok = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-  let reg = null, sub = null, msg = '';
+  let reg = null, sub = null, msg = '', prefs = null, open = false;
+  const PT = [['order', '新订单'], ['apply', '审听申请'], ['fb', '歌手发来评论'], ['reply', '评论里的回复']];
+  const defPrefs = () => ({ types: { order: 1, apply: 1, fb: 1, reply: 1 }, dnd: { on: 0, from: '23:00', to: '08:00' }, tz: -new Date().getTimezoneOffset() });
   if (!ok || (iOS && !standalone)) msg = iOS ? '要收通知：用 Safari 点分享 → 添加到主屏幕，再从主屏幕图标打开' : '';
   else { reg = await navigator.serviceWorker.register('sw.js').catch(() => null); sub = reg && await reg.pushManager.getSubscription(); }
-  if (sub && Notification.permission === 'granted') { try { await fetch(API + '/pushsub', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }); } catch (e) {} }
+  const sync = async (p) => { try { const j = await (await fetch(API + '/pushsub', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint, prefs: p }) })).json(); if (j.prefs) prefs = j.prefs; } catch (e) {} };
+  if (sub && Notification.permission === 'granted') { await sync(); }
+  if (!prefs) prefs = defPrefs(); prefs.tz = -new Date().getTimezoneOffset();
   // render() 每次会重画整页，所以通知条每次重画后再画一遍
   window.__pushDraw = () => {
     const bar = document.getElementById('nbar'); if (!bar) return;
     if (!reg) { bar.hidden = !msg; bar.textContent = msg; return; }
     const on = !!sub && Notification.permission === 'granted'; bar.hidden = false;
-    bar.innerHTML = on ? '手机通知已开启 <button id="nTest">发一条测试</button>' : '手机通知未开启 <button id="nOn">开启通知</button>';
+    bar.innerHTML = on ? '手机通知已开启 <button id="nTest">发一条测试</button><button id="nSet">' + (open ? '收起设置' : '通知设置') + '</button>' + (open ? '<div class="nset">'
+        + '<div class="nt">收哪些通知</div>' + PT.map(([k, n]) => '<label><input type="checkbox" data-t="' + k + '"' + (prefs.types[k] === 0 ? '' : ' checked') + '>' + n + '</label>').join('')
+        + '<div class="nt">免打扰</div><label><input type="checkbox" id="nDnd"' + (prefs.dnd.on ? ' checked' : '') + '>开启</label><span class="ntm"><input type="time" id="nFrom" value="' + prefs.dnd.from + '"> 到 <input type="time" id="nTo" value="' + prefs.dnd.to + '"></span>'
+        + '<div class="nh">免打扰时段内的通知不会推送，不补发（微信推送不受影响）。时间按这台设备的时区算。</div></div>' : '') : '手机通知未开启 <button id="nOn">开启通知</button>';
+    const ns = document.getElementById('nSet'); if (ns) ns.onclick = () => { open = !open; window.__pushDraw(); };
+    if (open) { const save = () => { const p = { types: {}, dnd: { on: document.getElementById('nDnd').checked ? 1 : 0, from: document.getElementById('nFrom').value || '23:00', to: document.getElementById('nTo').value || '08:00' }, tz: -new Date().getTimezoneOffset() };
+        bar.querySelectorAll('[data-t]').forEach(c => { p.types[c.dataset.t] = c.checked ? 1 : 0; }); prefs = p; sync(p); };
+      bar.querySelectorAll('input').forEach(x => x.onchange = save); }
     const t = document.getElementById('nTest'); if (t) t.onclick = async () => { t.textContent = '已发送…'; try { const j = await (await fetch(API + '/push/test', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY } })).json(); t.textContent = j.ready ? '已发送，几秒内会弹' : '服务器还没设置通知密钥'; } catch (e) { t.textContent = '没发出去'; } };
     const b = document.getElementById('nOn'); if (b) b.onclick = async () => {
       try { const p = await Notification.requestPermission(); if (p !== 'granted') { bar.textContent = '通知权限被拒绝，到系统设置里打开'; return; }
         const u8 = Uint8Array.from(atob(VAPID_PUB.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
         const s = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8 });
-        await fetch(API + '/pushsub', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: s.endpoint }) });
-        sub = s; window.__pushDraw(); } catch (e) { bar.textContent = '开启失败：' + (e && e.message || e); } };
+        sub = s; await sync(prefs); window.__pushDraw(); } catch (e) { bar.textContent = '开启失败：' + (e && e.message || e); } };
   };
   window.__pushDraw();
 }
