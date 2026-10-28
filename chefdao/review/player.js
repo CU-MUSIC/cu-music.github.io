@@ -777,8 +777,19 @@ function render(newId) {
     });
   }
   $('#n').textContent = notes.length; $('#empty').hidden = notes.length > 0 || ow.length > 0;
+  drawOverall();
+}
+// 整体评论下面：你的回复 / 已读 / 对话（键 = 版本 + 时间 0 + 「整体：」前 120 字）
+function drawOverall() {
+  const ta = $('#overall'), v = ta.value.trim(); let w = document.getElementById('ovthr'); if (w) w.remove();
+  if (!v) return;
+  const m = '整体：' + v.slice(0, 120), r = REPLIES.get(rk(cur.ver, 0, m)), has = !!(r && (r.reply || r.read || r.done)) || MSGS.some(x => x.ver === cur.ver && x.t === 0 && x.m === m);
+  if (!has) return;
+  w = document.createElement('div'); w.id = 'ovthr'; w.className = 'row ovrow'; w.innerHTML = '<div class="m"></div>';
+  decorate(w, r); thread(w, cur.ver, 0, m, !!(r && r.reply)); ta.after(w);
 }
 $('#overall').addEventListener('input', () => { save(); updateCta(); grow($('#overall')); });
+$('#overall').addEventListener('change', () => drawOverall());
 
 /* ───────── 发送 ───────── */
 const hud = (msg, ms = 2600) => { const h = $('#hud'); h.textContent = msg; h.classList.add('show'); clearTimeout(hud.t); hud.t = setTimeout(() => h.classList.remove('show'), ms); };
@@ -1150,7 +1161,7 @@ async function clientFb() {
       let cm = []; try { cm = JSON.parse(f.comments || '[]'); } catch (e) {}
       const who = names.get(f.lid) || ('听众 ' + f.lid);
       cm.forEach(c => items.push({ ver: f.ver, t: c.t, m: c.m, who, sent: f.sent, at: f.updated }));
-      if (f.overall) items.push({ ver: f.ver, t: null, m: '整体：' + f.overall, who, sent: f.sent, at: f.updated });
+      if (f.overall) items.push({ ver: f.ver, t: null, m: '整体：' + f.overall, mk: '整体：' + String(f.overall).trim().slice(0, 120), who, sent: f.sent, at: f.updated });
     });
     if (!items.length) return;
     // 同一条评论客户可能在两次打开里都同步过：按 版本+时间点+内容 去重
@@ -1182,8 +1193,9 @@ async function clientFb() {
       if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
       row.querySelector('.m').textContent = o.m;
       const wb = document.createElement('div'); wb.className = 'cwho'; wb.textContent = o.who + (o.at ? ' · ' + tstr(o.at) : ''); row.querySelector('.m').prepend(wb);   // 谁写的 · 什么时候
-      if (o.t != null) {
-        const k = rk(o.ver, o.t, o.m), acts = document.createElement('div'); acts.className = 'acts';
+      {
+        const kt = o.t == null ? 0 : o.t, km = o.mk || o.m;   // 整体评论：时间记 0，文字取前 120 字做键
+        const k = rk(o.ver, kt, km), acts = document.createElement('div'); acts.className = 'acts';
         acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
         const sync = () => { const r = mine.get(k); decorate(row, r); { const rp = row.querySelector('.rp'); if (rp && !rp.querySelector('.mx')) { const bx = document.createElement('button'); bx.className = 'mx'; bx.textContent = '×'; bx.setAttribute('aria-label', '删除这条回复'); bx.onclick = () => save({ reply: '' }); rp.appendChild(bx); } } const sb = acts.querySelector('[data-a=st]'), pc = r && r.done ? 100 : r && r.read ? 50 : 0, pv = stPrev.has(k) ? stPrev.get(k) : pc;   // 圆圈：空心 = 未读，半圆 = 已读，实心 ✓ = 已完成；状态变了就从上一个状态补间过去
           sb.innerHTML = '<i class="ring' + (pc === 100 ? ' full' : '') + '" style="--p:' + pv + '"></i><span>' + (pc === 100 ? '已完成' : pc === 50 ? '已读' : '未读') + '</span>';
@@ -1193,7 +1205,7 @@ async function clientFb() {
         const save = async body => {
           try {
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, ...body }) });
+              body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
             if (!j.reply && !j.done && !j.read) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read });
             cfbRender();
@@ -1201,16 +1213,16 @@ async function clientFb() {
         };
         acts.querySelector('[data-a=reply]').onclick = async () => {
           const v = prompt('回复这条评论（客户会在审听页看到，可以继续对话）：\n「' + o.m + '」', ''); if (!v || !v.trim()) return;
-          try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, text: v.trim() }) });
-            const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(o.t * 10) / 10, m: o.m, who: 'o', text: v.trim(), ts: j.ts }); cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } };
+          try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, text: v.trim() }) });
+            const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(kt * 10) / 10, m: km, who: 'o', text: v.trim(), ts: j.ts }); cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } };
         // 一个按钮走三步：未读 → 已读 → 已完成 → 回到未读（客户那边同步显示「已读」「已处理」）
         acts.querySelector('[data-a=st]').onclick = () => { const r = mine.get(k) || {}; save(!r.read && !r.done ? { read: true } : !r.done ? { read: true, done: true } : { read: false, done: false }); };
         // 一点就回一个表情，歌手在评论下的对话里看到
-        acts.querySelectorAll('.emo').forEach(b => b.onclick = async () => { try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, text: b.dataset.e }) });
-          const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(o.t * 10) / 10, m: o.m, who: 'o', text: b.dataset.e, ts: j.ts }); if (!(mine.get(k) || {}).read) save({ read: true }); else cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } });
-        const th = MSGS.filter(x => x.ver === o.ver && x.t === Math.round(o.t * 10) / 10 && x.m === o.m);
+        acts.querySelectorAll('.emo').forEach(b => b.onclick = async () => { try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, text: b.dataset.e }) });
+          const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(kt * 10) / 10, m: km, who: 'o', text: b.dataset.e, ts: j.ts }); if (!(mine.get(k) || {}).read) save({ read: true }); else cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } });
+        const th = MSGS.filter(x => x.ver === o.ver && x.t === Math.round(kt * 10) / 10 && x.m === o.m);
         if (th.length) { const tb = document.createElement('div'); tb.className = 'thr'; tb.innerHTML = th.map(x => `<div class="tm ${x.who === 'o' ? 'o' : 'c'}"><b>${x.who === 'o' ? '我' : esc(o.who)}</b>${esc(x.text)}${x.who === 'o' ? `<button class="mx" data-ts="${x.ts}" aria-label="删除">×</button>` : ''}<i>${tstr(x.ts)}</i></div>`).join('');
-          tb.querySelectorAll('.mx').forEach(bx => bx.onclick = async () => { try { const r = await fetch(API + '/cm/del', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, ts: +bx.dataset.ts }) });
+          tb.querySelectorAll('.mx').forEach(bx => bx.onclick = async () => { try { const r = await fetch(API + '/cm/del', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ts: +bx.dataset.ts }) });
             if (!(await r.json()).ok) throw 0; MSGS = MSGS.filter(y => !(y.ts === +bx.dataset.ts && y.who === 'o' && y.m === o.m)); cfbRender(); } catch (e) { alert('没删掉，检查网络再试'); } }); row.querySelector('.m').appendChild(tb); }
         row.querySelector('.m').after(acts);
         rows.push(sync);

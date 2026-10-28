@@ -581,3 +581,5 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 @keyframes ringpop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
 
 .thr .tm .mx,.rp .mx{margin-left:8px;padding:0 6px;border-radius:50%;color:var(--text-3);font-size:14px;line-height:18px;opacity:.6}.thr .tm .mx:hover,.rp .mx:hover{opacity:1;color:var(--red)}
+
+.ovrow{padding:6px 0 0;margin-top:6px}.ovrow::before{display:none}
