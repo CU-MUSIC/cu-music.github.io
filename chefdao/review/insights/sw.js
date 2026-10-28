@@ -8,8 +8,8 @@ self.addEventListener('push', e => e.waitUntil((async () => {
   let n = { title: 'CU MUSIC', body: '有新动态', url: '/chefdao/review/insights/' };
   try {
     const sub = await self.registration.pushManager.getSubscription();
-    if (sub) { const j = await (await fetch(API + '/push/last?e=' + await sha16(sub.endpoint), { cache: 'no-store' })).json(); if (j.ok && j.title) n = { title: j.title, body: j.body || '', url: j.url || n.url }; }
+    if (sub) { const j = await (await fetch(API + '/push/last?e=' + await sha16(sub.endpoint), { cache: 'no-store' })).json(); if (j.ok && j.title) n = { title: j.title, body: j.body || '', url: j.url || n.url, silent: !!j.silent }; }
   } catch (err) {}
-  await self.registration.showNotification(n.title, { body: n.body, icon: '/chefdao/assets/insights-192.png', badge: '/chefdao/assets/insights-32.png', data: { url: n.url }, tag: 'cu-' + Date.now() });
+  await self.registration.showNotification(n.title, { body: n.body, icon: '/chefdao/assets/insights-192.png', badge: '/chefdao/assets/insights-32.png', data: { url: n.url }, silent: n.silent, tag: 'cu-' + Date.now() });
 })()));
 self.addEventListener('notificationclick', e => { e.notification.close(); e.waitUntil(self.clients.openWindow(e.notification.data && e.notification.data.url || '/chefdao/review/insights/')); });
