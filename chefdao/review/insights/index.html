@@ -127,7 +127,8 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s}
 .lcard:hover .lc{transform:scale(1.02)}
-.nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.rfb{margin-left:auto;margin-right:10px;width:34px;height:34px;border-radius:50%;background:var(--fill-2);color:var(--text-2);font-size:18px;line-height:1}.rfb.spin{animation:rfspin .7s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
+.nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.bv{font-size:11px;font-weight:400;letter-spacing:.04em;color:var(--text-3);margin-left:6px;vertical-align:middle}
+.rfb{margin-left:auto;margin-right:10px;width:34px;height:34px;border-radius:50%;background:var(--fill-2);color:var(--text-2);font-size:18px;line-height:1}.rfb.spin{animation:rfspin .7s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
 .ptr{position:fixed;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 14px;border-radius:99px;background:var(--fill-3,rgba(255,255,255,.16));color:var(--text);font-size:12.5px;z-index:99;pointer-events:none}
 .nbar .nset{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:6px;color:var(--text-2)}.nbar .nset label{display:flex;align-items:center;gap:8px;font-size:13px}.nbar .npj{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:4px 0;border-top:.5px solid var(--hair,rgba(255,255,255,.1))}.nbar .npj b{flex:1 1 100%;font-size:13px;color:var(--text)}
 .nbar .nt{margin-top:4px;font-size:11.5px;letter-spacing:.08em;color:var(--text-3)}.nbar .nh{font-size:11.5px;color:var(--text-3)}.nbar .ntm{display:flex;align-items:center;gap:6px;font-size:13px}.nbar input[type=time]{background:var(--fill-2);color:var(--text);border:0;border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;color-scheme:dark}
@@ -268,6 +269,8 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
+const BUILD = '261028.1722';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
   get(k) { try { return localStorage.getItem(k) } catch (e) { return null } },
@@ -354,12 +357,12 @@ async function setupPush() {
 }
 
 // 主屏幕图标打开没有浏览器地址栏：右上角有刷新按钮，页面顶部往下拉也能刷新（都是整页重载，同时拿到最新代码）
-document.addEventListener('click', e => { const b = e.target.closest('#rfb'); if (b) { b.classList.add('spin'); setTimeout(() => location.reload(), 150); } });
+document.addEventListener('click', e => { const b = e.target.closest('#rfb'); if (b) { b.classList.add('spin'); setTimeout(bust, 150); } });
 { let y0 = null, tip = null;
   addEventListener('touchstart', e => { y0 = scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; }, { passive: true });
   addEventListener('touchmove', e => { if (y0 === null) return; const d = e.touches[0].clientY - y0;
     if (d > 20) { if (!tip) { tip = document.createElement('div'); tip.className = 'ptr'; document.body.appendChild(tip); } tip.textContent = d > 90 ? '松开刷新' : '下拉刷新'; } else if (tip) { tip.remove(); tip = null; } }, { passive: true });
-  addEventListener('touchend', e => { if (y0 !== null && tip && tip.textContent === '松开刷新') { tip.textContent = '刷新中…'; location.reload(); } else if (tip) { tip.remove(); tip = null; } y0 = null; }, { passive: true }); }
+  addEventListener('touchend', e => { if (y0 !== null && tip && tip.textContent === '松开刷新') { tip.textContent = '刷新中…'; bust(); } else if (tip) { tip.remove(); tip = null; } y0 = null; }, { passive: true }); }
 
 // 独立应用窗口里：点「打开」等链接留在窗口里（不再跳到 Chrome）；检测到页面有新版本时提示刷新
 document.addEventListener('click', e => {
@@ -371,7 +374,7 @@ document.addEventListener('click', e => {
   const sig = async () => { try { return fnv(await (await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' })).text()); } catch (e) { return null; } };
   let base = null; sig().then(s => { base = s; });
   const check = async () => { if (document.visibilityState !== 'visible' || base === null || document.getElementById('newver')) return; const s = await sig();
-    if (s !== null && s !== base) { const b = document.createElement('button'); b.id = 'newver'; b.textContent = '有新版本，点这里刷新'; b.style.cssText = 'position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99;padding:10px 18px;border-radius:99px;background:#ebe9e5;color:#121213;font:600 14px -apple-system,"PingFang SC",sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)'; b.onclick = () => location.reload(); document.body.appendChild(b); } };
+    if (s !== null && s !== base) { const b = document.createElement('button'); b.id = 'newver'; b.textContent = '有新版本，点这里刷新'; b.style.cssText = 'position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99;padding:10px 18px;border-radius:99px;background:#ebe9e5;color:#121213;font:600 14px -apple-system,"PingFang SC",sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)'; b.onclick = bust; document.body.appendChild(b); } };
   setInterval(check, 3 * 60 * 1000); document.addEventListener('visibilitychange', check); }
 async function load() {
   if (!KEY) return login();
@@ -477,7 +480,7 @@ function render() {
   // 每分钟自动刷新时，保留展开着的报价单
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
-  const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div><button class="rfb" id="rfb" aria-label="刷新" title="刷新">⟳</button>
+  const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights <small class="bv" title="页面版本号">v${BUILD}</small></h1></div><button class="rfb" id="rfb" aria-label="刷新" title="刷新">⟳</button>
     ${tab === 'orders' || tab === 'lib' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="nbar" id="nbar" hidden></div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
