@@ -1185,7 +1185,7 @@ async function clientFb() {
       if (o.t != null) {
         const k = rk(o.ver, o.t, o.m), acts = document.createElement('div'); acts.className = 'acts';
         acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
-        const sync = () => { const r = mine.get(k); decorate(row, r); const sb = acts.querySelector('[data-a=st]'), pc = r && r.done ? 100 : r && r.read ? 50 : 0, pv = stPrev.has(k) ? stPrev.get(k) : pc;   // 圆圈：空心 = 未读，半圆 = 已读，实心 ✓ = 已完成；状态变了就从上一个状态补间过去
+        const sync = () => { const r = mine.get(k); decorate(row, r); { const rp = row.querySelector('.rp'); if (rp && !rp.querySelector('.mx')) { const bx = document.createElement('button'); bx.className = 'mx'; bx.textContent = '×'; bx.setAttribute('aria-label', '删除这条回复'); bx.onclick = () => save({ reply: '' }); rp.appendChild(bx); } } const sb = acts.querySelector('[data-a=st]'), pc = r && r.done ? 100 : r && r.read ? 50 : 0, pv = stPrev.has(k) ? stPrev.get(k) : pc;   // 圆圈：空心 = 未读，半圆 = 已读，实心 ✓ = 已完成；状态变了就从上一个状态补间过去
           sb.innerHTML = '<i class="ring' + (pc === 100 ? ' full' : '') + '" style="--p:' + pv + '"></i><span>' + (pc === 100 ? '已完成' : pc === 50 ? '已读' : '未读') + '</span>';
           const ring = sb.querySelector('.ring'); if (pv !== pc) { requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.setProperty('--p', pc); ring.classList.add('pop'); })); }
           stPrev.set(k, pc); sb.classList.toggle('on', pc > 0); sb.classList.toggle('dn', pc === 100);
@@ -1209,7 +1209,9 @@ async function clientFb() {
         acts.querySelectorAll('.emo').forEach(b => b.onclick = async () => { try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, text: b.dataset.e }) });
           const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(o.t * 10) / 10, m: o.m, who: 'o', text: b.dataset.e, ts: j.ts }); if (!(mine.get(k) || {}).read) save({ read: true }); else cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } });
         const th = MSGS.filter(x => x.ver === o.ver && x.t === Math.round(o.t * 10) / 10 && x.m === o.m);
-        if (th.length) { const tb = document.createElement('div'); tb.className = 'thr'; tb.innerHTML = th.map(x => `<div class="tm ${x.who === 'o' ? 'o' : 'c'}"><b>${x.who === 'o' ? '我' : esc(o.who)}</b>${esc(x.text)}<i>${tstr(x.ts)}</i></div>`).join(''); row.querySelector('.m').appendChild(tb); }
+        if (th.length) { const tb = document.createElement('div'); tb.className = 'thr'; tb.innerHTML = th.map(x => `<div class="tm ${x.who === 'o' ? 'o' : 'c'}"><b>${x.who === 'o' ? '我' : esc(o.who)}</b>${esc(x.text)}${x.who === 'o' ? `<button class="mx" data-ts="${x.ts}" aria-label="删除">×</button>` : ''}<i>${tstr(x.ts)}</i></div>`).join('');
+          tb.querySelectorAll('.mx').forEach(bx => bx.onclick = async () => { try { const r = await fetch(API + '/cm/del', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, ts: +bx.dataset.ts }) });
+            if (!(await r.json()).ok) throw 0; MSGS = MSGS.filter(y => !(y.ts === +bx.dataset.ts && y.who === 'o' && y.m === o.m)); cfbRender(); } catch (e) { alert('没删掉，检查网络再试'); } }); row.querySelector('.m').appendChild(tb); }
         row.querySelector('.m').after(acts);
         rows.push(sync);
       }

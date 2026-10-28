@@ -579,3 +579,5 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .ring.full::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font-size:9px;font-weight:700;color:var(--bg,#0e0e0f);line-height:1}
 .ring.pop{animation:ringpop .42s var(--spring,ease)}
 @keyframes ringpop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+
+.thr .tm .mx,.rp .mx{margin-left:8px;padding:0 6px;border-radius:50%;color:var(--text-3);font-size:14px;line-height:18px;opacity:.6}.thr .tm .mx:hover,.rp .mx:hover{opacity:1;color:var(--red)}
