@@ -9,6 +9,7 @@
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
 <link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
+<link rel="manifest" href="manifest.webmanifest">
 <style>
 /* 审听 Insights 看板：和审听页同一套黑白 token */
 :root{
@@ -125,6 +126,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s}
 .lcard:hover .lc{transform:scale(1.02)}
+.nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.nbar button{margin-left:8px;padding:3px 10px;border-radius:99px;background:var(--fill-2);color:var(--text);font-size:12px}
 .rqbox{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
 .rqr{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06))}
 .rqi{min-width:0;display:flex;flex-direction:column;gap:2px}.rqi b{font-size:15px}.rqi span{font-size:12.5px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -307,6 +309,32 @@ function login(err) {
 
 // 正在看板里打字时，自动刷新先不重画，免得输入被冲掉
 const typing = () => { const a = document.activeElement; return a && root.contains(a) && /INPUT|TEXTAREA/.test(a.tagName); };
+
+// ── 手机通知：存到主屏幕后点「开启通知」，新订单 / 审听申请 / 歌手评论和回复会弹通知 ──
+const VAPID_PUB = 'BO3vEYEyLagnI1Ts843KbJhNsQKh-cRRAze32JEsaqwWFlqnfgDMoi2l6OyJGgG1bjbCyJfzPNGRCDn4XtSbEgc';
+async function setupPush() {
+  const iOS = /iPhone|iPad/.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const ok = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  let reg = null, sub = null, msg = '';
+  if (!ok || (iOS && !standalone)) msg = iOS ? '要收通知：用 Safari 点分享 → 添加到主屏幕，再从主屏幕图标打开' : '';
+  else { reg = await navigator.serviceWorker.register('sw.js').catch(() => null); sub = reg && await reg.pushManager.getSubscription(); }
+  if (sub && Notification.permission === 'granted') { try { await fetch(API + '/pushsub', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }); } catch (e) {} }
+  // render() 每次会重画整页，所以通知条每次重画后再画一遍
+  window.__pushDraw = () => {
+    const bar = document.getElementById('nbar'); if (!bar) return;
+    if (!reg) { bar.hidden = !msg; bar.textContent = msg; return; }
+    const on = !!sub && Notification.permission === 'granted'; bar.hidden = false;
+    bar.innerHTML = on ? '手机通知已开启 <button id="nTest">发一条测试</button>' : '手机通知未开启 <button id="nOn">开启通知</button>';
+    const t = document.getElementById('nTest'); if (t) t.onclick = async () => { t.textContent = '已发送…'; try { const j = await (await fetch(API + '/push/test', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY } })).json(); t.textContent = j.ready ? '已发送，几秒内会弹' : '服务器还没设置通知密钥'; } catch (e) { t.textContent = '没发出去'; } };
+    const b = document.getElementById('nOn'); if (b) b.onclick = async () => {
+      try { const p = await Notification.requestPermission(); if (p !== 'granted') { bar.textContent = '通知权限被拒绝，到系统设置里打开'; return; }
+        const u8 = Uint8Array.from(atob(VAPID_PUB.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+        const s = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8 });
+        await fetch(API + '/pushsub', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: s.endpoint }) });
+        sub = s; window.__pushDraw(); } catch (e) { bar.textContent = '开启失败：' + (e && e.message || e); } };
+  };
+  window.__pushDraw();
+}
 async function load() {
   if (!KEY) return login();
   if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';
@@ -326,6 +354,7 @@ async function load() {
     if (j2 && j2.ok) pdata = j2;
     GEO = new Map([...(j.geo || []), ...((pdata && pdata.geo) || [])].map(g => [g.sid, g]));
     data = j; if (!typing()) render();
+    if (!window.__pushInit) { window.__pushInit = 1; setTimeout(setupPush, 300); }
     if (tab === 'beat') loadBeat();
   } catch (e) { if (!data) root.innerHTML = '<div class="msg">读不到数据，检查网络后下拉刷新</div>'; }
 }
@@ -412,9 +441,11 @@ function render() {
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
   const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights</h1></div>
     ${tab === 'orders' || tab === 'lib' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
+    <div class="nbar" id="nbar" hidden></div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
   root.innerHTML = head + (tab === 'lib' ? renderLib() : tab === 'beat' ? renderBeat() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
+  if (window.__pushDraw) window.__pushDraw();
   opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
   document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
   const sg = document.getElementById('seg');
