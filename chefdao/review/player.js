@@ -948,7 +948,7 @@ function ownerTools() {
       const lj = await fetch(live.api + '/lib', { headers: { Authorization: 'Bearer ' + key } }).then(r => r.json());
       const pj = lj.ok && lj.projects.find(x => x.tracks.some(t => t.slug === S.slug));
       const slugs = pj ? pj.tracks.map(t => t.slug) : [S.slug], title = pj && pj.tracks.length > 1 ? pj.title : S.title;
-      await new Promise((ok, no) => { if (window.cuListenStats) return ok(); const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261028h'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+      await new Promise((ok, no) => { if (window.cuListenStats) return ok(); const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261028i'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
       window.cuListenStats({ api: live.api, key, slugs, current: S.slug, side: true, tracks: pj ? pj.tracks : [{ slug: S.slug, artist: S.artist }], title, mount: el => own.after(el) });
     } catch (e) {}
   })();

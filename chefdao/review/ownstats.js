@@ -99,6 +99,6 @@
       el.querySelectorAll('.chips button').forEach(b => b.onclick = () => { if (b.dataset.sc) { scope = b.dataset.sc; pick = ''; pickL = ''; } else if (b.dataset.l !== undefined) pickL = b.dataset.l; else pick = b.dataset.s; draw(); });
     }
     await load();
-    setInterval(() => { if (document.visibilityState === 'visible') load(); }, 60000);
+    setInterval(() => { if (document.visibilityState === 'visible') load(); }, 180000);
   };
 })();

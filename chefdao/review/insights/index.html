@@ -270,7 +270,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261028.1830';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261028.2126';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -1231,7 +1231,7 @@ async function openUpload(opt) {
 
 load();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && KEY) load(); });
-setInterval(() => { if (document.visibilityState === 'visible' && KEY && data) load(); }, 60000);
+setInterval(() => { if (document.visibilityState === 'visible' && KEY && data) load(); }, 180000);
 })();
 </script>
 </body>
