@@ -270,7 +270,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261028.1829';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261028.1830';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -337,16 +337,18 @@ async function setupPush() {
     const bar = document.getElementById('nbar'); if (!bar) return;
     if (!reg) { bar.hidden = !msg; bar.textContent = msg; return; }
     const on = !!sub && Notification.permission === 'granted'; bar.hidden = false;
-    bar.innerHTML = on ? '手机通知已开启 <button id="nTest">发一条测试</button><button id="nSet">' + (open ? '收起设置' : '通知设置') + '</button>' + (open ? '<div class="nset">'
+    const muted = (prefs.mute || 0) > Date.now();
+    bar.innerHTML = on ? '手机通知已开启 ' + (muted ? '<button id="nMute">静音到明早 10 点 · 取消</button>' : '<button id="nMute">今天先不推送</button>') + ' <button id="nTest">发一条测试</button><button id="nSet">' + (open ? '收起设置' : '通知设置') + '</button>' + (open ? '<div class="nset">'
         + '<div class="nt">收哪些通知</div>' + PT.map(([k, n]) => '<label><input type="checkbox" data-t="' + k + '"' + ((prefs.types[k] === undefined ? k !== 'listen' : prefs.types[k]) ? ' checked' : '') + '>' + n + '</label>').join('')
         + '<div class="nt">按项目（评论 / 聆听 / 申请）</div>' + ((typeof LIB !== 'undefined' && LIB && LIB.projects ? LIB.projects : []).filter(p => !p.archived).map(p => { const pp = (prefs.proj || {})[p.slug] || {}; return '<div class="npj"><b>' + esc(p.title) + '</b>' + [['c', '评论'], ['l', '聆听'], ['a', '申请']].map(([g, n]) => '<label><input type="checkbox" data-p="' + p.slug + '" data-g="' + g + '"' + (pp[g] === 0 ? '' : ' checked') + '>' + n + '</label>').join('') + '</div>'; }).join('') || '<div class="nh">还没有项目</div>')
         + '<div class="nt">免打扰</div><label><input type="checkbox" id="nDnd"' + (prefs.dnd.on ? ' checked' : '') + '>开启</label><span class="ntm"><input type="time" id="nFrom" value="' + prefs.dnd.from + '"> 到 <input type="time" id="nTo" value="' + prefs.dnd.to + '"></span>'
         + '<div class="nh">免打扰时段内的通知不会推送，不补发（微信推送不受影响）。时间按这台设备的时区算。</div></div>' : '') : '手机通知未开启 <button id="nOn">开启通知</button>';
     const ns = document.getElementById('nSet'); if (ns) ns.onclick = () => { open = !open; window.__pushDraw(); };
-    if (open) { const save = () => { const p = { types: {}, dnd: { on: document.getElementById('nDnd').checked ? 1 : 0, from: document.getElementById('nFrom').value || '22:00', to: document.getElementById('nTo').value || '10:00' }, tz: -new Date().getTimezoneOffset() };
+    if (open) { const save = () => { const p = { types: {}, dnd: { on: document.getElementById('nDnd').checked ? 1 : 0, from: document.getElementById('nFrom').value || '22:00', to: document.getElementById('nTo').value || '10:00' }, tz: -new Date().getTimezoneOffset(), mute: prefs.mute || 0 };
         bar.querySelectorAll('[data-t]').forEach(c => { p.types[c.dataset.t] = c.checked ? 1 : 0; }); p.proj = {};
         bar.querySelectorAll('[data-p]').forEach(c => { const o = p.proj[c.dataset.p] || (p.proj[c.dataset.p] = { c: 1, l: 1, a: 1 }); o[c.dataset.g] = c.checked ? 1 : 0; }); prefs = p; sync(p); };
       bar.querySelectorAll('input').forEach(x => x.onchange = save); }
+    const nm = document.getElementById('nMute'); if (nm) nm.onclick = () => { if ((prefs.mute || 0) > Date.now()) prefs.mute = 0; else { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); prefs.mute = d.getTime(); } sync(prefs); window.__pushDraw(); };
     const t = document.getElementById('nTest'); if (t) t.onclick = async () => { t.textContent = '已发送…'; try { const j = await (await fetch(API + '/push/test', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY } })).json(); t.textContent = j.ready ? '已发送，几秒内会弹' : '服务器还没设置通知密钥'; } catch (e) { t.textContent = '没发出去'; } };
     const b = document.getElementById('nOn'); if (b) b.onclick = async () => {
       try { const p = await Notification.requestPermission(); if (p !== 'granted') { bar.textContent = '通知权限被拒绝，到系统设置里打开'; return; }
