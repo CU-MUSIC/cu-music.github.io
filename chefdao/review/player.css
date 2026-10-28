@@ -583,3 +583,11 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .thr .tm .mx,.rp .mx{margin-left:8px;padding:0 6px;border-radius:50%;color:var(--text-3);font-size:14px;line-height:18px;opacity:.6}.thr .tm .mx:hover,.rp .mx:hover{opacity:1;color:var(--red)}
 
 .ovrow{padding:6px 0 0;margin-top:6px}.ovrow::before{display:none}
+
+/* 管理员：点段落后的编辑栏 */
+.pt.sel{outline:1px solid var(--text-3);outline-offset:-1px;border-radius:4px}
+#partbar{margin:8px 0 2px;padding:10px 12px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:8px}
+#partbar .pbn,#partbar .pbt{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#partbar button{padding:4px 11px;border-radius:99px;background:var(--fill-2);color:var(--text-2);font-size:12.5px}
+#partbar .pbn button.on{background:var(--pearl);color:var(--ink)}#partbar .pbn button[style*="--pc"]{box-shadow:inset 0 0 0 1px var(--pc)}
+#partbar .pbt span{font-size:12.5px;color:var(--text-3);margin-right:4px;font-variant-numeric:tabular-nums}#partbar .dz{color:var(--red)}

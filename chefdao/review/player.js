@@ -1055,10 +1055,31 @@ function ownerTools() {
     if (!v || !v.trim()) return;
     PARTS = PARTS.filter(p => Math.abs(p.t - t) > .3).concat({ t, n: v.trim() }).sort((x, y) => x.t - y.t); renderParts(); saveParts();
   };
+  // 点段落：先跳过去播放（和歌手看到的一样）；同时在段落下面展开一条编辑栏——改名（歌手 / 歌曲分段）、起点前后挪一小节、用此刻当起点、删除。不再点一下就弹窗直接改
+  let selPart = -1;
+  const SECS = ['Intro', 'Verse', 'Hook', 'Bridge', 'Outro'];
+  const step = () => BPM ? barLen() : 1;   // 有 BPM 按小节挪，没有按 1 秒
+  const partBar = () => {
+    let bar = document.getElementById('partbar');
+    if (selPart < 0 || !PARTS[selPart]) { if (bar) bar.remove(); return; }
+    const p = PARTS[selPart];
+    if (!bar) { bar = document.createElement('div'); bar.id = 'partbar'; $('#parts').after(bar); }
+    const chips = [...new Set([...names, ...SECS, p.n])];
+    bar.innerHTML = '<div class="pbn">' + chips.map(n => `<button class="press${n === p.n ? ' on' : ''}" data-n="${esc(n)}"${colorOf(n) ? ` style="--pc:${colorOf(n)}"` : ''}>${esc(n)}</button>`).join('') + '<button class="press" data-a="new">＋ 其他</button></div>'
+      + '<div class="pbt"><span>' + fmt(p.t) + (BPM ? ' · 第 ' + barNo(p.t) + ' 小节' : '') + '</span><button class="press" data-a="m">起点 −' + (BPM ? '1 小节' : '1 秒') + '</button><button class="press" data-a="p">起点 +' + (BPM ? '1 小节' : '1 秒') + '</button><button class="press" data-a="now">用此刻</button><button class="press dz" data-a="del">删除</button><button class="press" data-a="x">完成</button></div>';
+    const commit = (moved) => { if (moved) { const cur0 = PARTS[selPart]; PARTS.sort((x, y) => x.t - y.t); selPart = PARTS.indexOf(cur0); } renderParts(); saveParts(); partBar(); };
+    bar.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { p.n = b.dataset.n; commit(false); });
+    bar.querySelector('[data-a=new]').onclick = () => { const v = prompt('这段的名字（歌手名，或 Intro / Verse / Hook / Bridge / Outro）', p.n); if (v && v.trim()) { p.n = v.trim(); commit(false); } };
+    bar.querySelector('[data-a=m]').onclick = () => { p.t = Math.max(0, Math.round((p.t - step()) * 10) / 10); seek(p.t); commit(true); };
+    bar.querySelector('[data-a=p]').onclick = () => { p.t = Math.min(dur() - .5, Math.round((p.t + step()) * 10) / 10); seek(p.t); commit(true); };
+    bar.querySelector('[data-a=now]').onclick = () => { p.t = snapBar(Math.round(curTime() * 10) / 10); commit(true); };
+    bar.querySelector('[data-a=del]').onclick = () => { PARTS.splice(selPart, 1); selPart = -1; renderParts(); saveParts(); partBar(); };
+    bar.querySelector('[data-a=x]').onclick = () => { selPart = -1; partBar(); renderParts(); };
+  };
   onPart = i => {
-    const p = PARTS[i], v = prompt(fmt(p.t) + ' 这段的歌手（清空就删掉这段）', p.n); if (v === null) return;
-    if (v.trim()) p.n = v.trim(); else PARTS.splice(i, 1);
-    renderParts(); saveParts();
+    seek(PARTS[i].t); if (a.paused && !$('#play').disabled) $('#play').click();
+    selPart = selPart === i ? -1 : i; partBar(); renderParts();
+    document.querySelectorAll('#parts .pt').forEach((b, k) => b.classList.toggle('sel', k === selPart));
   };
   // 每个版本旁边一个「删除」
   document.querySelectorAll('.vrow').forEach(row => {
