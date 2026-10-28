@@ -596,7 +596,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 #cta{display:none!important}
 
 /* 艺人确认没有问题、可以准备交付 */
-.okbar{margin-top:22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.okbar{margin:22px 0 6px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .okbar[hidden]{display:none}
 .okbtn{flex:1 1 100%;min-height:58px;border:0;border-radius:16px;background:#8fc7a2;color:#10231a;font:inherit;font-size:17px;font-weight:700;letter-spacing:.2px;cursor:pointer;box-shadow:0 6px 24px rgba(143,199,162,.28);transition:transform .15s,box-shadow .15s}
 .okbtn:active{transform:scale(.985)}

@@ -145,6 +145,7 @@ document.body.innerHTML = `
   <aside class="plist" id="plist" hidden></aside>
   <section class="fee" id="fee" hidden></section>
 
+  <div class="okbar" id="okbar" hidden></div>
   <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
     <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT">0:00</span></span>
@@ -160,7 +161,6 @@ document.body.innerHTML = `
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
-  <div class="okbar" id="okbar" hidden></div>
 </main>
 
 <div class="dock">
