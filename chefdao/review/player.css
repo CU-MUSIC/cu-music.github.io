@@ -567,3 +567,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 
 /* 软刷新 / 切歌后淡入 */
 @keyframes qfade{from{opacity:0}to{opacity:1}}
+
+#cfl .acts{flex-wrap:wrap;justify-content:flex-end}
+#cfl .acts .st.on{background:var(--fill-3);color:var(--text)}#cfl .acts .st.dn{background:rgba(47,107,79,.55);color:#d8f0e3}
+#cfl .acts .emo{padding:0 7px;font-size:15px;background:none}

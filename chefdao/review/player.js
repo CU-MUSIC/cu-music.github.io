@@ -1183,8 +1183,8 @@ async function clientFb() {
       const wb = document.createElement('div'); wb.className = 'cwho'; wb.textContent = o.who + (o.at ? ' · ' + tstr(o.at) : ''); row.querySelector('.m').prepend(wb);   // 谁写的 · 什么时候
       if (o.t != null) {
         const k = rk(o.ver, o.t, o.m), acts = document.createElement('div'); acts.className = 'acts';
-        acts.innerHTML = '<button class="press" data-a="reply">回复</button><button class="press" data-a="done">✓ 完成</button>';
-        const sync = () => { const r = mine.get(k); decorate(row, r); acts.querySelector('[data-a=done]').classList.toggle('on', !!(r && r.done));
+        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
+        const sync = () => { const r = mine.get(k); decorate(row, r); const sb = acts.querySelector('[data-a=st]'); sb.textContent = r && r.done ? '✓ 已完成' : r && r.read ? '已读 · 点一下完成' : '标为已读'; sb.classList.toggle('on', !!(r && (r.done || r.read))); sb.classList.toggle('dn', !!(r && r.done));
           acts.querySelector('[data-a=reply]').textContent = r && r.reply ? '改回复' : '回复'; };
         const save = async body => {
           try {
@@ -1199,7 +1199,11 @@ async function clientFb() {
           const v = prompt('回复这条评论（客户会在审听页看到，可以继续对话）：\n「' + o.m + '」', ''); if (!v || !v.trim()) return;
           try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, text: v.trim() }) });
             const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(o.t * 10) / 10, m: o.m, who: 'o', text: v.trim(), ts: j.ts }); cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } };
-        acts.querySelector('[data-a=done]').onclick = () => { const r = mine.get(k); save({ done: !(r && r.done) }); };
+        // 一个按钮走三步：未读 → 已读 → 已完成 → 回到未读（客户那边同步显示「已读」「已处理」）
+        acts.querySelector('[data-a=st]').onclick = () => { const r = mine.get(k) || {}; save(!r.read && !r.done ? { read: true } : !r.done ? { read: true, done: true } : { read: false, done: false }); };
+        // 一点就回一个表情，歌手在评论下的对话里看到
+        acts.querySelectorAll('.emo').forEach(b => b.onclick = async () => { try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, text: b.dataset.e }) });
+          const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(o.t * 10) / 10, m: o.m, who: 'o', text: b.dataset.e, ts: j.ts }); if (!(mine.get(k) || {}).read) save({ read: true }); else cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } });
         const th = MSGS.filter(x => x.ver === o.ver && x.t === Math.round(o.t * 10) / 10 && x.m === o.m);
         if (th.length) { const tb = document.createElement('div'); tb.className = 'thr'; tb.innerHTML = th.map(x => `<div class="tm ${x.who === 'o' ? 'o' : 'c'}"><b>${x.who === 'o' ? '我' : esc(o.who)}</b>${esc(x.text)}<i>${tstr(x.ts)}</i></div>`).join(''); row.querySelector('.m').appendChild(tb); }
         row.querySelector('.m').after(acts);
@@ -1208,11 +1212,6 @@ async function clientFb() {
       box.appendChild(row);
     });
     rows.forEach(f => f());
-    // 你打开这一版就算看过：把没标已读的评论标上，客户那边显示「已读」
-    all.filter(o => o.t != null && !(mine.get(rk(o.ver, o.t, o.m)) || {}).read).forEach(o => {
-      const k = rk(o.ver, o.t, o.m); mine.set(k, { ...(mine.get(k) || {}), read: 1 });
-      fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, read: true }) }).catch(() => { const r = mine.get(k); if (r) r.read = 0; });
-    });
     $('#cfn').textContent = here.length ? here.length + ' 条 · ' + [...new Set(here.map(x => x.who))].join('、') : '这一版还没有';
     $('#cfb').hidden = false;
     };
