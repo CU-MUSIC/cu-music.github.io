@@ -220,10 +220,7 @@ function tilt() {
     set((e.gamma - base.g) / 18, (e.beta - base.b) / 18);
   };
   const D = window.DeviceOrientationEvent;
-  if (D && typeof D.requestPermission === 'function') {
-    const ask = () => { removeEventListener('touchend', ask); D.requestPermission().then(s => { if (s === 'granted') addEventListener('deviceorientation', ori); }).catch(() => {}); };
-    addEventListener('touchend', ask);
-  } else addEventListener('deviceorientation', ori);
+  if (D && typeof D.requestPermission !== 'function') addEventListener('deviceorientation', ori);   // iOS 要弹「动作与方向」权限窗，每次都很烦，直接不启用；安卓无需权限
 }
 const pin = document.getElementById('pin'), dots = [...document.querySelectorAll('#dots i')], ask = document.getElementById('ask');
 const focus = () => pin.focus({ preventScroll: true });
