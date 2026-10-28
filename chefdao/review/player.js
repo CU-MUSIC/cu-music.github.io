@@ -167,6 +167,7 @@ const a = $('#a');
 let PUSH = '', WK = '', notes = [], locked = null;
 // 刀大厨对评论的回复 / 完成标记：键 = 版本|时间点(0.1 秒)|内容
 let REPLIES = new Map();
+let MSGS = [];   // 评论下的对话 [{ ver, t, m, who: 'c'|'o', text, ts }]
 let ONOTES = [];   // 刀大厨自己的评论（歌手端显示，来自 /cr）
 const IS_OWNER = !!store.get('insights:key');
 const rk = (ver, t, m) => ver + '|' + (Math.round(t * 10) / 10) + '|' + m;
@@ -689,8 +690,26 @@ async function loadReplies() {
     if (!j.ok) return;
     REPLIES = new Map(j.replies.map(x => [rk(x.ver, x.t, x.m), x]));
     ONOTES = j.onotes || [];
+    MSGS = j.msgs || [];
     render();
   } catch (e) {}
+}
+// 评论下的对话：客户在这条评论下给你回复（有你的回复，或这是你写的评论时才出现输入框）；发送后你的微信会收到推送
+function thread(row, ver, tm, m, canReply) {
+  const key = x => x.ver === ver && x.t === Math.round(tm * 10) / 10 && x.m === m;
+  const box = document.createElement('div'); box.className = 'thr';
+  const draw = () => {
+    const ms = MSGS.filter(key);
+    box.innerHTML = ms.map(x => `<div class="tm ${x.who === 'o' ? 'o' : 'c'}"><b>${x.who === 'o' ? '刀大厨' : '我'}</b>${esc(x.text)}<i>${tstr(x.ts)}</i></div>`).join('')
+      + (canReply || ms.length ? '<div class="tin"><input maxlength="300" placeholder="回复刀大厨…"><button type="button">发送</button></div>' : '');
+    const inp = box.querySelector('input'); if (!inp) return;
+    const send = async () => { const v = inp.value.trim(); if (!v || !WK) return; inp.disabled = true;
+      try { const r = await fetch(API_BASE + '/cm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver, t: tm, m, text: v }) });
+        const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver, t: Math.round(tm * 10) / 10, m, who: 'c', text: v, ts: j.ts || Date.now() }); draw(); }
+      catch (e) { inp.disabled = false; hud('没发出去，检查网络再试'); } };
+    box.querySelector('button').onclick = send; inp.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); send(); } };
+  };
+  draw(); row.querySelector('.m').appendChild(box);
 }
 function render(newId) {
   const list = $('#list'); list.innerHTML = '';
@@ -706,6 +725,7 @@ function render(newId) {
     row.querySelector('.m').textContent = o.m;
     if (o.id) { const ts = document.createElement('span'); ts.className = 'ts'; ts.textContent = tstr(o.id); row.querySelector('.m').appendChild(ts); }   // 评论发表时间
     decorate(row, REPLIES.get(rk(cur.ver, o.t, o.m)));
+    { const rr = REPLIES.get(rk(cur.ver, o.t, o.m)); thread(row, cur.ver, o.t, o.m, !!(rr && rr.reply)); }
     row.querySelector('.x').onclick = () => {
       row.classList.add('out');
       setTimeout(() => { notes = notes.filter(n => n !== o); render(); save(); updateCta(); }, 260);
@@ -722,6 +742,7 @@ function render(newId) {
       row.querySelector('.t').textContent = fmt(o.t);
       row.querySelector('.t').onclick = () => { seek(o.t); if (a.paused && !$('#play').disabled) a.play(); };
       row.querySelector('.m').textContent = o.m;
+      thread(row, o.ver, o.t, o.m, true);
       list.insertBefore(row, at);
     });
   }
@@ -1100,7 +1121,7 @@ async function clientFb() {
     const mine = new Map();
     try {   // 已有的回复 / 完成
       const rj = await (await fetch(API + '/cr?s=' + S.slug, { headers: { Authorization: 'Bearer ' + key }, cache: 'no-store' })).json();
-      if (rj.ok) rj.replies.forEach(x => mine.set(rk(x.ver, x.t, x.m), x));
+      if (rj.ok) { rj.replies.forEach(x => mine.set(rk(x.ver, x.t, x.m), x)); MSGS = rj.msgs || []; }
     } catch (e) {}
     // 只显示正在听的这一版的评论；切版本时重画
     cfbRender = () => {
@@ -1136,8 +1157,13 @@ async function clientFb() {
             cfbRender();
           } catch (e) { alert('没存上，检查网络再试'); }
         };
-        acts.querySelector('[data-a=reply]').onclick = () => { const r = mine.get(k); const v = prompt('回复这条评论（客户会在审听页看到）：\n「' + o.m + '」', (r && r.reply) || ''); if (v !== null) save({ reply: v }); };
+        acts.querySelector('[data-a=reply]').onclick = async () => {
+          const v = prompt('回复这条评论（客户会在审听页看到，可以继续对话）：\n「' + o.m + '」', ''); if (!v || !v.trim()) return;
+          try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: o.t, m: o.m, text: v.trim() }) });
+            const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(o.t * 10) / 10, m: o.m, who: 'o', text: v.trim(), ts: j.ts }); cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } };
         acts.querySelector('[data-a=done]').onclick = () => { const r = mine.get(k); save({ done: !(r && r.done) }); };
+        const th = MSGS.filter(x => x.ver === o.ver && x.t === Math.round(o.t * 10) / 10 && x.m === o.m);
+        if (th.length) { const tb = document.createElement('div'); tb.className = 'thr'; tb.innerHTML = th.map(x => `<div class="tm ${x.who === 'o' ? 'o' : 'c'}"><b>${x.who === 'o' ? '我' : esc(o.who)}</b>${esc(x.text)}<i>${tstr(x.ts)}</i></div>`).join(''); row.querySelector('.m').appendChild(tb); }
         row.querySelector('.m').after(acts);
         rows.push(sync);
       }
