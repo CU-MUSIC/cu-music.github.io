@@ -139,7 +139,7 @@ document.body.innerHTML = `
   </div>
   <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
-    <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="loopBtn" aria-pressed="false">循环</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+    <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="loopBtn" aria-pressed="false">循环</button><button class="loud press" id="snapBtn" aria-pressed="false" title="点波形、设循环都落在小节线上；点段落只循环这一段">吸附</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
   <section class="mst" id="mst" hidden></section>
   <aside class="plist" id="plist" hidden></aside>
@@ -512,6 +512,10 @@ const colorOf = n => SINGERS[n] || '';
 let BPM = S.bpmInfo || null;   // { bpm, off, n }
 const barLen = () => BPM ? 60 / BPM.bpm * BPM.n : 0;
 const snapBar = t => { if (!BPM) return t; const L = barLen(), k = Math.round((t - BPM.off) / L); return Math.max(0, Math.round((BPM.off + k * L) * 10) / 10); };
+let SNAP = store.get('review:snap') === '1';   // 吸附：点波形、设循环都落在小节线上；点段落 = 只循环播放这一段
+const snapT = t => (SNAP && BPM ? Math.max(0, snapBar(t)) : t);
+const barDown = t => BPM ? Math.max(0, BPM.off + Math.floor((t - BPM.off) / barLen() + 1e-6) * barLen()) : t;
+const barUp = t => BPM ? BPM.off + Math.ceil((t - BPM.off) / barLen() - 1e-6) * barLen() : t;
 const barNo = t => BPM ? Math.floor((t - BPM.off) / barLen() + 1e-6) + 1 : 0;
 // 从音频里估 BPM：能量包络 → 起音 → 自相关；再找第一拍的位置
 function estimateBpm(ch, sr) {
@@ -548,10 +552,12 @@ function findKick(ch, sr, bpm0) {
 }
 const KSET = [1, 5, 9, 13, 17, 25, 33];
 let PARTS = (S.parts || []).slice().sort((x, y) => x.t - y.t), partNow = -2;
-let onPart = i => { seek(PARTS[i].t); if (a.paused && !$('#play').disabled) $('#play').click(); };
+const partLoop = i => { if (!SNAP) return; const e = PARTS[i + 1] ? PARTS[i + 1].t : dur(); LOOP = { a: PARTS[i].t, b: e }; loopUi(); };   // 吸附开着：点段落 = 循环这一段
+let onPart = i => { seek(PARTS[i].t); partLoop(i); if (a.paused && !$('#play').disabled) $('#play').click(); };
 const partAt = t => { let k = -1; PARTS.forEach((p, i) => { if (p.t <= t + .05) k = i; }); return k; };
 function renderParts() {
   const el = $('#parts'); el.hidden = !PARTS.length; partNow = -2;
+  try { snapUi(); } catch (e) {}   // 有了段落才显示「吸附」按钮
   el.innerHTML = PARTS.map((p, i) => { const s = Math.min(1, p.t / dur()), e = Math.min(1, (PARTS[i + 1] ? PARTS[i + 1].t : dur()) / dur());
     const c = colorOf(p.n);
     return `<button class="pt press" data-i="${i}" style="left:${(s * 100).toFixed(2)}%;width:${(Math.max(0, e - s) * 100).toFixed(2)}%${c ? ';--pc:' + c : ''}" title="${esc(fmt(p.t) + ' ' + p.n)}"><span>${esc(p.n)}</span></button>`; }).join('');
@@ -580,6 +586,9 @@ function draw(now) {
     ctx.roundRect ? ctx.roundRect(x, mid - bh / 2, bw, bh, bw / 2) : ctx.rect(x, mid - bh / 2, bw, bh);
     ctx.fill();
   }
+  // 小节号：波形顶部标出，间隔按宽度自动取 1 / 2 / 4 / 8 / 16 小节
+  if (BPM && barLen() * w / dur() > 5) { const bp = barLen() * w / dur(), st = [1, 2, 4, 8, 16, 32].find(s => bp * s >= 34) || 32, cb = barNo(tt); ctx.font = '500 10px ui-monospace,Menlo,monospace'; ctx.textBaseline = 'top';
+    for (let k = 0; BPM.off + k * barLen() < dur(); k += st) { const x = (BPM.off + k * barLen()) / dur() * w; ctx.fillStyle = cb - 1 >= k && cb - 1 < k + st ? 'rgba(236,234,230,.85)' : 'rgba(236,234,230,.38)'; ctx.fillText(String(k + 1), x + 3, 1); } }
   // 小节线：每小节一条细线，每 4 小节稍亮
   if (BPM && barLen() * w / dur() > 5) { const L = barLen(); for (let k = 0, x0 = BPM.off; x0 < dur(); k++, x0 = BPM.off + k * L) { const x = Math.round(x0 / dur() * w); ctx.fillStyle = k % 4 === 0 ? 'rgba(236,234,230,.16)' : 'rgba(236,234,230,.06)'; ctx.fillRect(x, 0, 1, h); } }
   // 循环区间
@@ -613,7 +622,8 @@ function loopUi() {
   loopBtn.setAttribute('aria-pressed', on);
 }
 function loopStep() {                       // 无 → 设起点 → 设终点（开始循环）→ 取消
-  const t = Math.round(curTime() * 10) / 10;
+  const t0 = Math.round(curTime() * 10) / 10;
+  const t = LOOP.a === null ? (SNAP && BPM ? barDown(t0) : t0) : (SNAP && BPM ? barUp(t0) : t0);   // 吸附开着：起点落在小节开头，终点落在小节末尾
   if (LOOP.b !== null) LOOP = { a: null, b: null };
   else if (LOOP.a === null) LOOP.a = t;
   else if (t - LOOP.a >= 1) { LOOP.b = t; seek(LOOP.a); if (a.paused && !$('#play').disabled) $('#play').click(); }
@@ -621,6 +631,10 @@ function loopStep() {                       // 无 → 设起点 → 设终点�
   loopUi();
 }
 loopBtn.onclick = loopStep;
+const snapBtn = $('#snapBtn');
+const snapUi = () => { snapBtn.setAttribute('aria-pressed', SNAP); snapBtn.hidden = !BPM && !PARTS.length; };
+snapBtn.onclick = () => { SNAP = !SNAP; store.set('review:snap', SNAP ? '1' : '0'); snapUi(); hud(SNAP ? '吸附已开：点波形落在小节线，点段落只循环这一段' : '吸附已关'); };
+snapUi();
 // 播放中越过终点就回到起点；手动拖到终点之后不拉回
 let loopPrev = 0;
 setInterval(() => {
@@ -629,7 +643,7 @@ setInterval(() => {
   loopPrev = a.currentTime;
 }, 40);
 let drag = false;
-cv.addEventListener('pointerdown', e => { drag = true; cv.setPointerCapture(e.pointerId); seek(frac(e) * dur()); });
+cv.addEventListener('pointerdown', e => { drag = true; cv.setPointerCapture(e.pointerId); seek(snapT(frac(e) * dur())); });
 box.addEventListener('pointermove', e => {
   hover = frac(e); box.classList.add('hov');
   const tip = box.querySelector('.tip'), w = cv.clientWidth;
@@ -637,7 +651,7 @@ box.addEventListener('pointermove', e => {
   tip.textContent = near ? fmt(near.t) + ' · ' + (near.m.length > 16 ? near.m.slice(0, 16) + '…' : near.m) : fmt(hover * dur()) + (BPM ? ' · 第 ' + barNo(hover * dur()) + ' 小节' : '');
   tip.classList.toggle('note', !!near);
   tip.style.left = Math.min(w - tip.offsetWidth / 2, Math.max(tip.offsetWidth / 2, hover * w)) + 'px';
-  if (drag) seek(hover * dur());
+  if (drag) seek(snapT(hover * dur()));
 });
 const unhover = () => { hover = null; box.classList.remove('hov'); };
 cv.addEventListener('pointerup', e => { drag = false; if (e.pointerType !== 'mouse') unhover(); });
@@ -1046,7 +1060,7 @@ function ownerTools() {
       } else if (+mode > 0) { const sec = prompt('第一拍在第几秒（鼓第一下 / 节拍起点，没概念就填 0）', BPM ? String(BPM.off) : '0'); if (sec === null) return; x = { bpm: +mode, off: Math.max(0, +sec || 0), n: 4 }; }
       else x = null;
       if (x) { const nb = prompt('每小节几拍（默认 4）', String(x.n)); if (nb === null) return; x.n = [2, 3, 4, 5, 6, 7].includes(+nb) ? +nb : 4; }
-      await post('/radm/meta', { slug: S.slug, bpm: x }); BPM = x; busy(x ? 'BPM ' + x.bpm + ' 已保存，波形上有小节线，加段落会吸附到小节' : 'BPM 已清除');
+      await post('/radm/meta', { slug: S.slug, bpm: x }); BPM = x; try { snapUi(); } catch (e) {} busy(x ? 'BPM ' + x.bpm + ' 已保存，波形上有小节线，加段落会吸附到小节' : 'BPM 已清除');
     } catch (e) { busy('没成功，检查网络再试'); }
   };
   $('#ownPart').onclick = () => {
@@ -1077,7 +1091,7 @@ function ownerTools() {
     bar.querySelector('[data-a=x]').onclick = () => { selPart = -1; partBar(); renderParts(); };
   };
   onPart = i => {
-    seek(PARTS[i].t); if (a.paused && !$('#play').disabled) $('#play').click();
+    seek(PARTS[i].t); partLoop(i); if (a.paused && !$('#play').disabled) $('#play').click();
     selPart = selPart === i ? -1 : i; partBar(); renderParts();
     document.querySelectorAll('#parts .pt').forEach((b, k) => b.classList.toggle('sel', k === selPart));
   };
