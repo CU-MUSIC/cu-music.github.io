@@ -1162,6 +1162,7 @@ async function clientFb() {
       if (rj.ok) { rj.replies.forEach(x => mine.set(rk(x.ver, x.t, x.m), x)); MSGS = rj.msgs || []; }
     } catch (e) {}
     // 只显示正在听的这一版的评论；切版本时重画
+    const stPrev = new Map();   // 每条评论上一次的状态圈，用来做过渡动画
     cfbRender = () => {
     const box = $('#cfl'); box.innerHTML = '';
     const done = o => { const r = mine.get(rk(o.ver, o.t, o.m)); return !!(r && r.done); };
@@ -1184,7 +1185,10 @@ async function clientFb() {
       if (o.t != null) {
         const k = rk(o.ver, o.t, o.m), acts = document.createElement('div'); acts.className = 'acts';
         acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
-        const sync = () => { const r = mine.get(k); decorate(row, r); const sb = acts.querySelector('[data-a=st]'); sb.textContent = r && r.done ? '✓ 已完成' : r && r.read ? '已读 · 点一下完成' : '标为已读'; sb.classList.toggle('on', !!(r && (r.done || r.read))); sb.classList.toggle('dn', !!(r && r.done));
+        const sync = () => { const r = mine.get(k); decorate(row, r); const sb = acts.querySelector('[data-a=st]'), pc = r && r.done ? 100 : r && r.read ? 50 : 0, pv = stPrev.has(k) ? stPrev.get(k) : pc;   // 圆圈：空心 = 未读，半圆 = 已读，实心 ✓ = 已完成；状态变了就从上一个状态补间过去
+          sb.innerHTML = '<i class="ring' + (pc === 100 ? ' full' : '') + '" style="--p:' + pv + '"></i><span>' + (pc === 100 ? '已完成' : pc === 50 ? '已读' : '未读') + '</span>';
+          const ring = sb.querySelector('.ring'); if (pv !== pc) { requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.setProperty('--p', pc); ring.classList.add('pop'); })); }
+          stPrev.set(k, pc); sb.classList.toggle('on', pc > 0); sb.classList.toggle('dn', pc === 100);
           acts.querySelector('[data-a=reply]').textContent = r && r.reply ? '改回复' : '回复'; };
         const save = async body => {
           try {
