@@ -712,6 +712,7 @@ function add() {
   notes.push(o); notes.sort((x, y) => x.t - y.t);
   txt.value = ''; locked = null; $('#stamp').classList.remove('locked'); $('#add').classList.remove('on'); grow(txt);
   render(o.id); save(); updateCta();
+  clearTimeout(syncT); track(vi, true);   // 点发送（回车）就立刻同步给你，不等防抖
 }
 $('#add').onclick = add;
 txt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover:hover)').matches) { e.preventDefault(); add(); } });
