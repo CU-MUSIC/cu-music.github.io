@@ -66,7 +66,8 @@
         return out; };
       const gset = (a, m) => { const o = new Set(); a.lids.forEach(l => (m.get(l) || []).forEach(x => o.add(x))); return o; };
       const geoTxt = a => { const g = [...gset(a, lg)]; return g.length ? ' · 📍' + esc(g.join('、')) : ''; };
-      const gnames = [...new Set([...by.values()].map(a => a.g && a.g.name).filter(Boolean))];
+      const trk = (o.tracks || []).find(t => t.slug === o.current), own = trk ? String(trk.artist || '').split(/[、,，/&]/).map(x => x.trim()).filter(Boolean) : [];
+      const gnames = [...new Set(own.concat([...by.values()].map(a => a.g && a.g.name).filter(Boolean)))];   // 这首歌的所有歌手都列出来，没人对上的也要有
       const list0 = merge([...by.values()]).sort((x, y) => y.last - x.last);
       const openedArr = merge([...opened.values()]).filter(a => !list0.some(l => l.lids.some(x => a.lids.includes(x)) || (nm(a.lids[0]) && nm(a.lids[0]) === nm(l.lids[0]) && (() => { const x = gset(a, lg), y = gset(l, lg); return !x.size || !y.size || [...x].some(z => y.has(z)); })())));
       const all = list0.concat(openedArr);   // 同一个网络（运营商 + 城市）出现的不同编号放到一起，提示可能是同一人
