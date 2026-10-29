@@ -964,7 +964,7 @@ function markSeg() {
     b.classList.toggle('has', has); b.classList.toggle('on', i === vi); b.setAttribute('aria-current', i === vi);
   });
   document.querySelectorAll('#seg .vg.old').forEach(g => {
-    if (g.querySelector('.vrow.on')) g.classList.add('open');
+    if (g.querySelector('.vrow.on') && g.dataset.seen !== String(vi)) { g.classList.add('open'); g.dataset.seen = String(vi); }   // 只在切换到这一版时自动展开；你手动收起后不再被自动弹开
     const s = g.querySelector('.vsum'); s.setAttribute('aria-expanded', g.classList.contains('open')); s.classList.toggle('has', !!g.querySelector('.vrow.has'));
   });
   if (typeof markList === 'function') markList();
