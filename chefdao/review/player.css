@@ -435,7 +435,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .pli .m{font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
 .pli.on{color:var(--text);background:var(--fill)}.pli.on .n{color:var(--text)}
 @media(hover:hover){.pli:not(.on):hover{background:var(--fill);color:var(--text)}}
-@media(min-width:1180px){.plist{position:fixed;top:120px;left:calc(50% + 350px);width:240px;max-height:calc(100vh - 160px);overflow:auto;margin:0}.plist .plc{display:none}.plist.collapsed .pli,.plist.collapsed .plg{display:block!important}}
+@media(min-width:1180px){.plist{position:fixed;top:120px;left:calc(50% + 350px);width:240px;max-height:calc(100vh - 160px);overflow:auto;margin:0}}   /* 宽屏也要能收起：之前这里把收起强制显示成 block，点了折叠没反应、箭头方向和内容对不上，列表还被撑成非 grid */
 .plh{width:100%;background:none;border:0;color:inherit;font-family:inherit;cursor:pointer;text-align:left}
 .plh .plc{display:inline-block;margin-left:8px;width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s}
 .plist.collapsed .plc{transform:rotate(-45deg)}.plist.collapsed .pli,.plist.collapsed .plg{display:none}
