@@ -113,7 +113,7 @@ function pjErr(k) {
 // 申请制项目：客户填 ID 提交申请，等你批准；批准后这页自动进入（每 6 秒问一次）
 const apDevice = () => { const x = navigator.userAgent; return (/iPhone|iPad/.test(x) ? 'iPhone' : /Android/.test(x) ? '安卓' : /Mac/.test(x) ? 'Mac' : /Windows/.test(x) ? 'Windows' : '设备') + (/MicroMessenger/i.test(x) ? ' · 微信' : /xhsdiscover|XiaoHongShu/i.test(x) ? ' · 小红书' : /aweme|douyin/i.test(x) ? ' · 抖音' : ''); };
 function approvalGate(info) {
-  const name0 = ls.get('review:ap:name') || '', st = info.state;
+  const name0 = ls.get('review:name') || ls.get('review:ap:name') || '', st = info.state;   // 之前自己填过艺名的，直接带入
   const cover = info.project.cover ? ' style="background-image:url(' + API + info.project.cover + ')"' : '';
   const stage = (st === 'pending') ? ['申请已提交', '批准后这个页面会自动打开，请保持页面开启，或稍后再回来。']
     : (st === 'denied' || st === 'revoked') ? ['申请未通过', '如有疑问，请联系发送方。'] : null;
