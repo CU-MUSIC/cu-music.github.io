@@ -319,7 +319,7 @@ function progPanel() {
 }
 // 收款情况：只在你的设备（存了看板钥匙）显示。读每首歌的费用单，按人列出定金 / 尾款，定金收齐才开工
 async function payPanel() {
-  const qs = await Promise.all(P.tracks.map(t => fetch(API + '/rs?s=' + t.slug + '&tok=' + tok, { cache: 'no-store' }).then(r => r.json()).then(j => j.ok && j.song.quote ? { t, q: j.song.quote } : null).catch(() => null)));
+  const qs = await Promise.all(P.tracks.map(t => fetch(API + '/rs?s=' + t.slug + '&tok=' + tok, { cache: 'no-store', headers: { Authorization: 'Bearer ' + ls.get('insights:key') } }).then(r => r.json()).then(j => j.ok && j.song.quote ? { t, q: j.song.quote } : null).catch(() => null)));
   const list = qs.filter(Boolean); if (!list.length) return;
   const price = (q, p) => p.fix != null ? p.fix : q.menu.base + q.menu.vocal[p.v][1] + q.menu.edit[p.e][1];
   const half = (q, p) => { const t = price(q, p), d = Math.min(t, p.da ?? Math.round(t / 2)); return [d, t - d]; };
