@@ -1,10 +1,10 @@
 // 侧边栏：只在你自己的设备上出现（带看板钥匙）。列出所有项目和单曲，点一下切换，不用回看板找
-// 宽屏（≥1460px）固定在左边，窄屏是抽屉；开关状态记在本机
+// 宽屏（≥1520px）固定在左边，窄屏是抽屉；开关状态记在本机
 (() => {
   const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const KEY = ls.get('insights:key'); if (!KEY || document.getElementById('cuSide')) return;
   const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
-  const W = 272, PIN = matchMedia('(min-width:1460px)');
+  const W = 272, PIN = matchMedia('(min-width:1520px)');
   const STAGE = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付', '人声制作中', '修改中', '交付结算'];
   const HOT = { 4: '#9fb7e8', 7: '#e8c98a', 8: '#e8c98a' };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -23,6 +23,7 @@ html.cu-side-pin #cuSide{box-shadow:none}
 html.cu-side-pin body{margin-left:${W}px}
 html.cu-side-pin .dock,html.cu-side-pin #lock,html.cu-side-pin .lock{left:${W}px}
 html.cu-side-pin .plist{left:calc(50% + ${W / 2}px + 350px)}
+html.cu-side-pin .ols.side{right:calc(50% - ${W / 2}px + 350px)}
 #cuSideBtn{position:fixed;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));z-index:71;width:34px;height:34px;border-radius:10px;border:0;
   background:rgba(236,234,230,.08);color:#d8d6d2;display:grid;place-items:center;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:left .22s}
 #cuSideBtn svg{width:18px;height:18px}
