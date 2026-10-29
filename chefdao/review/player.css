@@ -601,15 +601,12 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .okbtn{flex:1 1 100%;min-height:58px;border:0;border-radius:16px;background:#8fc7a2;color:#10231a;font:inherit;font-size:17px;font-weight:700;letter-spacing:.2px;cursor:pointer;box-shadow:0 6px 24px rgba(143,199,162,.28);transition:transform .15s,box-shadow .15s}
 .okbtn:active{transform:scale(.985)}
 .okcd{flex:1 1 100%;text-align:center;font-size:14px;line-height:1.6;color:#8d8f93}
-.okwrap{position:relative;flex:1 1 100%;margin:5px 0}
-.okwrap .okbtn{width:100%}
-.okrg{position:absolute;left:-5px;top:-5px;pointer-events:none;overflow:visible}
-.okrg rect{fill:none;stroke-width:3;stroke-linecap:round}
-.okrg .t{stroke:rgba(143,199,162,.16)}
-.okrg .p{stroke:#8fc7a2;filter:drop-shadow(0 0 5px rgba(143,199,162,.75));transition:stroke-dasharray .6s}
-.okwrap.late .okrg .p{stroke:#e0b55a;filter:drop-shadow(0 0 6px rgba(224,181,90,.85));animation:okp 2.2s ease-in-out infinite}
-@keyframes okp{50%{opacity:.55}}
-.okbtn small{display:block;margin-top:3px;font-size:13px;font-weight:500;opacity:.78;letter-spacing:0}
+.okbtn.cd{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 16px 14px}
+.okbtn small{display:block;font-size:13px;font-weight:500;opacity:.8;letter-spacing:0}
+.okbar2{display:block;width:62%;height:5px;border-radius:3px;background:rgba(16,35,26,.22);overflow:hidden;margin-top:3px}
+.okbar2 b{display:block;height:100%;border-radius:3px;background:rgba(16,35,26,.78);transition:width .6s}
+.okbtn.late{background:#e0b55a;color:#2b2008;box-shadow:0 6px 24px rgba(224,181,90,.3)}
+.okbtn.late .okbar2{background:rgba(43,32,8,.2)}.okbtn.late .okbar2 b{background:rgba(43,32,8,.75)}
 .okext{flex:1 1 100%;min-height:44px;margin-top:2px;border:1px solid rgba(201,178,122,.5);border-radius:12px;background:transparent;color:#cdb98a;font:inherit;font-size:15px;cursor:pointer}
 .okbar.auto{padding:12px 16px;border-radius:14px;background:rgba(201,178,122,.12);color:#cdb98a;font-size:15px;font-weight:600}
 .okbar.auto.done{background:rgba(143,199,162,.12);color:#9fd2b0}

@@ -847,14 +847,10 @@ async function renderOk() {
   bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');
   bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题，可以准备交付</span><button type="button" class="okundo">撤回</button>'
     : auto ? '<span>✓ 超过 72 小时无反馈，已视为没有意见，进入母带交付流程。有想法随时写在下面，会作为交付后微调处理</span>'
-    : (() => { const txt = '没有新意见的话，' + leftTxt(ai ? ai.left : 0) + '后将自动视为没有意见' + (ai && ai.ext ? '（已延长 24 小时）' : '');
-      const btn = '<button type="button" class="okbtn">✓ 这一版没有问题了，可以准备交付' + (ai ? '<small>' + txt + '</small>' : '') + '</button>';
-      return ai ? '<div class="okwrap' + (ai.left <= 432e5 ? ' late' : '') + '">' + btn + '<svg class="okrg"><rect class="t"/><rect class="p"/></svg></div>' + (!ai.ext && ai.left <= 432e5 ? '<button type="button" class="okext">还需要时间？延长 24 小时</button>' : '') : btn; })();
-  const wrap = bar.querySelector('.okwrap');   // 按钮外一圈光环 = 剩余时间，沿边框一点点缩短
-  if (wrap) { const w = wrap.offsetWidth + 10, hh = wrap.offsetHeight + 10, tot = AUTO_H * 36e5 + (ai.ext ? 864e5 : 0), f = Math.max(0, Math.min(1, ai.left / tot)), sv = wrap.querySelector('svg');
-    sv.setAttribute('width', w); sv.setAttribute('height', hh);
-    wrap.querySelectorAll('rect').forEach(r => { r.setAttribute('x', 2); r.setAttribute('y', 2); r.setAttribute('width', w - 4); r.setAttribute('height', hh - 4); r.setAttribute('rx', 21); r.setAttribute('pathLength', 100); });
-    wrap.querySelector('.p').setAttribute('stroke-dasharray', (f * 100).toFixed(2) + ' 100'); }
+    : (() => { const txt = '没有新意见的话，' + leftTxt(ai ? ai.left : 0) + '后将自动视为没有意见' + (ai && ai.ext ? '（已延长 24 小时）' : ''),
+        f = ai ? Math.max(0, Math.min(1, ai.left / (AUTO_H * 36e5 + (ai.ext ? 864e5 : 0)))) : 0;
+      const btn = '<button type="button" class="okbtn' + (ai ? ' cd' + (ai.left <= 432e5 ? ' late' : '') : '') + '">✓ 这一版没有问题了，可以准备交付' + (ai ? '<small>' + txt + '</small><i class="okbar2"><b style="width:' + (f * 100).toFixed(1) + '%"></b></i>' : '') + '</button>';
+      return btn + (ai && !ai.ext && ai.left <= 432e5 ? '<button type="button" class="okext">还需要时间？延长 24 小时</button>' : ''); })();
   const set = async flag => { if (flag) OKS[v] = Date.now(); else delete OKS[v]; renderOk();
     try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: flag ? 1 : 0 }) }); } catch (e) {} };
   const b1 = bar.querySelector('.okbtn'); if (b1) b1.onclick = () => set(true);
