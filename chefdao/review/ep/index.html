@@ -115,14 +115,16 @@ const apDevice = () => { const x = navigator.userAgent; return (/iPhone|iPad/.te
 function approvalGate(info) {
   const name0 = ls.get('review:name') || ls.get('review:ap:name') || '', st = info.state;   // 之前自己填过艺名的，直接带入
   const cover = info.project.cover ? ' style="background-image:url(' + API + info.project.cover + ')"' : '';
+  const avgTxt = info.avg ? (() => { const m = Math.max(1, Math.round(info.avg / 6e4)); return '平均 ' + (m < 60 ? m + ' 分钟' : m < 1440 ? Math.round(m / 60) + ' 小时' : Math.round(m / 1440) + ' 天') + '内通过'; })() : '';   // 最近几次申请从提交到批准的平均用时
+  const avgLine = avgTxt ? '<div style="margin:10px auto 0;font-size:13px;color:var(--text-3)">' + avgTxt + '</div>' : '';
   const stage = (st === 'pending') ? ['申请已提交', '批准后这个页面会自动打开，请保持页面开启，或稍后再回来。']
     : (st === 'denied' || st === 'revoked') ? ['申请未通过', '如有疑问，请联系发送方。'] : null;
   m.innerHTML = '<div class="cv"' + cover + '>' + (info.project.cover ? '' : CU) + '</div><h1>' + esc(info.project.title) + '</h1>'
     + (stage
-      ? '<div class="ask" style="margin-top:28px">' + stage[0] + '</div><div style="margin:10px auto 0;max-width:300px;font-size:14px;line-height:1.7;color:var(--text-3)">' + stage[1] + '</div>'
+      ? '<div class="ask" style="margin-top:28px">' + stage[0] + '</div><div style="margin:10px auto 0;max-width:300px;font-size:14px;line-height:1.7;color:var(--text-3)">' + stage[1] + '</div>' + (st === 'pending' ? avgLine : '')
       : '<div class="ask" style="margin-top:28px">此项目需申请后查看</div>'
         + '<form id="apf" style="margin:18px auto 0;max-width:300px;display:flex;flex-direction:column;gap:12px"><input id="apn" maxlength="40" autocomplete="off" placeholder="你的 ID（艺名或微信号）" value="' + esc(name0) + '" style="padding:13px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-size:16px;text-align:center">'
-        + '<button style="padding:13px;border-radius:12px;border:0;background:#eeeee6;color:#0e0e0f;font:inherit;font-weight:600;font-size:16px;cursor:pointer">申请查看</button><div id="ape" style="min-height:18px;font-size:13px;color:#e8a89a"></div></form>');
+        + '<button style="padding:13px;border-radius:12px;border:0;background:#eeeee6;color:#0e0e0f;font:inherit;font-weight:600;font-size:16px;cursor:pointer">申请查看</button><div id="ape" style="min-height:18px;font-size:13px;color:#e8a89a"></div></form>' + avgLine);
   const poll = () => fetch(API + '/pj?s=' + slug + '&tok=' + tok, { cache: 'no-store' }).then(r => r.json()).then(j => { if (j.ok) location.reload(); else if (j.state === 'denied' || j.state === 'revoked') approvalGate(j); }).catch(() => {});
   if (st === 'pending') setInterval(poll, 6000);
   const f = document.getElementById('apf'); if (!f) return;
