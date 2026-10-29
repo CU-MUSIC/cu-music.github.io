@@ -626,3 +626,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .pnotice{margin:18px 0 6px;padding:14px 16px;border-radius:14px;background:rgba(201,178,122,.10);border:1px solid rgba(201,178,122,.22);color:#d6d3cd;font-size:15px;line-height:1.75}
 .pnotice[hidden]{display:none}
 .pnotice b{display:block;font-size:13px;font-weight:600;color:#cdb98a;margin-bottom:3px;letter-spacing:.3px}
+
+.sprog.settle .spbar span.c{color:#e0b55a}.sprog.settle .spbar span.c i{background:#e0b55a}
+.okbar.settle{display:block;padding:14px 16px;border-radius:14px;background:rgba(224,181,90,.10);border:1px solid rgba(224,181,90,.25)}
+.okset{font-size:15px;line-height:1.7;color:#d6d3cd}.okset b{display:block;font-size:13px;color:#e0b55a;margin-bottom:2px;letter-spacing:.3px}

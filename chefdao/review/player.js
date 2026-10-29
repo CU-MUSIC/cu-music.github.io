@@ -119,11 +119,11 @@ document.body.innerHTML = `
   </header>
   ${(() => {   // 进度：项目页里改的阶段，这里只显示
     const g = S.prog; if (!g || !(g.s >= 0)) return '';
-    const BAR = [0, 1, 2, 3, 4, 5, 3, 4], cur = BAR[g.s] ?? 0;   // 人声制作并入混音、修改中并入审听：来回修改进度条不后退
-    const ST = ['待付款', '准备中', '编辑中', g.s === 6 ? '人声制作中' : '混音中', g.s === 7 ? '修改中 · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? '待审听 · 第 ' + (g.r + 1) + ' 轮' : '待审听', '已交付'];
+    const BAR = [0, 1, 2, 3, 4, 5, 3, 4, 5], cur = BAR[g.s] ?? 0;   // 人声制作并入混音、修改中并入审听：来回修改进度条不后退
+    const ST = ['待付款', '准备中', '编辑中', g.s === 6 ? '人声制作中' : '混音中', g.s === 7 ? '修改中 · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? '待审听 · 第 ' + (g.r + 1) + ' 轮' : '待审听', g.s === 8 ? '交付结算' : '已交付'];
     const W = [3.4, 1, .7, .55];   // 当前阶段占最宽，离得越远越窄（透视感）
-    return `<div class="sprog"><div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
-      + (g.s !== 5 && g.due ? `<div class="spdue">预计 ${cdate(g.due)} 交付</div>` : '') + '</div>';
+    return `<div class="sprog${g.s === 8 ? ' settle' : ''}"><div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
+      + (g.s !== 5 && g.s !== 8 && g.due ? `<div class="spdue">预计 ${cdate(g.due)} 交付</div>` : '') + '</div>';
   })()}
   <section class="vpick" id="seg"${V.length > 1 ? '' : ' hidden'}>${(() => {
     // 版本选择：按阶段一组一排小按钮「编辑 V1 V2 · 混音 V3」，当前版本高亮
@@ -840,11 +840,13 @@ async function renderOk() {
   if (owner) {
     if (okAll === null) { okAll = []; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug, { headers: { Authorization: 'Bearer ' + store.get('insights:key') }, cache: 'no-store' })).json(); okAll = j.all || []; } catch (e) {} }
     const mine = okAll.filter(x => x.ver === cur.ver); bar.hidden = !mine.length; bar.className = 'okbar done';
+    if (S.prog && S.prog.s === 8 && !mine.length) { bar.hidden = false; bar.className = 'okbar auto done'; bar.textContent = '⏱ 无反馈已自动确认，交付结算中'; return; }
     const ai = !mine.length && !notes.length ? autoInfo(okAll.some(x => x.ver === 'ext:' + cur.ver)) : null;
     bar.hidden = !mine.length && !ai; if (ai) bar.className = 'okbar auto' + (ai.left <= 0 ? ' done' : '');
     bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过 72 小时无反馈，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left) + (ai.ext ? ' · 已延长 24 小时' : '')) : ''; return;
   }
   if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid, { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); } catch (e) {} }
+  if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>'; return; }
   const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 6 ? '多轮修改后，建议先确认整体方向是否已经定下来，再继续细节调整。' : rn >= 4 ? '已经修改到第 ' + rn + ' 轮了。如果整体已经满意，点下面「没有问题了」就能进入母带交付；还有想改的，请一次性整理成一条发我。' : '';
   const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
   bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');

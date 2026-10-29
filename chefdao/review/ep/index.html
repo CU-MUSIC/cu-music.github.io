@@ -273,8 +273,8 @@ async function open(pw, key) {
   const restore = () => document.querySelectorAll('.pay').forEach(sec => { if (sec.dataset.fr) return; sec.dataset.fr = '1'; if (fs.get(fk(sec)) === '1') sec.classList.add('fold'); });
   new MutationObserver(restore).observe(document.body, { childList: true, subtree: true });
   document.addEventListener('click', ev => { const h = ev.target.closest('.pyhd'); if (!h || ev.target.closest('button,input,select,a')) return; const sec = h.parentElement; sec.classList.toggle('fold'); fs.set(fk(sec), sec.classList.contains('fold') ? '1' : '0'); }); }
-const STAGES = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付', '人声制作中', '修改中'];   // 下标 = 存的编号：0–5 沿用旧编号，6 人声制作（算在混音里），7 修改中（算在审听里）
-const BAR = [0, 1, 2, 3, 4, 5, 3, 4], ORDER = [0, 1, 2, 6, 3, 4, 7, 5];   // 进度条 6 格：来回修改、人声制作都不让进度条后退
+const STAGES = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付', '人声制作中', '修改中', '交付结算'];   // 下标 = 存的编号：0–5 沿用旧编号，6 人声制作（算在混音里），7 修改中（算在审听里）
+const BAR = [0, 1, 2, 3, 4, 5, 3, 4, 5], ORDER = [0, 1, 2, 6, 3, 4, 7, 8, 5];   // 进度条 6 格：来回修改、人声制作都不让进度条后退
 const stageText = g => STAGES[g.s] + (g.s === 7 ? ' · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? ' · 第 ' + (g.r + 1) + ' 轮' : '');
 // 时间显示：近的用相对时间（刚刚 / N 分钟前 / N 小时前 / 昨天 14:32 / N 天前），早的写具体日期和时间；只有日期没有时间的旧版本只显示日期
 const relTime = (ts, date) => {
@@ -291,7 +291,7 @@ const md = d => { const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || ''); return m ? 
 function progTag(g) {
   if (!g) return '';
   return '<em class="pg"><span class="bar">' + [0, 1, 2, 3, 4, 5].map(i => '<s class="' + (i < BAR[g.s] ? 'd' : i === BAR[g.s] ? 'c' : '') + '"></s>').join('') + '</span>'
-    + stageText(g) + (g.s !== 5 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
+    + stageText(g) + (g.s !== 5 && g.s !== 8 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
 }
 function noticePanel() {   // 项目公告：不是评论，没有时间点，客户在项目页顶部和每首歌的评论区上方都能看到
   const key = ls.get('insights:key'), el = document.createElement('section'); el.className = 'pay';
