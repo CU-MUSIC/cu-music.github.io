@@ -158,6 +158,7 @@ document.body.innerHTML = `
   <section class="fee" id="fee" hidden></section>
 
   <div class="okbar" id="okbar" hidden></div>
+  <div class="pnotice" id="pnotice" hidden></div>
   <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
     <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT">0:00</span></span>
@@ -751,6 +752,7 @@ async function loadReplies() {
     REPLIES = new Map(j.replies.map(x => [rk(x.ver, x.t, x.m), x]));
     ONOTES = j.onotes || [];
     MSGS = j.msgs || [];
+    const pn = $('#pnotice'); if (pn) { const t = j.notice && j.notice.text; pn.hidden = !t; pn.innerHTML = t ? '<b>刀大厨</b>' + esc(t).replace(/\n/g, '<br>') : ''; }
     render();
   } catch (e) {}
 }

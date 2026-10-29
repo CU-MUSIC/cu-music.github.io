@@ -622,3 +622,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .spbar span.k1{font-size:10.5px;opacity:.75;text-overflow:clip}
 .spbar span.k2{font-size:10px;opacity:.5;filter:blur(.35px);text-overflow:clip}
 .spbar span.k3{font-size:9.5px;opacity:.32;filter:blur(.7px);text-overflow:clip}
+
+.pnotice{margin:18px 0 6px;padding:14px 16px;border-radius:14px;background:rgba(201,178,122,.10);border:1px solid rgba(201,178,122,.22);color:#d6d3cd;font-size:15px;line-height:1.75}
+.pnotice[hidden]{display:none}
+.pnotice b{display:block;font-size:13px;font-weight:600;color:#cdb98a;margin-bottom:3px;letter-spacing:.3px}
