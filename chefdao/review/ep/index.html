@@ -293,7 +293,7 @@ function progPanel() {
   const key = ls.get('insights:key'), el = document.createElement('section'); el.className = 'pay';
   el.innerHTML = '<div class="pyhd"><span>进度</span><i>仅你可见 · 改了客户马上看到</i></div>' + P.tracks.map((t, i) => {
     const g = t.prog || { s: -1, due: '' };
-    return '<div class="pgr"><span class="n">' + esc(t.title) + '</span><select data-i="' + i + '"><option value="-1"' + (g.s < 0 ? ' selected' : '') + '>不显示</option>'
+    return '<div class="pgr"><span class="n">' + esc(t.title) + ((g.r || 0) >= 5 ? ' <b title="修改轮数偏多，建议和客户对一下是否该收口" style="color:#e0b55a;font-weight:600">● 第 ' + g.r + ' 轮</b>' : '') + '</span><select data-i="' + i + '"><option value="-1"' + (g.s < 0 ? ' selected' : '') + '>不显示</option>'
       + ORDER.map(k => '<option value="' + k + '"' + (g.s === k ? ' selected' : '') + '>' + STAGES[k] + '</option>').join('') + '</select>'
       + '<input type="date" data-i="' + i + '" value="' + esc(g.due || '') + '" aria-label="预计交付">'
       + '<input type="number" class="rn" data-r="' + i + '" min="0" max="99" value="' + (g.r || 0) + '" title="修改轮数：修改中显示「第 N 轮」，待审听显示「第 N+1 轮」" aria-label="修改轮数" style="width:44px;text-align:center"></div>';
