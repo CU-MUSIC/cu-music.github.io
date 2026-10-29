@@ -158,7 +158,7 @@ document.body.innerHTML = `
   <section class="fee" id="fee" hidden></section>
 
   <div class="okbar" id="okbar" hidden></div>
-  <div class="pnotice" id="pnotice" hidden></div>
+  <div class="pnotice" id="pnotice" hidden></div><button class="pnedit press" id="pnedit" hidden></button>
   <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
     <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT">0:00</span></span>
@@ -744,6 +744,22 @@ function decorate(row, r) {
   if (r.done) { const d = document.createElement('span'); d.className = 'dn'; d.textContent = '✓ 已处理'; m.appendChild(d); }
   if (r.reply) { const p = document.createElement('div'); p.className = 'rp'; p.innerHTML = '<b>刀大厨</b>'; p.appendChild(document.createTextNode(r.reply)); m.appendChild(p); }
 }
+// 单曲公告：你在这首歌页面上写的留言，不是评论、没有时间点，显示在评论区上方；只有你的设备能编辑
+let NOTICE = '';
+function drawNotice() {
+  const pn = $('#pnotice'), eb = $('#pnedit'); if (!pn || !eb) return;
+  pn.hidden = !NOTICE; pn.innerHTML = NOTICE ? '<b>刀大厨</b>' + esc(NOTICE).replace(/\n/g, '<br>') : '';
+  eb.hidden = !IS_OWNER; eb.textContent = NOTICE ? '✎ 编辑公告' : '＋ 写公告';
+  eb.onclick = () => {
+    pn.hidden = false; eb.hidden = true;
+    pn.innerHTML = '<b>刀大厨 · 公告</b><textarea id="pntx" rows="3" maxlength="1000" placeholder="例如：这一版重点调了人声，其余不变（留空保存即清除）"></textarea><div class="pnbt"><button class="press" id="pnsv">保存</button><button class="press" id="pncx">取消</button><span id="pnst"></span></div>';
+    const ta = $('#pntx'); ta.value = NOTICE; ta.focus();
+    $('#pncx').onclick = drawNotice;
+    $('#pnsv').onclick = async () => { $('#pnst').textContent = '保存中…';
+      try { const r = await fetch(API_BASE + '/radm/notice', { method: 'POST', headers: { Authorization: 'Bearer ' + store.get('insights:key'), 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, text: ta.value }) });
+        if (!(await r.json()).ok) throw 0; NOTICE = ta.value.trim(); drawNotice(); } catch (e) { $('#pnst').textContent = '没保存上，再试一次'; } };
+  };
+}
 async function loadReplies() {
   if (!WK) return;
   try {
@@ -752,7 +768,7 @@ async function loadReplies() {
     REPLIES = new Map(j.replies.map(x => [rk(x.ver, x.t, x.m), x]));
     ONOTES = j.onotes || [];
     MSGS = j.msgs || [];
-    const pn = $('#pnotice'); if (pn) { const t = j.notice && j.notice.text; pn.hidden = !t; pn.innerHTML = t ? '<b>刀大厨</b>' + esc(t).replace(/\n/g, '<br>') : ''; }
+    NOTICE = (j.notice && j.notice.text) || ''; drawNotice();
     render();
   } catch (e) {}
 }

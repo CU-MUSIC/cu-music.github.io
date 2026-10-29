@@ -10,8 +10,6 @@
 <link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
 <style>
-.pnotice{margin:22px auto 0;max-width:420px;padding:14px 16px;border-radius:14px;background:rgba(201,178,122,.10);border:1px solid rgba(201,178,122,.22);color:#d6d3cd;font-size:15px;line-height:1.75;text-align:left}
-.pnotice b{display:block;font-size:13px;font-weight:600;color:#cdb98a;margin-bottom:3px}
 /* 项目页（EP / 专辑）：封面 + 名称，输一次密码出现曲目；每首歌的审听页自动记住这个密码 */
 :root{--bg:#0e0e0f;--fill:rgba(236,234,230,.05);--fill-2:rgba(236,234,230,.085);--hair:rgba(236,234,230,.09);--text:#e8e6e2;--text-2:#a3a19d;--text-3:#74726f;--red:#e9a19a;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;color-scheme:dark}
@@ -197,9 +195,7 @@ if (singerSet.size > 1 && !myName && !ls.get('insights:key') && ls.get('review:m
 m.innerHTML = '<div class="cv"' + (P.cover ? ' style="background-image:url(' + API + P.cover + ')"' : '') + '>' + (P.cover ? '' : CU) + '</div>'
   + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '') + '<button class="mename" id="meName"></button>'
   + '<div id="gate"><div class="ask" id="ask">输入密码收听</div><div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>'
-  + '<input class="pin" id="pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="密码"></div><div id="notice"></div><div id="list"></div>';
-const drawNotice = () => { const n = document.getElementById('notice'); if (!n) return; const t = P.notice && P.notice.text; n.className = t ? 'pnotice' : ''; n.innerHTML = t ? '<b>刀大厨</b>' + esc(t).replace(/\n/g, '<br>') : ''; };
-drawNotice();
+  + '<input class="pin" id="pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="密码"></div><div id="list"></div>';
 // 封面图加载完才亮起下面的柔光；没有封面的项目不显示柔光
 if (P.cover) { const cvEl = m.querySelector('.cv'), im = new Image(); im.onload = () => cvEl && cvEl.classList.add('ld'); im.src = API + P.cover; }
 // 封面立体转动：电脑跟鼠标，手机跟陀螺仪（以拿手机的初始角度为准，慢慢回正）。iPhone 要在第一次点屏幕时允许「运动与方向」
@@ -261,7 +257,7 @@ async function open(pw, key) {
   document.getElementById('list').innerHTML = P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>';
-  if (ls.get('insights:key')) { noticePanel(); progPanel(); payPanel();
+  if (ls.get('insights:key')) { progPanel(); payPanel();
     const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261029k';
     sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), tracks: P.tracks.map(t => ({ slug: t.slug, artist: t.artist })), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
     document.head.appendChild(sc); }
@@ -292,15 +288,6 @@ function progTag(g) {
   if (!g) return '';
   return '<em class="pg"><span class="bar">' + [0, 1, 2, 3, 4, 5].map(i => '<s class="' + (i < BAR[g.s] ? 'd' : i === BAR[g.s] ? 'c' : '') + '"></s>').join('') + '</span>'
     + stageText(g) + (g.s !== 5 && g.s !== 8 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
-}
-function noticePanel() {   // 项目公告：不是评论，没有时间点，客户在项目页顶部和每首歌的评论区上方都能看到
-  const key = ls.get('insights:key'), el = document.createElement('section'); el.className = 'pay';
-  el.innerHTML = '<div class="pyhd"><span>项目公告</span><i>客户看得到 · 留空保存即清除</i></div><textarea id="ntx" rows="2" maxlength="1000" placeholder="例如：这一版重点调了人声，其余不变" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:transparent;color:inherit;font:inherit;font-size:15px;resize:vertical"></textarea><div style="display:flex;gap:10px;align-items:center;margin-top:8px"><button id="nsv" class="press" style="padding:8px 16px;border-radius:10px;border:0;background:#eeeee6;color:#0e0e0f;font:inherit;font-weight:600;cursor:pointer">保存</button><span id="nst" style="font-size:13px;color:var(--text-3)"></span></div>';
-  document.getElementById('list').appendChild(el);
-  const ta = el.querySelector('#ntx'), st = el.querySelector('#nst'); ta.value = (P.notice && P.notice.text) || '';
-  el.querySelector('#nsv').onclick = async () => { st.textContent = '保存中…';
-    try { const r = await fetch(API + '/radm/notice', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ project: slug, text: ta.value }) }); const j = await r.json(); if (!j.ok) throw 0;
-      P.notice = ta.value.trim() ? { text: ta.value.trim(), ts: j.ts } : null; drawNotice(); st.textContent = '已保存'; } catch (e) { st.textContent = '没保存上，再试一次'; } };
 }
 function progPanel() {
   const key = ls.get('insights:key'), el = document.createElement('section'); el.className = 'pay';

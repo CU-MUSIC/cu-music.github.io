@@ -630,3 +630,6 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .sprog.settle .spbar span.c{color:#e0b55a}.sprog.settle .spbar span.c i{background:#e0b55a}
 .okbar.settle{display:block;padding:14px 16px;border-radius:14px;background:rgba(224,181,90,.10);border:1px solid rgba(224,181,90,.25)}
 .okset{font-size:15px;line-height:1.7;color:#d6d3cd}.okset b{display:block;font-size:13px;color:#e0b55a;margin-bottom:2px;letter-spacing:.3px}
+.pnedit{margin:6px 0 0;padding:6px 12px;border-radius:10px;border:1px solid var(--hair);background:transparent;color:var(--text-3);font:inherit;font-size:13px;cursor:pointer}.pnedit[hidden]{display:none}
+.pnotice textarea{display:block;width:100%;box-sizing:border-box;margin:6px 0 8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:transparent;color:inherit;font:inherit;font-size:15px;resize:vertical}
+.pnbt{display:flex;gap:10px;align-items:center}.pnbt button{padding:7px 16px;border-radius:10px;border:0;background:#eeeee6;color:#0e0e0f;font:inherit;font-weight:600;font-size:14px;cursor:pointer}.pnbt #pncx{background:transparent;color:var(--text-3);border:1px solid var(--hair)}.pnbt #pnst{font-size:13px;color:var(--text-3)}
