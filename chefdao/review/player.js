@@ -863,14 +863,14 @@ async function renderOk() {
   }
   if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid, { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); } catch (e) {} }
   if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>'; return; }
-  const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 6 ? '多轮修改后，建议先确认整体方向是否已经定下来，再继续细节调整。反馈时限为 24 小时。' : rn >= 4 ? '已经修改到第 ' + rn + ' 轮了，这一轮起反馈时限为 24 小时。如果整体已经满意，点下面「没有问题了」就能进入母带交付；还有想改的，请一次性整理成一条，24 小时内发我。' : '';
+  const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 4 ? '第 ' + rn + ' 轮 · 反馈时限 24 小时' : '';
   const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
   bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');
   bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题，可以准备交付</span><button type="button" class="okundo">撤回</button>'
     : auto ? '<span>✓ 超过反馈时限无意见，已视为没有意见，进入母带交付流程。有想法随时写在下面，会作为交付后微调处理</span>'
-    : (() => { const hh = hint && !on ? '<div class="okhint">' + hint + '</div>' : '', txt = '没有新意见的话，' + leftTxt(ai ? ai.left : 0) + '后将自动视为没有意见' + (ai && ai.ext ? '（已延长 24 小时）' : ''),
+    : (() => { const hh = hint && !on ? '<div class="okhint">' + hint + '</div>' : '', txt = leftTxt(ai ? ai.left : 0) + '后自动确认' + (ai && ai.ext ? ' · 已延长 24 小时' : ''),
         f = ai ? Math.max(0, Math.min(1, ai.left / (winH() * 36e5 + (ai.ext ? 864e5 : 0)))) : 0;
-      const btn = '<button type="button" class="okbtn' + (ai ? ' cd' + (ai.left <= 432e5 ? ' late' : '') : '') + '">✓ 这一版没有问题了，可以准备交付' + (ai ? '<small>' + txt + '</small><i class="okbar2"><b style="width:' + (f * 100).toFixed(1) + '%"></b></i>' : '') + '</button>';
+      const btn = '<button type="button" class="okbtn' + (ai ? ' cd' + (ai.left <= 432e5 ? ' late' : '') : '') + '">✓ 这一版没有问题了' + (ai ? '<small>' + txt + '</small><i class="okbar2"><b style="width:' + (f * 100).toFixed(1) + '%"></b></i>' : '') + '</button>';
       return hh + btn + (ai && !ai.ext && ai.left <= 432e5 ? '<button type="button" class="okext">还需要时间？延长 24 小时</button>' : ''); })();
   const set = async flag => { if (flag) OKS[v] = Date.now(); else delete OKS[v]; renderOk();
     try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: flag ? 1 : 0 }) }); } catch (e) {} };
