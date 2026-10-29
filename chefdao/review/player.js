@@ -827,9 +827,9 @@ const hud = (msg, ms = 2600) => { const h = $('#hud'); h.textContent = msg; h.cl
 const OKS = {}; let okLoaded = false, okAll = null;
 // 交付政策：每版交付后超过 72 小时仍无反馈（周末照常计时），视为无意见。只对待审听的最新版本、且这一版还没写过意见时计时
 const AUTO_H = 72;
-const autoInfo = () => {
+const autoInfo = ext => {
   if (cur !== V[V.length - 1] || !cur.ts || !S.prog || S.prog.s !== 4) return null;
-  return { left: AUTO_H * 36e5 - (Date.now() - cur.ts) };
+  return { left: AUTO_H * 36e5 + (ext ? 864e5 : 0) - (Date.now() - cur.ts), ext };
 };
 const leftTxt = ms => { const m = Math.ceil(ms / 6e4), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mi = m % 60; return d ? d + ' 天 ' + h + ' 小时' : h ? h + ' 小时 ' + mi + ' 分' : mi + ' 分钟'; };
 async function renderOk() {
@@ -838,20 +838,22 @@ async function renderOk() {
   if (owner) {
     if (okAll === null) { okAll = []; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug, { headers: { Authorization: 'Bearer ' + store.get('insights:key') }, cache: 'no-store' })).json(); okAll = j.all || []; } catch (e) {} }
     const mine = okAll.filter(x => x.ver === cur.ver); bar.hidden = !mine.length; bar.className = 'okbar done';
-    const ai = !mine.length && !notes.length ? autoInfo() : null;
+    const ai = !mine.length && !notes.length ? autoInfo(okAll.some(x => x.ver === 'ext:' + cur.ver)) : null;
     bar.hidden = !mine.length && !ai; if (ai) bar.className = 'okbar auto' + (ai.left <= 0 ? ' done' : '');
-    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过 72 小时无反馈，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left)) : ''; return;
+    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过 72 小时无反馈，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left) + (ai.ext ? ' · 已延长 24 小时' : '')) : ''; return;
   }
   if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid, { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); } catch (e) {} }
-  const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo() : null, auto = ai && ai.left <= 0;
+  const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
   bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');
   bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题，可以准备交付</span><button type="button" class="okundo">撤回</button>'
     : auto ? '<span>✓ 超过 72 小时无反馈，已视为没有意见，进入母带交付流程。有想法随时写在下面，会作为交付后微调处理</span>'
-    : '<button type="button" class="okbtn">✓ 这一版没有问题了，可以准备交付</button>' + (ai ? '<div class="okcd">没有新意见的话，' + leftTxt(ai.left) + '后将自动视为没有意见' + '</div>' : '');
+    : '<button type="button" class="okbtn">✓ 这一版没有问题了，可以准备交付</button>' + (ai ? '<div class="okcd">没有新意见的话，' + leftTxt(ai.left) + '后将自动视为没有意见' + (ai.ext ? '（已延长 24 小时）' : '') + '</div>' + (!ai.ext && ai.left <= 432e5 ? '<button type="button" class="okext">还需要时间？延长 24 小时</button>' : '') : '');
   const set = async flag => { if (flag) OKS[v] = Date.now(); else delete OKS[v]; renderOk();
     try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: flag ? 1 : 0 }) }); } catch (e) {} };
   const b1 = bar.querySelector('.okbtn'); if (b1) b1.onclick = () => set(true);
   const b2 = bar.querySelector('.okundo'); if (b2) b2.onclick = () => set(false);
+  const b3 = bar.querySelector('.okext'); if (b3) b3.onclick = async () => { OKS['ext:' + v] = Date.now(); renderOk();   // 最后 12 小时可延长一次 24 小时
+    try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: 'ext:' + v, lid, on: 1 }) }); } catch (e) {} };
 }
 setInterval(() => { if (!document.hidden) renderOk(); }, 60000);
 function updateCta() {
