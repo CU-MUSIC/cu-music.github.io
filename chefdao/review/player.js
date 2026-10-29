@@ -1195,9 +1195,12 @@ function ownerTools() {
       const n = cuNameInfo(file.name);
       const next = 'V' + (V.reduce((m, v) => Math.max(m, parseInt(v.ver.slice(1)) || 0), 0) + 1);
       // 文件名里的 _V1_ 是每个阶段各自的编号：Mix V1 和 Edit V1 同号不算同一个版本，自动用下一个空号；同一阶段同号才问覆盖
-      const st = cuStage(n.raw), same = V.find(v => v.ver === n.ver);
-      const ver = n.ver && !(same && stageOf(same) !== st) ? n.ver : next;
-      const existing = V.find(v => v.ver === ver);
+      // 文件名里的编号按阶段数：Mix V2 = 第 2 个混音，不一定等于页面里的 V2（Demo 占了 V1，第 1 个混音其实是 V2）
+      const st = cuStage(n.raw), num = parseInt((n.ver || '').slice(1)) || 0, sv = STAGE[st] ? V.filter(v => stageOf(v) === st) : [];
+      const same = V.find(v => v.ver === n.ver);
+      let ver, existing;
+      if (STAGE[st] && num) { existing = sv[num - 1]; ver = existing ? existing.ver : (same || !n.ver ? next : n.ver); }
+      else { ver = n.ver && !(same && stageOf(same) !== st) ? n.ver : next; existing = V.find(v => v.ver === ver); }
       const lab = (STAGE[st] ? STAGE[st] + ' ' : '') + (existing ? vlab(existing) : String(V.filter(v => stageOf(v) === st).length + 1));
       if (existing && !confirm('「' + lab + '」已经有了，要覆盖吗？')) return;
       if (!confirm('把「' + file.name + '」上传为《' + S.title + '》' + (existing ? lab : (STAGE[st] ? STAGE[st] + ' ' + (V.filter(v => stageOf(v) === st).length + 1) : ver)) + '？')) return;
