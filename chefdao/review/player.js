@@ -825,22 +825,39 @@ $('#overall').addEventListener('change', () => drawOverall());
 const hud = (msg, ms = 2600) => { const h = $('#hud'); h.textContent = msg; h.classList.add('show'); clearTimeout(hud.t); hud.t = setTimeout(() => h.classList.remove('show'), ms); };
 // 艺人确认当前版本没有问题、可以准备交付（按版本记，换了新版本要重新确认；你自己的设备不显示按钮，只显示谁确认了）
 const OKS = {}; let okLoaded = false, okAll = null;
+// 交付政策：每版交付后超过 72 小时（周末不计）仍无反馈，视为无意见。只对待审听的最新版本、且这一版还没写过意见时计时
+const AUTO_H = 72;
+const bizMs = (a, b) => { let t = a + 288e5, e = b + 288e5, sum = 0;   // 按北京时间切天，周六周日不计
+  while (t < e) { const d = Math.floor(t / 864e5), end = Math.min(e, (d + 1) * 864e5), w = (d + 4) % 7; if (w !== 0 && w !== 6) sum += end - t; t = end; }
+  return sum; };
+const autoInfo = () => {
+  if (cur !== V[V.length - 1] || !cur.ts || !S.prog || S.prog.s !== 4) return null;
+  const left = AUTO_H * 36e5 - bizMs(cur.ts, Date.now()), wk = [0, 6].includes((new Date(Date.now() + 288e5)).getUTCDay());
+  return { left, wk };
+};
+const leftTxt = ms => { const m = Math.ceil(ms / 6e4), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mi = m % 60; return d ? d + ' 天 ' + h + ' 小时' : h ? h + ' 小时 ' + mi + ' 分' : mi + ' 分钟'; };
 async function renderOk() {
   const bar = $('#okbar'); if (!bar || !WK) return;
   const owner = ME || !!store.get('insights:key');
   if (owner) {
     if (okAll === null) { okAll = []; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug, { headers: { Authorization: 'Bearer ' + store.get('insights:key') }, cache: 'no-store' })).json(); okAll = j.all || []; } catch (e) {} }
     const mine = okAll.filter(x => x.ver === cur.ver); bar.hidden = !mine.length; bar.className = 'okbar done';
-    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ''; return;
+    const ai = !mine.length && !notes.length ? autoInfo() : null;
+    bar.hidden = !mine.length && !ai; if (ai) bar.className = 'okbar auto' + (ai.left <= 0 ? ' done' : '');
+    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过 72 小时无反馈，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left) + (ai.wk ? '（周末暂停）' : '')) : ''; return;
   }
   if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid, { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); } catch (e) {} }
-  const v = cur.ver, on = !!OKS[v]; bar.hidden = false; bar.className = 'okbar' + (on ? ' done' : '');
-  bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题，可以准备交付</span><button type="button" class="okundo">撤回</button>' : '<button type="button" class="okbtn">✓ 这一版没有问题了，可以准备交付</button>';
+  const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo() : null, auto = ai && ai.left <= 0;
+  bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');
+  bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题，可以准备交付</span><button type="button" class="okundo">撤回</button>'
+    : auto ? '<span>✓ 超过 72 小时无反馈，已视为没有意见，进入母带交付流程。有想法随时写在下面，会作为交付后微调处理</span>'
+    : '<button type="button" class="okbtn">✓ 这一版没有问题了，可以准备交付</button>' + (ai ? '<div class="okcd">没有新意见的话，' + leftTxt(ai.left) + '后将自动视为没有意见' + (ai.wk ? '（周末暂停计时）' : '') + '</div>' : '');
   const set = async flag => { if (flag) OKS[v] = Date.now(); else delete OKS[v]; renderOk();
     try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: flag ? 1 : 0 }) }); } catch (e) {} };
   const b1 = bar.querySelector('.okbtn'); if (b1) b1.onclick = () => set(true);
   const b2 = bar.querySelector('.okundo'); if (b2) b2.onclick = () => set(false);
 }
+setInterval(() => { if (!document.hidden) renderOk(); }, 60000);
 function updateCta() {
   renderOk();
   const has = notes.length || $('#overall').value.trim();
