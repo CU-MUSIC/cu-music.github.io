@@ -42,14 +42,14 @@ const cdate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? (
 const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户的参考曲
 const V = S.versions.filter(v => v.ver !== 'REF');
 // 版本名精简：「舞步 Edit @ChefDao_V2_1018」→「编辑 V2」；按文件名里的 Edit / Mix / Master 分阶段，编辑在前、混音在后
-const STAGE = { edit: '编辑', mix: '混音', master: '母带' };
+const STAGE = { demo: 'Demo', edit: '编辑', mix: '混音', master: '母带' };
 const stageOf = v => { if (v.stage) return v.stage === 'none' ? '' : v.stage;   // 手动改过类别的优先
   const f = String(v.file || '').replace(/@ChefDao.*$/i, '').replace(/_/g, ' ');
   if (/\bpre-?master/i.test(f)) return 'mix';
-  const m = /(?<![A-Za-z])(Edit|Mix|Master)(?![A-Za-z])/i.exec(f); return m ? m[1].toLowerCase() : ''; };   // Mix1、Mix 1、Mix_1 都认
+  const m = /(?<![A-Za-z])(Demo|Edit|Mix|Master)(?![A-Za-z])/i.exec(f); return m ? m[1].toLowerCase() : ''; };   // Mix1、Mix 1、Mix_1 都认
 // 显示名：有阶段的按阶段内第几个数（混音 1、混音 2），没阶段的用 V 号。内部编号 V1、V2 全局唯一，评论、统计都按它认
 // 按阶段排：编辑在前、混音、母带在后；同阶段保持上传先后（排序稳定）。这样同阶段的版本总是连在一起分组
-{ const rank = { '': 0, edit: 1, mix: 2, master: 3 }, at = new Map(V.map((v, i) => [v, i]));
+{ const rank = { '': 0, demo: 1, edit: 2, mix: 3, master: 4 }, at = new Map(V.map((v, i) => [v, i]));
   V.sort((x, y) => rank[stageOf(x)] - rank[stageOf(y)] || (x.ord || 1e3 + at.get(x)) - (y.ord || 1e3 + at.get(y))); }
 const vlab = v => { const st = stageOf(v); return STAGE[st] ? String(V.filter(x => stageOf(x) === st).indexOf(v) + 1) : v.ver; };
 const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);
@@ -130,7 +130,7 @@ document.body.innerHTML = `
     const groups = [];
     V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
     // 到了后面的阶段，前面阶段的版本收成一颗药丸「编辑 · 6 版」，点开才展开；当前阶段永远是展开的
-    const RK = { '': 0, edit: 1, mix: 2, master: 3 }, top = Math.max(...groups.map(g => RK[g.st]));
+    const RK = { '': 0, demo: 1, edit: 2, mix: 3, master: 4 }, top = Math.max(...groups.map(g => RK[g.st]));
     return groups.map(g => { const old = STAGE[g.st] && RK[g.st] < top;
       return `<div class="vg${old ? ' old' : ''}">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${old ? `<button class="vsum press" aria-expanded="false">${g.items.length} 版<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}${g.items.map(i =>
       `<button class="vrow press" data-i="${i}"><span class="vn">${esc(vlab(V[i]))}</span><span class="hasdot"></span></button>`).join('')}</div>`; }).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
@@ -1167,9 +1167,9 @@ function ownerTools() {
   });
   // 改类别和序号：类别 1 编辑 2 混音 3 母带 0 无；序号 = 在这个类别里排第几（别的版本自动顺延）
   const editVer = async v => {
-    const names = { edit: 1, mix: 2, master: 3 }, cs = stageOf(v);
-    const a = prompt('《' + S.title + '》' + vname(v) + ' 的类别\n1 编辑　2 混音　3 母带　0 不分类', String(names[cs] || 0)); if (a === null) return;
-    const st = { 0: 'none', 1: 'edit', 2: 'mix', 3: 'master' }[a.trim()]; if (!st) { busy('类别只能填 0、1、2、3'); return; }
+    const names = { edit: 1, mix: 2, master: 3, demo: 4 }, cs = stageOf(v);
+    const a = prompt('《' + S.title + '》' + vname(v) + ' 的类别\n1 编辑　2 混音　3 母带　4 Demo　0 不分类', String(names[cs] || 0)); if (a === null) return;
+    const st = { 0: 'none', 1: 'edit', 2: 'mix', 3: 'master', 4: 'demo' }[a.trim()]; if (!st) { busy('类别只能填 0 到 4'); return; }
     const inStage = V.filter(x => x !== v && stageOf(x) === (st === 'none' ? '' : st));
     const cur = cs === (st === 'none' ? '' : st) ? V.filter(x => stageOf(x) === cs).indexOf(v) + 1 : inStage.length + 1;
     const b = prompt('在「' + (st === 'none' ? '不分类' : STAGE[st]) + '」里排第几（1 = 最前，现有 ' + inStage.length + ' 个其他版本）', String(cur)); if (b === null) return;
@@ -1187,7 +1187,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261024'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261029'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
