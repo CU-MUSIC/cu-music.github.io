@@ -1599,7 +1599,7 @@ render(); requestAnimationFrame(draw);
 /* ───────── 不提供下载：屏蔽右键 / 长按菜单 ───────── */
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('dragstart', e => e.preventDefault());
-if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: S.title, artist: 'CU MUSIC · ChefDao' });
+if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: S.title, artist: 'CU MUSIC · ChefDao', artwork: [{ src: S.cover ? API_BASE + S.cover : location.origin + '/chefdao/assets/cu-art-512.png', sizes: '512x512' }] });   // 锁屏封面：有项目封面用封面，没有用满铺 C 标（不带圆角白边）
 
 /* ───────── 收听报告（Insights）：开始听、离开时的总结推到刀大厨微信 ─────────
    在自己设备上打开一次 #me 网址，这台设备就不再上报。 */
