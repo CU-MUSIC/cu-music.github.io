@@ -754,6 +754,7 @@ function decorate(row, r) {
   row.querySelectorAll('.rp,.dn,.rd').forEach(x => x.remove());
   const m = row.querySelector('.m'); if (!r) return;
   if (r.read) { const d = document.createElement('span'); d.className = 'rd'; d.textContent = '已读'; if (r.read_at) d.title = '刀大厨 ' + tstr(r.read_at) + ' 看过'; m.appendChild(d); }
+  if (r.quote) { const d = document.createElement('span'); d.className = 'qt'; d.textContent = '新方案 · 需报价'; m.appendChild(d); }
   if (r.done) { const d = document.createElement('span'); d.className = 'dn'; d.textContent = '✓ 已处理'; m.appendChild(d); }
   if (r.reply) { const p = document.createElement('div'); p.className = 'rp'; p.innerHTML = '<b>刀大厨</b>'; p.appendChild(document.createTextNode(r.reply)); m.appendChild(p); }
 }
@@ -1322,18 +1323,19 @@ async function clientFb() {
       {
         const kt = o.t == null ? 0 : o.t, km = o.mk || o.m;   // 整体评论：时间记 0，文字取前 120 字做键
         const k = rk(o.ver, kt, km), acts = document.createElement('div'); acts.className = 'acts';
-        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
+        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button><button class="press qb" data-a="quote">报价</button>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
         const sync = () => { const r = mine.get(k); decorate(row, r); { const rp = row.querySelector('.rp'); if (rp && !rp.querySelector('.mx')) { const bx = document.createElement('button'); bx.className = 'mx'; bx.textContent = '×'; bx.setAttribute('aria-label', '删除这条回复'); bx.onclick = () => save({ reply: '' }); rp.appendChild(bx); } } const sb = acts.querySelector('[data-a=st]'), pc = r && r.done ? 100 : r && r.read ? 50 : 0, pv = stPrev.has(k) ? stPrev.get(k) : pc;   // 圆圈：空心 = 未读，半圆 = 已读，实心 ✓ = 已完成；状态变了就从上一个状态补间过去
           sb.innerHTML = '<i class="ring' + (pc === 100 ? ' full' : '') + '" style="--p:' + pv + '"></i><span>' + (pc === 100 ? '已完成' : pc === 50 ? '已读' : '未读') + '</span>';
           const ring = sb.querySelector('.ring'); if (pv !== pc) { requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.setProperty('--p', pc); ring.classList.add('pop'); })); }
           stPrev.set(k, pc); sb.classList.toggle('on', pc > 0); sb.classList.toggle('dn', pc === 100);
-          acts.querySelector('[data-a=reply]').textContent = r && r.reply ? '改回复' : '回复'; };
+          acts.querySelector('[data-a=reply]').textContent = r && r.reply ? '改回复' : '回复';
+          { const qb = acts.querySelector('[data-a=quote]'); qb.textContent = r && r.quote ? '取消报价' : '报价'; qb.classList.toggle('on', !!(r && r.quote)); } };
         const save = async body => {
           try {
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
-            if (!j.reply && !j.done && !j.read) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read });
+            if (!j.reply && !j.done && !j.read && !j.quote) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read, quote: j.quote });
             cfbRender();
           } catch (e) { alert('没存上，检查网络再试'); }
         };
@@ -1341,6 +1343,8 @@ async function clientFb() {
           const v = prompt('回复这条评论（客户会在审听页看到，可以继续对话）：\n「' + o.m + '」', ''); if (!v || !v.trim()) return;
           try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, text: v.trim() }) });
             const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(kt * 10) / 10, m: km, who: 'o', text: v.trim(), ts: j.ts }); cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } };
+        // 标成「新方案 · 需报价」：客户在这条评论下看到标记，知道这条要另外报价（¥150 / 次）
+        acts.querySelector('[data-a=quote]').onclick = () => { const r = mine.get(k) || {}; save({ quote: !r.quote, ...(r.read ? {} : { read: true }) }); };
         // 一个按钮走三步：未读 → 已读 → 已完成 → 回到未读（客户那边同步显示「已读」「已处理」）
         acts.querySelector('[data-a=st]').onclick = () => { const r = mine.get(k) || {}; save(!r.read && !r.done ? { read: true } : !r.done ? { read: true, done: true } : { read: false, done: false }); };
         // 一点就回一个表情，歌手在评论下的对话里看到
