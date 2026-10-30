@@ -324,7 +324,7 @@ if (S.cover) { const sc = document.createElement('script'); sc.src = '../tint.js
 let Q = S.quote || null, feeOpen = null, feeOwner = null, feeOwnerP = null;
 const yuan = n => '¥' + n.toLocaleString('en-US');
 // 定金比例按金额分档，和价格页一致：¥500 以下 80%、¥500–1000 70%、¥1000 以上 50%（费用单里单独定了定金的以单独的为准）
-const depOf = t => Math.ceil(t * (t < 500 ? .8 : t < 1000 ? .7 : .5));
+const depOf = t => Q && Q.half ? Math.round(t / 2) : Math.ceil(t * (t < 500 ? .8 : t < 1000 ? .7 : .5));   // Q.half：分档之前开的费用单，定金仍然对半
 const hasFix = p => p.fix !== undefined && p.fix !== null;   // 单独报价（例如只做母带），不按菜单选
 const pPrice = p => hasFix(p) ? p.fix : Q.menu.base + Q.menu.vocal[p.v][1] + Q.menu.edit[p.e][1];
 // 母带阶段（有母带版本或已进入交付结算）还没结清：确认按钮上方直接写出要付的金额，不用你再催
@@ -361,7 +361,7 @@ function renderFee() {
       <div class="fl">人声制作</div><div class="fg">${opt('vocal', i, p.v, p.dep)}</div>${desc(Q.menu.vocal[p.v])}
       <div class="fl">音频编辑</div><div class="fg">${opt('edit', i, p.e, p.dep)}</div>${desc(Q.menu.edit[p.e])}
       ${p.dep ? '' : `<button class="fok press" data-ok="${i}"${p.ok ? ' disabled' : ''}>${p.ok ? '已确定 ✓' : '确定'}</button>`}${feeOwnerP ? feeOwnerP(p, i) : ''}</div>`).join('')
-    + `<div class="ft"><div><span>基础混音</span><b>${yuan(Q.menu.base)} / 人</b></div><div><span>每人定金（开工）/ 尾款（交付）</span><b>金额越小定金越高</b></div><div><span>合计</span><b>${yuan(total)}</b></div>${got ? `<div><span>已收</span><b>${yuan(got)}</b></div>` : ''}</div>`
+    + `<div class="ft"><div><span>基础混音</span><b>${yuan(Q.menu.base)} / 人</b></div><div><span>每人定金（开工）/ 尾款（交付）</span><b>${Q.half ? '各一半' : '金额越小定金越高'}</b></div><div><span>合计</span><b>${yuan(total)}</b></div>${got ? `<div><span>已收</span><b>${yuan(got)}</b></div>` : ''}</div>`
     + (Q.note ? `<div class="fnote">${esc(Q.note)}</div>` : '') + `<a class="fx" href="https://cumusic.work/chefdao/price" target="_blank" rel="noopener">价格明细 ›</a>`
     + (feeOwner ? feeOwner(total) : '') + '</div>';
 }
