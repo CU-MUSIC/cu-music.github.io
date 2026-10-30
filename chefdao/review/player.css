@@ -642,3 +642,12 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .okbar2{width:44%;height:3px;margin-top:6px;background:rgba(16,35,26,.16)}
 .okbar2 b{background:rgba(16,35,26,.6)}
 .okbtn.late{box-shadow:none}
+
+/* 母带阶段的尾款提示：确认按钮上方，一眼看到金额 */
+.fdue{margin:22px 0 -8px;padding:14px 16px;border-radius:14px;background:rgba(232,201,138,.1);box-shadow:0 0 0 1px rgba(232,201,138,.28) inset;user-select:none}
+.fdue[hidden]{display:none}
+.fdt{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.fdt span{font-size:14px;font-weight:600;color:#e8c98a}
+.fdt b{font-size:22px;font-weight:700;color:#f0d9a8;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.fdp{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:4px;font-size:13px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.fds{margin-top:4px;font-size:12.5px;color:var(--text-3)}

@@ -157,6 +157,7 @@ document.body.innerHTML = `
   <aside class="plist" id="plist" hidden></aside>
   <section class="fee" id="fee" hidden></section>
 
+  <div class="fdue" id="fdue" hidden></div>
   <div class="okbar" id="okbar" hidden></div>
   <div class="pnotice" id="pnotice" hidden></div><button class="pnedit press" id="pnedit" hidden></button>
   <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
@@ -324,7 +325,19 @@ let Q = S.quote || null, feeOpen = null, feeOwner = null, feeOwnerP = null;
 const yuan = n => '¥' + n.toLocaleString('en-US');
 const hasFix = p => p.fix !== undefined && p.fix !== null;   // 单独报价（例如只做母带），不按菜单选
 const pPrice = p => hasFix(p) ? p.fix : Q.menu.base + Q.menu.vocal[p.v][1] + Q.menu.edit[p.e][1];
+// 母带阶段（有母带版本或已进入交付结算）还没结清：确认按钮上方直接写出要付的金额，不用你再催
+function renderDue() {
+  const el = $('#fdue'), g = S.prog || {};
+  const on = Q && (V.some(v => stageOf(v) === 'master') || g.s === 8) && g.s !== 5;
+  const owe = on ? Q.people.map(p => { const t = pPrice(p), d = Math.min(t, p.da ?? Math.round(t / 2)); return { n: p.n, a: (p.dep ? 0 : d) + (p.fin ? 0 : t - d) }; }).filter(x => x.a > 0) : [];
+  el.hidden = !owe.length; if (!owe.length) { el.innerHTML = ''; return; }
+  const sum = owe.reduce((s, x) => s + x.a, 0);
+  el.innerHTML = '<div class="fdt"><span>尾款待付</span><b>' + yuan(sum) + '</b></div>'
+    + (owe.length > 1 ? '<div class="fdp">' + owe.map(x => '<span>' + esc(x.n) + ' ' + yuan(x.a) + '</span>').join('') + '</div>' : '')
+    + '<div class="fds">结清后发送最终母带文件</div>';
+}
 function renderFee() {
+  renderDue();
   const el = $('#fee'); if (!Q) { el.hidden = true; el.innerHTML = ''; return; }
   const half = p => { const t = pPrice(p), d = Math.min(t, p.da ?? Math.round(t / 2)); return [d, t - d]; };
   const total = Q.people.reduce((s, p) => s + pPrice(p), 0), n = Q.people.length;
