@@ -323,13 +323,15 @@ if (S.cover) { const sc = document.createElement('script'); sc.src = '../tint.js
 /* ───────── 费用：每位歌手自己选人声制作和音频编辑，点「确定」；每人各付各的，定金 / 尾款各一半。收了这个人的定金，他的选择就锁定 ───────── */
 let Q = S.quote || null, feeOpen = null, feeOwner = null, feeOwnerP = null;
 const yuan = n => '¥' + n.toLocaleString('en-US');
+// 定金比例按金额分档，和价格页一致：¥500 以下 80%、¥500–1000 70%、¥1000 以上 50%（费用单里单独定了定金的以单独的为准）
+const depOf = t => Math.ceil(t * (t < 500 ? .8 : t < 1000 ? .7 : .5));
 const hasFix = p => p.fix !== undefined && p.fix !== null;   // 单独报价（例如只做母带），不按菜单选
 const pPrice = p => hasFix(p) ? p.fix : Q.menu.base + Q.menu.vocal[p.v][1] + Q.menu.edit[p.e][1];
 // 母带阶段（有母带版本或已进入交付结算）还没结清：确认按钮上方直接写出要付的金额，不用你再催
 function renderDue() {
   const el = $('#fdue'), g = S.prog || {};
   const on = Q && (V.some(v => stageOf(v) === 'master') || g.s === 8) && g.s !== 5;
-  const owe = on ? Q.people.map(p => { const t = pPrice(p), d = Math.min(t, p.da ?? Math.round(t / 2)); return { n: p.n, a: (p.dep ? 0 : d) + (p.fin ? 0 : t - d) }; }).filter(x => x.a > 0) : [];
+  const owe = on ? Q.people.map(p => { const t = pPrice(p), d = Math.min(t, p.da ?? depOf(t)); return { n: p.n, a: (p.dep ? 0 : d) + (p.fin ? 0 : t - d) }; }).filter(x => x.a > 0) : [];
   el.hidden = !owe.length; if (!owe.length) { el.innerHTML = ''; return; }
   const sum = owe.reduce((s, x) => s + x.a, 0);
   el.innerHTML = '<div class="fdt"><span>尾款待付</span><b>' + yuan(sum) + '</b></div>'
@@ -339,7 +341,7 @@ function renderDue() {
 function renderFee() {
   renderDue();
   const el = $('#fee'); if (!Q) { el.hidden = true; el.innerHTML = ''; return; }
-  const half = p => { const t = pPrice(p), d = Math.min(t, p.da ?? Math.round(t / 2)); return [d, t - d]; };
+  const half = p => { const t = pPrice(p), d = Math.min(t, p.da ?? depOf(t)); return [d, t - d]; };
   const total = Q.people.reduce((s, p) => s + pPrice(p), 0), n = Q.people.length;
   const got = Q.people.reduce((s, p) => { const [d, f] = half(p); return s + (p.dep ? d : 0) + (p.fin ? f : 0); }, 0);
   const done = Q.people.filter(p => p.ok).length, paid = Q.people.filter(p => p.dep).length;
@@ -359,7 +361,7 @@ function renderFee() {
       <div class="fl">人声制作</div><div class="fg">${opt('vocal', i, p.v, p.dep)}</div>${desc(Q.menu.vocal[p.v])}
       <div class="fl">音频编辑</div><div class="fg">${opt('edit', i, p.e, p.dep)}</div>${desc(Q.menu.edit[p.e])}
       ${p.dep ? '' : `<button class="fok press" data-ok="${i}"${p.ok ? ' disabled' : ''}>${p.ok ? '已确定 ✓' : '确定'}</button>`}${feeOwnerP ? feeOwnerP(p, i) : ''}</div>`).join('')
-    + `<div class="ft"><div><span>基础混音</span><b>${yuan(Q.menu.base)} / 人</b></div><div><span>每人定金（开工）/ 尾款（交付）</span><b>各一半</b></div><div><span>合计</span><b>${yuan(total)}</b></div>${got ? `<div><span>已收</span><b>${yuan(got)}</b></div>` : ''}</div>`
+    + `<div class="ft"><div><span>基础混音</span><b>${yuan(Q.menu.base)} / 人</b></div><div><span>每人定金（开工）/ 尾款（交付）</span><b>金额越小定金越高</b></div><div><span>合计</span><b>${yuan(total)}</b></div>${got ? `<div><span>已收</span><b>${yuan(got)}</b></div>` : ''}</div>`
     + (Q.note ? `<div class="fnote">${esc(Q.note)}</div>` : '') + `<a class="fx" href="https://cumusic.work/chefdao/price" target="_blank" rel="noopener">价格明细 ›</a>`
     + (feeOwner ? feeOwner(total) : '') + '</div>';
 }

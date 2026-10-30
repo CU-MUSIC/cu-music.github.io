@@ -322,7 +322,7 @@ async function payPanel() {
   const qs = await Promise.all(P.tracks.map(t => fetch(API + '/rs?s=' + t.slug + '&tok=' + tok, { cache: 'no-store', headers: { Authorization: 'Bearer ' + ls.get('insights:key') } }).then(r => r.json()).then(j => j.ok && j.song.quote ? { t, q: j.song.quote } : null).catch(() => null)));
   const list = qs.filter(Boolean); if (!list.length) return;
   const price = (q, p) => p.fix != null ? p.fix : q.menu.base + q.menu.vocal[p.v][1] + q.menu.edit[p.e][1];
-  const half = (q, p) => { const t = price(q, p), d = Math.min(t, p.da ?? Math.round(t / 2)); return [d, t - d]; };
+  const half = (q, p) => { const t = price(q, p), d = Math.min(t, p.da ?? Math.ceil(t * (t < 500 ? .8 : t < 1000 ? .7 : .5))); return [d, t - d]; };
   let total = 0, got = 0, depDue = 0, nPeople = 0, nDep = 0, nOk = 0;
   const blocks = list.map(({ t, q }) => '<div class="pyt"><div class="pyh">' + esc(t.title) + '</div>' + q.people.map(p => {
     const [d, f] = half(q, p), all = d + f;
