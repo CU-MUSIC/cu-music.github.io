@@ -1549,6 +1549,7 @@ const sliceBuf = (b, t0, t1) => {
   for (let c = 0; c < b.numberOfChannels; c++) o.copyToChannel(b.getChannelData(c).subarray(s0, s1), c);
   return o;
 };
+window.cuAlign = { alignBufs, plainOf, decodeBuf, mono8k, bandFeats, V: () => V };   // 调试：控制台里直接对两个版本跑对齐
 const tsec = t => Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0');
 async function alignCmp(i) {   // 两段长度差得多（一边是截出来的片段）才对齐；返回要附在对比标题后的说明
   refD = 0; cmpLu = null;
@@ -1557,7 +1558,7 @@ async function alignCmp(i) {   // 两段长度差得多（一边是截出来的�
   $('#refName').textContent = '对比 · 两段长度不同，正在找对应位置…';
   const aLong = dA > dB, Lb = aLong ? bufA : refBuf, Sb = aLong ? refBuf : bufA;
   const r = await alignBufs(Lb, Sb); if (CMP !== i) return '';
-  if (r.score < .25) return ' · 没找到对应位置，按开头对齐';
+  if (r.score < .25) return ' · 没找到对应位置，按开头对齐（匹配度 ' + Math.round(r.score * 100) + '%）';
   refD = aLong ? -r.t : r.t;
   try { await libLufs(); const lL = await cuLufs(sliceBuf(Lb, r.t, r.t + Sb.duration)), lS = await cuLufs(Sb); if (Number.isFinite(lL) && Number.isFinite(lS)) cmpLu = aLong ? { a: lL, b: lS } : { a: lS, b: lL }; } catch (e) {}
   return ' · 已对齐：' + (aLong ? vname(V[i]) : vname(V[vi])) + ' 从 ' + tsec(r.t) + ' 起' + (r.score < .4 ? ' · 把握不大' : '') + ' · 响度只比重叠部分';
