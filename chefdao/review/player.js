@@ -153,6 +153,7 @@ document.body.innerHTML = `
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
     <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="loopBtn" aria-pressed="false">循环</button><button class="loud press" id="snapBtn" aria-pressed="false" title="点波形、设循环都落在小节线上；点段落只循环这一段">吸附</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
+  <div class="cmpat" id="cmpAt" hidden><span id="cmpAtT"></span><input id="cmpAtIn" inputmode="decimal" autocomplete="off" placeholder="0:40"><button class="press" id="cmpAtGo" type="button">对齐</button></div>
   <section class="mst" id="mst" hidden></section>
   <aside class="plist" id="plist" hidden></aside>
   <section class="fee" id="fee" hidden></section>
@@ -1515,7 +1516,7 @@ function bandFeats(x) {
   }
   return { F: O, nf, B };
 }
-async function alignBufs(Lb, Sb) {   // 返回 S 在 L 里的起点（秒）和匹配度（0–1）
+async function alignBufs(Lb, Sb, hint) {   // 返回 S 在 L 里的起点（秒）和匹配度（0–1）；hint：你知道大概起点时，只在它前后 1.5 秒里找
   const [lw, sw] = [await mono8k(Lb), await mono8k(Sb)];
   const L = bandFeats(lw), S = bandFeats(sw), B = L.B;
   if (S.nf < 25 || L.nf <= S.nf) return { t: 0, score: 0 };
@@ -1524,7 +1525,8 @@ async function alignBufs(Lb, Sb) {   // 返回 S 在 L 里的起点（秒）和�
   let ns = 0; for (const t of ts) for (let b = 0; b < B; b++) ns += S.F[t * B + b] ** 2; ns = Math.sqrt(ns) || 1;
   const e = new Float64Array(L.nf); for (let f = 0; f < L.nf; f++) { let q = 0; for (let b = 0; b < B; b++) q += L.F[f * B + b] ** 2; e[f] = q; }
   let best = -1, bk = 0;
-  for (let k = 0; k + S.nf <= L.nf; k++) {
+  const k0 = hint === undefined ? 0 : Math.max(0, Math.floor((hint - 1.5) / .02)), k1 = hint === undefined ? Infinity : Math.ceil((hint + 1.5) / .02);
+  for (let k = k0; k + S.nf <= L.nf && k <= k1; k++) {
     let dot = 0, nl = 0;
     for (const t of ts) { const o = (k + t) * B, so = t * B; for (let b = 0; b < B; b++) dot += S.F[so + b] * L.F[o + b]; nl += e[k + t]; }
     const sc = dot / (ns * (Math.sqrt(nl) || 1)); if (sc > best) { best = sc; bk = k; }
@@ -1551,18 +1553,33 @@ const sliceBuf = (b, t0, t1) => {
 };
 window.cuAlign = { alignBufs, plainOf, decodeBuf, mono8k, bandFeats, V: () => V };   // 调试：控制台里直接对两个版本跑对齐
 const tsec = t => Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0');
-async function alignCmp(i) {   // 两段长度差得多（一边是截出来的片段）才对齐；返回要附在对比标题后的说明
-  refD = 0; cmpLu = null;
-  const bufA = await decodeBuf(await plainOf(vi)); if (CMP !== i) return '';
-  const dA = bufA.duration, dB = refBuf.duration; if (Math.abs(dA - dB) <= 1.5) return '';
-  $('#refName').textContent = '对比 · 两段长度不同，正在找对应位置…';
-  const aLong = dA > dB, Lb = aLong ? bufA : refBuf, Sb = aLong ? refBuf : bufA;
-  const r = await alignBufs(Lb, Sb); if (CMP !== i) return '';
-  if (r.score < .25) return ' · 没找到对应位置，按开头对齐（匹配度 ' + Math.round(r.score * 100) + '%）';
-  refD = aLong ? -r.t : r.t;
+let cmpPair = null, cmpNote = '';
+function cmpTitle() { return '对比 · ' + vname(V[vi]) + ' ↔ ' + vname(V[CMP]) + (cmpLu ? cmpNote : (loudBefore ? '' : ' · 已对齐响度') + cmpNote) + (matchMedia('(hover:hover)').matches ? ' · 按 R 切换' : ''); }
+async function useAlign(r, how) {   // 把找到（或你指定）的起点用起来：B 的位置 = A 的位置 + refD，响度只比重叠部分
+  const { Lb, Sb, aLong } = cmpPair;
+  refD = aLong ? -r.t : r.t; cmpLu = null;
   try { await libLufs(); const lL = await cuLufs(sliceBuf(Lb, r.t, r.t + Sb.duration)), lS = await cuLufs(Sb); if (Number.isFinite(lL) && Number.isFinite(lS)) cmpLu = aLong ? { a: lL, b: lS } : { a: lS, b: lL }; } catch (e) {}
-  return ' · 已对齐：' + (aLong ? vname(V[i]) : vname(V[vi])) + ' 从 ' + tsec(r.t) + ' 起' + (r.score < .4 ? ' · 把握不大' : '') + ' · 响度只比重叠部分';
+  cmpNote = ' · ' + how + '：' + (aLong ? vname(V[CMP]) : vname(V[vi])) + ' 从 ' + tsec(r.t) + ' 起' + (how === '已对齐' && r.score < .4 ? ' · 把握不大' : '') + ' · 响度只比重叠部分';
 }
+async function alignCmp(i) {   // 两段长度差得多（一边是截出来的片段）才对齐
+  refD = 0; cmpLu = null; cmpNote = ''; cmpPair = null; $('#cmpAt').hidden = true;
+  const bufA = await decodeBuf(await plainOf(vi)); if (CMP !== i) return;
+  const dA = bufA.duration, dB = refBuf.duration; if (Math.abs(dA - dB) <= 1.5) return;
+  const aLong = dA > dB; cmpPair = { aLong, Lb: aLong ? bufA : refBuf, Sb: aLong ? refBuf : bufA, i };
+  $('#refName').textContent = '对比 · 两段长度不同，正在找对应位置…';
+  const r = await alignBufs(cmpPair.Lb, cmpPair.Sb); if (CMP !== i) return;
+  $('#cmpAt').hidden = false; $('#cmpAtT').textContent = (aLong ? vname(V[i]) : vname(V[vi])) + ' 从整首的';
+  if (r.score < .35) { cmpNote = ' · 没找到对应位置，按开头对齐（匹配度 ' + Math.round(r.score * 100) + '%）· 在右边填起点'; return; }
+  await useAlign(r, '已对齐'); $('#cmpAtIn').value = tsec(r.t);
+}
+async function cmpAtGo() {   // 你知道片段是从整首的哪里截的：填起点，在它前后 1.5 秒里精修
+  const v = $('#cmpAtIn').value.trim(), m = v.match(/^(\d+):(\d+(?:\.\d+)?)$/), T = m ? +m[1] * 60 + +m[2] : parseFloat(v);
+  if (!cmpPair || !Number.isFinite(T) || T < 0) return;
+  const i = cmpPair.i; $('#refName').textContent = '对比 · 正在对齐…';
+  const r = await alignBufs(cmpPair.Lb, cmpPair.Sb, T); if (CMP !== i) return;
+  await useAlign({ t: r.score > .2 ? r.t : T, score: 1 }, '手动对齐'); refStart(); applyGains(); $('#refName').textContent = cmpTitle();
+}
+$('#cmpAtGo').onclick = cmpAtGo; $('#cmpAtIn').addEventListener('keydown', e => { if (e.key === 'Enter') cmpAtGo(); });
 async function startCmp(i, keep) {
   if (i < 0 || i >= V.length || i === vi || !KEY) return;
   const btn = $('#cmp'), keepAB = keep ? AB : null; CMP = i; refD = 0; cmpLu = null; btn.textContent = '加载中…'; graph();
@@ -1571,13 +1588,13 @@ async function startCmp(i, keep) {
     await Promise.all([measure(vi), measure(i)]);
     const plain = await plainOf(i); if (CMP !== i) return;
     await setRef(plain, vname(V[i]), LU[i]); if (CMP !== i) return;
-    const note = await alignCmp(i); if (CMP !== i) return; refStart(); applyGains();
-    $('#refName').textContent = '对比 · ' + vname(V[vi]) + ' ↔ ' + vname(V[i]) + (cmpLu ? note : (loudBefore ? '' : ' · 已对齐响度') + note) + (matchMedia('(hover:hover)').matches ? ' · 按 R 切换' : '');
+    await alignCmp(i); if (CMP !== i) return; refStart(); applyGains();
+    $('#refName').textContent = cmpTitle();
     abLabels(); setAB(keepAB || 'ref'); markList();
   } catch (e) { stopCmp(); }
 }
 function stopCmp() {
-  if (CMP < 0) return; CMP = -1; refStop(); refBuf = null; REF = null; refStats = null; AB = 'mix'; refD = 0; cmpLu = null;
+  if (CMP < 0) return; CMP = -1; refStop(); refBuf = null; REF = null; refStats = null; AB = 'mix'; refD = 0; cmpLu = null; cmpPair = null; cmpNote = ''; $('#cmpAt').hidden = true;
   if (loudBefore !== null) { LOUD = loudBefore; loudBefore = null; }
   if (refN && actx) refN.gain.value = 0;
   $('#refName').hidden = true; if (!REFV) $('#ab').classList.remove('has'); $('#refPick').textContent = REFV ? '换 REF' : '＋ 加 REF'; abLabels(); applyGains(); markList(); if (mstOpen) showStats();
