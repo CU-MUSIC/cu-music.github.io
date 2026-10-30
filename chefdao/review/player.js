@@ -1381,6 +1381,7 @@ let LOUD = ({ '1': 'min', min: 'min', lufs: 'lufs' })[store.get('review:loud')] 
 const LU = {}, lkey = i => 'review:lufs:' + String(V[i].audio).split('/').pop();
 V.forEach((v, i) => { if (Number.isFinite(v.lufs)) LU[i] = v.lufs; else { const c = +store.get(lkey(i)); if (c < 0) LU[i] = c; } });
 let REF = null, refBuf = null, refNode = null, refAt = 0, refOff = 0, AB = 'mix';
+let refD = 0, cmpLu = null;   // 对比片段：B 的位置 = A 的位置 + refD；cmpLu 是两段重叠部分各自的响度（整首和片段比响度没意义）
 function graph() {
   if (actx) { if (actx.state === 'suspended') actx.resume(); return true; }
   try {
@@ -1424,15 +1425,16 @@ function applyGains() {
   btn.classList.toggle('on', LOUD); btn.setAttribute('aria-pressed', LOUD);
   $('#abMix').classList.toggle('on', AB === 'mix'); $('#abRef').classList.toggle('on', AB === 'ref');
   if (!gainN) { lab.textContent = ''; return; }
-  const all = V.map((v, i) => LU[i]).concat(REF ? [REF.lufs] : []).filter(Number.isFinite);
+  const lA = cmpLu ? cmpLu.a : LU[vi], lB = cmpLu ? cmpLu.b : REF && REF.lufs;
+  const all = cmpLu ? [lA, lB] : V.map((v, i) => LU[i]).concat(REF ? [REF.lufs] : []).filter(Number.isFinite);
   const target = LOUD === 'min' && all.length ? Math.min(...all) : LOUD === 'lufs' ? -14 : null;
   const db = l => target === null || !Number.isFinite(l) ? 0 : Math.max(-24, Math.min(12, target - l));
-  const now = actx.currentTime, mixDb = db(LU[vi]), refDb = REF ? db(REF.lufs) : 0;
+  const now = actx.currentTime, mixDb = db(lA), refDb = REF ? db(lB) : 0;
   gainN.gain.setTargetAtTime(AB === 'mix' ? Math.pow(10, mixDb / 20) : 0, now, .008);
   refN.gain.setTargetAtTime(AB === 'ref' ? Math.pow(10, refDb / 20) : 0, now, .008);
   const d = AB === 'ref' ? refDb : mixDb;
   const head = LOUD === 'min' ? ' · 对齐最小' : LOUD === 'lufs' ? ' · -14 LUFS' : '';
-  lab.textContent = !LOUD ? '' : LU[vi] === undefined || (AB === 'ref' && !Number.isFinite(REF && REF.lufs)) ? head + ' · 测量中'
+  lab.textContent = !LOUD ? '' : lA === undefined || (AB === 'ref' && !Number.isFinite(lB)) ? head + ' · 测量中'
     : LOUD === 'min' && Math.abs(d) < .05 ? head + ' · 基准' : head + ' · ' + (d > 0 ? '+' : '') + d.toFixed(1) + ' dB';
 }
 // REF 播放：AudioBuffer 从混音当前位置起播；混音暂停 / 跳转 / 切版本时跟着重启，保持同步
@@ -1440,14 +1442,15 @@ function refStop() { if (refNode) { try { refNode.stop(); } catch (e) {} refNode
 function refStart() {
   refStop();
   if (!refBuf || !actx || a.paused) return;
-  const off = a.currentTime; if (off >= refBuf.duration) return;
-  const n = actx.createBufferSource(); n.buffer = refBuf; n.connect(refN); n.start(0, off);
+  const off = a.currentTime + refD; if (off >= refBuf.duration) return;
+  const n = actx.createBufferSource(); n.buffer = refBuf; n.connect(refN);
+  if (off >= 0) n.start(0, off); else n.start(actx.currentTime - off, 0);   // B 还没到它的起点：等到那一刻再出声
   refNode = n; refAt = actx.currentTime; refOff = off;
 }
 a.addEventListener('playing', refStart);
 a.addEventListener('pause', refStop);
 a.addEventListener('seeked', () => { if (!a.paused) refStart(); });
-setInterval(() => { if (refNode && !a.paused && Math.abs(refOff + actx.currentTime - refAt - a.currentTime) > .06) refStart(); }, 500);
+setInterval(() => { if (refNode && !a.paused && Math.abs(refOff + actx.currentTime - refAt - (a.currentTime + refD)) > .06) refStart(); }, 500);
 async function setRef(buf, name, lufs) {
   if (!graph()) return;
   try {
@@ -1472,20 +1475,108 @@ const abLabels = () => {
   $('#abMix').textContent = CMP >= 0 ? vname(V[vi]) : '混音'; $('#abRef').textContent = CMP >= 0 ? vname(V[CMP]) : 'REF';
   $('#cmp').textContent = CMP >= 0 ? '退出对比' : '对比上一版'; $('#cmp').classList.toggle('on', CMP >= 0);
 };
+
+/* 片段对齐：把短音频放到长音频的时间轴上。
+   先比频谱包络（16 个频段、20ms 一帧，去掉慢变化后做归一化互相关）找出大致位置，再用波形互相关精修到约 0.1ms。 */
+function fft(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) { let b = n >> 1; for (; j & b; b >>= 1) j ^= b; j ^= b; if (i < j) { const t = re[i]; re[i] = re[j]; re[j] = t; const u = im[i]; im[i] = im[j]; im[j] = u; } }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang), h = len >> 1;
+    for (let i = 0; i < n; i += len) { let cr = 1, ci = 0;
+      for (let k = 0; k < h; k++) {
+        const xr = re[i + k + h] * cr - im[i + k + h] * ci, xi = re[i + k + h] * ci + im[i + k + h] * cr;
+        re[i + k + h] = re[i + k] - xr; im[i + k + h] = im[i + k] - xi; re[i + k] += xr; im[i + k] += xi;
+        const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t;
+      } }
+  }
+}
+async function mono8k(buf) {
+  const oc = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, Math.max(1, Math.ceil(buf.duration * 8000)), 8000);
+  const src = oc.createBufferSource(); src.buffer = buf; src.connect(oc.destination); src.start();
+  const r = await new Promise((ok, no) => { const p = oc.startRendering(); if (p && p.then) p.then(ok, no); else oc.oncomplete = e => ok(e.renderedBuffer); });
+  return r.getChannelData(0);
+}
+function bandFeats(x) {
+  const N = 512, H = 160, B = 16, nf = Math.max(0, Math.floor((x.length - N) / H)), F = new Float32Array(nf * B);
+  const edges = [7]; for (let j = 1; j <= B; j++) edges.push(Math.max(edges[j - 1] + 1, Math.round(120 / 15.625 * Math.pow(3600 / 120, j / B))));
+  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = .5 - .5 * Math.cos(2 * Math.PI * i / (N - 1));
+  const re = new Float32Array(N), im = new Float32Array(N);
+  for (let f = 0; f < nf; f++) {
+    for (let i = 0; i < N; i++) { re[i] = x[f * H + i] * win[i]; im[i] = 0; }
+    fft(re, im);
+    for (let b = 0; b < B; b++) { let e = 0; for (let k = edges[b]; k < edges[b + 1]; k++) e += re[k] * re[k] + im[k] * im[k]; F[f * B + b] = Math.log(e + 1e-7); }
+  }
+  // 减去前后各 25 帧（约 1 秒）的平均：去掉整体音量 / 音色差，只留节奏和起伏
+  const R = 25, O = new Float32Array(F.length);
+  for (let b = 0; b < B; b++) {
+    const ps = new Float64Array(nf + 1); for (let f = 0; f < nf; f++) ps[f + 1] = ps[f] + F[f * B + b];
+    for (let f = 0; f < nf; f++) { const lo = Math.max(0, f - R), hi = Math.min(nf, f + R + 1); O[f * B + b] = F[f * B + b] - (ps[hi] - ps[lo]) / (hi - lo); }
+  }
+  return { F: O, nf, B };
+}
+async function alignBufs(Lb, Sb) {   // 返回 S 在 L 里的起点（秒）和匹配度（0–1）
+  const [lw, sw] = [await mono8k(Lb), await mono8k(Sb)];
+  const L = bandFeats(lw), S = bandFeats(sw), B = L.B;
+  if (S.nf < 25 || L.nf <= S.nf) return { t: 0, score: 0 };
+  await new Promise(r => setTimeout(r));
+  const step = Math.max(1, Math.ceil(S.nf / 600)), ts = []; for (let t = 0; t < S.nf; t += step) ts.push(t);
+  let ns = 0; for (const t of ts) for (let b = 0; b < B; b++) ns += S.F[t * B + b] ** 2; ns = Math.sqrt(ns) || 1;
+  const e = new Float64Array(L.nf); for (let f = 0; f < L.nf; f++) { let q = 0; for (let b = 0; b < B; b++) q += L.F[f * B + b] ** 2; e[f] = q; }
+  let best = -1, bk = 0;
+  for (let k = 0; k + S.nf <= L.nf; k++) {
+    let dot = 0, nl = 0;
+    for (const t of ts) { const o = (k + t) * B, so = t * B; for (let b = 0; b < B; b++) dot += S.F[so + b] * L.F[o + b]; nl += e[k + t]; }
+    const sc = dot / (ns * (Math.sqrt(nl) || 1)); if (sc > best) { best = sc; bk = k; }
+  }
+  let t = bk * 160 / 8000;
+  // 波形精修：取 S 中间最多 8 秒，在粗位置前后 ±40ms 里找互相关最大的点
+  const seg = Math.min(sw.length, 64000), s0 = Math.floor((sw.length - seg) / 2), c0 = Math.round(t * 8000);
+  let wb = -1, wd = 0;
+  if (c0 + s0 - 320 >= 0 && c0 + s0 + seg + 320 <= lw.length) {
+    let nS = 0; for (let i = 0; i < seg; i++) nS += sw[s0 + i] ** 2; nS = Math.sqrt(nS) || 1;
+    for (let d = -320; d <= 320; d++) {
+      let dot = 0, nL = 0; const o = c0 + s0 + d;
+      for (let i = 0; i < seg; i += 2) { const x = lw[o + i]; dot += sw[s0 + i] * x; nL += x * x; }
+      const sc = dot / (nS * Math.sqrt(nL * 2) || 1); if (sc > wb) { wb = sc; wd = d; }
+    }
+    if (wb > .4) t = (c0 + wd) / 8000;
+  }
+  return { t: Math.max(0, t), score: Math.max(0, best), wave: wb };
+}
+const sliceBuf = (b, t0, t1) => {
+  const sr = b.sampleRate, s0 = Math.max(0, Math.floor(t0 * sr)), s1 = Math.min(b.length, Math.ceil(t1 * sr)), o = new AudioBuffer({ length: Math.max(1, s1 - s0), numberOfChannels: b.numberOfChannels, sampleRate: sr });
+  for (let c = 0; c < b.numberOfChannels; c++) o.copyToChannel(b.getChannelData(c).subarray(s0, s1), c);
+  return o;
+};
+const tsec = t => Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0');
+async function alignCmp(i) {   // 两段长度差得多（一边是截出来的片段）才对齐；返回要附在对比标题后的说明
+  refD = 0; cmpLu = null;
+  const bufA = await decodeBuf(await plainOf(vi)); if (CMP !== i) return '';
+  const dA = bufA.duration, dB = refBuf.duration; if (Math.abs(dA - dB) <= 1.5) return '';
+  $('#refName').textContent = '对比 · 两段长度不同，正在找对应位置…';
+  const aLong = dA > dB, Lb = aLong ? bufA : refBuf, Sb = aLong ? refBuf : bufA;
+  const r = await alignBufs(Lb, Sb); if (CMP !== i) return '';
+  if (r.score < .25) return ' · 没找到对应位置，按开头对齐';
+  refD = aLong ? -r.t : r.t;
+  try { await libLufs(); const lL = await cuLufs(sliceBuf(Lb, r.t, r.t + Sb.duration)), lS = await cuLufs(Sb); if (Number.isFinite(lL) && Number.isFinite(lS)) cmpLu = aLong ? { a: lL, b: lS } : { a: lS, b: lL }; } catch (e) {}
+  return ' · 已对齐：' + (aLong ? vname(V[i]) : vname(V[vi])) + ' 从 ' + tsec(r.t) + ' 起' + (r.score < .4 ? ' · 把握不大' : '') + ' · 响度只比重叠部分';
+}
 async function startCmp(i, keep) {
   if (i < 0 || i >= V.length || i === vi || !KEY) return;
-  const btn = $('#cmp'), keepAB = keep ? AB : null; CMP = i; btn.textContent = '加载中…'; graph();
+  const btn = $('#cmp'), keepAB = keep ? AB : null; CMP = i; refD = 0; cmpLu = null; btn.textContent = '加载中…'; graph();
   try {
     if (loudBefore === null) { loudBefore = LOUD; if (!LOUD) { LOUD = 'min'; } }
     await Promise.all([measure(vi), measure(i)]);
     const plain = await plainOf(i); if (CMP !== i) return;
     await setRef(plain, vname(V[i]), LU[i]); if (CMP !== i) return;
-    $('#refName').textContent = '对比 · ' + vname(V[vi]) + ' ↔ ' + vname(V[i]) + (loudBefore ? '' : ' · 已对齐响度') + (matchMedia('(hover:hover)').matches ? ' · 按 R 切换' : '');
+    const note = await alignCmp(i); if (CMP !== i) return; refStart(); applyGains();
+    $('#refName').textContent = '对比 · ' + vname(V[vi]) + ' ↔ ' + vname(V[i]) + (cmpLu ? note : (loudBefore ? '' : ' · 已对齐响度') + note) + (matchMedia('(hover:hover)').matches ? ' · 按 R 切换' : '');
     abLabels(); setAB(keepAB || 'ref'); markList();
   } catch (e) { stopCmp(); }
 }
 function stopCmp() {
-  if (CMP < 0) return; CMP = -1; refStop(); refBuf = null; REF = null; refStats = null; AB = 'mix';
+  if (CMP < 0) return; CMP = -1; refStop(); refBuf = null; REF = null; refStats = null; AB = 'mix'; refD = 0; cmpLu = null;
   if (loudBefore !== null) { LOUD = loudBefore; loudBefore = null; }
   if (refN && actx) refN.gain.value = 0;
   $('#refName').hidden = true; if (!REFV) $('#ab').classList.remove('has'); $('#refPick').textContent = REFV ? '换 REF' : '＋ 加 REF'; abLabels(); applyGains(); markList(); if (mstOpen) showStats();
