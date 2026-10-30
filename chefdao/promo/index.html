@@ -35,7 +35,7 @@ let sid = ''; while (sid.length < 12) sid += Math.random().toString(36).slice(2)
 const ua = navigator.userAgent, device = (/iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? '安卓' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : '设备') + (/MicroMessenger/i.test(ua) ? ' · 微信' : '');
 const esc = x => String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const day = t => { const d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate(); };
-const box = document.getElementById('box');
+const box = document.getElementById('box'), K = (new URLSearchParams(location.search).get('k') || '').slice(0, 40);
 const mine = c => ({ ...c, mine: c.mine });
 function mineCard(c, code, exp, used) {
   return '<div class="card"><div class="k">' + esc(c.label || '优惠') + '</div><div class="v">立减 ¥' + c.value + '<small>满 ¥' + c.min + '</small></div>'
@@ -62,7 +62,7 @@ function render(list) {
   });
 }
 async function load() {
-  try { const j = await (await fetch(API + '/claim/info?lid=' + lid, { cache: 'no-store' })).json(); render(j.ok ? j.campaigns : []); }
+  try { const j = await (await fetch(API + '/claim/info?lid=' + lid + (K ? '&k=' + encodeURIComponent(K) : ''), { cache: 'no-store' })).json(); render(j.ok ? j.campaigns : []); }
   catch (e) { box.innerHTML = '<div class="empty">读取失败，刷新再试</div>'; }
 }
 load();
