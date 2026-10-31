@@ -96,6 +96,7 @@ h1{font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-.03em;overflow
 .sk{background:var(--fill);border-radius:99px;padding:7px 14px;font-size:13px;color:var(--text-2);transition:background .2s,color .2s}
 .sk:hover{background:var(--fill-2);color:var(--text)}
 .ld{color:var(--text-3);font-size:12px;margin-top:10px;min-height:1.2em;font-variant-numeric:tabular-nums}
+.lbox.shr{margin:16px 0 0;font-size:13px}
 .lbox{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2)}
 .lbox em{font:500 10px var(--mono);color:var(--text-3);font-style:normal;letter-spacing:.06em}
 .lbox select{padding:4px 8px;font-size:12px;border-radius:8px}
@@ -134,10 +135,10 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 .login input:focus{border-color:var(--border-hover)}
 
 /* 打分 / 入选 */
-.scwrap{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
-.radar{flex:none;width:250px;height:250px;overflow:visible}
+.scwrap{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+.scwrap .rows{flex:1;min-width:280px}
+.radar{flex:none;width:250px;height:250px;overflow:visible;margin:0 auto}
 .radar text{font:500 11px var(--font);fill:var(--text-2)}
-.radar text.bz{fill:var(--green-soft)}
 .radar .v{font:600 11px var(--mono);fill:var(--text)}
 .radar polygon.g{fill:none;stroke:var(--border-hover);stroke-width:1}
 .radar polygon.g.o{stroke:rgba(255,255,255,.3)}
@@ -146,17 +147,26 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 .radar circle{fill:#2fae7a;stroke:#080808;stroke-width:2}
 .score{display:grid;gap:6px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
 .srow{display:flex;align-items:center;gap:14px}
-.sname{width:9.5em;flex:none;color:var(--text);font-size:13px;line-height:1.35}
+.sname{width:9em;flex:none;color:var(--text);font-size:13px;line-height:1.35}
+.sums{display:flex;gap:10px;margin-bottom:6px}
+.sm{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:12px;background:var(--lift)}
+.sm small{display:block;font-size:11px;color:var(--text-3)}
+.sm b{font:600 20px var(--mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.sm.tt{border-color:rgba(31,138,91,.5);background:rgba(31,138,91,.12)}
+.sm.tt b{color:#5fd0a0}
+.rg{-webkit-appearance:none;appearance:none;flex:1;min-width:90px;height:22px;background:transparent;cursor:pointer;touch-action:pan-y}
+.rg::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(90deg,#2fae7a var(--p,0%),rgba(255,255,255,.16) var(--p,0%))}
+.rg::-moz-range-track{height:4px;border-radius:4px;background:rgba(255,255,255,.16)}
+.rg::-moz-range-progress{height:4px;border-radius:4px;background:#2fae7a}
+.rg::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#f0f0f0;margin-top:-8px;box-shadow:0 1px 6px rgba(0,0,0,.6);border:0}
+.rg::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#f0f0f0;border:0}
+.rg:focus-visible{outline:2px solid var(--green-soft);outline-offset:4px;border-radius:6px}
+.rv{flex:none;width:2.4em;text-align:right;font:600 13px var(--mono);font-style:normal;color:var(--text);font-variant-numeric:tabular-nums}
 .sname small{display:block;color:var(--text-3);font-size:11px}
 .sgrp{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 2px;font:500 11px var(--mono);letter-spacing:.16em;color:var(--text-3)}
 .sgrp:first-child{margin-top:0}
 .sgrp.bz{color:var(--green-soft)}
 .sgrp em{font-style:normal;letter-spacing:.04em;color:var(--text-2)}
-.dots{display:flex;gap:6px}
-.dot5{width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hover);color:var(--text-3);font:500 12px/1 var(--mono);transition:background .2s,color .2s,border-color .2s}
-.dot5:hover{border-color:var(--text-2)}
-.dot5.on{background:var(--pearl);color:var(--ink);border-color:var(--pearl)}
-.stotal{margin-top:6px;color:var(--text-2);font:500 12px var(--mono)}
 #pick:not(.ghost){background:var(--green);color:#fff}
 
 /* 访问 */
@@ -210,12 +220,16 @@ const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { retu
 let KEY = store.get('insights:key'), D = [], cur = null, filter = 'all';
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const ROLE = { singer: '歌手', rap: '说唱', other: '其他', artist: '艺人', mixer: '混音师', beat: 'Beatmaker' };
-// 三个歌曲视角 + 三个商业视角；六边形顶点从上方作品力顺时针。第三项是说明，显示在评分行下面
-const CRIT = [['w', '作品力', '歌曲', '旋律、词、结构'], ['v', '辨识度', '歌曲', '声音和风格，一听就记住'], ['x', '表现力', '歌曲', '演唱的情绪和技巧'],
-  ['i', '影响力', '商业', '现有听众和粉丝基础'], ['g', '成长空间', '商业', '一年后能到多高'], ['c', '合作度', '商业', '愿意持续出歌、好沟通']];
+// 这首歌：旋律、歌词、演唱、编排、风格融合、传播性（六边形）；商业：当前粉丝、未来潜力、市场模板、进取心、歌曲商业价值（滑块）。都是 0–10 分，滑动打分，0 = 没评
+const CRIT = [
+  ['m', '旋律', '歌曲', '记忆点强不强'], ['l', '歌词', '歌曲', '写得好不好'], ['s', '演唱', '歌曲', '旋律唱得好不好'],
+  ['a', '编排', '歌曲', '编曲、和声用得怎么样'], ['f', '风格融合', '歌曲', '整体美感融不融合，土不土'], ['p', '传播性', '歌曲', '记住歌，还是因歌记住这个人'],
+  ['bi', '当前粉丝', '商业', '现在有多少人在听'], ['bg', '未来潜力', '商业', '粉丝能不能远不止现在这么多'], ['bt', '市场模板', '商业', '市场上有没有成功的参照'],
+  ['bd', '进取心', '商业', '想真正走起，还是只是玩一玩'], ['bv', '歌曲商业价值', '商业', '能不能卖；有没有出圈、迷因的点']];
 const SONG = CRIT.filter(c => c[2] === '歌曲'), BIZ = CRIT.filter(c => c[2] === '商业');
-const sub = (sc, set) => set.reduce((t, c) => t + (+(sc || {})[c[0]] || 0), 0);
-const total = sc => CRIT.reduce((t, [k]) => t + (+(sc || {})[k] || 0), 0);
+const avg = (sc, set) => { const v = set.map(c => +(sc || {})[c[0]] || 0).filter(x => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
+const f1 = x => (Math.round(x * 10) / 10).toFixed(1);
+const total = sc => avg(sc, CRIT);   // 综合 = 已评各项的平均
 const clock = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 const ago = ts => { const m = Math.floor((Date.now() - ts) / 6e4); return m < 60 ? Math.max(1, m) + ' 分钟前' : m < 1440 ? Math.floor(m / 60) + ' 小时前' : Math.floor(m / 1440) + ' 天前'; };
 async function api(path, body) {
@@ -252,7 +266,7 @@ function renderList() {
   rows.forEach(d => {
     const b = el('button', 'item' + (cur && cur.id === d.id ? ' on' : '')); b.type = 'button';
     const top = el('div', 'it'); top.append(el('b', '', d.title));
-    const t = total(d.scores), has = nrated(d) > 0, sb = el('i', 'scb' + (has ? (t >= 22 ? ' hi' : '') : ' no'), has ? t + '/30' : '未评分'); top.append(sb); b.append(top);
+    const t = total(d.scores), has = nrated(d) > 0, sb = el('i', 'scb' + (has ? (t >= 7.5 ? ' hi' : '') : ' no'), has ? f1(t) : '未评分'); top.append(sb); b.append(top);
     const s = el('span'); s.append(el('i', 'dot ' + (d.pub ? 'done' : d.status === 'heard' ? 'heard' : '')), el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode((d.pick ? '★ ' : '') + d.who + ' · ' + ago(d.ts) + (d.status === 'new' ? ' · 没听过' : '') + (d.notes.length ? ' · ' + d.notes.length + ' 条' : '')));
     b.append(s); b.onclick = () => open(d); box.append(b);
   });
@@ -306,9 +320,10 @@ async function open(d) {
   m.append(sec);
   const pk = el('div', 'sec'); pk.innerHTML = '<h2>主厨之选</h2><div class="score" id="score"></div><div class="row"><button class="btn ghost" id="pick" type="button"></button><span class="hint" id="pickh"></span></div>';
   m.append(pk);
-  const ov = el('div', 'sec'); ov.innerHTML = '<h2>整体感受</h2><textarea id="ov" placeholder="整体评价（发布后和时间点反馈一起给对方看）"></textarea><div class="row"><button class="btn" id="pub" type="button"></button><span class="hint" id="pubh"></span></div><button class="danger" id="del" type="button">删除这首</button>';
+  const ov = el('div', 'sec'); ov.innerHTML = '<h2>整体感受</h2><textarea id="ov" placeholder="整体评价（发布后和时间点反馈一起给对方看）"></textarea><label class="lbox shr"><button type="button" class="lsw" id="sh" role="switch" aria-checked="true" aria-label="附上六边形"></button><span>发布时附上这首歌的六边形（商业评估不会给对方看）</span></label><div class="row"><button class="btn" id="pub" type="button"></button><span class="hint" id="pubh"></span></div><button class="danger" id="del" type="button">删除这首</button>';
   m.append(ov);
   $('#ov').value = d.overall || '';
+  { const sh = $('#sh'); sh.setAttribute('aria-checked', String(d.share !== 0)); sh.onclick = () => sh.setAttribute('aria-checked', String(sh.getAttribute('aria-checked') !== 'true')); }
   renderMeta(); renderNotes(); renderScore(); bindPlayer(d);
   m.scrollTop = 0; window.scrollTo(0, 0);
 }
@@ -459,38 +474,43 @@ function renderMeta() {
 /* 主厨之选：四项 1–5 分 + 入选（最多 5 席） */
 const NS = 'http://www.w3.org/2000/svg';
 const sv = (tag, attrs, txt) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (txt != null) e.textContent = txt; return e; };
-// 六边形雷达图：外圈 = 5 分，里面每圈 1 分；上方从「作品力」开始顺时针
+// 六边形：只管「这首歌」的六项，外圈 = 10 分，里面每圈 2 分；上方从旋律开始顺时针
 function radar(sc) {
-  const C = 115, R = 78, n = CRIT.length, pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
-  const svg = sv('svg', { viewBox: '0 0 230 230', class: 'radar' });
-  for (let lv = 1; lv <= 5; lv++) svg.append(sv('polygon', { class: 'g' + (lv === 5 ? ' o' : ''), points: CRIT.map((_, i) => pt(i, R * lv / 5).join(',')).join(' ') }));
-  CRIT.forEach((_, i) => { const [x, y] = pt(i, R); svg.append(sv('line', { x1: C, y1: C, x2: x, y2: y })); });
-  const val = i => Math.max(0, Math.min(5, +(sc || {})[CRIT[i][0]] || 0));
-  if (CRIT.some((_, i) => val(i) > 0)) {
-    svg.append(sv('polygon', { class: 'd', points: CRIT.map((_, i) => pt(i, R * Math.max(.04, val(i)) / 5).join(',')).join(' ') }));
-    CRIT.forEach((_, i) => { if (val(i) > 0) { const [x, y] = pt(i, R * val(i) / 5); svg.append(sv('circle', { cx: x, cy: y, r: 3.4 })); } });
+  const C = 125, R = 82, n = SONG.length, pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
+  const svg = sv('svg', { viewBox: '0 0 250 250', class: 'radar' });
+  for (let lv = 1; lv <= 5; lv++) svg.append(sv('polygon', { class: 'g' + (lv === 5 ? ' o' : ''), points: SONG.map((_, i) => pt(i, R * lv / 5).join(',')).join(' ') }));
+  SONG.forEach((_, i) => { const [x, y] = pt(i, R); svg.append(sv('line', { x1: C, y1: C, x2: x, y2: y })); });
+  const val = i => Math.max(0, Math.min(10, +(sc || {})[SONG[i][0]] || 0));
+  if (SONG.some((_, i) => val(i) > 0)) {
+    svg.append(sv('polygon', { class: 'd', points: SONG.map((_, i) => pt(i, R * Math.max(.3, val(i)) / 10).join(',')).join(' ') }));
+    SONG.forEach((_, i) => { if (val(i) > 0) { const [x, y] = pt(i, R * val(i) / 10); svg.append(sv('circle', { cx: x, cy: y, r: 3.4 })); } });
   }
-  CRIT.forEach(([k, name, grp], i) => { const [x, y] = pt(i, R + 27), anchor = Math.abs(x - C) < 4 ? 'middle' : x > C ? 'start' : 'end'; const tx = sv('text', { x: x + (anchor === 'start' ? -2 : anchor === 'end' ? 2 : 0), y: y + 4, 'text-anchor': anchor, class: grp === '商业' ? 'bz' : '' }, name); svg.append(tx);
-    if (val(i) > 0) svg.append(sv('text', { x: tx.getAttribute('x'), y: y + 17, 'text-anchor': anchor, class: 'v' }, String(val(i)))); });
+  SONG.forEach(([k, name], i) => { const [x, y] = pt(i, R + 27), anchor = Math.abs(x - C) < 4 ? 'middle' : x > C ? 'start' : 'end'; const ax = x + (anchor === 'start' ? -2 : anchor === 'end' ? 2 : 0);
+    svg.append(sv('text', { x: ax, y: y + 4, 'text-anchor': anchor }, name));
+    if (val(i) > 0) svg.append(sv('text', { x: ax, y: y + 17, 'text-anchor': anchor, class: 'v' }, String(val(i)))); });
   return svg;
 }
+let scSave = 0;
 function renderScore() {
   const box = $('#score'); if (!box || !cur) return; box.textContent = '';
   const d = cur.d, sc = { ...(d.scores || {}) };
-  const wrap = el('div', 'scwrap'), rows = el('div', 'rows');
-  wrap.append(radar(sc), rows); box.append(wrap);
-  [['歌曲', SONG], ['商业', BIZ]].forEach(([g, set]) => {
-    const hd = el('div', 'sgrp' + (g === '商业' ? ' bz' : ''), g + '视角'); hd.append(el('em', '', sub(sc, set) + ' / 15')); rows.append(hd);
+  const wrap = el('div', 'scwrap'), side = el('div', 'rows'); let rd = radar(sc);
+  const sum = el('div', 'sums'); const refresh = () => { sum.textContent = ''; [['这首歌', avg(sc, SONG)], ['商业', avg(sc, BIZ)], ['综合', total(sc)]].forEach(([n, v]) => { const c = el('div', 'sm' + (n === '综合' ? ' tt' : '')); c.append(el('small', '', n), el('b', '', v ? f1(v) : '—')); sum.append(c); }); };
+  refresh(); wrap.append(rd, side); box.append(wrap); side.append(sum);
+  const group = (title, set, cls) => {
+    side.append(el('div', 'sgrp' + (cls ? ' ' + cls : ''), title));
     set.forEach(([k, name, , hint]) => {
       const r = el('div', 'srow'), nm = el('div', 'sname'); nm.append(el('span', '', name), el('small', '', hint)); r.append(nm);
-      const dots = el('div', 'dots');
-      for (let v = 1; v <= 5; v++) { const b = el('button', 'dot5' + ((sc[k] || 0) >= v ? ' on' : ''), String(v)); b.type = 'button';
-        b.onclick = async () => { sc[k] = sc[k] === v ? 0 : v; d.scores = sc; renderScore(); renderList(); await api('/demo/score', { id: d.id, scores: sc }); load(true); };
-        dots.append(b); }
-      r.append(dots); rows.append(r);
+      const rg = el('input'); rg.type = 'range'; rg.min = 0; rg.max = 10; rg.step = .5; rg.value = sc[k] || 0; rg.className = 'rg'; rg.setAttribute('aria-label', name);
+      const vv = el('em', 'rv', sc[k] ? String(sc[k]) : '—');
+      const paint = () => rg.style.setProperty('--p', (rg.value / 10 * 100) + '%');
+      rg.oninput = () => { const v = +rg.value; if (v > 0) sc[k] = v; else delete sc[k]; d.scores = { ...sc }; vv.textContent = v > 0 ? String(v) : '—'; paint();
+        const nr = radar(sc); rd.replaceWith(nr); rd = nr; refresh(); renderList();
+        clearTimeout(scSave); scSave = setTimeout(() => { api('/demo/score', { id: d.id, scores: sc }).catch(() => {}); }, 450); };
+      paint(); r.append(rg, vv); side.append(r);
     });
-  });
-  rows.append(el('div', 'stotal', '合计 ' + total(sc) + ' / 30'));
+  };
+  group('这首歌 · 六边形', SONG, ''); group('商业评估', BIZ, 'bz');
   const used = D.filter(x => x.pick > 0).length, pb = $('#pick');
   pb.textContent = d.pick ? '★ 已入选 · 取消' : '入选主厨之选'; pb.className = 'btn' + (d.pick ? '' : ' ghost');
   pb.disabled = !d.pick && used >= 5;
@@ -500,7 +520,7 @@ function renderScore() {
 async function publish() {
   const d = cur.d; $('#pub').disabled = true;
   const willPub = !d.pub;
-  await api('/demo/pub', { id: d.id, overall: $('#ov').value.trim(), pub: willPub ? 1 : 0 });
+  await api('/demo/pub', { id: d.id, overall: $('#ov').value.trim(), pub: willPub ? 1 : 0, share: $('#sh').getAttribute('aria-checked') === 'true' ? 1 : 0 });
   await load(true); $('#pub').disabled = false;
   if (willPub && cur && cur.d && cur.d.token) { const link = location.origin + '/chefdao/demo/?t=' + cur.d.token; let ok = true; try { await navigator.clipboard.writeText(link); } catch (e) { ok = false; } $('#pubh').textContent = ok ? '已发布，反馈链接已复制，直接发给对方' : '已发布，链接：' + link; }
 }
