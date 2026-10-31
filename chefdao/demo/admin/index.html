@@ -225,11 +225,12 @@ const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { retu
 let KEY = store.get('insights:key'), D = [], cur = null, filter = 'all';
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const ROLE = { singer: '歌手', rap: '说唱', other: '其他', artist: '艺人', mixer: '混音师', beat: 'Beatmaker' };
-// 这首歌：旋律、歌词、演唱、伴奏匹配（人声在这个伴奏上唱得对不对）、录音、编曲（含混音问题）、风格融合、传播性（多边形，顺时针从旋律开始）；商业：当前粉丝、未来潜力、市场模板、进取心、歌曲商业价值（滑块）。都是 0–10 分，滑动打分，0 = 没评
+// 这首歌六边形：旋律、歌词、演唱、伴奏匹配（人声在这个伴奏上唱得对不对）、编曲（含混音问题）、传播性；补充（不进图）：录音、风格融合；商业：当前粉丝、未来潜力、市场模板、进取心、歌曲商业价值（滑块）。都是 0–10 分，滑动打分，0 = 没评
 const CRIT = [
-  ['m', '旋律', '歌曲'], ['l', '歌词', '歌曲'], ['s', '演唱', '歌曲'], ['k', '伴奏匹配', '歌曲'], ['r', '录音', '歌曲'], ['a', '编曲', '歌曲'], ['f', '风格融合', '歌曲'], ['p', '传播性', '歌曲'],
+  ['m', '旋律', '歌曲'], ['l', '歌词', '歌曲'], ['s', '演唱', '歌曲'], ['k', '伴奏匹配', '歌曲'], ['a', '编曲', '歌曲'], ['p', '传播性', '歌曲'],
+  ['r', '录音', '补充'], ['f', '风格融合', '补充'],
   ['bi', '当前粉丝', '商业'], ['bg', '未来潜力', '商业'], ['bt', '市场模板', '商业'], ['bd', '进取心', '商业'], ['bv', '歌曲商业价值', '商业']];
-const SONG = CRIT.filter(c => c[2] === '歌曲'), BIZ = CRIT.filter(c => c[2] === '商业');
+const SONG = CRIT.filter(c => c[2] === '歌曲'), XTRA = CRIT.filter(c => c[2] === '补充'), BIZ = CRIT.filter(c => c[2] === '商业');   // 六边形只画 SONG 六项；XTRA 照常打分、计入均分，但不进图
 const avg = (sc, set) => { const v = set.map(c => +(sc || {})[c[0]] || 0).filter(x => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
 const f1 = x => (Math.round(x * 10) / 10).toFixed(1);
 const total = sc => avg(sc, CRIT);   // 综合 = 已评各项的平均
@@ -504,7 +505,7 @@ function renderScore() {
   const box = $('#score'); if (!box || !cur) return; box.textContent = '';
   const d = cur.d, sc = { ...(d.scores || {}) };
   const wrap = el('div', 'scwrap'), side = el('div', 'rows'); let rd = radar(sc);
-  const sum = el('div', 'sums'); const refresh = () => { sum.textContent = ''; [['这首歌', avg(sc, SONG)], ['商业', avg(sc, BIZ)], ['综合', total(sc)]].forEach(([n, v]) => { const c = el('div', 'sm' + (n === '综合' ? ' tt' : '')); c.append(el('small', '', n), el('b', '', v ? f1(v) : '—')); sum.append(c); }); };
+  const sum = el('div', 'sums'); const refresh = () => { sum.textContent = ''; [['这首歌', avg(sc, SONG.concat(XTRA))], ['商业', avg(sc, BIZ)], ['综合', total(sc)]].forEach(([n, v]) => { const c = el('div', 'sm' + (n === '综合' ? ' tt' : '')); c.append(el('small', '', n), el('b', '', v ? f1(v) : '—')); sum.append(c); }); };
   refresh(); wrap.append(rd, side); box.append(wrap); side.append(sum);
   const group = (title, set, cls) => {
     side.append(el('div', 'sgrp' + (cls ? ' ' + cls : ''), title));
@@ -519,7 +520,7 @@ function renderScore() {
       paint(); r.append(rg, vv); side.append(r);
     });
   };
-  group('这首歌', SONG, ''); group('商业评估', BIZ, 'bz');
+  group('这首歌', SONG, ''); group('补充 · 不进六边形', XTRA, ''); group('商业评估', BIZ, 'bz');
   const used = D.filter(x => x.pick > 0).length, pb = $('#pick');
   pb.textContent = d.pick ? '★ 已入选 · 取消' : '入选主厨之选'; pb.className = 'btn' + (d.pick ? '' : ' ghost');
   pb.disabled = !d.pick && used >= 5;
