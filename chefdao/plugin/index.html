@@ -7,11 +7,11 @@
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
 <link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
-<meta name="description" content="给 Logic Pro 用的免费并轨计时插件：还剩多久、渲染倍速、全屏专注、历史记录。一个 ADHD 混音师给自己做的工具。AU 格式，Intel / Apple Silicon 通用，开源免费。">
+<meta name="description" content="给 Logic Pro 用的免费并轨 / 冻结计时插件：还剩多久、渲染倍速、全屏专注、历史记录。一个 ADHD 混音师给自己做的工具。AU 格式，Intel / Apple Silicon 通用，开源免费。">
 <meta name="theme-color" content="#080808">
 
-<meta property="og:title" content="BounceTimer · 免费 Logic 并轨计时插件">
-<meta property="og:description" content="并轨还要多久？挂上就知道。免费、开源、Intel / Apple Silicon 通用。">
+<meta property="og:title" content="BounceTimer · 免费 Logic 并轨 / 冻结倒计时插件">
+<meta property="og:description" content="并轨、冻结还要多久？挂上就知道。免费、开源、Intel / Apple Silicon 通用。">
 <meta property="og:image" content="https://cumusic.work/chefdao/plugin/shots/zh-bouncing.webp">
 <meta property="og:url" content="https://cumusic.work/chefdao/plugin">
 <meta property="og:type" content="website">
@@ -244,9 +244,9 @@ footer a:hover { color: var(--text-primary); }
 			<div class="kicker">Free · Open Source · Logic Pro</div>
 			<h1>BounceTimer</h1>
 			<p class="hero-sub">
-				并轨还要多久？挂上就知道。<br>
-				一个给 Logic Pro 用的免费并轨计时插件 —— 实时显示已用时间、剩余时间、渲染倍速，
-				还能在并轨时把整个屏幕暗下来，只留一个进度环。
+				并轨、冻结还要多久？挂上就知道。<br>
+				一个给 Logic Pro 用的免费计时插件 —— 实时显示已用时间、剩余时间、渲染倍速，
+				开始前就告诉你大概要多久，还能在并轨时把整个屏幕暗下来，只留一个进度环。
 			</p>
 		</div>
 		<img class="hero-shot" src="shots/zh-bouncing.webp" alt="BounceTimer 并轨中界面" width="720" height="1020" loading="eager">
@@ -254,8 +254,8 @@ footer a:hover { color: var(--text-primary); }
 
 	<!-- ── 下载 ── -->
 	<div class="dl reveal" id="download">
-		<a class="dl-btn" href="BounceTimer-1.0.0.dmg" download>
-			下载 BounceTimer 1.0.0（macOS）
+		<a class="dl-btn" href="BounceTimer-1.1.0.dmg" download>
+			下载 BounceTimer 1.1.0（macOS）
 		</a>
 		<div class="dl-meta">
 			<span><i class="dl-dot"></i>AU 格式 · Logic Pro / GarageBand</span>
@@ -263,6 +263,72 @@ footer a:hover { color: var(--text-primary); }
 			<span><i class="dl-dot"></i>macOS 11 以上 · 3.7 MB</span>
 			<span><i class="dl-dot"></i>完全免费 · 无内购</span>
 		</div>
+	</div>
+
+	<!-- ── 1.1.0 更新 ── -->
+	<div class="section reveal" id="whats-new">
+		<div class="section-head">
+			<div class="step-tag">New in 1.1.0</div>
+			<h2>现在，冻结轨道也有倒计时</h2>
+			<span class="sub">Logic 冻结只给一个进度条，不告诉你还要多久。1.1.0 把并轨的倒计时搬到了冻结上，并且在你按下按钮之前就先给一个预估。</span>
+		</div>
+
+		<div class="grid">
+			<div class="card">
+				<h3>冻结倒计时</h3>
+				<p>冻结时显示已用时间、剩余时间和渲染倍速，数字平稳倒数，不再一抖一抖。</p>
+			</div>
+			<div class="card">
+				<h3>开始前先给预估</h3>
+				<p>按你最近几次的速度，空闲时就显示「预计冻结用时 02:20」。第一次冻完之后开始生效。</p>
+			</div>
+			<div class="card">
+				<h3>记录分清冻结和并轨</h3>
+				<p>每条记录标出类型和倍速，比如「冻结 1.2×」，回头看就知道哪次慢。</p>
+			</div>
+			<div class="card">
+				<h3>完成弹系统通知</h3>
+				<p>结束时弹一条 macOS 通知，切到别的窗口干活也不会错过。跟随「完成提示音」开关。</p>
+			</div>
+			<div class="card">
+				<h3>记录不再丢</h3>
+				<p>冻结完 Logic 会释放轨道上的插件。现在记录存在本机一个共用文件里，任何一个 BounceTimer 都能看到。</p>
+			</div>
+			<div class="card">
+				<h3>歌曲长度自动记住</h3>
+				<p>没填长度时，自动用上一次渲染走到的位置，不用每次重填。</p>
+			</div>
+		</div>
+
+		<div class="section-head" style="margin:34px 0 18px">
+			<div class="step-tag">Freeze</div>
+			<h2 style="font-size:clamp(18px,4vw,22px)">冻结要这样放插件</h2>
+			<span class="sub">冻结只渲染被冻结轨道自己的通道条，不经过「立体声输出」，所以计时要靠轨道上的插件。</span>
+		</div>
+		<div class="steps">
+			<div class="step">
+				<div class="step-n"></div>
+				<div>
+					<h3>在 Stereo Out 放一个 BounceTimer</h3>
+					<p>打开它的窗口别关，填好项目时长，点「设置」。<em>倒计时就在这个窗口里看。</em></p>
+				</div>
+			</div>
+			<div class="step">
+				<div class="step-n"></div>
+				<div>
+					<h3>在要冻结的每条轨道上也各放一个</h3>
+					<p>Logic 只会通知轨道上的插件「现在开始离线渲染」。冻结时这些轨道上的窗口会被 Logic 关掉，这是正常的。</p>
+				</div>
+			</div>
+			<div class="step">
+				<div class="step-n"></div>
+				<div>
+					<h3>开始冻结，看 Stereo Out 的窗口</h3>
+					<p>Logic 是一个播放头从头走到尾，所有选中的轨道一起冻，所以只有一份倒计时，不是一条一条算。</p>
+				</div>
+			</div>
+		</div>
+		<p class="shots-cap" style="text-align:left;margin-top:14px">并轨照旧：只需要 Stereo Out 上那一个。</p>
 	</div>
 
 	<!-- ── 作者自白 ── -->
@@ -288,7 +354,7 @@ footer a:hover { color: var(--text-primary); }
 				<div class="step-n"></div>
 				<div>
 					<h3>把插件拖进 Components 文件夹</h3>
-					<p>双击下载好的 <em>BounceTimer-1.0.0.dmg</em>，把左边的插件图标拖到右边的 Components 文件夹上。</p>
+					<p>双击下载好的 <em>BounceTimer-1.1.0.dmg</em>，把左边的插件图标拖到右边的 Components 文件夹上。</p>
 					<p>系统会要求输入开机密码 —— 因为要写进系统目录，正常现象。</p>
 				</div>
 			</div>
@@ -326,7 +392,7 @@ footer a:hover { color: var(--text-primary); }
 		<div class="section-head">
 			<div class="step-tag">Usage</div>
 			<h2>怎么用</h2>
-			<span class="sub">Logic 不会把工程总长度告诉插件，所以要手动填一次。填过之后会跟工程一起保存。</span>
+			<span class="sub">Logic 不会把工程总长度告诉插件，所以第一次要手动填。之后没填的话，会自动用上一次渲染走到的位置。</span>
 		</div>
 
 		<div class="grid">
@@ -343,8 +409,12 @@ footer a:hover { color: var(--text-primary); }
 				<p>打开「全屏专注」，并轨时整个屏幕会暗下来只留一个进度环。点一下可以隐藏，鼠标静止 10 秒会自动淡回来，并轨全程不受影响。</p>
 			</div>
 			<div class="card">
-				<h3>④ 完事有提示音</h3>
-				<p>并轨结束会响一声。历史记录页会记下每一次并轨的时间和时长，还能加备注。</p>
+				<h3>④ 完事有提示音和通知</h3>
+				<p>并轨或冻结结束会响一声，并弹一条系统通知。历史记录页会记下每一次的时间、时长、类型和倍速，还能加备注。</p>
+			</div>
+			<div class="card">
+				<h3>⑤ 冻结也一样</h3>
+				<p>在要冻结的轨道上也放一个 BounceTimer，然后在 Stereo Out 的窗口里看倒计时。详见上面「冻结要这样放插件」。</p>
 			</div>
 		</div>
 	</div>
@@ -373,6 +443,18 @@ footer a:hover { color: var(--text-primary); }
 		</div>
 		<div class="faq">
 			<details>
+				<summary>冻结时倒计时是 00:00 / 没反应</summary>
+				<div class="a">冻结不经过「立体声输出」，只有<strong>被冻结的轨道上</strong>的 BounceTimer 才会收到 Logic 的通知。在要冻结的每条轨道也放一个，再在 Stereo Out 的窗口里看倒计时。</div>
+			</details>
+			<details>
+				<summary>冻结完，轨道上的插件窗口自己关了</summary>
+				<div class="a">正常现象。冻结后 Logic 会释放那条轨道上的插件。记录已经存到本机共用文件，在 Stereo Out 上的 BounceTimer 里就能看到。</div>
+			</details>
+			<details>
+				<summary>从 1.0.0 升级要做什么</summary>
+				<div class="a">直接用新 DMG 覆盖安装，然后<strong>重新执行一次</strong>第 2 步那行 <code>xattr</code> 命令（新文件会重新带上隔离标记），完全退出 Logic 再打开。旧记录会自动保留。</div>
+			</details>
+			<details>
 				<summary>装完了，Logic 里找不到这个插件</summary>
 				<div class="a">九成是第 2 步没做。先执行那行 <code>xattr</code> 命令，再<strong>完全退出</strong> Logic 重开。<br>
 					还是不行的话，在终端跑 <code>auval -v aufx Bntm Chef</code>，最后显示 AU VALIDATION SUCCEEDED 就说明插件本身没问题，那就是 Logic 的插件缓存问题，重启一次电脑。</div>
@@ -383,7 +465,7 @@ footer a:hover { color: var(--text-primary); }
 			</details>
 			<details>
 				<summary>剩余时间一直显示「请先设置项目时长」</summary>
-				<div class="a">Logic 不会把工程总长度告诉插件，需要你在「项目时长」里手动填一次。填完就能算剩余时间了，而且会跟工程一起保存，同一个工程下次打开还在。</div>
+				<div class="a">Logic 不会把工程总长度告诉插件，第一次需要你在「项目时长」里手动填。填完就能算剩余时间了。之后没填的话，插件会自动用上一次渲染走到的位置。</div>
 			</details>
 			<details>
 				<summary>有 VST3 版本吗？Studio One / Cubase 能用吗？</summary>
@@ -404,7 +486,7 @@ footer a:hover { color: var(--text-primary); }
 	<div class="foot-cta reveal">
 		<h2>拿去用吧</h2>
 		<p>免费、开源、没有任何附加条件。</p>
-		<a class="dl-btn" href="BounceTimer-1.0.0.dmg" download style="max-width:380px;margin:0 auto;">下载 BounceTimer 1.0.0</a>
+		<a class="dl-btn" href="BounceTimer-1.1.0.dmg" download style="max-width:380px;margin:0 auto;">下载 BounceTimer 1.1.0</a>
 	</div>
 
 	<footer>
@@ -412,7 +494,7 @@ footer a:hover { color: var(--text-primary); }
 			<img src="shots/chefdao_wordmark.png" alt="ChefDao">
 			<span style="opacity:.6">Audio</span>
 		</div><br>
-		BounceTimer 1.0.0 · GPLv3 开源 · 基于 JUCE<br>
+		BounceTimer 1.1.0 · GPLv3 开源 · 基于 JUCE<br>
 		<a href="/chefdao/">刀大厨 ChefDao</a> ·
 		<a href="/chefdao/price/">混音母带报价</a>
 	</footer>
