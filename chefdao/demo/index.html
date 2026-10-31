@@ -51,14 +51,14 @@ main{max-width:400px;margin:0 auto}
 .hero .mark svg{transition:transform .9s var(--spring)}
 body.intro{overflow:hidden}
 .hero .mark.pop svg{transform:scale(1.08)}
-.hero h1{margin-top:34px;font-size:clamp(28px,8.2vw,54px);line-height:1;font-weight:600;letter-spacing:-.028em;white-space:nowrap}
+.hero h1{position:relative;z-index:3;margin-top:calc(34px - .2em);padding-top:.2em;padding-bottom:.12em;font-size:clamp(28px,8.2vw,54px);line-height:1;font-weight:600;letter-spacing:-.028em;white-space:nowrap}
 .hero h1 .it{font-family:"Instrument Serif","Times New Roman",serif;font-style:italic;font-weight:400;font-size:1.3em;line-height:.8;letter-spacing:-.005em;margin-right:.03em;color:#1f8a5b}
-.hero h1 .it span{transform:translateY(.35em) skewX(-6deg)}
-.hero h1 .it{display:inline-block}
+.hero h1 .it{display:inline-block;padding:0 .14em 0 .08em;margin:0 -.1em 0 -.06em;opacity:0;transform:translateY(.35em);filter:blur(8px)}
+.titled .hero h1 .it{animation:letter 1s var(--ease) .05s forwards}
 .hero h1 span:not(.it){display:inline-block;opacity:0;transform:translateY(.35em);filter:blur(8px)}
 .titled .hero h1 span:not(.it){animation:letter 1s var(--ease) forwards;animation-delay:calc(var(--i) * 45ms)}
 .hero h1 span.sp{width:.26em}
-@keyframes letter{to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes letter{to{opacity:1;transform:none;filter:none}}
 .status{height:20px;margin-top:14px;font:500 11px/20px var(--mono);letter-spacing:.24em;color:var(--text-3);font-variant-numeric:tabular-nums;opacity:0;transition:opacity .4s var(--ease)}
 .status.on{opacity:1}
 
@@ -145,7 +145,13 @@ button.chip.ok::after{content:"";width:6px;height:6px;border-right:1.5px solid c
 button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1px,-1px)}
 .fbp{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
 .fbp[hidden]{display:none}
-.rdr{display:block;width:220px;height:220px;margin:6px auto 12px;overflow:visible}
+.sbar{margin:2px 0 14px}
+.sbar .sh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font:500 11px var(--mono);letter-spacing:.14em;color:var(--text-3)}
+.sbar .sh b{font:600 26px var(--mono);letter-spacing:-.02em;color:var(--text);font-variant-numeric:tabular-nums}
+.sbar .sh b small{font-size:13px;color:var(--text-3);font-weight:500;margin-left:3px}
+.sbar .tr{position:relative;height:6px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}
+.sbar .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,#1f8a5b,#5fd0a0);width:0;transition:width 1s var(--ease)}
+.rdr{display:block;width:252px;height:220px;max-width:100%;margin:6px auto 12px;overflow:visible}
 .rdr text{font:500 11px var(--font);fill:var(--text-2)}
 .rdr text.v{font:600 11px var(--mono);fill:var(--text)}
 .rdr polygon.g{fill:none;stroke:var(--border-hover);stroke-width:1}
@@ -173,7 +179,7 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
 .tl time{font:500 11px/2 var(--mono);color:var(--text-3)}
 .tl button.on time{color:var(--green-soft)}
 [hidden]{display:none!important}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.hero::before{opacity:1}.hero h1 span:not(.it),#form .row,#form .go,#form .group{opacity:1;transform:none;filter:none}.cumark .d{stroke-dashoffset:0;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.hero::before{opacity:1}.hero h1 .it,.hero h1 span:not(.it),#form .row,#form .go,#form .group{opacity:1;transform:none;filter:none}.cumark .d{stroke-dashoffset:0;opacity:1}}
 </style>
 </head>
 <body>
@@ -240,7 +246,9 @@ try { fetch(API + '/demo/v', { method: 'POST', headers: { 'Content-Type': 'appli
 const h1 = $('#h1'); let li = 0;
 const split = (node, into) => { [...node.textContent].forEach(c => { const s = el('span', c === ' ' ? 'sp' : '', c === ' ' ? '' : c); s.style.setProperty('--i', li++); s.setAttribute('aria-hidden', 'true'); into.append(s); }); };
 const parts = [...h1.childNodes]; h1.textContent = '';
-parts.forEach(nd => { if (nd.nodeType === 1) { const w = el('span', nd.className); split(nd, w); h1.append(w); } else split(nd, h1); });
+parts.forEach(nd => { if (nd.nodeType === 1) { const w = el('span', nd.className, nd.textContent); w.setAttribute('aria-hidden', 'true'); h1.append(w); } else split(nd, h1); });
+// 动画一结束就把 filter / transform 彻底清掉：留着会让 Safari 给每个字母单独建图层，斜体字探出去的部分（Chef’s 的撇号）被图层边界切掉
+h1.addEventListener('animationend', e => { const t = e.target; if (t === h1) return; t.style.animation = 'none'; t.style.opacity = '1'; t.style.transform = 'none'; t.style.filter = 'none'; });
 // 开场编排：标在屏幕正中、微微转着画出来（同 CU 主页）→ 移到标题上方 → 标题浮出 → 表单最后出来 → 标退成底纹等你填写
 const B = document.body, mark = $('#mark');
 // 点开反馈链接的人（?t=）不看开场：直接落在自己的投递和反馈上，投递表单排在后面
@@ -421,12 +429,12 @@ function player(src) {
   box.audio = () => a;
   return box;
 }
-// 这首歌的六边形（只有发布时勾了「附上六边形」才会带上）
-const SONGK = [['m', '旋律'], ['l', '歌词'], ['s', '演唱'], ['a', '编排'], ['f', '风格融合'], ['p', '传播性']];
+// 这首歌的多边形（只有发布时选了「评分条 + 六边形」才会带上）
+const SONGK = [['m', '旋律'], ['l', '歌词'], ['s', '演唱'], ['r', '录音'], ['a', '编曲'], ['f', '风格融合'], ['p', '传播性']];
 function radar(sc) {
   const NS = 'http://www.w3.org/2000/svg', mk = (t, at, tx) => { const e = document.createElementNS(NS, t); for (const k in at) e.setAttribute(k, at[k]); if (tx != null) e.textContent = tx; return e; };
-  const C = 110, R = 70, n = 6, pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
-  const svg = mk('svg', { viewBox: '0 0 220 220', class: 'rdr' }), val = i => Math.max(0, Math.min(10, +sc[SONGK[i][0]] || 0));
+  const C = 110, R = 70, n = SONGK.length, pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
+  const svg = mk('svg', { viewBox: '-16 0 252 220', class: 'rdr' }), val = i => Math.max(0, Math.min(10, +sc[SONGK[i][0]] || 0));
   for (let lv = 1; lv <= 5; lv++) svg.appendChild(mk('polygon', { class: 'g' + (lv === 5 ? ' o' : ''), points: SONGK.map((_, i) => pt(i, R * lv / 5).join(',')).join(' ') }));
   SONGK.forEach((_, i) => { const p = pt(i, R); svg.appendChild(mk('line', { x1: C, y1: C, x2: p[0], y2: p[1] })); });
   svg.appendChild(mk('polygon', { class: 'd', points: SONGK.map((_, i) => pt(i, R * Math.max(.3, val(i)) / 10).join(',')).join(' ') }));
@@ -444,6 +452,7 @@ function card(d) {
   const pl = player(API + '/demo/a?id=' + d.id + '&t=' + encodeURIComponent(d.tok)); c.append(pl);
   if (d.pub) {
     const box = el('div', 'fbp'); box.append(el('h4', '', 'FEEDBACK · 点时间可以跳到那一刻'));
+    if (d.ascore > 0) { const sb = el('div', 'sbar'), sh = el('div', 'sh'), b = el('b', '', String(d.ascore)); b.append(el('small', '', '/ 10')); sh.append(el('span', '', 'SCORE'), b); const tr = el('div', 'tr'), fi = el('i'); tr.append(fi); sb.append(sh, tr); box.append(sb); setTimeout(() => { fi.style.width = (d.ascore / 10 * 100) + '%'; }, 120); }
     if (d.radar) box.append(radar(d.radar));
     if (d.overall) box.append(el('div', 'ov', d.overall));
     if (n) {

@@ -96,7 +96,12 @@ h1{font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-.03em;overflow
 .sk{background:var(--fill);border-radius:99px;padding:7px 14px;font-size:13px;color:var(--text-2);transition:background .2s,color .2s}
 .sk:hover{background:var(--fill-2);color:var(--text)}
 .ld{color:var(--text-3);font-size:12px;margin-top:10px;min-height:1.2em;font-variant-numeric:tabular-nums}
-.lbox.shr{margin:16px 0 0;font-size:13px}
+.gv{margin-top:16px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.gvh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;font-size:13px;color:var(--text-2)}
+.gvh em{font:600 15px var(--mono);font-style:normal;color:#5fd0a0}
+.gv .seg2{margin-bottom:12px}
+.gv .rg{width:100%;display:block}
+.gv .hint{margin-top:8px}
 .lbox{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2)}
 .lbox em{font:500 10px var(--mono);color:var(--text-3);font-style:normal;letter-spacing:.06em}
 .lbox select{padding:4px 8px;font-size:12px;border-radius:8px}
@@ -137,7 +142,7 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 /* 打分 / 入选 */
 .scwrap{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
 .scwrap .rows{flex:1;min-width:280px}
-.radar{flex:none;width:250px;height:250px;overflow:visible;margin:0 auto}
+.radar{flex:none;width:286px;height:250px;overflow:visible;margin:0 auto}
 .radar text{font:500 11px var(--font);fill:var(--text-2)}
 .radar .v{font:600 11px var(--mono);fill:var(--text)}
 .radar polygon.g{fill:none;stroke:var(--border-hover);stroke-width:1}
@@ -147,7 +152,7 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 .radar circle{fill:#2fae7a;stroke:#080808;stroke-width:2}
 .score{display:grid;gap:6px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
 .srow{display:flex;align-items:center;gap:14px}
-.sname{width:9em;flex:none;color:var(--text);font-size:13px;line-height:1.35}
+.sname{width:7em;flex:none;color:var(--text);font-size:13px;line-height:1.35}
 .sums{display:flex;gap:10px;margin-bottom:6px}
 .sm{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:12px;background:var(--lift)}
 .sm small{display:block;font-size:11px;color:var(--text-3)}
@@ -220,12 +225,10 @@ const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { retu
 let KEY = store.get('insights:key'), D = [], cur = null, filter = 'all';
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const ROLE = { singer: '歌手', rap: '说唱', other: '其他', artist: '艺人', mixer: '混音师', beat: 'Beatmaker' };
-// 这首歌：旋律、歌词、演唱、编排、风格融合、传播性（六边形）；商业：当前粉丝、未来潜力、市场模板、进取心、歌曲商业价值（滑块）。都是 0–10 分，滑动打分，0 = 没评
+// 这首歌：旋律、歌词、演唱、录音、编曲（含混音问题）、风格融合、传播性（多边形，顺时针从旋律开始）；商业：当前粉丝、未来潜力、市场模板、进取心、歌曲商业价值（滑块）。都是 0–10 分，滑动打分，0 = 没评
 const CRIT = [
-  ['m', '旋律', '歌曲', '记忆点强不强'], ['l', '歌词', '歌曲', '写得好不好'], ['s', '演唱', '歌曲', '旋律唱得好不好'],
-  ['a', '编排', '歌曲', '编曲、和声用得怎么样'], ['f', '风格融合', '歌曲', '整体美感融不融合，土不土'], ['p', '传播性', '歌曲', '记住歌，还是因歌记住这个人'],
-  ['bi', '当前粉丝', '商业', '现在有多少人在听'], ['bg', '未来潜力', '商业', '粉丝能不能远不止现在这么多'], ['bt', '市场模板', '商业', '市场上有没有成功的参照'],
-  ['bd', '进取心', '商业', '想真正走起，还是只是玩一玩'], ['bv', '歌曲商业价值', '商业', '能不能卖；有没有出圈、迷因的点']];
+  ['m', '旋律', '歌曲'], ['l', '歌词', '歌曲'], ['s', '演唱', '歌曲'], ['r', '录音', '歌曲'], ['a', '编曲', '歌曲'], ['f', '风格融合', '歌曲'], ['p', '传播性', '歌曲'],
+  ['bi', '当前粉丝', '商业'], ['bg', '未来潜力', '商业'], ['bt', '市场模板', '商业'], ['bd', '进取心', '商业'], ['bv', '歌曲商业价值', '商业']];
 const SONG = CRIT.filter(c => c[2] === '歌曲'), BIZ = CRIT.filter(c => c[2] === '商业');
 const avg = (sc, set) => { const v = set.map(c => +(sc || {})[c[0]] || 0).filter(x => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
 const f1 = x => (Math.round(x * 10) / 10).toFixed(1);
@@ -320,10 +323,16 @@ async function open(d) {
   m.append(sec);
   const pk = el('div', 'sec'); pk.innerHTML = '<h2>主厨之选</h2><div class="score" id="score"></div><div class="row"><button class="btn ghost" id="pick" type="button"></button><span class="hint" id="pickh"></span></div>';
   m.append(pk);
-  const ov = el('div', 'sec'); ov.innerHTML = '<h2>整体感受</h2><textarea id="ov" placeholder="整体评价（发布后和时间点反馈一起给对方看）"></textarea><label class="lbox shr"><button type="button" class="lsw" id="sh" role="switch" aria-checked="true" aria-label="附上六边形"></button><span>发布时附上这首歌的六边形（商业评估不会给对方看）</span></label><div class="row"><button class="btn" id="pub" type="button"></button><span class="hint" id="pubh"></span></div><button class="danger" id="del" type="button">删除这首</button>';
+  const ov = el('div', 'sec'); ov.innerHTML = '<h2>整体感受</h2><textarea id="ov" placeholder="整体评价（发布后和时间点反馈一起给对方看）"></textarea><div class="gv"><div class="gvh"><span>给歌手看什么</span><em id="asv"></em></div><div class="seg2" id="sm"><button type="button" data-m="0" aria-pressed="false">不给</button><button type="button" data-m="1" aria-pressed="true">只给评分条</button><button type="button" data-m="2" aria-pressed="false">评分条 + 六边形</button></div><input class="rg" id="as" type="range" min="0" max="10" step="0.5" aria-label="给歌手的分数"><div class="hint" id="ash">内部的商业评估永远不会给对方看</div></div><div class="row"><button class="btn" id="pub" type="button"></button><span class="hint" id="pubh"></span></div><button class="danger" id="del" type="button">删除这首</button>';
   m.append(ov);
   $('#ov').value = d.overall || '';
-  { const sh = $('#sh'); sh.setAttribute('aria-checked', String(d.share !== 0)); sh.onclick = () => sh.setAttribute('aria-checked', String(sh.getAttribute('aria-checked') !== 'true')); }
+  { // 给歌手的分数：默认带出综合分（四舍五入到 0.5），你想给多少就滑到多少，和内部打分互不影响
+    let mode = d.mode == null ? 1 : d.mode; const as = $('#as'), asv = $('#asv'), sm = $('#sm');
+    const sug = Math.round(total(d.scores || {}) * 2) / 2; as.value = d.ascore > 0 ? d.ascore : (sug > 0 ? sug : 0);
+    const paint = () => { as.style.setProperty('--p', (as.value / 10 * 100) + '%'); asv.textContent = mode === 0 ? '不给' : (+as.value > 0 ? as.value + ' / 10' : '没有分数'); as.disabled = mode === 0; as.style.opacity = mode === 0 ? .35 : 1; sm.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.m === mode))); };
+    as.oninput = paint; sm.querySelectorAll('button').forEach(b => b.onclick = () => { mode = +b.dataset.m; paint(); });
+    sm.dataset.mode = mode; sm.getMode = () => mode; paint();
+  }
   renderMeta(); renderNotes(); renderScore(); bindPlayer(d);
   m.scrollTop = 0; window.scrollTo(0, 0);
 }
@@ -474,10 +483,10 @@ function renderMeta() {
 /* 主厨之选：四项 1–5 分 + 入选（最多 5 席） */
 const NS = 'http://www.w3.org/2000/svg';
 const sv = (tag, attrs, txt) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (txt != null) e.textContent = txt; return e; };
-// 六边形：只管「这首歌」的六项，外圈 = 10 分，里面每圈 2 分；上方从旋律开始顺时针
+// 多边形：只管「这首歌」的各项，外圈 = 10 分，里面每圈 2 分；上方从旋律开始顺时针
 function radar(sc) {
   const C = 125, R = 82, n = SONG.length, pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
-  const svg = sv('svg', { viewBox: '0 0 250 250', class: 'radar' });
+  const svg = sv('svg', { viewBox: '-18 0 286 250', class: 'radar' });
   for (let lv = 1; lv <= 5; lv++) svg.append(sv('polygon', { class: 'g' + (lv === 5 ? ' o' : ''), points: SONG.map((_, i) => pt(i, R * lv / 5).join(',')).join(' ') }));
   SONG.forEach((_, i) => { const [x, y] = pt(i, R); svg.append(sv('line', { x1: C, y1: C, x2: x, y2: y })); });
   const val = i => Math.max(0, Math.min(10, +(sc || {})[SONG[i][0]] || 0));
@@ -499,8 +508,8 @@ function renderScore() {
   refresh(); wrap.append(rd, side); box.append(wrap); side.append(sum);
   const group = (title, set, cls) => {
     side.append(el('div', 'sgrp' + (cls ? ' ' + cls : ''), title));
-    set.forEach(([k, name, , hint]) => {
-      const r = el('div', 'srow'), nm = el('div', 'sname'); nm.append(el('span', '', name), el('small', '', hint)); r.append(nm);
+    set.forEach(([k, name]) => {
+      const r = el('div', 'srow'), nm = el('div', 'sname'); nm.append(el('span', '', name)); r.append(nm);
       const rg = el('input'); rg.type = 'range'; rg.min = 0; rg.max = 10; rg.step = .5; rg.value = sc[k] || 0; rg.className = 'rg'; rg.setAttribute('aria-label', name);
       const vv = el('em', 'rv', sc[k] ? String(sc[k]) : '—');
       const paint = () => rg.style.setProperty('--p', (rg.value / 10 * 100) + '%');
@@ -510,7 +519,7 @@ function renderScore() {
       paint(); r.append(rg, vv); side.append(r);
     });
   };
-  group('这首歌 · 六边形', SONG, ''); group('商业评估', BIZ, 'bz');
+  group('这首歌', SONG, ''); group('商业评估', BIZ, 'bz');
   const used = D.filter(x => x.pick > 0).length, pb = $('#pick');
   pb.textContent = d.pick ? '★ 已入选 · 取消' : '入选主厨之选'; pb.className = 'btn' + (d.pick ? '' : ' ghost');
   pb.disabled = !d.pick && used >= 5;
@@ -520,7 +529,7 @@ function renderScore() {
 async function publish() {
   const d = cur.d; $('#pub').disabled = true;
   const willPub = !d.pub;
-  await api('/demo/pub', { id: d.id, overall: $('#ov').value.trim(), pub: willPub ? 1 : 0, share: $('#sh').getAttribute('aria-checked') === 'true' ? 1 : 0 });
+  await api('/demo/pub', { id: d.id, overall: $('#ov').value.trim(), pub: willPub ? 1 : 0, ascore: +$('#as').value, mode: $('#sm').getMode() });
   await load(true); $('#pub').disabled = false;
   if (willPub && cur && cur.d && cur.d.token) { const link = location.origin + '/chefdao/demo/?t=' + cur.d.token; let ok = true; try { await navigator.clipboard.writeText(link); } catch (e) { ok = false; } $('#pubh').textContent = ok ? '已发布，反馈链接已复制，直接发给对方' : '已发布，链接：' + link; }
 }
