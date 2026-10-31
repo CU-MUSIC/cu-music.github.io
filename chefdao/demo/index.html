@@ -24,7 +24,7 @@
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
 }
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg)}
+html{background:var(--bg);overflow-x:hidden}
 body{background:var(--bg);color:var(--text);font:16px/1.5 var(--font);-webkit-font-smoothing:antialiased;caret-color:var(--green-soft);
   padding:0 max(20px,env(safe-area-inset-left)) calc(72px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-right))}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -41,7 +41,7 @@ main{max-width:400px;margin:0 auto}
 .settled .cumark .d{opacity:0;transition:opacity 1.2s var(--ease)}
 @keyframes draw{from{stroke-dashoffset:1.06}to{stroke-dashoffset:0}}
 
-.hero{position:relative;padding:calc(11vh + env(safe-area-inset-top)) 0 48px;text-align:center}
+.hero{position:relative;overflow-x:clip;padding:calc(11vh + env(safe-area-inset-top)) 0 48px;text-align:center}
 /* 光晕：同 CU 主页，标题出来后才淡入 */
 .hero::before{content:"";position:absolute;left:50%;top:calc(11vh + env(safe-area-inset-top) + 80px);width:min(150vw,760px);aspect-ratio:1;pointer-events:none;opacity:0;
   background:radial-gradient(circle,rgba(255,252,248,.075) 0%,rgba(255,252,248,.022) 34%,transparent 68%);transform:translate(-50%,-50%) translateZ(0)}
@@ -125,6 +125,14 @@ body.intro{overflow:hidden}
 .link button{flex:none;font-size:13px;font-weight:600;color:var(--cta-fg);background:var(--cta-bg);border-radius:10px;padding:8px 14px;transition:background .3s}
 .link button.ok{background:var(--green-soft)}
 .again{margin-top:20px;font-size:14px;color:var(--text-2)}
+.find{display:block;margin:22px auto 0;font-size:13px;color:var(--text-3);transition:color .2s}
+.find:hover{color:var(--text)}
+.fbox{margin-top:16px}
+.fbox .go{margin-top:12px}
+.fbox .err{margin-top:10px}
+.notice{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 18px;padding:12px 16px;border-radius:var(--r);background:rgba(31,138,91,.14);border:1px solid rgba(31,138,91,.4);color:var(--green-soft);font-size:14px;font-weight:600;transition:background .2s}
+.notice:hover{background:rgba(31,138,91,.22)}
+.notice::before{content:"";width:7px;height:7px;border-radius:50%;background:#1f8a5b;box-shadow:0 0 0 4px rgba(31,138,91,.25)}
 .again:hover{color:var(--text)}
 .fade-out{opacity:0!important;transform:translateY(-6px);transition:opacity .45s var(--ease),transform .45s var(--ease)}
 
@@ -136,7 +144,23 @@ body.intro{overflow:hidden}
 .ch b{font-size:16px;font-weight:600;overflow-wrap:anywhere}
 .chip{flex:none;font-size:12px;color:var(--text-3)}
 .chip.ok{color:var(--green-soft)}
-audio{display:block;width:100%;height:34px;margin-top:10px;color-scheme:dark}
+button.chip.ok{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;background:rgba(31,138,91,.16);border:1px solid rgba(31,138,91,.45);font-size:12px;font-weight:600;transition:background .2s}
+button.chip.ok:hover{background:rgba(31,138,91,.26)}
+button.chip.ok::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .3s var(--ease)}
+button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1px,-1px)}
+.fbp{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.fbp[hidden]{display:none}
+.fbp h4{font:500 11px var(--mono);letter-spacing:.18em;color:var(--text-3);margin-bottom:10px}
+/* 卡片播放器：播放键 + 波形 + 时间；波形可点、可拖 */
+.cp{display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:center;margin-top:14px}
+.cp .pb{width:40px;height:40px;border-radius:50%;background:var(--cta-bg);color:#0a0a0a;display:grid;place-items:center;transition:transform .2s var(--ease),opacity .2s}
+.cp .pb:active{transform:scale(.92)}
+.cp .pb[disabled]{opacity:.35}
+.cp .pb svg{width:14px;height:14px;fill:currentColor}
+.cp .wv{min-width:0}
+.cp canvas{display:block;width:100%;height:44px;cursor:pointer;touch-action:none}
+.cp .tm{display:flex;justify-content:space-between;margin-top:4px;font:500 11px var(--mono);color:var(--text-3);font-variant-numeric:tabular-nums}
+.cp .tm i{font-style:normal}
 .ov{margin-top:12px;font-size:14px;line-height:1.7;white-space:pre-wrap}
 .tl{margin-top:8px}
 .tl button{display:grid;grid-template-columns:44px 1fr;gap:10px;width:100%;text-align:left;font-size:14px;line-height:1.6;padding:7px 0}
@@ -158,6 +182,7 @@ audio{display:block;width:100%;height:34px;margin-top:10px;color-scheme:dark}
 </section>
 
 <main>
+  <button class="notice" id="notice" type="button" hidden></button>
   <form id="form" autocomplete="off" novalidate>
     <div class="group">
       <div class="row" style="--k:0"><label class="fl"><input id="n" maxlength="20" placeholder=" "><span>艺名</span></label></div>
@@ -172,6 +197,15 @@ audio{display:block;width:100%;height:34px;margin-top:10px;color-scheme:dark}
     <input id="file" type="file" accept="audio/*,.mp3,.m4a,.wav,.aif,.aiff,.flac" hidden>
     <button class="go idle" id="go" type="submit" style="--k:5">投递</button>
     <div class="err" id="err" role="alert"></div>
+    <button class="find" id="findBtn" type="button">已经投递过？查看反馈</button>
+    <div class="fbox" id="fbox" hidden>
+      <div class="group">
+        <div class="row"><label class="fl"><input id="fn" maxlength="20" placeholder=" "><span>投递时的艺名</span></label></div>
+        <div class="row"><label class="fl"><input id="ft" maxlength="60" placeholder=" "><span>投递时的歌名</span></label></div>
+      </div>
+      <button class="go" id="fgo" type="button" style="opacity:1">查看反馈</button>
+      <div class="err" id="ferr" role="alert"></div>
+    </div>
   </form>
 
   <div class="done" id="ok" hidden>
@@ -207,7 +241,10 @@ const parts = [...h1.childNodes]; h1.textContent = '';
 parts.forEach(nd => { if (nd.nodeType === 1) { const w = el('span', nd.className); split(nd, w); h1.append(w); } else split(nd, h1); });
 // 开场编排：标在屏幕正中、微微转着画出来（同 CU 主页）→ 移到标题上方 → 标题浮出 → 表单最后出来 → 标退成底纹等你填写
 const B = document.body, mark = $('#mark');
-if (REDUCE) { B.classList.add('drawing', 'titled', 'ready'); $('#hero').classList.add('settled'); progress(); }
+// 点开反馈链接的人（?t=）不看开场：直接落在自己的投递和反馈上，投递表单排在后面
+const FB = new URLSearchParams(location.search).get('t');
+if (FB) { $('main').insertBefore($('#mine'), $('#notice')); $('#mine').style.marginTop = '0'; }
+if (REDUCE || FB) { B.classList.add('drawing', 'titled', 'ready'); $('#hero').classList.add('settled'); setTimeout(progress, 0); $('#hero').style.paddingBottom = '28px'; }   // progress 用到后面才声明的变量，放到下一拍再调
 else {
   B.classList.add('intro'); scrollTo(0, 0);
   const r = mark.getBoundingClientRect(), dy = innerHeight / 2 - (r.top + r.height / 2), sc = Math.min(1.55, (innerWidth * .62) / r.width);
@@ -329,6 +366,21 @@ $('#again').onclick = () => {
   setTimeout(() => { o.hidden = true; $('#form').hidden = false; $('#status').classList.remove('on'); p2.style.strokeDashoffset = 1.06; progress(); $('#n').focus({ preventScroll: true }); }, 400);
 };
 
+/* 找回反馈：换设备、清了浏览器、没存链接，都能用投递时的艺名 + 歌名找回（只能找回已发布的） */
+$('#findBtn').onclick = () => { const b = $('#fbox'); b.hidden = !b.hidden; if (!b.hidden) setTimeout(() => $('#fn').focus({ preventScroll: true }), 50); };
+const doFind = async () => {
+  const n = $('#fn').value.trim(), t = $('#ft').value.trim(), err = $('#ferr'); err.textContent = '';
+  if (!n || !t) { err.textContent = '请填写艺名和歌名。'; return; }
+  $('#fgo').disabled = true;
+  try {
+    const j = await (await fetch(API + '/demo/find?' + new URLSearchParams({ n, t }))).json();
+    if (j.ok && j.token) { const ts = tokens(); if (!ts.includes(j.token)) ts.unshift(j.token); store.set('demo:tokens', JSON.stringify(ts.slice(0, 10))); $('#fbox').hidden = true; await load(); $('#mine').scrollIntoView({ behavior: 'smooth' }); }
+    else err.textContent = j.e === 'rate' ? '操作太频繁，稍后再试。' : '没有找到已发布的反馈。艺名和歌名需与投递时一致；如果还没收到反馈，说明还没发布。';
+  } catch (e) { err.textContent = '网络不稳，请稍后再试。'; }
+  $('#fgo').disabled = false;
+};
+$('#fgo').onclick = doFind; [$('#fn'), $('#ft')].forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); doFind(); } }));
+
 /* 我的投递 */
 const STATUS = { new: '已收到', heard: '已收到', done: '反馈已发布' };
 async function load() {
@@ -339,21 +391,80 @@ async function load() {
   rows.sort((a, b) => b.ts - a.ts);
   const box = $('#list'); box.textContent = ''; rows.forEach(d => box.append(card(d)));
   $('#mine').hidden = !rows.length;
-  if (q && rows.length) setTimeout(() => $('#mine').scrollIntoView({ behavior: 'smooth' }), 2800);
+  const pubN = rows.filter(d => d.pub).length, nt = $('#notice');
+  nt.hidden = !pubN || !!FB; if (pubN && !FB) { nt.textContent = '你有 ' + pubN + ' 条反馈已发布，点这里查看'; nt.onclick = () => $('#mine').scrollIntoView({ behavior: 'smooth' }); }
+}
+function sniff(u) {
+  const at = (a, o = 0) => a.every((v, i) => u[o + i] === v);
+  if (at([82, 73, 70, 70])) return 'audio/wav'; if (at([73, 68, 51]) || (u[0] === 255 && (u[1] & 224) === 224)) return 'audio/mpeg';
+  if (at([102, 116, 121, 112], 4)) return 'audio/mp4'; if (at([102, 76, 97, 67])) return 'audio/flac'; if (at([79, 103, 103, 83])) return 'audio/ogg'; if (at([70, 79, 82, 77])) return 'audio/aiff'; return '';
+}
+// 先把音频整个取下来、按文件头认格式再播：这样不管当初上传时格式标成什么，都放得出来；也能画出波形
+function player(src) {
+  const box = el('div', 'cp'), pb = el('button', 'pb'); pb.type = 'button'; pb.disabled = true; pb.setAttribute('aria-label', '播放');
+  pb.innerHTML = '<svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>';
+  const wv = el('div', 'wv'), cv = document.createElement('canvas'), tm = el('div', 'tm'), t1 = el('i', '', '加载中…'), t2 = el('i', '', '');
+  tm.append(t1, t2); wv.append(cv, tm); box.append(pb, wv);
+  let a = null, peaks = null, grow = 0, raf = 0;
+  const setIcon = on => { pb.innerHTML = on ? '<svg viewBox="0 0 12 12"><path d="M2 1h3v10H2zM7 1h3v10H7z"/></svg>' : '<svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>'; };
+  const draw = () => {
+    const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w) return;
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    const dur = a && isFinite(a.duration) ? a.duration : 0, at = dur ? a.currentTime / dur : 0, n = Math.floor(w / 4.5), mid = h / 2;
+    for (let i = 0; i < n; i++) {
+      let v = .06; if (peaks) { const x = Math.floor(i / n * peaks.length), y = Math.max(x + 1, Math.floor((i + 1) / n * peaks.length)); let m = 0; for (let k = x; k < y; k++) m = Math.max(m, peaks[k]); v = Math.max(.06, m * grow); }
+      const bh = Math.max(2, v * (h - 4)); g.fillStyle = (i + .5) / n <= at ? '#f0f0f0' : 'rgba(240,240,240,.3)';
+      g.beginPath(); if (g.roundRect) g.roundRect(i * 4.5 + .5, mid - bh / 2, 3, bh, 1.4); else g.rect(i * 4.5 + .5, mid - bh / 2, 3, bh); g.fill();
+    }
+    if (dur) { t1.textContent = clock(a.currentTime); t2.textContent = clock(dur); }
+  };
+  const tick = () => { draw(); if (a && !a.paused) raf = requestAnimationFrame(tick); };
+  const fail = () => { t1.textContent = '音频加载失败，请刷新重试'; };
+  (async () => {
+    try {
+      const r = await fetch(src); if (!r.ok) throw 0;
+      const buf = await r.arrayBuffer(), type = sniff(new Uint8Array(buf.slice(0, 12))) || (r.headers.get('content-type') || 'audio/mpeg');
+      a = new Audio(URL.createObjectURL(new Blob([buf], { type }))); a.preload = 'auto';
+      a.onloadedmetadata = () => { draw(); }; a.onended = () => { setIcon(false); draw(); };
+      a.onplay = () => { setIcon(true); cancelAnimationFrame(raf); tick(); }; a.onpause = () => { setIcon(false); cancelAnimationFrame(raf); draw(); };
+      a.onerror = fail; pb.disabled = false; t1.textContent = '0:00'; draw();
+      try { const AC = window.AudioContext || window.webkitAudioContext, ac = new AC(); const ab = await ac.decodeAudioData(buf.slice(0)); ac.close && ac.close();
+        const ch = ab.getChannelData(0), N = 200, st = Math.max(1, Math.floor(ch.length / N)), out = [];
+        for (let i = 0; i < N; i++) { let m = 0; for (let j = i * st, e = Math.min(ch.length, j + st); j < e; j += 24) m = Math.max(m, Math.abs(ch[j])); out.push(m); }
+        const sorted = out.slice().sort((x, y) => x - y), top = sorted[Math.floor(N * .98)] || sorted[N - 1] || 1; peaks = out.map(v => Math.min(1, v / top));
+        const t0 = performance.now(); const step = now => { const k = Math.min(1, (now - t0) / 700); grow = 1 - Math.pow(1 - k, 3); draw(); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step);
+      } catch (e) { peaks = Array.from({ length: 60 }, (_, i) => .35 + .3 * Math.abs(Math.sin(i * .7))); grow = 1; draw(); }
+    } catch (e) { fail(); }
+  })();
+  pb.onclick = () => { if (!a) return; a.paused ? a.play().catch(() => {}) : a.pause(); };
+  let drag = false; const at = e => { const r = cv.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
+  cv.onpointerdown = e => { if (!a || !isFinite(a.duration)) return; drag = true; cv.setPointerCapture(e.pointerId); a.currentTime = at(e) * a.duration; draw(); };
+  cv.onpointermove = e => { if (drag && a) { a.currentTime = at(e) * a.duration; draw(); } }; cv.onpointerup = () => { drag = false; };
+  addEventListener('resize', draw);
+  box.seek = t => { if (!a) return; a.currentTime = t; a.play().catch(() => {}); };
+  box.audio = () => a; box.draw = draw;
+  return box;
 }
 function card(d) {
-  const c = el('div', 'card'), h = el('div', 'ch');
-  h.append(el('b', '', d.title), el('span', 'chip' + (d.pub ? ' ok' : ''), d.pub ? STATUS.done : STATUS[d.status] || '已收到'));
-  c.append(h);
-  const a = document.createElement('audio'); a.controls = true; a.preload = 'none'; a.src = API + '/demo/a?id=' + d.id + '&t=' + encodeURIComponent(d.tok); c.append(a);
+  const c = el('div', 'card'), h = el('div', 'ch'), n = d.notes ? d.notes.length : 0;
+  let chip;
+  if (d.pub) { chip = el('button', 'chip ok', '反馈已发布' + (n ? ' · ' + n + ' 条' : '')); chip.type = 'button'; chip.setAttribute('aria-expanded', 'true'); }
+  else chip = el('span', 'chip', STATUS[d.status] || '已收到');
+  h.append(el('b', '', d.title), chip); c.append(h);
+  const pl = player(API + '/demo/a?id=' + d.id + '&t=' + encodeURIComponent(d.tok)); c.append(pl);
   if (d.pub) {
-    if (d.overall) c.append(el('div', 'ov', d.overall));
-    if (d.notes && d.notes.length) {
+    const box = el('div', 'fbp'); box.append(el('h4', '', 'FEEDBACK · 点时间可以跳到那一刻'));
+    if (d.overall) box.append(el('div', 'ov', d.overall));
+    if (n) {
       const tl = el('div', 'tl');
-      d.notes.forEach(n => { const b = el('button'); b.type = 'button'; b.append(el('time', '', clock(n.t)), el('span', '', n.text)); b.onclick = () => { a.currentTime = n.t; a.play().catch(() => {}); }; tl.append(b); });
-      a.addEventListener('timeupdate', () => { let on = -1; d.notes.forEach((n, i) => { if (a.currentTime >= n.t - .2) on = i; }); [...tl.children].forEach((b, i) => b.classList.toggle('on', i === on)); });
-      c.append(tl);
+      d.notes.forEach(x => { const b = el('button'); b.type = 'button'; b.append(el('time', '', clock(x.t)), el('span', '', x.text)); b.onclick = () => pl.seek(x.t); tl.append(b); });
+      setInterval(() => { const a = pl.audio(); if (!a) return; let on = -1; d.notes.forEach((x, i) => { if (a.currentTime >= x.t - .2) on = i; }); [...tl.children].forEach((b, i) => b.classList.toggle('on', i === on)); }, 250);
+      box.append(tl);
     }
+    if (!d.overall && !n) box.append(el('div', 'ov', '已发布，暂时没有文字内容。'));
+    c.append(box);
+    chip.onclick = () => { const open = chip.getAttribute('aria-expanded') !== 'true'; chip.setAttribute('aria-expanded', String(open)); box.hidden = !open; };
   }
   return c;
 }

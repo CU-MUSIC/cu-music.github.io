@@ -313,7 +313,7 @@ function bindPlayer(d) {
   audio = new Audio(); audio.preload = 'auto'; url = null; peaks = null; grow = 1; cur.lu = null;
   wireGain();
   const ico = $('#ico'); const setIco = p => ico.innerHTML = '<path d="' + p + '"/>'; setIco(PLAY);
-  api('/demo/a?id=' + d.id).then(r => r.blob()).then(async b => {
+  api('/demo/a?id=' + d.id).then(async r => { const buf = await r.arrayBuffer(), u = new Uint8Array(buf.slice(0, 12)), at = (x, o = 0) => x.every((v, i) => u[o + i] === v); const ty = at([82, 73, 70, 70]) ? 'audio/wav' : (at([73, 68, 51]) || (u[0] === 255 && (u[1] & 224) === 224)) ? 'audio/mpeg' : at([102, 116, 121, 112], 4) ? 'audio/mp4' : at([102, 76, 97, 67]) ? 'audio/flac' : at([79, 103, 103, 83]) ? 'audio/ogg' : (r.headers.get('content-type') || 'audio/mpeg'); return new Blob([buf], { type: ty }); }).then(async b => {
     if (!cur || cur.id !== d.id) return;
     url = URL.createObjectURL(b); audio.src = url; $('#ld').textContent = '';
     try { // 解码出波形（和播放用同一份文件）
@@ -408,6 +408,7 @@ function renderMeta() {
   const d = cur.d, s = $('#meta'); if (!s) return; s.textContent = '';
   s.append(el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode(d.who + (d.role ? ' · ' + ROLE[d.role] : '') + ' · ' + ago(d.ts)));
   if (d.link) { const a = el('a', '', '主页 ↗'); a.href = d.link; a.target = '_blank'; a.rel = 'noopener'; a.className = 'lnk'; s.append(a); }
+  if (d.pub && d.token) { const cp = el('button', '', '复制反馈链接'); cp.type = 'button'; cp.onclick = async () => { try { await navigator.clipboard.writeText(location.origin + '/chefdao/demo/?t=' + d.token); cp.textContent = '已复制'; setTimeout(() => cp.textContent = '复制反馈链接', 1800); } catch (e) { cp.textContent = location.origin + '/chefdao/demo/?t=' + d.token; } }; s.append(cp); }
   const sw = el('button', '', d.kind === 'mem' ? '改为访客' : '改为刀门会员'); sw.type = 'button'; sw.onclick = async () => { await api('/demo/kind', { id: d.id, mem: d.kind === 'mem' ? 0 : 1 }); load(true); };
   s.append(sw);
   const b = $('#brief'); if (b) { b.textContent = d.note || ''; b.hidden = !d.note; }
@@ -436,8 +437,10 @@ function renderScore() {
 }
 async function publish() {
   const d = cur.d; $('#pub').disabled = true;
-  await api('/demo/pub', { id: d.id, overall: $('#ov').value.trim(), pub: d.pub ? 0 : 1 });
+  const willPub = !d.pub;
+  await api('/demo/pub', { id: d.id, overall: $('#ov').value.trim(), pub: willPub ? 1 : 0 });
   await load(true); $('#pub').disabled = false;
+  if (willPub && cur && cur.d && cur.d.token) { const link = location.origin + '/chefdao/demo/?t=' + cur.d.token; let ok = true; try { await navigator.clipboard.writeText(link); } catch (e) { ok = false; } $('#pubh').textContent = ok ? '已发布，反馈链接已复制，直接发给对方' : '已发布，链接：' + link; }
 }
 async function remove() {
   if (!confirm('删除这首投递和音频？')) return;
