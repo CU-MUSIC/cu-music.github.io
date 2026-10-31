@@ -859,7 +859,7 @@ $('#overall').addEventListener('change', () => drawOverall());
 /* ───────── 发送 ───────── */
 const hud = (msg, ms = 2600) => { const h = $('#hud'); h.textContent = msg; h.classList.add('show'); clearTimeout(hud.t); hud.t = setTimeout(() => h.classList.remove('show'), ms); };
 // 艺人确认当前版本没有问题、可以准备交付（按版本记，换了新版本要重新确认；你自己的设备不显示按钮，只显示谁确认了）
-const OKS = {}; let okLoaded = false, okAll = null;
+const OKS = {}; let okLoaded = false, okAll = null, OKN = { need: 1, got: 0 };
 // 交付政策：每版交付后超过 72 小时仍无反馈（周末照常计时），视为无意见。只对待审听的最新版本、且这一版还没写过意见时计时
 const winH = () => (S.prog && (S.prog.r || 0) >= 3 ? 24 : 72);   // 前三轮宽松 72 小时，第 4 轮起压缩到 24 小时
 const autoInfo = ext => {
@@ -878,12 +878,12 @@ async function renderOk() {
     bar.hidden = !mine.length && !ai; if (ai) bar.className = 'okbar auto' + (ai.left <= 0 ? ' done' : '');
     bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过反馈时限无意见，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left) + (ai.ext ? ' · 已延长 24 小时' : '')) : ''; return;
   }
-  if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid, { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); } catch (e) {} }
+  if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid + '&v=' + encodeURIComponent(cur.ver), { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); OKN = { need: j.need || 1, got: j.got || 0 }; } catch (e) {} }
   if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>'; return; }
   const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 4 ? '第 ' + rn + ' 轮 · 反馈时限 24 小时' : '';
   const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
   bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');
-  bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题，可以准备交付</span><button type="button" class="okundo">撤回</button>'
+  bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题' + (OKN.need > 1 ? '，等其他歌手也确认后进入交付结算' : '，可以准备交付') + '</span><button type="button" class="okundo">撤回</button>'
     : auto ? '<span>✓ 超过反馈时限无意见，已视为没有意见，进入母带交付流程。有想法随时写在下面，会作为交付后微调处理</span>'
     : (() => { const hh = hint && !on ? '<div class="okhint">' + hint + '</div>' : '', txt = leftTxt(ai ? ai.left : 0) + '后自动确认' + (ai && ai.ext ? ' · 已延长 24 小时' : ''),
         f = ai ? Math.max(0, Math.min(1, ai.left / (winH() * 36e5 + (ai.ext ? 864e5 : 0)))) : 0;
