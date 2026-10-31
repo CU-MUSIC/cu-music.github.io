@@ -44,6 +44,16 @@ a{color:inherit}
 .tabs button:hover{color:var(--text)}
 .tabs button[aria-pressed=true]{background:var(--fill-2);color:var(--text)}
 #list{display:grid;gap:6px}
+.ctrls{display:flex;gap:8px;align-items:center;margin:0 0 12px}
+.seg2{display:flex;flex:1;padding:3px;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.seg2 button{flex:1;font-size:12px;color:var(--text-3);border-radius:7px;padding:5px 4px;transition:background .25s var(--ease),color .25s}
+.seg2 button:hover{color:var(--text)}
+.seg2 button[aria-pressed=true]{background:var(--fill-2);color:var(--text)}
+.ctrls select{font-size:12px;padding:6px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border)}
+.it{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.scb{flex:none;font:600 12px var(--mono);color:var(--text-2);font-style:normal;font-variant-numeric:tabular-nums}
+.scb.hi{color:var(--green-soft)}
+.scb.no{color:var(--text-3);font-weight:400}
 .item{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;transition:border-color .25s var(--ease),background .25s}
 .item:hover{border-color:var(--border-hover)}
 .item.on{background:var(--lift);border-color:rgba(255,255,255,.22)}
@@ -124,6 +134,15 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 .login input:focus{border-color:var(--border-hover)}
 
 /* 打分 / 入选 */
+.scwrap{display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.radar{flex:none;width:250px;height:250px;overflow:visible}
+.radar text{font:500 11px var(--font);fill:var(--text-2)}
+.radar .v{font:600 11px var(--mono);fill:var(--text)}
+.radar polygon.g{fill:none;stroke:var(--border-hover);stroke-width:1}
+.radar polygon.g.o{stroke:rgba(255,255,255,.3)}
+.radar line{stroke:var(--border);stroke-width:1}
+.radar polygon.d{fill:rgba(31,138,91,.28);stroke:#2fae7a;stroke-width:2;stroke-linejoin:round;transition:all .35s var(--ease)}
+.radar circle{fill:#2fae7a;stroke:#080808;stroke-width:2}
 .score{display:grid;gap:6px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
 .srow{display:flex;align-items:center;gap:14px}
 .sname{width:4.5em;color:var(--text-2);font-size:13px}
@@ -165,7 +184,11 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 <div class="wrap" id="app" hidden>
   <aside class="side">
     <div class="tabs" id="tabs">
-      <button data-f="all" aria-pressed="true">全部</button><button data-f="mem" aria-pressed="false">刀门</button><button data-f="pub" aria-pressed="false">访客</button><button data-f="new" aria-pressed="false">待听</button><button data-f="pick" aria-pressed="false">入选</button><button data-f="vis" aria-pressed="false">访问</button>
+      <button data-f="all" aria-pressed="true">全部</button><button data-f="mem" aria-pressed="false">刀门</button><button data-f="pub" aria-pressed="false">访客</button><button data-f="pick" aria-pressed="false">入选</button><button data-f="vis" aria-pressed="false">访问</button>
+    </div>
+    <div class="ctrls">
+      <div class="seg2" id="hf"><button data-h="all" aria-pressed="true">全部</button><button data-h="new" aria-pressed="false">没听过</button><button data-h="heard" aria-pressed="false">听过</button></div>
+      <select id="so" aria-label="排序"><option value="time">最新</option><option value="hi">评分高→低</option><option value="lo">评分低→高</option></select>
     </div>
     <div id="list"></div>
   </aside>
@@ -181,7 +204,7 @@ const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { retu
 let KEY = store.get('insights:key'), D = [], cur = null, filter = 'all';
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const ROLE = { singer: '歌手', rap: '说唱', other: '其他', artist: '艺人', mixer: '混音师', beat: 'Beatmaker' };
-const CRIT = [['w', '作品力'], ['o', '产出'], ['i', '影响力'], ['c', '配合度']];
+const CRIT = [['w', '作品力'], ['v', '嗓音'], ['x', '表现力'], ['i', '影响力'], ['o', '产出'], ['c', '配合度']];   // 顺时针，上方从作品力开始
 const total = sc => CRIT.reduce((t, [k]) => t + (+(sc || {})[k] || 0), 0);
 const clock = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 const ago = ts => { const m = Math.floor((Date.now() - ts) / 6e4); return m < 60 ? Math.max(1, m) + ' 分钟前' : m < 1440 ? Math.floor(m / 60) + ' 小时前' : Math.floor(m / 1440) + ' 天前'; };
@@ -200,20 +223,27 @@ $('#key').onkeydown = e => { if (e.key === 'Enter') $('#keygo').click(); };
 async function load(keep) {
   const j = await (await api('/demo/all')).json();
   if (!j.ok) return;
-  D = j.demos; $('#cnt').textContent = D.filter(d => d.status === 'new').length ? D.filter(d => d.status === 'new').length + ' 首待听' : '';
+  D = j.demos; $('#cnt').textContent = D.filter(d => d.status === 'new').length ? D.filter(d => d.status === 'new').length + ' 首没听过' : '';
   renderList();
   if (keep && cur) { const d = D.find(x => x.id === cur.id); if (d) { cur.d = d; renderNotes(); renderMeta(); renderScore(); } }
 }
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { filter = b.dataset.f; document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (filter === 'vis') return showVisits(); renderList(); });
+let heardF = 'all', sortM = 'time';
+const nrated = d => CRIT.filter(([k]) => (d.scores || {})[k] > 0).length;
+document.querySelectorAll('#hf button').forEach(b => b.onclick = () => { heardF = b.dataset.h; document.querySelectorAll('#hf button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderList(); });
+$('#so').onchange = e => { sortM = e.target.value; renderList(); };
 function renderList() {
   const box = $('#list'); box.textContent = '';
+  { const nn = D.filter(d => d.status === 'new').length; $('#cnt').textContent = nn ? nn + ' 首没听过' : ''; }
   if (filter === 'vis') return;
-  const rows = D.filter(d => filter === 'all' || (filter === 'new' ? d.status === 'new' : filter === 'pick' ? d.pick > 0 : d.kind === filter));
-  if (!rows.length) box.append(el('div', 'empty', '还没有投递'));
+  let rows = D.filter(d => (filter === 'all' || (filter === 'pick' ? d.pick > 0 : d.kind === filter)) && (heardF === 'all' || (heardF === 'new' ? d.status === 'new' : d.status !== 'new')));
+  if (sortM !== 'time') rows = rows.slice().sort((a, b) => { const x = nrated(a) ? total(a.scores) : -1, y = nrated(b) ? total(b.scores) : -1; if (x < 0 && y < 0) return b.ts - a.ts; if (x < 0) return 1; if (y < 0) return -1; return sortM === 'hi' ? y - x || b.ts - a.ts : x - y || b.ts - a.ts; });
+  if (!rows.length) box.append(el('div', 'empty', '没有符合条件的投递'));
   rows.forEach(d => {
     const b = el('button', 'item' + (cur && cur.id === d.id ? ' on' : '')); b.type = 'button';
-    b.append(el('b', '', d.title));
-    const s = el('span'); s.append(el('i', 'dot ' + (d.pub ? 'done' : d.status === 'heard' ? 'heard' : '')), el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode((d.pick ? '★ ' : '') + d.who + (d.role ? ' · ' + ROLE[d.role] : '') + ' · ' + ago(d.ts) + (total(d.scores) ? ' · ' + total(d.scores) + ' 分' : '') + (d.notes.length ? ' · ' + d.notes.length + ' 条' : '')));
+    const top = el('div', 'it'); top.append(el('b', '', d.title));
+    const t = total(d.scores), has = nrated(d) > 0, sb = el('i', 'scb' + (has ? (t >= 22 ? ' hi' : '') : ' no'), has ? t + '/30' : '未评分'); top.append(sb); b.append(top);
+    const s = el('span'); s.append(el('i', 'dot ' + (d.pub ? 'done' : d.status === 'heard' ? 'heard' : '')), el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode((d.pick ? '★ ' : '') + d.who + ' · ' + ago(d.ts) + (d.status === 'new' ? ' · 没听过' : '') + (d.notes.length ? ' · ' + d.notes.length + ' 条' : '')));
     b.append(s); b.onclick = () => open(d); box.append(b);
   });
 }
@@ -330,7 +360,7 @@ function bindPlayer(d) {
   }).catch(() => { $('#ld').textContent = '音频加载失败'; $('#ldw').textContent = '音频加载失败'; });
   audio.onloadedmetadata = () => { $('#dur').textContent = '/ ' + clock(audio.duration); drawAxis(); drawWave(); };
   const tick = () => { const t = audio.currentTime || 0; $('#cur').textContent = clock(t); $('#add').textContent = '在 ' + clock(t) + ' 添加'; drawWave(); raf = requestAnimationFrame(tick); };
-  audio.onplay = () => { setIco(PAUSE); cancelAnimationFrame(raf); tick(); }; audio.onpause = () => { setIco(PLAY); cancelAnimationFrame(raf); tick(); cancelAnimationFrame(raf); };
+  audio.onplay = () => { setIco(PAUSE); cancelAnimationFrame(raf); tick(); if (cur && cur.d && cur.d.status === 'new') { const dd = cur.d; dd.status = 'heard'; renderList(); api('/demo/seen', { id: dd.id }).catch(() => {}); } }; audio.onpause = () => { setIco(PLAY); cancelAnimationFrame(raf); tick(); cancelAnimationFrame(raf); };
   audio.onended = () => setIco(PLAY);
   $('#play').onclick = toggle;
   document.querySelectorAll('.sk').forEach(b => b.onclick = () => skip(+b.dataset.s));
@@ -417,18 +447,37 @@ function renderMeta() {
 }
 
 /* 主厨之选：四项 1–5 分 + 入选（最多 5 席） */
+const NS = 'http://www.w3.org/2000/svg';
+const sv = (tag, attrs, txt) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (txt != null) e.textContent = txt; return e; };
+// 六边形雷达图：外圈 = 5 分，里面每圈 1 分；上方从「作品力」开始顺时针
+function radar(sc) {
+  const C = 115, R = 78, n = CRIT.length, pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
+  const svg = sv('svg', { viewBox: '0 0 230 230', class: 'radar' });
+  for (let lv = 1; lv <= 5; lv++) svg.append(sv('polygon', { class: 'g' + (lv === 5 ? ' o' : ''), points: CRIT.map((_, i) => pt(i, R * lv / 5).join(',')).join(' ') }));
+  CRIT.forEach((_, i) => { const [x, y] = pt(i, R); svg.append(sv('line', { x1: C, y1: C, x2: x, y2: y })); });
+  const val = i => Math.max(0, Math.min(5, +(sc || {})[CRIT[i][0]] || 0));
+  if (CRIT.some((_, i) => val(i) > 0)) {
+    svg.append(sv('polygon', { class: 'd', points: CRIT.map((_, i) => pt(i, R * Math.max(.04, val(i)) / 5).join(',')).join(' ') }));
+    CRIT.forEach((_, i) => { if (val(i) > 0) { const [x, y] = pt(i, R * val(i) / 5); svg.append(sv('circle', { cx: x, cy: y, r: 3.4 })); } });
+  }
+  CRIT.forEach(([k, name], i) => { const [x, y] = pt(i, R + 27), anchor = Math.abs(x - C) < 4 ? 'middle' : x > C ? 'start' : 'end'; const tx = sv('text', { x: x + (anchor === 'start' ? -2 : anchor === 'end' ? 2 : 0), y: y + 4, 'text-anchor': anchor }, name); svg.append(tx);
+    if (val(i) > 0) svg.append(sv('text', { x: tx.getAttribute('x'), y: y + 17, 'text-anchor': anchor, class: 'v' }, String(val(i)))); });
+  return svg;
+}
 function renderScore() {
   const box = $('#score'); if (!box || !cur) return; box.textContent = '';
   const d = cur.d, sc = { ...(d.scores || {}) };
+  const wrap = el('div', 'scwrap'), rows = el('div', 'rows');
+  wrap.append(radar(sc), rows); box.append(wrap);
   CRIT.forEach(([k, name]) => {
     const r = el('div', 'srow'); r.append(el('span', 'sname', name));
     const dots = el('div', 'dots');
     for (let v = 1; v <= 5; v++) { const b = el('button', 'dot5' + ((sc[k] || 0) >= v ? ' on' : ''), String(v)); b.type = 'button';
-      b.onclick = async () => { sc[k] = sc[k] === v ? 0 : v; d.scores = sc; renderScore(); await api('/demo/score', { id: d.id, scores: sc }); load(true); };
+      b.onclick = async () => { sc[k] = sc[k] === v ? 0 : v; d.scores = sc; renderScore(); renderList(); await api('/demo/score', { id: d.id, scores: sc }); load(true); };
       dots.append(b); }
-    r.append(dots); box.append(r);
+    r.append(dots); rows.append(r);
   });
-  box.append(el('div', 'stotal', '合计 ' + total(sc) + ' / 20'));
+  rows.append(el('div', 'stotal', '合计 ' + total(sc) + ' / 30'));
   const used = D.filter(x => x.pick > 0).length, pb = $('#pick');
   pb.textContent = d.pick ? '★ 已入选 · 取消' : '入选主厨之选'; pb.className = 'btn' + (d.pick ? '' : ' ghost');
   pb.disabled = !d.pick && used >= 5;
