@@ -108,6 +108,19 @@ audio{display:block;width:100%;height:40px;margin-top:14px;color-scheme:dark}
 .tl button:hover{background:var(--fill)}
 .tl time{font:500 13px/1.9 var(--mono);color:var(--text-3)}
 .tl button.on time{color:var(--text)}
+/* 三个事实：大数字，不写解释 */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:28px;background:var(--hair);border-radius:16px;overflow:hidden}
+.facts div{background:var(--bg);padding:16px 12px 14px;text-align:left}
+.facts b{display:block;font-size:30px;line-height:1.1;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.facts b small{font-size:15px;font-weight:500;letter-spacing:0;margin-left:2px;color:var(--text-2)}
+.facts span{display:block;margin-top:6px;font-size:13px;color:var(--text-3);line-height:1.4}
+/* 入选墙：5 个席位 */
+.wall{margin-top:56px}
+.wall h2{display:flex;justify-content:space-between;align-items:baseline;font:500 12px/1 var(--mono);letter-spacing:.22em;color:var(--text-3);text-transform:uppercase;margin-bottom:16px}
+.wall h2 em{font-style:normal;letter-spacing:.12em;text-transform:none}
+.seats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.seat{aspect-ratio:1;max-width:100%;border-radius:50%;border:1px dashed rgba(236,234,230,.2);display:grid;place-items:center;font:500 12px/1 var(--mono);color:var(--text-3);letter-spacing:.06em}
+@media (max-width:420px){.facts b{font-size:26px}}
 [hidden]{display:none!important}
 @media (max-width:420px){h1{font-size:40px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.rise{opacity:1;transform:none}#intro{display:none}}
@@ -124,7 +137,8 @@ audio{display:block;width:100%;height:40px;margin-top:14px;color-scheme:dark}
 
   <div id="mine" hidden><div class="sec" style="margin-top:44px"><h2>我的投递</h2><div id="list"></div></div></div>
 
-  <div class="rise" id="head" style="margin-top:56px"><div class="kick" style="margin-bottom:12px">Chef's Table</div><h1 id="h1">主厨之选</h1></div>
+  <div class="rise" id="head" style="margin-top:56px"><div class="kick" style="margin-bottom:12px">Chef's Table</div><h1 id="h1">主厨之选</h1>
+    <div class="facts"><div><b>5<small>席</small></b><span>全年名额</span></div><div><b>1<small>首</small></b><span>免费混音</span></div><div><b>5<small>折</small></b><span>26.12 – 27.12</span></div></div></div>
 
   <section id="formsec" class="sec" style="margin-top:30px">
     <label class="field rise" style="margin-top:0"><span>艺名</span><input id="n" type="text" maxlength="20" placeholder="你的艺名" autocomplete="off"></label>
@@ -139,6 +153,9 @@ audio{display:block;width:100%;height:40px;margin-top:14px;color-scheme:dark}
       <span id="dt">选择音频，或拖到这里</span><small>mp3 · m4a · wav</small></label>
     <div class="rise"><button class="btn" id="go" type="button">投递</button><div class="err" id="err" role="alert"></div></div>
   </section>
+
+  <section class="wall rise" id="wall"><h2>入选<em>首批 2026.12 公布</em></h2>
+    <div class="seats"><div class="seat">01</div><div class="seat">02</div><div class="seat">03</div><div class="seat">04</div><div class="seat">05</div></div></section>
 
   <section id="ok" class="done" hidden>
     <h3>收到了。</h3>
