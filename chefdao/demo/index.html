@@ -430,7 +430,7 @@ function player(src) {
   return box;
 }
 // 这首歌的多边形（只有发布时选了「评分条 + 六边形」才会带上）
-const SONGK = [['m', '旋律'], ['l', '歌词'], ['s', '演唱'], ['r', '录音'], ['a', '编曲'], ['f', '风格融合'], ['p', '传播性']];
+const SONGK = [['m', '旋律'], ['l', '歌词'], ['s', '演唱'], ['k', '伴奏匹配'], ['r', '录音'], ['a', '编曲'], ['f', '风格融合'], ['p', '传播性']];
 function radar(sc) {
   const NS = 'http://www.w3.org/2000/svg', mk = (t, at, tx) => { const e = document.createElementNS(NS, t); for (const k in at) e.setAttribute(k, at[k]); if (tx != null) e.textContent = tx; return e; };
   const C = 110, R = 70, n = SONGK.length, pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };

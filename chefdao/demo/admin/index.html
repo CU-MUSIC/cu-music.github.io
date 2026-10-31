@@ -225,9 +225,9 @@ const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { retu
 let KEY = store.get('insights:key'), D = [], cur = null, filter = 'all';
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const ROLE = { singer: '歌手', rap: '说唱', other: '其他', artist: '艺人', mixer: '混音师', beat: 'Beatmaker' };
-// 这首歌：旋律、歌词、演唱、录音、编曲（含混音问题）、风格融合、传播性（多边形，顺时针从旋律开始）；商业：当前粉丝、未来潜力、市场模板、进取心、歌曲商业价值（滑块）。都是 0–10 分，滑动打分，0 = 没评
+// 这首歌：旋律、歌词、演唱、伴奏匹配（人声在这个伴奏上唱得对不对）、录音、编曲（含混音问题）、风格融合、传播性（多边形，顺时针从旋律开始）；商业：当前粉丝、未来潜力、市场模板、进取心、歌曲商业价值（滑块）。都是 0–10 分，滑动打分，0 = 没评
 const CRIT = [
-  ['m', '旋律', '歌曲'], ['l', '歌词', '歌曲'], ['s', '演唱', '歌曲'], ['r', '录音', '歌曲'], ['a', '编曲', '歌曲'], ['f', '风格融合', '歌曲'], ['p', '传播性', '歌曲'],
+  ['m', '旋律', '歌曲'], ['l', '歌词', '歌曲'], ['s', '演唱', '歌曲'], ['k', '伴奏匹配', '歌曲'], ['r', '录音', '歌曲'], ['a', '编曲', '歌曲'], ['f', '风格融合', '歌曲'], ['p', '传播性', '歌曲'],
   ['bi', '当前粉丝', '商业'], ['bg', '未来潜力', '商业'], ['bt', '市场模板', '商业'], ['bd', '进取心', '商业'], ['bv', '歌曲商业价值', '商业']];
 const SONG = CRIT.filter(c => c[2] === '歌曲'), BIZ = CRIT.filter(c => c[2] === '商业');
 const avg = (sc, set) => { const v = set.map(c => +(sc || {})[c[0]] || 0).filter(x => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
