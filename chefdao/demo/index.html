@@ -138,9 +138,6 @@ audio{display:block;width:100%;height:36px;margin-top:12px;color-scheme:dark}
 
   <section id="formsec" class="sec" style="margin-top:8px">
     <label class="field rise"><span>艺名<i>Name</i></span><input id="n" type="text" maxlength="20" placeholder="你的艺名" autocomplete="off"></label>
-    <div class="field rise"><span>身份<i>Role</i></span>
-      <div class="seg" id="role" style="--n:3"><button type="button" data-v="singer" aria-pressed="false">歌手</button><button type="button" data-v="rap" aria-pressed="false">说唱</button><button type="button" data-v="other" aria-pressed="false">其他</button></div>
-    </div>
     <div class="field rise"><span>刀门会员<i>Member</i></span>
       <div class="seg" id="seg" style="--n:2"><button type="button" data-v="1" aria-pressed="false">是</button><button type="button" data-v="0" aria-pressed="false">不是</button></div>
     </div>
@@ -167,7 +164,7 @@ const API = 'https://stats.cumusic.work', $ = s => document.querySelector(s);
 const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch (e) {} } };
 const MAX = 24 * 1024 * 1024;
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let mem = null, role = null, file = null, busy = false;
+let mem = null, file = null, busy = false;
 const LID = (() => { let v = store.get('demo:lid'); if (!/^[A-Z0-9]{6}$/.test(v || '')) { v = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join(''); store.set('demo:lid', v); } return v; })();
 const DEV = (() => { const u = navigator.userAgent; const d = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : '其他'; return d + (/MicroMessenger/.test(u) ? ' · 微信' : ''); })();
 try { fetch(API + '/demo/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid: LID, device: DEV, ref: document.referrer ? new URL(document.referrer).host : '' }), keepalive: true }); } catch (e) {}
@@ -187,7 +184,6 @@ function seg(id, on) {
   const box = $(id), btns = [...box.querySelectorAll('button')];
   btns.forEach((b, i) => b.addEventListener('click', () => { box.style.setProperty('--i', i); box.classList.add('set'); btns.forEach(x => x.setAttribute('aria-pressed', x === b)); $('#err').textContent = ''; on(b.dataset.v); }));
 }
-seg('#role', v => { role = v; });
 seg('#seg', v => { mem = v === '1'; });
 
 /* 选文件 */
@@ -215,13 +211,12 @@ $('#go').onclick = () => {
   if (busy) return;
   const n = $('#n').value.trim(), t = $('#t').value.trim(), err = $('#err');
   if (!n) return err.textContent = '请填写艺名。';
-  if (!role) return err.textContent = '请选择身份。';
   if (mem === null) return err.textContent = '请选择是否为刀门会员。';
   if (!t) return err.textContent = '请填写歌名。';
   if (!file) return err.textContent = '请选择要投递的音频。';
   err.textContent = ''; busy = true; $('#go').disabled = true; upShow(true);
   let link = $('#l').value.trim(); if (link && !/^https?:\/\//i.test(link)) { const m = link.match(/https?:\/\/\S+/i); link = m ? m[0] : ''; }
-  const q = new URLSearchParams({ n, r: role, mem: mem ? '1' : '0', lid: LID, title: t, l: link, ct: file.type || 'audio/mpeg' });
+  const q = new URLSearchParams({ n, mem: mem ? '1' : '0', lid: LID, title: t, l: link, ct: file.type || 'audio/mpeg' });
   const x = new XMLHttpRequest();
   x.open('POST', API + '/demo/up?' + q);
   x.upload.onprogress = e => { if (e.lengthComputable) goal = Math.min(.98, e.loaded / e.total); };
