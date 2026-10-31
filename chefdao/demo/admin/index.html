@@ -134,9 +134,10 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 .login input:focus{border-color:var(--border-hover)}
 
 /* 打分 / 入选 */
-.scwrap{display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.scwrap{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
 .radar{flex:none;width:250px;height:250px;overflow:visible}
 .radar text{font:500 11px var(--font);fill:var(--text-2)}
+.radar text.bz{fill:var(--green-soft)}
 .radar .v{font:600 11px var(--mono);fill:var(--text)}
 .radar polygon.g{fill:none;stroke:var(--border-hover);stroke-width:1}
 .radar polygon.g.o{stroke:rgba(255,255,255,.3)}
@@ -145,7 +146,12 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 .radar circle{fill:#2fae7a;stroke:#080808;stroke-width:2}
 .score{display:grid;gap:6px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
 .srow{display:flex;align-items:center;gap:14px}
-.sname{width:4.5em;color:var(--text-2);font-size:13px}
+.sname{width:9.5em;flex:none;color:var(--text);font-size:13px;line-height:1.35}
+.sname small{display:block;color:var(--text-3);font-size:11px}
+.sgrp{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 2px;font:500 11px var(--mono);letter-spacing:.16em;color:var(--text-3)}
+.sgrp:first-child{margin-top:0}
+.sgrp.bz{color:var(--green-soft)}
+.sgrp em{font-style:normal;letter-spacing:.04em;color:var(--text-2)}
 .dots{display:flex;gap:6px}
 .dot5{width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hover);color:var(--text-3);font:500 12px/1 var(--mono);transition:background .2s,color .2s,border-color .2s}
 .dot5:hover{border-color:var(--text-2)}
@@ -204,7 +210,11 @@ const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { retu
 let KEY = store.get('insights:key'), D = [], cur = null, filter = 'all';
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const ROLE = { singer: '歌手', rap: '说唱', other: '其他', artist: '艺人', mixer: '混音师', beat: 'Beatmaker' };
-const CRIT = [['w', '作品力'], ['v', '嗓音'], ['x', '表现力'], ['i', '影响力'], ['o', '产出'], ['c', '配合度']];   // 顺时针，上方从作品力开始
+// 三个歌曲视角 + 三个商业视角；六边形顶点从上方作品力顺时针。第三项是说明，显示在评分行下面
+const CRIT = [['w', '作品力', '歌曲', '旋律、词、结构'], ['v', '辨识度', '歌曲', '声音和风格，一听就记住'], ['x', '表现力', '歌曲', '演唱的情绪和技巧'],
+  ['i', '影响力', '商业', '现有听众和粉丝基础'], ['g', '成长空间', '商业', '一年后能到多高'], ['c', '合作度', '商业', '愿意持续出歌、好沟通']];
+const SONG = CRIT.filter(c => c[2] === '歌曲'), BIZ = CRIT.filter(c => c[2] === '商业');
+const sub = (sc, set) => set.reduce((t, c) => t + (+(sc || {})[c[0]] || 0), 0);
 const total = sc => CRIT.reduce((t, [k]) => t + (+(sc || {})[k] || 0), 0);
 const clock = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 const ago = ts => { const m = Math.floor((Date.now() - ts) / 6e4); return m < 60 ? Math.max(1, m) + ' 分钟前' : m < 1440 ? Math.floor(m / 60) + ' 小时前' : Math.floor(m / 1440) + ' 天前'; };
@@ -460,7 +470,7 @@ function radar(sc) {
     svg.append(sv('polygon', { class: 'd', points: CRIT.map((_, i) => pt(i, R * Math.max(.04, val(i)) / 5).join(',')).join(' ') }));
     CRIT.forEach((_, i) => { if (val(i) > 0) { const [x, y] = pt(i, R * val(i) / 5); svg.append(sv('circle', { cx: x, cy: y, r: 3.4 })); } });
   }
-  CRIT.forEach(([k, name], i) => { const [x, y] = pt(i, R + 27), anchor = Math.abs(x - C) < 4 ? 'middle' : x > C ? 'start' : 'end'; const tx = sv('text', { x: x + (anchor === 'start' ? -2 : anchor === 'end' ? 2 : 0), y: y + 4, 'text-anchor': anchor }, name); svg.append(tx);
+  CRIT.forEach(([k, name, grp], i) => { const [x, y] = pt(i, R + 27), anchor = Math.abs(x - C) < 4 ? 'middle' : x > C ? 'start' : 'end'; const tx = sv('text', { x: x + (anchor === 'start' ? -2 : anchor === 'end' ? 2 : 0), y: y + 4, 'text-anchor': anchor, class: grp === '商业' ? 'bz' : '' }, name); svg.append(tx);
     if (val(i) > 0) svg.append(sv('text', { x: tx.getAttribute('x'), y: y + 17, 'text-anchor': anchor, class: 'v' }, String(val(i)))); });
   return svg;
 }
@@ -469,13 +479,16 @@ function renderScore() {
   const d = cur.d, sc = { ...(d.scores || {}) };
   const wrap = el('div', 'scwrap'), rows = el('div', 'rows');
   wrap.append(radar(sc), rows); box.append(wrap);
-  CRIT.forEach(([k, name]) => {
-    const r = el('div', 'srow'); r.append(el('span', 'sname', name));
-    const dots = el('div', 'dots');
-    for (let v = 1; v <= 5; v++) { const b = el('button', 'dot5' + ((sc[k] || 0) >= v ? ' on' : ''), String(v)); b.type = 'button';
-      b.onclick = async () => { sc[k] = sc[k] === v ? 0 : v; d.scores = sc; renderScore(); renderList(); await api('/demo/score', { id: d.id, scores: sc }); load(true); };
-      dots.append(b); }
-    r.append(dots); rows.append(r);
+  [['歌曲', SONG], ['商业', BIZ]].forEach(([g, set]) => {
+    const hd = el('div', 'sgrp' + (g === '商业' ? ' bz' : ''), g + '视角'); hd.append(el('em', '', sub(sc, set) + ' / 15')); rows.append(hd);
+    set.forEach(([k, name, , hint]) => {
+      const r = el('div', 'srow'), nm = el('div', 'sname'); nm.append(el('span', '', name), el('small', '', hint)); r.append(nm);
+      const dots = el('div', 'dots');
+      for (let v = 1; v <= 5; v++) { const b = el('button', 'dot5' + ((sc[k] || 0) >= v ? ' on' : ''), String(v)); b.type = 'button';
+        b.onclick = async () => { sc[k] = sc[k] === v ? 0 : v; d.scores = sc; renderScore(); renderList(); await api('/demo/score', { id: d.id, scores: sc }); load(true); };
+        dots.append(b); }
+      r.append(dots); rows.append(r);
+    });
   });
   rows.append(el('div', 'stotal', '合计 ' + total(sc) + ' / 30'));
   const used = D.filter(x => x.pick > 0).length, pb = $('#pick');
