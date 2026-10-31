@@ -43,11 +43,11 @@ main{max-width:400px;margin:0 auto}
 
 .hero{position:relative;overflow-x:clip;padding:calc(11vh + env(safe-area-inset-top)) 0 48px;text-align:center}
 /* 光晕：同 CU 主页，标题出来后才淡入 */
-.hero::before{content:"";position:absolute;left:50%;top:calc(11vh + env(safe-area-inset-top) + 80px);width:min(150vw,760px);aspect-ratio:1;pointer-events:none;opacity:0;
+.hero::before{content:"";position:absolute;left:50%;top:calc(11vh + env(safe-area-inset-top) + 80px);width:min(150vw,760px);height:min(150vw,760px);pointer-events:none;opacity:0;
   background:radial-gradient(circle,rgba(255,252,248,.075) 0%,rgba(255,252,248,.022) 34%,transparent 68%);transform:translate(-50%,-50%) translateZ(0)}
 .titled .hero::before{animation:glow 1.8s ease .3s forwards}
 @keyframes glow{to{opacity:1}}
-.hero .mark{width:clamp(136px,40vw,184px);aspect-ratio:1;margin:0 auto;will-change:transform;backface-visibility:hidden}
+.hero .mark{width:clamp(136px,40vw,184px);height:clamp(136px,40vw,184px);margin:0 auto;will-change:transform;backface-visibility:hidden}
 .hero .mark svg{transition:transform .9s var(--spring)}
 body.intro{overflow:hidden}
 .hero .mark.pop svg{transform:scale(1.08)}
@@ -75,7 +75,7 @@ body.intro{overflow:hidden}
 .row+.row::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--border)}
 .row:focus-within{background:var(--lift)}
 .fl{flex:1;position:relative;display:block;height:56px}
-.fl input{position:absolute;inset:0;width:100%;font:inherit;font-size:16px;color:var(--text);background:transparent;border:0;outline:0;padding:22px 0 6px}
+.fl input{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;font:inherit;font-size:16px;color:var(--text);background:transparent;border:0;outline:0;padding:22px 0 6px}
 .fl span{position:absolute;left:0;top:50%;transform:translateY(-50%);color:var(--text-3);pointer-events:none;transition:top .35s var(--ease),transform .35s var(--ease),font-size .35s var(--ease),color .3s}
 .fl input:focus+span,.fl input:not(:placeholder-shown)+span{top:9px;transform:none;font-size:11px;color:var(--text-2)}
 .fl input:focus+span{color:var(--green-soft)}
@@ -89,17 +89,12 @@ body.intro{overflow:hidden}
 
 /* 音频行：选完变成可试听的波形 */
 .file{flex-wrap:wrap;padding-top:0;padding-bottom:0}
-.file .top{display:flex;align-items:center;width:100%;min-height:56px;text-align:left;padding:0}
+.file{position:relative;cursor:pointer}
+.file input[type=file]{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0;z-index:2}
 .file .lab{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file .lab.empty{color:var(--text-3)}
 .file:hover .lab.empty{color:var(--text-2)}
 .file em{font-style:normal;font-size:12px;color:var(--text-3);margin-left:12px;flex:none;letter-spacing:.04em;font-variant-numeric:tabular-nums}
-.wave{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:center;width:100%;height:0;overflow:hidden;opacity:0;transition:height .6s var(--ease),opacity .5s var(--ease),padding .6s var(--ease)}
-.wave.on{height:58px;opacity:1;padding-bottom:14px}
-.wave canvas{width:100%;height:36px;display:block;cursor:pointer}
-.play{width:28px;height:28px;border-radius:50%;background:var(--text);color:#0a0a0a;display:grid;place-items:center;transition:transform .2s var(--ease)}
-.play:active{transform:scale(.9)}
-.play svg{width:11px;height:11px;fill:currentColor}
 
 .go{display:block;width:100%;margin-top:16px;height:52px;border-radius:var(--r);background:var(--cta-bg);color:var(--cta-fg);font-size:16px;font-weight:600;letter-spacing:.02em;transition:transform .15s var(--ease),opacity .4s var(--ease),background .3s}
 .go:active{transform:scale(.985)}
@@ -110,8 +105,8 @@ body.intro{overflow:hidden}
 @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
 
 /* 拖文件进窗口 */
-#dropzone{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(8,8,8,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
-#dropzone::before{content:"";position:absolute;inset:max(16px,env(safe-area-inset-top)) 16px 16px;border:1px dashed var(--green-line);border-radius:24px}
+#dropzone{position:fixed;top:0;right:0;bottom:0;left:0;z-index:50;display:grid;place-items:center;background:rgba(8,8,8,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
+#dropzone::before{content:"";position:absolute;top:16px;right:16px;bottom:16px;left:16px;border:1px dashed var(--green-line);border-radius:24px}
 #dropzone p{font-size:15px;color:var(--text-2);letter-spacing:.02em}
 .dragging #dropzone{opacity:1}
 
@@ -158,8 +153,11 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
 .cp .pb[disabled]{opacity:.35}
 .cp .pb svg{width:14px;height:14px;fill:currentColor}
 .cp .wv{min-width:0}
-.cp canvas{display:block;width:100%;height:44px;cursor:pointer;touch-action:none}
-.cp .tm{display:flex;justify-content:space-between;margin-top:4px;font:500 11px var(--mono);color:var(--text-3);font-variant-numeric:tabular-nums}
+/* 进度条：外层加高方便手指点，里面细线 */
+.cp .bar{position:relative;height:22px;cursor:pointer;touch-action:none}
+.cp .bar::before{content:"";position:absolute;left:0;right:0;top:9px;height:4px;border-radius:4px;background:rgba(255,255,255,.18)}
+.cp .bar .fill{position:absolute;left:0;top:9px;height:4px;border-radius:4px;background:var(--text);width:0}
+.cp .tm{display:flex;justify-content:space-between;margin-top:0;font:500 11px var(--mono);color:var(--text-3);font-variant-numeric:tabular-nums}
 .cp .tm i{font-style:normal}
 .ov{margin-top:12px;font-size:14px;line-height:1.7;white-space:pre-wrap}
 .tl{margin-top:8px}
@@ -189,12 +187,8 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
       <div class="row" style="--k:1"><label class="fl"><input id="t" maxlength="60" placeholder=" "><span>歌名</span></label></div>
       <div class="row" style="--k:2"><label class="fl"><input id="l" maxlength="200" inputmode="url" placeholder=" "><span>主页链接（选填）</span></label></div>
       <div class="row" style="--k:3"><span class="lab" id="memLab">刀门会员</span><button type="button" class="switch" id="mem" role="switch" aria-checked="false" aria-labelledby="memLab"></button></div>
-      <div class="row file" style="--k:4">
-        <button type="button" class="top" id="pick"><span class="lab empty" id="fl">选择音频</span><em id="fmeta">MP3 · WAV</em></button>
-        <div class="wave" id="wave"><button type="button" class="play" id="play" aria-label="试听"><svg viewBox="0 0 12 12" id="pico"><path d="M2 1l9 5-9 5z"/></svg></button><canvas id="cv"></canvas></div>
-      </div>
+      <div class="row file" style="--k:4"><input id="file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.amr,.wma,.aif,.aiff,.mp4" aria-label="选择音频"><span class="lab empty" id="fl">选择音频</span><em id="fmeta">MP3 · M4A · WAV</em></div>
     </div>
-    <input id="file" type="file" accept="audio/*,.mp3,.m4a,.wav,.aif,.aiff,.flac" hidden>
     <button class="go idle" id="go" type="submit" style="--k:5">投递</button>
     <div class="err" id="err" role="alert"></div>
     <button class="find" id="findBtn" type="button">已经投递过？查看反馈</button>
@@ -243,8 +237,8 @@ parts.forEach(nd => { if (nd.nodeType === 1) { const w = el('span', nd.className
 const B = document.body, mark = $('#mark');
 // 点开反馈链接的人（?t=）不看开场：直接落在自己的投递和反馈上，投递表单排在后面
 const FB = new URLSearchParams(location.search).get('t');
-if (FB) { $('main').insertBefore($('#mine'), $('#notice')); $('#mine').style.marginTop = '0'; }
-if (REDUCE || FB) { B.classList.add('drawing', 'titled', 'ready'); $('#hero').classList.add('settled'); setTimeout(progress, 0); $('#hero').style.paddingBottom = '28px'; }   // progress 用到后面才声明的变量，放到下一拍再调
+if (FB) { $('main').insertBefore($('#mine'), $('#notice')); $('#mine').style.marginTop = '0'; $('#mine').style.marginBottom = '36px'; }
+if (REDUCE || FB || !mark.animate) { B.classList.add('drawing', 'titled', 'ready'); $('#hero').classList.add('settled'); setTimeout(progress, 0); $('#hero').style.paddingBottom = '28px'; }   // progress 用到后面才声明的变量，放到下一拍再调
 else {
   B.classList.add('intro'); scrollTo(0, 0);
   const r = mark.getBoundingClientRect(), dy = innerHeight / 2 - (r.top + r.height / 2), sc = Math.min(1.55, (innerWidth * .62) / r.width);
@@ -264,6 +258,7 @@ else {
 }
 
 /* 外圈 = 必填完成度（艺名 / 歌名 / 音频），内圈 = 上传进度 */
+window.addEventListener('error', e => { const x = document.getElementById('err'); if (x && !x.textContent) x.textContent = '页面出错：' + (e.message || '未知') ; });
 let file = null, busy = false;
 const p1 = $('#p1'), p2 = $('#p2');
 const off = p => p <= 0.002 ? 1.06 : 1 - p;
@@ -278,45 +273,35 @@ function progress() {
 const sw = $('#mem');
 sw.onclick = () => { sw.setAttribute('aria-checked', String(sw.getAttribute('aria-checked') !== 'true')); if (navigator.vibrate) navigator.vibrate(8); };
 
-/* 音频：选择或拖进窗口；选完画波形、可试听 */
-$('#pick').onclick = () => $('#file').click();
-$('#file').onchange = e => setFile(e.target.files[0]);
+/* 音频：点这一行选择（透明的文件输入盖在行上，安卓/微信里直接触发系统选择器）或拖进窗口 */
+// 安卓（尤其华为浏览器 / 微信内核）常常把 accept 当成「只能录音」或根本弹不出选择器，所以安卓上去掉 accept，选完再自己按文件头判断是不是音频
+if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) $('#file').removeAttribute('accept');
+$('#file').onchange = e => { const f = e.target.files && e.target.files[0]; if (f) setFile(f); };
 let depth = 0;
-addEventListener('dragenter', e => { if ([...e.dataTransfer.types].includes('Files')) { depth++; document.body.classList.add('dragging'); } });
+addEventListener('dragenter', e => { if (e.dataTransfer && [].indexOf.call(e.dataTransfer.types || [], 'Files') >= 0) { depth++; document.body.classList.add('dragging'); } });
 addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) document.body.classList.remove('dragging'); });
 addEventListener('dragover', e => e.preventDefault());
-addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dragging'); const f = e.dataTransfer.files[0]; if (f) setFile(f); });
+addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dragging'); const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) setFile(f); });
 
-let peaks = null, prev = null, praf = 0;
-function setFile(f) {
-  if (!f) return;
-  if (!/^audio\//.test(f.type) && !/\.(mp3|m4a|wav|aiff?|flac)$/i.test(f.name)) { $('#err').textContent = '请选择音频文件。'; return; }
-  if (f.size > MAX) { $('#err').textContent = '文件超过 24MB，请导出 mp3。'; return; }
-  file = f; $('#err').textContent = '';
-  $('#fl').textContent = f.name.replace(/\.[^.]+$/, ''); $('#fl').classList.remove('empty'); $('#fmeta').textContent = '…';
-  if (!$('#t').value.trim()) { $('#t').value = f.name.replace(/\.[^.]+$/, '').slice(0, 60); }
-  if (prev) { prev.pause(); URL.revokeObjectURL(prev.src); }
-  prev = new Audio(URL.createObjectURL(f)); prev.preload = 'metadata';
-  prev.onloadedmetadata = () => { if (isFinite(prev.duration)) $('#fmeta').textContent = clock(prev.duration); };
-  prev.onplay = () => { setIcon(true); tick(); }; prev.onpause = prev.onended = () => { setIcon(false); cancelAnimationFrame(praf); drawWave(); };
-  peaks = null; drawWave(); $('#wave').classList.add('on'); progress();
-  f.arrayBuffer().then(buf => { const AC = window.AudioContext || window.webkitAudioContext; const ac = new AC(); return ac.decodeAudioData(buf).finally(() => ac.close && ac.close()); })
-    .then(ab => { const ch = ab.getChannelData(0), N = 64, step = Math.floor(ch.length / N); const out = []; for (let i = 0; i < N; i++) { let m = 0; for (let j = i * step, e = j + step; j < e; j += 32) m = Math.max(m, Math.abs(ch[j])); out.push(m); } const top = Math.max(...out) || 1; peaks = out.map(v => v / top); revealWave(); })
-    .catch(() => { peaks = Array.from({ length: 64 }, (_, i) => .35 + .3 * Math.abs(Math.sin(i * .7))); drawWave(); });
+const AUDIO_EXT = /\.(mp3|m4a|aac|wav|wave|flac|ogg|oga|opus|amr|awb|wma|aif|aiff|aifc|mp4|3gp|caf|m4b|ape)$/i;
+const readHead = f => new Promise(res => { try { const r = new FileReader(); r.onload = () => res(new Uint8Array(r.result)); r.onerror = () => res(new Uint8Array(0)); r.readAsArrayBuffer(f.slice(0, 16)); } catch (e) { res(new Uint8Array(0)); } });
+const isAudioHead = u => { const at = (a, o) => { o = o || 0; for (let i = 0; i < a.length; i++) if (u[o + i] !== a[i]) return false; return true; };
+  return at([82, 73, 70, 70]) || at([73, 68, 51]) || (u[0] === 255 && (u[1] & 224) === 224) || at([102, 116, 121, 112], 4) || at([102, 76, 97, 67]) || at([79, 103, 103, 83]) || at([70, 79, 82, 77]) || at([35, 33, 65, 77, 82]) || at([48, 38, 178, 117]) || at([26, 69, 223, 163]); };
+let prev = null;
+async function setFile(f) {
+  const err = $('#err'); err.textContent = '';
+  if (!f || !f.size) { err.textContent = '没有读到文件，请重新选择。'; return; }
+  if (f.size > MAX) { err.textContent = '文件超过 24MB，请导出 mp3。'; return; }
+  // 类型、扩展名、文件头，任意一个像音频就放行（华为等手机选出来的文件 type 常常是空的）
+  const ok = /^audio\//.test(f.type || '') || AUDIO_EXT.test(f.name || '') || isAudioHead(await readHead(f));
+  if (!ok) { err.textContent = '这个文件看起来不是音频（' + (f.name || '未命名') + '）。请选 mp3、m4a、wav 等音频文件。'; return; }
+  file = f;
+  $('#fl').textContent = (f.name || '音频').replace(/\.[^.]+$/, ''); $('#fl').classList.remove('empty'); $('#fmeta').textContent = fmtSize(f.size);
+  if (!$('#t').value.trim()) $('#t').value = (f.name || '').replace(/\.[^.]+$/, '').slice(0, 60);
+  try { if (prev) { URL.revokeObjectURL(prev.src); } prev = new Audio(URL.createObjectURL(f)); prev.preload = 'metadata'; prev.onloadedmetadata = () => { if (isFinite(prev.duration)) $('#fmeta').textContent = clock(prev.duration) + ' · ' + fmtSize(f.size); }; } catch (e) {}
+  progress();
 }
-const setIcon = on => { $('#pico').innerHTML = on ? '<path d="M2 1h3v10H2zM7 1h3v10H7z"/>' : '<path d="M2 1l9 5-9 5z"/>'; };
-$('#play').onclick = () => { if (!prev) return; prev.paused ? prev.play() : prev.pause(); };
-$('#cv').onclick = e => { if (!prev || !isFinite(prev.duration)) return; const r = e.currentTarget.getBoundingClientRect(); prev.currentTime = (e.clientX - r.left) / r.width * prev.duration; if (prev.paused) prev.play(); else drawWave(); };
-let grow = 1;
-function revealWave() { if (REDUCE) { grow = 1; return drawWave(); } const t0 = performance.now(); const step = now => { grow = Math.min(1, (now - t0) / 700); grow = 1 - Math.pow(1 - grow, 3); drawWave(); if (grow < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
-function drawWave() {
-  const cv = $('#cv'), dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w) return;
-  cv.width = w * dpr; cv.height = h * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, h);
-  const data = peaks || Array(64).fill(.06), n = data.length, bw = w / n, at = prev && isFinite(prev.duration) && prev.duration ? prev.currentTime / prev.duration : 0;
-  for (let i = 0; i < n; i++) { const v = Math.max(.06, data[i] * (peaks ? grow : 1)), bh = v * h; g.fillStyle = (i + .5) / n <= at ? '#8fc3a9' : 'rgba(240,240,240,.42)'; const x = i * bw + bw * .2; g.beginPath(); if (g.roundRect) g.roundRect(x, (h - bh) / 2, bw * .6, bh, 1.2); else g.rect(x, (h - bh) / 2, bw * .6, bh); g.fill(); }
-}
-const tick = () => { drawWave(); praf = requestAnimationFrame(tick); };
-addEventListener('resize', drawWave);
+const fmtSize = n => n < 1048576 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
 
 /* 投递：标的内圈变成上传进度；完成后两圈画满、轻弹一下 */
 let shown = 0, goal = 0;
@@ -330,8 +315,7 @@ $('#form').addEventListener('submit', e => {
   if (!t) { err.textContent = '请填写歌名。'; $('#t').focus(); return nudge(); }
   if (!file) { err.textContent = '请选择音频。'; return nudge(); }
   let link = $('#l').value.trim(); if (link && !/^https?:\/\//i.test(link)) { const m = link.match(/https?:\/\/\S+/i); link = m ? m[0] : ''; }
-  if (prev) prev.pause();
-  err.textContent = ''; busy = true; $('#go').disabled = true; shown = goal = 0;
+    err.textContent = ''; busy = true; $('#go').disabled = true; shown = goal = 0;
   p1.style.strokeDashoffset = 0; p2.style.transition = 'none'; $('#status').classList.add('on'); $('#status').textContent = '0%';
   if ($('#mark').getBoundingClientRect().bottom < 40) window.scrollTo({ top: 0, behavior: REDUCE ? 'auto' : 'smooth' });
   loop();
@@ -358,7 +342,7 @@ function done(tok) {
   $('#cp').onclick = async () => { try { await navigator.clipboard.writeText(url); $('#cp').textContent = '已复制'; $('#cp').classList.add('ok'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('#lk')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
   const f = $('#form'); f.classList.add('fade-out');
   setTimeout(() => { f.hidden = true; f.classList.remove('fade-out'); const o = $('#ok'); o.hidden = false; requestAnimationFrame(() => o.classList.add('on')); }, 450);
-  file = null; $('#t').value = ''; $('#l').value = ''; $('#fl').textContent = '选择音频'; $('#fl').classList.add('empty'); $('#fmeta').textContent = 'MP3 · WAV'; $('#file').value = ''; $('#wave').classList.remove('on'); peaks = null;
+  file = null; $('#t').value = ''; $('#l').value = ''; $('#fl').textContent = '选择音频'; $('#fl').classList.add('empty'); $('#fmeta').textContent = 'MP3 · WAV'; $('#file').value = '';
   load();
 }
 $('#again').onclick = () => {
@@ -402,48 +386,31 @@ function sniff(u) {
 // 先把音频整个取下来、按文件头认格式再播：这样不管当初上传时格式标成什么，都放得出来；也能画出波形
 function player(src) {
   const box = el('div', 'cp'), pb = el('button', 'pb'); pb.type = 'button'; pb.disabled = true; pb.setAttribute('aria-label', '播放');
-  pb.innerHTML = '<svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>';
-  const wv = el('div', 'wv'), cv = document.createElement('canvas'), tm = el('div', 'tm'), t1 = el('i', '', '加载中…'), t2 = el('i', '', '');
-  tm.append(t1, t2); wv.append(cv, tm); box.append(pb, wv);
-  let a = null, peaks = null, grow = 0, raf = 0;
-  const setIcon = on => { pb.innerHTML = on ? '<svg viewBox="0 0 12 12"><path d="M2 1h3v10H2zM7 1h3v10H7z"/></svg>' : '<svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>'; };
-  const draw = () => {
-    const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w) return;
-    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
-    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-    const dur = a && isFinite(a.duration) ? a.duration : 0, at = dur ? a.currentTime / dur : 0, n = Math.floor(w / 4.5), mid = h / 2;
-    for (let i = 0; i < n; i++) {
-      let v = .06; if (peaks) { const x = Math.floor(i / n * peaks.length), y = Math.max(x + 1, Math.floor((i + 1) / n * peaks.length)); let m = 0; for (let k = x; k < y; k++) m = Math.max(m, peaks[k]); v = Math.max(.06, m * grow); }
-      const bh = Math.max(2, v * (h - 4)); g.fillStyle = (i + .5) / n <= at ? '#f0f0f0' : 'rgba(240,240,240,.3)';
-      g.beginPath(); if (g.roundRect) g.roundRect(i * 4.5 + .5, mid - bh / 2, 3, bh, 1.4); else g.rect(i * 4.5 + .5, mid - bh / 2, 3, bh); g.fill();
-    }
-    if (dur) { t1.textContent = clock(a.currentTime); t2.textContent = clock(dur); }
-  };
+  const ICON_PLAY = '<svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>', ICON_PAUSE = '<svg viewBox="0 0 12 12"><path d="M2 1h3v10H2zM7 1h3v10H7z"/></svg>';
+  pb.innerHTML = ICON_PLAY;
+  const wv = el('div', 'wv'), bar = el('div', 'bar'), fill = el('i', 'fill'), tm = el('div', 'tm'), t1 = el('i', '', '加载中…'), t2 = el('i', '', '');
+  bar.append(fill); tm.append(t1, t2); wv.append(bar, tm); box.append(pb, wv);
+  let a = null, raf = 0;
+  const draw = () => { const dur = a && isFinite(a.duration) ? a.duration : 0; fill.style.width = (dur ? a.currentTime / dur * 100 : 0) + '%'; if (dur) { t1.textContent = clock(a.currentTime); t2.textContent = clock(dur); } };
   const tick = () => { draw(); if (a && !a.paused) raf = requestAnimationFrame(tick); };
   const fail = () => { t1.textContent = '音频加载失败，请刷新重试'; };
   (async () => {
     try {
-      const r = await fetch(src); if (!r.ok) throw 0;
+      // 整个取下来，按文件头认格式再播，这样当初上传时格式标成什么都放得出来
+      const r = await fetch(src); if (!r.ok) throw new Error('http');
       const buf = await r.arrayBuffer(), type = sniff(new Uint8Array(buf.slice(0, 12))) || (r.headers.get('content-type') || 'audio/mpeg');
       a = new Audio(URL.createObjectURL(new Blob([buf], { type }))); a.preload = 'auto';
-      a.onloadedmetadata = () => { draw(); }; a.onended = () => { setIcon(false); draw(); };
-      a.onplay = () => { setIcon(true); cancelAnimationFrame(raf); tick(); }; a.onpause = () => { setIcon(false); cancelAnimationFrame(raf); draw(); };
+      a.onloadedmetadata = draw; a.onended = () => { pb.innerHTML = ICON_PLAY; draw(); };
+      a.onplay = () => { pb.innerHTML = ICON_PAUSE; cancelAnimationFrame(raf); tick(); }; a.onpause = () => { pb.innerHTML = ICON_PLAY; cancelAnimationFrame(raf); draw(); };
       a.onerror = fail; pb.disabled = false; t1.textContent = '0:00'; draw();
-      try { const AC = window.AudioContext || window.webkitAudioContext, ac = new AC(); const ab = await ac.decodeAudioData(buf.slice(0)); ac.close && ac.close();
-        const ch = ab.getChannelData(0), N = 200, st = Math.max(1, Math.floor(ch.length / N)), out = [];
-        for (let i = 0; i < N; i++) { let m = 0; for (let j = i * st, e = Math.min(ch.length, j + st); j < e; j += 24) m = Math.max(m, Math.abs(ch[j])); out.push(m); }
-        const sorted = out.slice().sort((x, y) => x - y), top = sorted[Math.floor(N * .98)] || sorted[N - 1] || 1; peaks = out.map(v => Math.min(1, v / top));
-        const t0 = performance.now(); const step = now => { const k = Math.min(1, (now - t0) / 700); grow = 1 - Math.pow(1 - k, 3); draw(); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step);
-      } catch (e) { peaks = Array.from({ length: 60 }, (_, i) => .35 + .3 * Math.abs(Math.sin(i * .7))); grow = 1; draw(); }
     } catch (e) { fail(); }
   })();
-  pb.onclick = () => { if (!a) return; a.paused ? a.play().catch(() => {}) : a.pause(); };
-  let drag = false; const at = e => { const r = cv.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
-  cv.onpointerdown = e => { if (!a || !isFinite(a.duration)) return; drag = true; cv.setPointerCapture(e.pointerId); a.currentTime = at(e) * a.duration; draw(); };
-  cv.onpointermove = e => { if (drag && a) { a.currentTime = at(e) * a.duration; draw(); } }; cv.onpointerup = () => { drag = false; };
-  addEventListener('resize', draw);
-  box.seek = t => { if (!a) return; a.currentTime = t; a.play().catch(() => {}); };
-  box.audio = () => a; box.draw = draw;
+  pb.onclick = () => { if (!a) return; if (a.paused) { const p = a.play(); if (p && p.catch) p.catch(() => {}); } else a.pause(); };
+  let drag = false; const frac = e => { const r = bar.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
+  const go = e => { if (a && isFinite(a.duration)) { a.currentTime = frac(e) * a.duration; draw(); } };
+  bar.onpointerdown = e => { drag = true; try { bar.setPointerCapture(e.pointerId); } catch (x) {} go(e); }; bar.onpointermove = e => { if (drag) go(e); }; bar.onpointerup = () => { drag = false; };
+  box.seek = t => { if (!a) return; a.currentTime = t; const p = a.play(); if (p && p.catch) p.catch(() => {}); };
+  box.audio = () => a;
   return box;
 }
 function card(d) {
