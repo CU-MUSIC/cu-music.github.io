@@ -197,7 +197,7 @@ const clock = t => { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) +
 
 const LID = (() => { let v = store.get('demo:lid'); if (!/^[A-Z0-9]{6}$/.test(v || '')) { v = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join(''); store.set('demo:lid', v); } return v; })();
 const DEV = (() => { const u = navigator.userAgent; const d = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : '其他'; return d + (/MicroMessenger/.test(u) ? ' · 微信' : ''); })();
-try { fetch(API + '/demo/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid: LID, device: DEV, ref: document.referrer ? new URL(document.referrer).host : '' }), keepalive: true }); } catch (e) {}
+try { fetch(API + '/demo/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid: LID, device: DEV, ref: (new URLSearchParams(location.search).get('from') || (document.referrer ? new URL(document.referrer).host : '')).slice(0, 60) }), keepalive: true }); } catch (e) {}
 
 /* 开场：标画出来 → 字母逐个从模糊里浮出 → 标退成底纹，表单逐行浮起 */
 // 逐字母拆开，保留“Chef’s”的斜体衬线
