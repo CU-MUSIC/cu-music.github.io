@@ -23,8 +23,6 @@ body{background:radial-gradient(120% 50% at 50% -10%,rgba(236,234,230,.06),trans
 main{max-width:560px;margin:0 auto}
 .top{display:flex;justify-content:space-between;align-items:center;padding:calc(28px + env(safe-area-inset-top)) 0 0;font:500 12px/1 var(--mono);letter-spacing:.28em;color:var(--text-3)}
 h1{font-size:34px;line-height:1.25;font-weight:600;letter-spacing:-.02em;margin:56px 0 14px;text-wrap:balance}
-.lead{color:var(--text-2);font-size:16px;line-height:1.8}
-.lead b{color:var(--text);font-weight:500}
 .sec{margin-top:44px}
 .sec>h2{font:500 12px/1 var(--mono);letter-spacing:.22em;color:var(--text-3);text-transform:uppercase;margin-bottom:16px}
 .field{display:block;margin-top:18px}
@@ -67,11 +65,6 @@ audio{display:block;width:100%;height:40px;margin-top:14px;color-scheme:dark}
 .tl button:hover{background:var(--fill)}
 .tl time{font:500 13px/1.9 var(--mono);color:var(--text-3)}
 .tl button.on time{color:var(--text)}
-.offer{margin-top:18px;padding:16px 18px;border:1px solid rgba(236,234,230,.22);border-radius:14px}
-.offer b{display:block;font-size:16px;font-weight:600}
-.offer p{color:var(--text-2);font-size:14px;margin-top:4px}
-.offer code{display:inline-block;margin-top:10px;font:500 20px/1 var(--mono);letter-spacing:.14em;color:var(--text);background:var(--fill-2);padding:10px 14px;border-radius:10px;user-select:all}
-.offer a{color:var(--text);margin-left:12px;font-size:14px}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -84,29 +77,25 @@ audio{display:block;width:100%;height:40px;margin-top:14px;color-scheme:dark}
     <div class="sec" style="margin-top:56px"><h2>我的投递</h2><div id="list"></div></div>
   </div>
 
-  <h1 id="h1">投递你的 Demo</h1>
-  <p class="lead" id="lead"><b>刀门会员</b>的投递，我会逐首听完，并按时间点留下反馈。<br>其他朋友，我会挑着听；遇到好的，会联系你，并送你一张<b>混音券</b>。</p>
-
-  <section id="formsec" class="sec">
-    <h2>投递</h2>
+  <h1 id="h1">投递 Demo</h1>
+  
+  <section id="formsec" class="sec" style="margin-top:36px">
     <label class="field" style="margin-top:0"><span>艺名</span><input id="n" type="text" maxlength="20" placeholder="你的艺名" autocomplete="off"></label>
     <div class="field"><span>是否为刀门会员</span>
       <div class="seg" id="seg"><button type="button" data-v="1" aria-pressed="false">是</button><button type="button" data-v="0" aria-pressed="false">不是</button></div>
     </div>
-    <label class="field" id="wf" hidden><span>微信号 · 听到好的，我会联系你</span><input id="w" type="text" maxlength="40" placeholder="微信号" autocomplete="off"></label>
     <label class="field"><span>歌名</span><input id="t" type="text" maxlength="60" placeholder="这首歌叫什么" autocomplete="off"></label>
-    <label class="field"><span>想让我重点听什么（选填）</span><textarea id="note" maxlength="400" placeholder="比如：人声和伴奏的平衡、副歌的冲击力"></textarea></label>
+    <label class="field"><span>备注（选填）</span><textarea id="note" maxlength="400" placeholder="想让我重点听什么"></textarea></label>
     <label class="drop" id="drop"><input id="file" type="file" accept="audio/*,.mp3,.m4a,.wav,.aif,.aiff,.flac" hidden>
-      <span id="dt">选择音频，或拖到这里</span><small>mp3 / m4a / wav，24MB 以内</small></label>
+      <span id="dt">选择音频，或拖到这里</span><small>mp3 · m4a · wav</small></label>
     <button class="btn" id="go" type="button">投递</button>
     <div class="bar" id="bar"><i></i></div>
     <div class="err" id="err" role="alert"></div>
-    <p class="fine">每位会员每月 2 首；其他朋友同一个微信号 30 天内 1 首。音频只有我和你自己能听，不会公开。</p>
   </section>
 
   <section id="ok" class="done" hidden>
     <h3>收到了。</h3>
-    <p>下面这个链接是你的专属入口。反馈、混音券（如果有）都会出现在这里，建议收藏。</p>
+    <p>反馈会出现在这个链接里。</p>
     <div class="link"><input id="lk" type="text" readonly><button id="cp" type="button">复制</button></div>
   </section>
 </main>
@@ -117,6 +106,9 @@ const API = 'https://stats.cumusic.work', $ = s => document.querySelector(s);
 const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch (e) {} } };
 const MAX = 24 * 1024 * 1024;
 let mem = null, file = null, busy = false;
+const LID = (() => { let v = store.get('demo:lid'); if (!/^[A-Z0-9]{6}$/.test(v || '')) { v = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join(''); store.set('demo:lid', v); } return v; })();
+const DEV = (() => { const u = navigator.userAgent; const d = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : '其他'; return d + (/MicroMessenger/.test(u) ? ' · 微信' : ''); })();
+try { fetch(API + '/demo/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid: LID, device: DEV, ref: document.referrer ? new URL(document.referrer).host : '' }), keepalive: true }); } catch (e) {}
 
 const fmt = n => n < 1048576 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
 const clock = t => { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
@@ -127,7 +119,6 @@ const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) 
 document.querySelectorAll('#seg button').forEach(b => b.onclick = () => {
   mem = b.dataset.v === '1';
   document.querySelectorAll('#seg button').forEach(x => x.setAttribute('aria-pressed', x === b));
-  $('#wf').hidden = mem;
   $('#err').textContent = '';
 });
 const setFile = f => {
@@ -143,18 +134,16 @@ $('#file').onchange = e => setFile(e.target.files[0]);
 ['dragleave', 'drop'].forEach(ev => $('#drop').addEventListener(ev, e => { e.preventDefault(); $('#drop').classList.remove('on'); }));
 $('#drop').addEventListener('drop', e => setFile(e.dataTransfer.files[0]));
 
-const ERR = { quota: m => m ? '这个艺名本月已经投了 2 首，下个月再来。' : '这个微信号 30 天内已经投过一首了，谢谢。', full: () => '今天的投递已经满了，明天再来。', size: () => '文件超过 24MB，请导出 mp3 再投递。',
-  rate: () => '操作太频繁，稍后再试。', contact: () => '请留下微信号，听到好的我才联系得上你。', who: () => '请填写艺名。', title: () => '请填写歌名。' };
+const ERR = { quota: () => '今天已经投过了，明天再来。', full: () => '今天的投递已满，明天再来。', size: () => '文件超过 24MB，请导出 mp3。', rate: () => '操作太频繁，稍后再试。', who: () => '请填写艺名。', title: () => '请填写歌名。' };
 $('#go').onclick = () => {
   if (busy) return;
-  const n = $('#n').value.trim(), w = $('#w').value.trim(), t = $('#t').value.trim(), err = $('#err');
+  const n = $('#n').value.trim(), t = $('#t').value.trim(), err = $('#err');
   if (!n) return err.textContent = '请填写艺名。';
   if (mem === null) return err.textContent = '请选择是否为刀门会员。';
-  if (!mem && w.length < 3) return err.textContent = '请留下微信号，听到好的我才联系得上你。';
   if (!t) return err.textContent = '请填写歌名。';
   if (!file) return err.textContent = '请选择要投递的音频。';
   err.textContent = ''; busy = true; $('#go').disabled = true; $('#bar').classList.add('on');
-  const q = new URLSearchParams({ n, mem: mem ? '1' : '0', w: mem ? '' : w, title: t, note: $('#note').value.trim(), ct: file.type || 'audio/mpeg' });
+  const q = new URLSearchParams({ n, mem: mem ? '1' : '0', lid: LID, title: t, note: $('#note').value.trim(), ct: file.type || 'audio/mpeg' });
   const x = new XMLHttpRequest();
   x.open('POST', API + '/demo/up?' + q);
   x.upload.onprogress = e => { if (e.lengthComputable) $('#bar i').style.width = (e.loaded / e.total * 100) + '%'; };
@@ -172,7 +161,7 @@ function success(tok) {
   const ts = tokens(); if (!ts.includes(tok)) ts.unshift(tok); store.set('demo:tokens', JSON.stringify(ts.slice(0, 10)));
   const url = location.origin + location.pathname + '?t=' + tok;
   $('#lk').value = url; $('#ok').hidden = false; $('#formsec').hidden = true;
-  $('#h1').hidden = true; $('#lead').hidden = true; $('#mine').before($('#ok')); $('#ok').style.marginTop = '56px'; window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('#h1').hidden = true; $('#mine').before($('#ok')); $('#ok').style.marginTop = '56px'; window.scrollTo({ top: 0, behavior: 'smooth' });
   $('#cp').onclick = async () => { try { await navigator.clipboard.writeText(url); } catch (e) { $('#lk').select(); } $('#cp').textContent = '已复制'; };
   load();
 }
@@ -189,7 +178,7 @@ async function load() {
   rows.sort((a, b) => b.ts - a.ts);
   const box = $('#list'); box.textContent = '';
   $('#mine').hidden = !rows.length;
-  if (rows.length) { $('#h1').textContent = '再投一首'; $('#mine .sec').style.marginTop = '56px'; }
+  if (rows.length) $('#mine .sec').style.marginTop = '56px';
   rows.forEach(d => box.append(card(d)));
 }
 function card(d) {
@@ -206,10 +195,6 @@ function card(d) {
       a.addEventListener('timeupdate', () => { let on = -1; d.notes.forEach((n, i) => { if (a.currentTime >= n.t - .2) on = i; }); [...tl.children].forEach((b, i) => b.classList.toggle('on', i === on)); });
       c.append(tl);
     }
-  }
-  if (d.offer) {
-    const o = el('div', 'offer'); o.append(el('b', '', '送你一张混音券 · 立减 ¥' + d.offer.val), el('p', '', '14 天内有效，订单满 ¥450 可用。下单时填写这个码。'));
-    const code = el('code', '', d.offer.code); const go = el('a', '', '去下单 →'); go.href = '/chefdao/price/'; o.append(code, go); c.append(o);
   }
   return c;
 }
