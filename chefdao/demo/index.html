@@ -4,158 +4,157 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0b0b0c">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<meta name="theme-color" content="#000000">
 <title>主厨之选 · CU MUSIC</title>
 <link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
 <style>
-/* 黑底为主，米白细字，薄荷绿只做一两处点缀；窄栏、发丝线、留白 */
+/* 一屏一件事：首屏是会自己画出来的 CU 标；投递是一问一答，CU 标的外圈记步数、内圈记上传 */
 :root{
-  --bg:#0b0b0c; --line:rgba(238,236,230,.12); --line-2:rgba(238,236,230,.22); --fill:rgba(238,236,230,.04);
-  --text:#ecebe6; --text-2:rgba(236,235,230,.62); --text-3:rgba(236,235,230,.38); --pearl:#ecebe6; --ink:#0b0b0c;
-  --mint:#8fbfa6; --red:#e6a99a;
-  --ease:cubic-bezier(.32,.72,0,1); --spring:cubic-bezier(.2,.9,.25,1.05);
-  --font:"Inter","Noto Sans SC",-apple-system,"PingFang SC",sans-serif;
-  --cjk:"Noto Sans SC","PingFang SC",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --bg:#000; --text:#f5f5f7; --gray:#86868b; --gray-2:#6e6e73; --line:rgba(255,255,255,.14); --fill:rgba(255,255,255,.06);
+  --mint:#8fbfa6; --red:#ff8a7a;
+  --ease:cubic-bezier(.32,.72,0,1); --spring:cubic-bezier(.2,.9,.25,1.04);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
 }
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg)}
-body{background:radial-gradient(900px 520px at 85% -8%,rgba(143,191,166,.07),transparent 70%),var(--bg);background-attachment:fixed;color:var(--text);font:15px/1.7 var(--font);
-  -webkit-font-smoothing:antialiased;min-height:100vh;padding:0 max(24px,env(safe-area-inset-left)) calc(88px + env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-right));caret-color:var(--mint)}
-body.lock{overflow:hidden}
-main{max-width:440px;margin:0 auto}
+html,body{background:var(--bg);height:100%}
+body{color:var(--text);font:17px/1.47 var(--font);letter-spacing:-.022em;-webkit-font-smoothing:antialiased;caret-color:var(--mint);overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 
+.top{position:fixed;inset:0 0 auto;z-index:10;display:flex;justify-content:space-between;align-items:center;
+  padding:calc(18px + env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) 0 max(22px,env(safe-area-inset-left));pointer-events:none}
+.top>*{pointer-events:auto}
+.brand{display:flex;gap:8px;align-items:center;font:500 11px/1 var(--mono);letter-spacing:.32em;color:var(--gray)}
+.brand i{width:15px;height:15px;display:block}
+.brand .cumark path{stroke-width:44;stroke:var(--text)}
+.toplink{font-size:13px;color:var(--gray);letter-spacing:0;transition:color .2s}
+.toplink:hover{color:var(--text)}
+
+/* CU 标 */
 .cumark{display:block;width:100%;height:100%;overflow:visible}
-.cumark path{fill:none;stroke-width:34;stroke-linecap:round;stroke-dasharray:1}
-.cumark .b{stroke:rgba(236,235,230,.14);stroke-dashoffset:0}
-.cumark .f{stroke:var(--text);stroke-dashoffset:1}
+.cumark path{fill:none;stroke-width:30;stroke-linecap:round;stroke-dasharray:1}
+.cumark .b{stroke:rgba(255,255,255,.12);stroke-dashoffset:0}
+.cumark .f{stroke:var(--text);stroke-dashoffset:1;transition:stroke-dashoffset .9s var(--ease)}
+.cumark.draw .f{animation:draw 1.6s cubic-bezier(.45,.05,.15,1) .2s both}
+.cumark.draw .f2{animation-delay:.6s}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
 
-#intro{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--bg);transition:opacity .6s var(--ease),transform .8s var(--ease),filter .6s var(--ease)}
-#intro .m{width:64px;height:64px}
-#intro .b{animation:cuDraw 1.4s cubic-bezier(.45,.05,.15,1) .1s both}
-#intro .b2{animation-delay:.4s}
-#intro.out{opacity:0;transform:scale(1.1);filter:blur(8px);pointer-events:none}
-@keyframes cuDraw{from{stroke-dashoffset:1;stroke:var(--text)}70%{stroke:var(--text)}to{stroke-dashoffset:0;stroke:rgba(236,235,230,.55)}}
+/* 视图：叠在一起，交叉淡入 */
+.stage{position:relative;min-height:100svh}
+.view{position:absolute;inset:0;min-height:100svh;display:grid;place-items:center;padding:calc(90px + env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));
+  opacity:0;visibility:hidden;transform:scale(.985);transition:opacity .6s var(--ease),transform .7s var(--ease),visibility 0s .6s}
+.view.on{opacity:1;visibility:visible;transform:none;transition:opacity .7s var(--ease) .08s,transform .8s var(--ease) .08s,visibility 0s}
+.inner{width:100%;max-width:520px;text-align:center}
 
-.rise{opacity:0;transform:translateY(10px);transition:opacity .7s var(--ease),transform .8s var(--ease)}
-.ready .rise{opacity:1;transform:none}
-.ready .rise:nth-child(2){transition-delay:.06s}.ready .rise:nth-child(3){transition-delay:.12s}.ready .rise:nth-child(4){transition-delay:.18s}.ready .rise:nth-child(5){transition-delay:.24s}.ready .rise:nth-child(6){transition-delay:.3s}.ready .rise:nth-child(7){transition-delay:.36s}
+/* 首屏 */
+.hero .mark{width:148px;height:148px;margin:0 auto}
+.hero h1{margin-top:44px;font-size:clamp(40px,9vw,64px);line-height:1.06;font-weight:600;letter-spacing:-.01em}
+.hero .en{margin-top:14px;font:500 12px/1 var(--mono);letter-spacing:.42em;color:var(--gray);padding-left:.42em}
+.seats{display:flex;justify-content:center;gap:10px;margin-top:44px}
+.seats i{width:7px;height:7px;border-radius:50%;border:1px solid var(--gray-2)}
+.seats i.on{background:var(--mint);border-color:var(--mint)}
+.offer{margin-top:16px;font-size:17px;color:var(--gray);letter-spacing:-.01em}
+.cta{display:inline-block;margin-top:40px;font-size:17px;font-weight:500;color:#000;background:var(--text);border-radius:999px;padding:13px 30px;transition:transform .18s var(--ease),opacity .2s}
+.cta:active{transform:scale(.97)}
+.cta:hover{opacity:.9}
+.date{margin-top:18px;font:500 11px/1 var(--mono);letter-spacing:.24em;color:var(--gray-2)}
+.fade-up{opacity:0;transform:translateY(12px);transition:opacity .9s var(--ease),transform 1s var(--ease)}
+.lit .fade-up{opacity:1;transform:none}
+.lit .d1{transition-delay:1.3s}.lit .d2{transition-delay:1.45s}.lit .d3{transition-delay:1.6s}.lit .d4{transition-delay:1.75s}.lit .d5{transition-delay:1.9s}
 
-.top{position:sticky;top:0;z-index:5;margin:0 calc(-1 * max(24px,env(safe-area-inset-left)));padding:calc(16px + env(safe-area-inset-top)) max(24px,env(safe-area-inset-left)) 14px;display:flex;justify-content:space-between;align-items:center;
-  background:rgba(11,11,12,.72);-webkit-backdrop-filter:blur(20px) saturate(140%);backdrop-filter:blur(20px) saturate(140%)}
-.top .lg{display:flex;gap:9px;align-items:center;font:500 10.5px/1 var(--mono);letter-spacing:.3em;color:var(--text-2)}
-.top .lg i{display:block;width:16px;height:16px}
-.top .lg i .cumark path{stroke-width:42}
-.top .lg i .cumark .b{stroke:var(--text)}
-.top span.r{font:500 10.5px/1 var(--mono);letter-spacing:.3em;color:var(--text-3)}
+/* 一问一答 */
+.flow .mark{width:56px;height:56px;margin:0 auto}
+.flow .num{margin-top:28px;font:500 11px/1 var(--mono);letter-spacing:.3em;color:var(--gray-2)}
+.flow h2{margin-top:14px;font-size:clamp(30px,6.4vw,44px);line-height:1.12;font-weight:600;letter-spacing:-.012em}
+.flow .sub{margin-top:10px;font-size:17px;color:var(--gray)}
+.ans{margin-top:40px}
+.ans input[type=text]{width:100%;font:inherit;font-size:clamp(22px,4.6vw,28px);font-weight:500;letter-spacing:-.01em;text-align:center;color:var(--text);background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 0 14px;outline:0;transition:border-color .3s var(--ease)}
+.ans input[type=text]:focus{border-bottom-color:var(--gray)}
+.ans ::placeholder{color:#3a3a3c}
+.pair{display:flex;justify-content:center;gap:12px}
+.pill{min-width:120px;font-size:17px;font-weight:500;color:var(--text);border:1px solid var(--line);border-radius:999px;padding:13px 26px;transition:background .2s,border-color .2s,transform .15s var(--ease)}
+.pill:hover{border-color:var(--gray)}
+.pill:active{transform:scale(.97)}
+.pill.solid{background:var(--text);color:#000;border-color:var(--text)}
+.pill[disabled]{opacity:.3;cursor:default}
+.file small{display:block;margin-top:14px;font:500 11px/1 var(--mono);letter-spacing:.22em;color:var(--gray-2)}
+.fname{margin-top:18px;font-size:15px;color:var(--gray);overflow-wrap:anywhere}
+.nav{display:flex;justify-content:center;align-items:center;gap:20px;margin-top:44px}
+.back{font-size:15px;color:var(--gray);padding:10px 6px;transition:color .2s}
+.back:hover{color:var(--text)}
+.err{margin-top:16px;min-height:1.4em;font-size:14px;color:var(--red)}
+.pc{margin-top:22px;font:500 12px/1 var(--mono);letter-spacing:.28em;color:var(--gray);font-variant-numeric:tabular-nums}
 
-.kick{display:flex;align-items:center;gap:8px;font:500 10.5px/1 var(--mono);letter-spacing:.3em;color:var(--text-3);text-transform:uppercase}
-.kick::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--mint)}
-h1{font-family:var(--cjk);font-size:30px;line-height:1.2;font-weight:300;letter-spacing:.06em;margin:18px 0 0}
-h1 small{display:block;margin-top:8px;font-family:var(--font);font-size:11px;font-weight:400;letter-spacing:.34em;color:var(--text-3)}
-.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:26px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:13px;color:var(--text-2)}
-.facts span b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums;margin-right:3px}
-.sec{margin-top:36px}
-.sec>h2{font:500 10.5px/1 var(--mono);letter-spacing:.26em;color:var(--text-3);text-transform:uppercase;margin-bottom:14px}
+/* 完成 */
+.link{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:30px;font:12px/1.4 var(--mono);color:var(--gray-2);letter-spacing:0}
+.link span{max-width:62vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link button{font-size:13px;color:var(--text);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-family:var(--font)}
 
-.field{display:block;margin-top:26px}
-.field>span{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--text-2);margin-bottom:6px;letter-spacing:.04em}
-.field>span i{font-style:normal;font:400 10px/1 var(--mono);letter-spacing:.2em;color:var(--text-3);text-transform:uppercase}
-input[type=text]{width:100%;font:inherit;font-size:16px;color:var(--text);background:transparent;border:0;border-bottom:1px solid var(--line-2);border-radius:0;padding:8px 0 10px;outline:0;transition:border-color .3s var(--ease)}
-input[type=text]:focus{border-bottom-color:var(--text)}
-::placeholder{color:var(--text-3)}
-
-.seg{position:relative;display:grid;grid-template-columns:repeat(var(--n),1fr);border:1px solid var(--line-2);border-radius:999px;padding:3px;margin-top:4px}
-.seg::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--n));border-radius:999px;background:rgba(236,235,230,.1);
-  transform:translateX(calc(var(--i,0) * 100%));opacity:0;transition:transform .45s var(--spring),opacity .2s}
-.seg.set::before{opacity:1}
-.seg button{position:relative;z-index:1;font:inherit;font-size:14px;color:var(--text-3);background:transparent;border:0;border-radius:999px;padding:8px 4px;cursor:pointer;transition:color .25s var(--ease),transform .15s var(--ease)}
-.seg button:active{transform:scale(.96)}
-.seg button[aria-pressed=true]{color:var(--text)}
-
-.drop{display:block;margin-top:30px;border:1px dashed var(--line-2);border-radius:12px;padding:22px 14px;text-align:center;color:var(--text-2);font-size:14px;cursor:pointer;transition:border-color .3s var(--ease),background .3s var(--ease)}
-.drop:hover,.drop.on{border-color:var(--text-2);background:var(--fill);color:var(--text)}
-.drop small{display:block;margin-top:4px;font:400 10.5px/1.4 var(--mono);letter-spacing:.16em;color:var(--text-3)}
-.drop.has{border-style:solid;color:var(--text)}
-.btn{display:block;width:100%;margin-top:22px;font:inherit;font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--ink);background:var(--pearl);border:0;border-radius:999px;padding:13px;cursor:pointer;transition:transform .16s var(--ease),opacity .2s}
-.btn:active{transform:scale(.98)}
-.btn[disabled]{opacity:.35;cursor:default}
-.err{margin-top:12px;color:var(--red);font-size:13px;min-height:1.5em;text-align:center}
-
-#up{position:fixed;inset:0;z-index:40;display:grid;place-items:center;align-content:center;gap:18px;background:rgba(11,11,12,.82);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
-#up.on{opacity:1;pointer-events:auto}
-#up .m{width:72px;height:72px;transform:scale(.94);transition:transform .6s var(--spring)}
-#up.on .m{transform:none}
-#up.fin .m{transform:scale(1.05)}
-#up .pc{font:500 11px/1 var(--mono);letter-spacing:.26em;color:var(--text-2);font-variant-numeric:tabular-nums}
-
-.done{margin-top:28px;padding:22px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.done h3{font-family:var(--cjk);font-size:20px;font-weight:400;letter-spacing:.04em;margin-bottom:4px}
-.done p{color:var(--text-2);font-size:13px}
-.link{display:flex;gap:10px;margin-top:14px;align-items:flex-end}
-.link input{flex:1;min-width:0;font-size:12px!important;font-family:var(--mono)!important;color:var(--text-2)!important}
-.link button{font:inherit;font-size:12px;letter-spacing:.12em;color:var(--text);background:transparent;border:1px solid var(--line-2);border-radius:999px;padding:7px 14px;cursor:pointer}
-.card{padding:18px 0;border-top:1px solid var(--line)}
-.card:first-of-type{border-top:0}
+/* 我的投递 */
+.mine{text-align:left;align-self:start}
+.mine h2{text-align:center;font-size:32px;font-weight:600;margin-bottom:28px}
+.card{padding:20px 0;border-top:1px solid var(--line)}
 .ch{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.ch b{font-size:15px;font-weight:500;overflow-wrap:anywhere}
-.chip{flex:none;font:400 10.5px/1.6 var(--mono);letter-spacing:.14em;color:var(--text-3)}
+.ch b{font-size:17px;font-weight:600;overflow-wrap:anywhere}
+.chip{flex:none;font-size:12px;color:var(--gray)}
 .chip.ok{color:var(--mint)}
-.meta{color:var(--text-3);font-size:12px;margin-top:2px}
+.meta{color:var(--gray-2);font-size:13px;margin-top:2px}
 audio{display:block;width:100%;height:36px;margin-top:12px;color-scheme:dark}
-.ov{margin-top:14px;color:var(--text);font-size:14px;line-height:1.8;white-space:pre-wrap}
-.tl{margin-top:12px;display:grid;gap:2px}
-.tl button{display:grid;grid-template-columns:46px 1fr;gap:10px;text-align:left;font:inherit;font-size:14px;line-height:1.7;color:var(--text);background:transparent;border:0;border-radius:8px;padding:7px 8px;margin:0 -8px;cursor:pointer}
+.ov{margin-top:14px;font-size:15px;line-height:1.7;white-space:pre-wrap}
+.tl{margin-top:10px;display:grid;gap:2px}
+.tl button{display:grid;grid-template-columns:48px 1fr;gap:10px;text-align:left;font-size:15px;line-height:1.6;border-radius:10px;padding:8px;margin:0 -8px}
 .tl button:hover{background:var(--fill)}
-.tl time{font:500 11px/2 var(--mono);color:var(--text-3)}
+.tl time{font:500 12px/1.9 var(--mono);color:var(--gray-2)}
 .tl button.on time{color:var(--mint)}
-
-.wall{margin-top:52px}
-.wall h2{display:flex;justify-content:space-between;align-items:baseline;font:500 10.5px/1 var(--mono);letter-spacing:.26em;color:var(--text-3);text-transform:uppercase;margin-bottom:16px}
-.wall h2 em{font-style:normal;letter-spacing:.14em;text-transform:none}
-.seats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.seat{aspect-ratio:1;max-width:100%;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font:400 10px/1 var(--mono);color:var(--text-3);letter-spacing:.08em;text-align:center;padding:4px;overflow:hidden}
-.seat.on{border-color:var(--mint);color:var(--text);font:400 11px/1.25 var(--font);letter-spacing:0}
 [hidden]{display:none!important}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.rise{opacity:1;transform:none}#intro{display:none}}
-@media (prefers-reduced-transparency:reduce){.top,#up{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--bg)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.fade-up{opacity:1;transform:none}.cumark.draw .f{stroke-dashoffset:0}}
 </style>
 </head>
-<body class="lock">
-<div id="intro" aria-hidden="true"><div class="m"><svg class="cumark" viewBox="272 164 456 456"><path class="b" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="b b2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg></div></div>
+<body>
+<header class="top">
+  <div class="brand"><i><svg class="cumark" viewBox="272 164 456 456"><path pathLength="1" style="stroke-dasharray:none" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path pathLength="1" style="stroke-dasharray:none" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg></i>CU MUSIC</div>
+  <button class="toplink" id="mineBtn" type="button" hidden>我的投递</button>
+</header>
 
-<div id="up" aria-live="polite"><div class="m"><svg class="cumark" viewBox="272 164 456 456"><path class="b" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="b" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/><path class="f" id="r1" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="f" id="r2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg></div><div class="pc" id="pc">0%</div></div>
+<main class="stage">
+  <!-- 首屏 -->
+  <section class="view hero on" id="vHero"><div class="inner">
+    <div class="mark"><svg class="cumark draw" viewBox="272 164 456 456" aria-hidden="true"><path class="b" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="b" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/><path class="f" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="f f2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg></div>
+    <h1 class="fade-up d1">主厨之选</h1>
+    <div class="en fade-up d2">CHEF'S TABLE</div>
+    <div class="seats fade-up d3" id="seats" aria-label="5 席"><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="offer fade-up d3">免费混音一首，全年混音五折。</p>
+    <button class="cta fade-up d4" id="start" type="button">投递 Demo</button>
+    <div class="date fade-up d5">26.11 — 27.11</div>
+  </div></section>
 
-<main>
-  <div class="top"><div class="lg"><i><svg class="cumark" viewBox="272 164 456 456"><path class="b" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="b" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg></i>CU MUSIC</div><span class="r">DEMO</span></div>
+  <!-- 一问一答 -->
+  <section class="view flow" id="vFlow"><div class="inner">
+    <div class="mark"><svg class="cumark" viewBox="272 164 456 456" aria-hidden="true"><path class="b" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="b" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/><path class="f" id="r1" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="f" id="r2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg></div>
+    <div class="num" id="num"></div>
+    <h2 id="q"></h2>
+    <p class="sub" id="sub" hidden></p>
+    <div class="ans" id="ans"></div>
+    <div class="err" id="err" role="alert"></div>
+    <div class="nav" id="nav"></div>
+  </div></section>
 
-  <div id="mine" hidden><div class="sec" style="margin-top:44px"><h2>我的投递</h2><div id="list"></div></div></div>
+  <!-- 完成 -->
+  <section class="view flow" id="vDone"><div class="inner">
+    <div class="mark"><svg class="cumark" viewBox="272 164 456 456" aria-hidden="true"><path class="f" style="stroke-dashoffset:0" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="f" style="stroke-dashoffset:0" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg></div>
+    <h2 style="margin-top:36px">收到了。</h2>
+    <p class="sub">反馈会出现在这个链接里。</p>
+    <div class="link"><span id="lk"></span><button id="cp" type="button">复制</button></div>
+    <div class="nav"><button class="back" id="home" type="button">回到首页</button></div>
+  </div></section>
 
-  <div class="rise" id="head" style="margin-top:52px"><div class="kick">ChefDao Audio</div><h1 id="h1">主厨之选<small>CHEF'S TABLE</small></h1>
-    <p class="facts"><span><b>5</b>席</span><span>免费混音 <b>1</b> 首</span><span>全年混音 <b>5</b> 折 · 26.11–27.11</span></p></div>
-
-  <section id="formsec" class="sec" style="margin-top:8px">
-    <label class="field rise"><span>艺名<i>Name</i></span><input id="n" type="text" maxlength="20" placeholder="你的艺名" autocomplete="off"></label>
-    <div class="field rise"><span>刀门会员<i>Member</i></span>
-      <div class="seg" id="seg" style="--n:2"><button type="button" data-v="1" aria-pressed="false">是</button><button type="button" data-v="0" aria-pressed="false">不是</button></div>
-    </div>
-    <label class="field rise"><span>歌名<i>Title</i></span><input id="t" type="text" maxlength="60" placeholder="这首歌叫什么" autocomplete="off"></label>
-    <label class="field rise"><span>主页<i>Profile · Optional</i></span><input id="l" type="text" inputmode="url" maxlength="200" placeholder="抖音 / 小红书 / 网易云主页链接" autocomplete="off"></label>
-    <label class="drop rise" id="drop"><input id="file" type="file" accept="audio/*,.mp3,.m4a,.wav,.aif,.aiff,.flac" hidden>
-      <span id="dt">选择音频，或拖到这里</span><small>MP3 · M4A · WAV</small></label>
-    <div class="rise"><button class="btn" id="go" type="button">投递 Submit</button><div class="err" id="err" role="alert"></div></div>
-  </section>
-
-  <section class="wall rise" id="wall"><h2>入选 Selected<em>首批 11 月公布</em></h2>
-    <div class="seats"><div class="seat">01</div><div class="seat">02</div><div class="seat">03</div><div class="seat">04</div><div class="seat">05</div></div></section>
-
-  <section id="ok" class="done" hidden>
-    <h3>收到了。</h3>
-    <p>反馈会出现在这个链接里。</p>
-    <div class="link"><input id="lk" type="text" readonly><button id="cp" type="button">复制</button></div>
-  </section>
+  <!-- 我的投递 -->
+  <section class="view" id="vMine"><div class="inner mine">
+    <h2>我的投递</h2>
+    <div id="list"></div>
+    <div class="nav"><button class="back" id="home2" type="button">回到首页</button></div>
+  </div></section>
 </main>
 <script>
 (() => {
@@ -163,81 +162,101 @@ audio{display:block;width:100%;height:36px;margin-top:12px;color-scheme:dark}
 const API = 'https://stats.cumusic.work', $ = s => document.querySelector(s);
 const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch (e) {} } };
 const MAX = 24 * 1024 * 1024;
-const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let mem = null, file = null, busy = false;
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const fmt = n => n < 1048576 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
+const clock = t => { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+const day = ts => { const d = new Date(ts); return (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日'; };
+
 const LID = (() => { let v = store.get('demo:lid'); if (!/^[A-Z0-9]{6}$/.test(v || '')) { v = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join(''); store.set('demo:lid', v); } return v; })();
 const DEV = (() => { const u = navigator.userAgent; const d = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : '其他'; return d + (/MicroMessenger/.test(u) ? ' · 微信' : ''); })();
 try { fetch(API + '/demo/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid: LID, device: DEV, ref: document.referrer ? new URL(document.referrer).host : '' }), keepalive: true }); } catch (e) {}
 
-const fmt = n => n < 1048576 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
-const clock = t => { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
-const day = ts => { const d = new Date(ts); return (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日'; };
-const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+/* 视图切换 */
+const views = ['vHero', 'vFlow', 'vDone', 'vMine'];
+const show = id => { views.forEach(v => $('#' + v).classList.toggle('on', v === id)); window.scrollTo(0, 0); };
+requestAnimationFrame(() => document.body.classList.add('lit'));
 
-/* 开场：CU 标画出来 → 放大淡去 → 页面逐层浮起。点一下可跳过 */
-let started = false;
-const reveal = () => { if (started) return; started = true; $('#intro').classList.add('out'); document.body.classList.remove('lock'); requestAnimationFrame(() => document.body.classList.add('ready')); setTimeout(() => { const i = $('#intro'); if (i) i.remove(); }, 1000); };
-if (REDUCE) { document.body.classList.remove('lock'); document.body.classList.add('ready'); } else { setTimeout(reveal, 1900); $('#intro').addEventListener('pointerdown', reveal); }
+/* 入选席位 */
+fetch(API + '/demo/wall').then(r => r.json()).then(j => { const dots = [...document.querySelectorAll('#seats i')]; (j.seats || []).forEach((w, i) => { if (dots[i]) { dots[i].classList.add('on'); dots[i].title = w; } }); }).catch(() => {});
 
-/* 分段选择 */
-function seg(id, on) {
-  const box = $(id), btns = [...box.querySelectorAll('button')];
-  btns.forEach((b, i) => b.addEventListener('click', () => { box.style.setProperty('--i', i); box.classList.add('set'); btns.forEach(x => x.setAttribute('aria-pressed', x === b)); $('#err').textContent = ''; on(b.dataset.v); }));
+/* 一问一答 */
+const A = { n: '', mem: null, t: '', l: '', file: null };
+const STEPS = [
+  { k: 'n', q: '你的艺名', type: 'text', ph: '艺名', max: 20 },
+  { k: 'mem', q: '你是刀门会员吗', type: 'pair', opts: [['1', '是'], ['0', '不是']] },
+  { k: 't', q: '这首歌叫什么', type: 'text', ph: '歌名', max: 60 },
+  { k: 'l', q: '你的主页', sub: '抖音、小红书或网易云，可以跳过', type: 'text', ph: '粘贴链接', max: 200, opt: true },
+  { k: 'file', q: '选择这首 demo', type: 'file' },
+];
+let step = 0, busy = false;
+const r1 = $('#r1'), r2 = $('#r2');
+const ring = () => { r1.style.strokeDashoffset = 1 - step / STEPS.length; };
+function render() {
+  const s = STEPS[step]; ring(); r2.style.strokeDashoffset = 1;
+  $('#num').textContent = String(step + 1).padStart(2, '0') + ' / ' + String(STEPS.length).padStart(2, '0');
+  $('#q').textContent = s.q; $('#sub').hidden = !s.sub; $('#sub').textContent = s.sub || ''; $('#err').textContent = '';
+  const ans = $('#ans'), nav = $('#nav'); ans.textContent = ''; nav.textContent = '';
+  const back = el('button', 'back', step ? '上一步' : '返回'); back.type = 'button'; back.onclick = () => { if (busy) return; if (step) { step--; render(); } else show('vHero'); };
+  if (s.type === 'text') {
+    const i = el('input'); i.type = 'text'; i.maxLength = s.max; i.placeholder = s.ph; i.value = A[s.k] || ''; i.autocomplete = 'off'; i.enterKeyHint = 'next';
+    ans.append(i); setTimeout(() => i.focus({ preventScroll: true }), 450);
+    const go = el('button', 'pill solid', s.opt ? '继续' : '继续'); go.type = 'button';
+    const next = () => { const v = i.value.trim(); if (!v && !s.opt) { $('#err').textContent = s.k === 'n' ? '请填写艺名。' : '请填写歌名。'; return; }
+      if (s.k === 'l' && v && !/^https?:\/\//i.test(v)) { const m = v.match(/https?:\/\/\S+/i); A.l = m ? m[0] : ''; } else A[s.k] = v; step++; render(); };
+    go.onclick = next; i.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); next(); } });
+    nav.append(back, go);
+    if (s.opt) { const skip = el('button', 'back', '跳过'); skip.type = 'button'; skip.onclick = () => { A.l = ''; step++; render(); }; nav.append(skip); }
+  } else if (s.type === 'pair') {
+    const p = el('div', 'pair');
+    s.opts.forEach(([v, label]) => { const b = el('button', 'pill' + (A.mem === (v === '1') ? ' solid' : ''), label); b.type = 'button'; b.onclick = () => { A.mem = v === '1'; step++; render(); }; p.append(b); });
+    ans.append(p); nav.append(back);
+  } else {
+    const f = el('div', 'file'), inp = el('input'); inp.type = 'file'; inp.accept = 'audio/*,.mp3,.m4a,.wav,.aif,.aiff,.flac'; inp.hidden = true;
+    const pick = el('button', 'pill' + (A.file ? '' : ' solid'), A.file ? '换一首' : '选择音频'); pick.type = 'button'; pick.onclick = () => inp.click();
+    f.append(inp, pick, el('small', '', 'MP3 · M4A · WAV'));
+    if (A.file) f.append(el('div', 'fname', A.file.name + ' · ' + fmt(A.file.size)));
+    inp.onchange = () => { const x = inp.files[0]; if (!x) return; if (x.size > MAX) { $('#err').textContent = '文件超过 24MB，请导出 mp3。'; return; } A.file = x; render(); };
+    ans.append(f);
+    const go = el('button', 'pill solid', '投递'); go.type = 'button'; go.disabled = !A.file; go.onclick = submit;
+    nav.append(back); if (A.file) { pick.className = 'pill'; nav.append(go); }
+  }
 }
-seg('#seg', v => { mem = v === '1'; });
+$('#start').onclick = () => { step = 0; render(); show('vFlow'); };
 
-/* 选文件 */
-const setFile = f => {
-  if (!f) return;
-  if (f.size > MAX) { $('#err').textContent = '文件超过 24MB，请导出 mp3。'; return; }
-  file = f; $('#err').textContent = '';
-  $('#drop').classList.add('has'); $('#dt').textContent = f.name + ' · ' + fmt(f.size);
-  if (!$('#t').value.trim()) $('#t').value = f.name.replace(/\.[^.]+$/, '').slice(0, 60);
-};
-$('#drop').addEventListener('click', e => { if (e.target !== $('#file')) { e.preventDefault(); $('#file').click(); } });
-$('#file').onchange = e => setFile(e.target.files[0]);
-['dragenter', 'dragover'].forEach(ev => $('#drop').addEventListener(ev, e => { e.preventDefault(); $('#drop').classList.add('on'); }));
-['dragleave', 'drop'].forEach(ev => $('#drop').addEventListener(ev, e => { e.preventDefault(); $('#drop').classList.remove('on'); }));
-$('#drop').addEventListener('drop', e => setFile(e.dataTransfer.files[0]));
-
-/* 上传进度环：外圈走前半，内圈走后半；显示值向真实进度平滑追赶 */
-let shown = 0, goal = 0, raf = 0;
-const paint = p => { $('#r1').style.strokeDashoffset = 1 - Math.min(1, p * 2); $('#r2').style.strokeDashoffset = 1 - Math.max(0, p * 2 - 1); $('#pc').textContent = Math.round(p * 100) + '%'; };
-const loop = () => { shown += (goal - shown) * .14; if (Math.abs(goal - shown) < .002) shown = goal; paint(shown); if (busy || shown < goal) raf = requestAnimationFrame(loop); };
-const upShow = on => { $('#up').classList.toggle('on', on); $('#up').classList.remove('fin'); if (on) { shown = goal = 0; paint(0); cancelAnimationFrame(raf); loop(); } };
-
-const ERR = { quota: () => '今天已经投过了，明天再来。', full: () => '今天的投递已满，明天再来。', size: () => '文件超过 24MB，请导出 mp3。', rate: () => '操作太频繁，稍后再试。', who: () => '请填写艺名。', title: () => '请填写歌名。' };
-$('#go').onclick = () => {
-  if (busy) return;
-  const n = $('#n').value.trim(), t = $('#t').value.trim(), err = $('#err');
-  if (!n) return err.textContent = '请填写艺名。';
-  if (mem === null) return err.textContent = '请选择是否为刀门会员。';
-  if (!t) return err.textContent = '请填写歌名。';
-  if (!file) return err.textContent = '请选择要投递的音频。';
-  err.textContent = ''; busy = true; $('#go').disabled = true; upShow(true);
-  let link = $('#l').value.trim(); if (link && !/^https?:\/\//i.test(link)) { const m = link.match(/https?:\/\/\S+/i); link = m ? m[0] : ''; }
-  const q = new URLSearchParams({ n, mem: mem ? '1' : '0', lid: LID, title: t, l: link, ct: file.type || 'audio/mpeg' });
+/* 上传：CU 标内圈 = 上传进度 */
+const ERR = { quota: '今天已经投过了，明天再来。', full: '今天的投递已满，明天再来。', size: '文件超过 24MB，请导出 mp3。', rate: '操作太频繁，稍后再试。', who: '请填写艺名。', title: '请填写歌名。' };
+let shown = 0, goal = 0;
+const loop = () => { shown += (goal - shown) * .12; r2.style.strokeDashoffset = 1 - shown; const pc = $('#pcv'); if (pc) pc.textContent = Math.round(shown * 100) + '%'; if (busy || Math.abs(goal - shown) > .002) requestAnimationFrame(loop); };
+function submit() {
+  if (busy || !A.file) return;
+  busy = true; r1.style.strokeDashoffset = 0; shown = goal = 0; r2.style.transition = 'none';
+  $('#q').textContent = '正在上传'; $('#sub').hidden = true; $('#err').textContent = '';
+  $('#ans').textContent = ''; const pc = el('div', 'pc', '0%'); pc.id = 'pcv'; $('#ans').append(pc); $('#nav').textContent = ''; loop();
+  const q = new URLSearchParams({ n: A.n, mem: A.mem ? '1' : '0', lid: LID, title: A.t, l: A.l, ct: A.file.type || 'audio/mpeg' });
   const x = new XMLHttpRequest();
   x.open('POST', API + '/demo/up?' + q);
-  x.upload.onprogress = e => { if (e.lengthComputable) goal = Math.min(.98, e.loaded / e.total); };
-  const end = () => { busy = false; $('#go').disabled = false; };
+  x.upload.onprogress = e => { if (e.lengthComputable) goal = Math.min(.97, e.loaded / e.total); };
+  const fail = msg => { busy = false; r2.style.transition = ''; render(); $('#err').textContent = msg; };
   x.onload = () => {
     let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {}
-    if (j.ok && j.token) { goal = 1; end(); setTimeout(() => $('#up').classList.add('fin'), 500); setTimeout(() => { upShow(false); success(j.token); }, 1100); loop(); return; }
-    end(); upShow(false); err.textContent = (ERR[j.e] ? ERR[j.e]() : '投递没有成功，请稍后再试。');
+    if (!(j.ok && j.token)) return fail(ERR[j.e] || '投递没有成功，请稍后再试。');
+    goal = 1; setTimeout(() => { busy = false; r2.style.transition = ''; done(j.token); }, 900);
   };
-  x.onerror = () => { end(); upShow(false); err.textContent = '网络不稳，请稍后再试。'; };
-  x.send(file);
-};
+  x.onerror = () => fail('网络不稳，请稍后再试。');
+  x.send(A.file);
+}
 const tokens = () => { try { return JSON.parse(store.get('demo:tokens') || '[]'); } catch (e) { return []; } };
-function success(tok) {
+function done(tok) {
   const ts = tokens(); if (!ts.includes(tok)) ts.unshift(tok); store.set('demo:tokens', JSON.stringify(ts.slice(0, 10)));
   const url = location.origin + location.pathname + '?t=' + tok;
-  $('#lk').value = url; $('#ok').hidden = false; $('#formsec').hidden = true; $('#head').hidden = true;
-  $('#mine').before($('#ok')); $('#ok').style.marginTop = '48px'; window.scrollTo({ top: 0, behavior: 'smooth' });
-  $('#cp').onclick = async () => { try { await navigator.clipboard.writeText(url); } catch (e) { $('#lk').select(); } $('#cp').textContent = '已复制'; };
-  load();
+  $('#lk').textContent = url.replace(/^https?:\/\//, '');
+  $('#cp').textContent = '复制';
+  $('#cp').onclick = async () => { try { await navigator.clipboard.writeText(url); $('#cp').textContent = '已复制'; } catch (e) { const r = document.createRange(); r.selectNodeContents($('#lk')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
+  A.t = ''; A.l = ''; A.file = null;
+  show('vDone'); load();
 }
+$('#home').onclick = () => show('vHero'); $('#home2').onclick = () => show('vHero');
+$('#mineBtn').onclick = () => show('vMine');
 
 /* 我的投递 */
 const STATUS = { new: '已收到', heard: '已收到', done: '反馈已发布' };
@@ -249,9 +268,9 @@ async function load() {
   }
   if (q && !tokens().includes(q) && rows.length) { const ts = tokens(); ts.unshift(q); store.set('demo:tokens', JSON.stringify(ts.slice(0, 10))); }
   rows.sort((a, b) => b.ts - a.ts);
-  const box = $('#list'); box.textContent = '';
-  $('#mine').hidden = !rows.length;
-  rows.forEach(d => box.append(card(d)));
+  const box = $('#list'); box.textContent = ''; rows.forEach(d => box.append(card(d)));
+  $('#mineBtn').hidden = !rows.length;
+  return rows.length;
 }
 function card(d) {
   const c = el('div', 'card'), h = el('div', 'ch');
@@ -262,16 +281,14 @@ function card(d) {
     if (d.overall) c.append(el('div', 'ov', d.overall));
     if (d.notes && d.notes.length) {
       const tl = el('div', 'tl');
-      d.notes.forEach(n => { const b = el('button'); b.type = 'button'; b.append(el('time', '', clock(n.t)), el('span', '', n.text));
-        b.onclick = () => { a.currentTime = n.t; a.play().catch(() => {}); }; tl.append(b); });
+      d.notes.forEach(n => { const b = el('button'); b.type = 'button'; b.append(el('time', '', clock(n.t)), el('span', '', n.text)); b.onclick = () => { a.currentTime = n.t; a.play().catch(() => {}); }; tl.append(b); });
       a.addEventListener('timeupdate', () => { let on = -1; d.notes.forEach((n, i) => { if (a.currentTime >= n.t - .2) on = i; }); [...tl.children].forEach((b, i) => b.classList.toggle('on', i === on)); });
       c.append(tl);
     }
   }
   return c;
 }
-load();
-fetch(API + '/demo/wall').then(r => r.json()).then(j => { (j.seats || []).forEach((who, i) => { const s = document.querySelectorAll('.seat')[i]; if (s) { s.textContent = who; s.classList.add('on'); } }); if ((j.seats || []).length) { const e = document.querySelector('#wall h2 em'); if (e) e.textContent = j.seats.length + ' / 5'; } }).catch(() => {});
+load().then(n => { if (n && new URLSearchParams(location.search).get('t')) show('vMine'); });
 })();
 </script>
 </body>
