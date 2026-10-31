@@ -105,6 +105,7 @@ const API = 'https://stats.cumusic.work', $ = s => document.querySelector(s);
 const store = { get(k) { try { return localStorage.getItem(k) } catch (e) { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch (e) {} }, del(k) { try { localStorage.removeItem(k) } catch (e) {} } };
 let KEY = store.get('insights:key'), D = [], cur = null, filter = 'all';
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const ROLE = { artist: '艺人', mixer: '混音师', beat: 'Beatmaker' };
 const clock = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 const ago = ts => { const m = Math.floor((Date.now() - ts) / 6e4); return m < 60 ? Math.max(1, m) + ' 分钟前' : m < 1440 ? Math.floor(m / 60) + ' 小时前' : Math.floor(m / 1440) + ' 天前'; };
 async function api(path, body) {
@@ -135,7 +136,7 @@ function renderList() {
   rows.forEach(d => {
     const b = el('button', 'item' + (cur && cur.id === d.id ? ' on' : '')); b.type = 'button';
     b.append(el('b', '', d.title));
-    const s = el('span'); s.append(el('i', 'dot ' + (d.pub ? 'done' : d.status === 'heard' ? 'heard' : '')), el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode(d.who + ' · ' + ago(d.ts) + (d.notes.length ? ' · ' + d.notes.length + ' 条' : '')));
+    const s = el('span'); s.append(el('i', 'dot ' + (d.pub ? 'done' : d.status === 'heard' ? 'heard' : '')), el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode(d.who + (d.role ? ' · ' + ROLE[d.role] : '') + ' · ' + ago(d.ts) + (d.notes.length ? ' · ' + d.notes.length + ' 条' : '')));
     b.append(s); b.onclick = () => open(d); box.append(b);
   });
 }
@@ -223,7 +224,7 @@ function renderNotes() {
 }
 function renderMeta() {
   const d = cur.d, s = $('#meta'); if (!s) return; s.textContent = '';
-  s.append(el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode(d.who + ' · ' + ago(d.ts)));
+  s.append(el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode(d.who + (d.role ? ' · ' + ROLE[d.role] : '') + ' · ' + ago(d.ts)));
   const sw = el('button', '', d.kind === 'mem' ? '改为访客' : '改为刀门会员'); sw.type = 'button'; sw.onclick = async () => { await api('/demo/kind', { id: d.id, mem: d.kind === 'mem' ? 0 : 1 }); load(true); };
   s.append(sw);
   const b = $('#brief'); if (b) { b.textContent = d.note || ''; b.hidden = !d.note; }
