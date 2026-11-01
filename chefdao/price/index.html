@@ -5349,6 +5349,7 @@ function qbMasterOrder() {
 	qbOrderOpen();
 }
 function qbOrderOpen() {
+	if (qbEdit) return qbEditSave();   // 看板「改单」进来的：按钮改成保存到订单，不新建
 	var t = qbOrderT(), q = I18N[currentLang].quote, total = qbMO ? qbMO.total : qbStatTotal(), from = false;
 	if (!qbMO) { try { from = qbCompute(q).from; } catch (e) {} }
 	var planTxt = qbMO ? qbMO.label : qbStatPlanLocal() + (total === null ? "" : " · " + qbFmt(q, total) + (from ? "+" : ""));
@@ -5450,7 +5451,7 @@ function qbOrderSend(e) {
 	var detail = ""; try { detail = qbMO ? qbMO.detail : qbQuoteText(); } catch (x) {}
 	if (qbPromo) { var sy = { zh: "¥", en: "$", ko: "₩" }[currentLang] || "¥"; detail += "\n" + (currentLang === "zh" ? "优惠码 " : "Promo ") + qbPromo.code + " −" + sy + qbPromo.off + " → " + sy + qbPromo.final; }
 	var body = JSON.stringify({ name: name, wechat: wx, song: v("qbo-song"), note: v("qbo-note"), website: v("qbo-hp"), promo: qbPromo ? qbPromo.code : "",
-		plan: qbOrderLast.plan, total: qbOrderLast.total, sch: qbOrderLast.sch, mem: qbOrderLast.mem, old: qbOrderLast.old, nb: qbOrderLast.nb, kind: qbOrderLast.kind, detail: detail, lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
+		plan: qbOrderLast.plan, total: qbOrderLast.total, sch: qbOrderLast.sch, mem: qbOrderLast.mem, old: qbOrderLast.old, nb: qbOrderLast.nb, kind: qbOrderLast.kind, detail: detail, q: qbMO ? "" : qbEncodeState(), lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
 	var fail = function (msg) { err.textContent = msg.replace("{w}", w); btn.disabled = false; btn.textContent = t.send; };
 	fetch(QBS_API + "/o", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
 		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
@@ -5484,6 +5485,37 @@ function qbOrderSend(e) {
 		.catch(function () { fail(t.errNet); });
 }
 
+// ── 改单模式（看板「用选择器改方案」进来：?edit=订单号&lang=zh&promo=码&off=金额，#q= 带着下单时的选择）──
+// 只在带着看板钥匙（insights:key，同域）的设备上生效；保存走 /oedit，服务端先把改前的订单存成快照
+var qbEdit = (function () {
+	try {
+		var sp = new URLSearchParams(location.search), id = +sp.get("edit"), key = qbLsGet("insights:key");
+		if (!id || !key) return null;
+		return { id: id, key: key, lang: ["zh", "en", "ko"].indexOf(sp.get("lang")) >= 0 ? sp.get("lang") : "zh", promo: (sp.get("promo") || "").replace(/[^A-Z0-9-]/gi, "").slice(0, 20), off: +sp.get("off") || 0 };
+	} catch (e) { return null; }
+})();
+function qbEditBar() {
+	var b = document.createElement("div"); b.id = "qbEditBar";
+	b.setAttribute("style", "position:fixed;left:0;right:0;top:0;z-index:9999;display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) 14px 10px;background:#1c1c1e;color:#e8e6e2;border-bottom:.5px solid rgba(236,234,230,.15);font:14px/1.4 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif");
+	b.innerHTML = '<span style="flex:1">正在改订单 <b>#' + qbEdit.id + '</b>：选好后点右边保存</span>'
+		+ '<button type="button" id="qbEditX" style="padding:7px 12px;border-radius:9px;border:0;background:rgba(236,234,230,.1);color:#e8e6e2;font:inherit">放弃</button>'
+		+ '<button type="button" id="qbEditOk" style="padding:7px 14px;border-radius:9px;border:0;background:#ebe9e5;color:#121213;font:inherit;font-weight:600">保存到订单</button>';
+	document.body.appendChild(b); document.body.style.paddingTop = "56px";
+	document.getElementById("qbEditX").onclick = function () { location.href = "/chefdao/review/insights/#orders"; };
+	document.getElementById("qbEditOk").onclick = function () { qbEditSave(); };
+}
+function qbEditSave() {
+	var total = qbStatTotal();
+	if (total === null) { alert("方案还没选完整，先把必选项选好"); return; }
+	var detail = ""; try { detail = qbQuoteText(); } catch (x) {}
+	if (qbEdit.promo && qbEdit.off) { var sy = { zh: "¥", en: "$", ko: "₩" }[currentLang] || "¥"; detail += "\n" + (currentLang === "zh" ? "优惠码 " : "Promo ") + qbEdit.promo + " −" + sy + qbEdit.off + " → " + sy + (total - qbEdit.off); }
+	var btn = document.getElementById("qbEditOk"); btn.disabled = true; btn.textContent = "保存中…";
+	fetch(QBS_API + "/oedit", { method: "POST", headers: { Authorization: "Bearer " + qbEdit.key, "Content-Type": "application/json" },
+		body: JSON.stringify({ id: qbEdit.id, f: { plan: qbStatPlan(), total: total, detail: detail, q: qbEncodeState() } }) })
+		.then(function (r) { return r.json(); })
+		.then(function (j) { if (!j.ok) throw 0; location.href = "/chefdao/review/insights/#orders"; })
+		.catch(function () { btn.disabled = false; btn.textContent = "保存到订单"; alert("没保存成功，检查网络再试"); });
+}
 document.addEventListener("DOMContentLoaded", function() {
 	qbSnapshotPrices(); // 必须在任何报价渲染之前
 	qbInitTheme();
@@ -5491,7 +5523,8 @@ document.addEventListener("DOMContentLoaded", function() {
 	var hq = (location.hash || "").match(/[#&]q=([^&]+)/);
 	if (!(hq && qbDecodeState(hq[1]))) qbRestoreState();
 	if (qbIsRemembered() && !qbState.mem[0]) qbState.mem[0] = 1; // 老客户不用每次重选身份
-	render("zh");
+	render(qbEdit ? qbEdit.lang : "zh");
+	if (qbEdit) { qbEditBar(); entryGo("book-mix"); }   // 跳过入口页，直接到混音选择器
 });
 </script>
 </body>

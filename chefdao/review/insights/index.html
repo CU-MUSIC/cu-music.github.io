@@ -279,6 +279,8 @@ button.av{cursor:pointer;padding:0}
 .order .eform{margin-top:10px;padding:12px;border-radius:12px;background:var(--fill)}
 .eform .flds{margin-top:0}.eform textarea{background:var(--fill-2);border:0;border-radius:9px;padding:8px 10px;font:inherit;font-size:15px;color:var(--text);width:100%;min-height:120px;resize:vertical}
 .eform .flds .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.eform .epick{display:flex;flex-direction:column;gap:3px;padding:12px 14px;margin-bottom:12px;border-radius:12px;background:var(--pearl);color:var(--ink);text-decoration:none}
+.eform .epick span{font-size:12.5px;opacity:.65}
 .eform .hint{margin-top:8px;font-size:12.5px;color:var(--text-3)}
 .order .rev{margin-top:8px;font-size:14px;color:var(--text-3)}.order .rev summary{color:#e8c98a}
 .order .rev .rw{margin-top:6px;color:var(--text-2);font-size:14px}.order .rev .rw s{color:var(--text-3)}.order .rev .rw b{color:var(--text);font-weight:600}
@@ -289,7 +291,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261101.1700';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261101.1709';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -1243,21 +1245,21 @@ function orderRev(o) {
   return `<details class="rev"><summary>已改过 ${o.nrev || 1} 次 · 看客户原单</summary>${rows || '<div class="rw">只改了报价单文字</div>'}${det}</details>`;
 }
 function orderForm(o) {
-  const d = odraft[o.id] || (odraft[o.id] = { name: o.name || '', wechat: o.wechat || '', song: o.song || '', plan: o.plan || '', total: o.total ?? '', discount: o.discount || 0, note: o.note || '', detail: o.detail || '' });
+  const d = odraft[o.id] || (odraft[o.id] = { name: o.name || '', wechat: o.wechat || '', song: o.song || '', discount: o.discount || 0, note: o.note || '' });
   const inp = (k, t, lbl) => `<label>${lbl}<input ${t} data-od="${k}" value="${esc(d[k])}"></label>`;
-  return `<div class="eform" data-oform="${o.id}"><div class="flds">
+  const pu = `/chefdao/price/?edit=${o.id}&lang=${encodeURIComponent(o.lang || 'zh')}${o.promo ? '&promo=' + encodeURIComponent(o.promo) + '&off=' + (o.discount || 0) : ''}${o.q ? '#q=' + o.q : ''}`;
+  return `<div class="eform" data-oform="${o.id}">
+    <a class="epick" href="${esc(pu)}"><b>用价格页的选择器改方案和总价 →</b><span>${o.q ? '已带入客户当时的选择，改完点「保存到订单」' : '这单下得早，没存下当时的选择，要从头选一遍'}</span></a>
+    <div class="flds">
     <div class="two">${inp('name', '', '称呼')}${inp('wechat', '', '微信')}</div>
-    ${inp('song', '', '歌名')}${inp('plan', '', '方案')}
-    <div class="two">${inp('total', 'type="number" inputmode="numeric"', '总价（' + esc(o.cur || '') + '）')}${inp('discount', 'type="number" inputmode="numeric"', '优惠金额')}</div>
-    ${inp('note', '', '备注')}
-    <label>完整报价单（给客户看的那份文字）<textarea data-od="detail">${esc(d.detail)}</textarea></label>
+    ${inp('song', '', '歌名')}${o.promo ? inp('discount', 'type="number" inputmode="numeric"', '优惠金额（' + esc(o.promo) + '）') : ''}${inp('note', '', '备注')}
   </div>
   <div class="acts"><button class="go" data-oact="save" data-id="${o.id}">保存修改</button><button data-oact="cancel" data-id="${o.id}">放弃</button></div>
-  <div class="hint">保存时自动留一份改之前的快照，随时能在「已改过」里看到客户原单${o.promo ? '。优惠码本身不能改，只能改优惠金额' : ''}</div></div>`;
+  <div class="hint">每次保存都会先留一份改之前的快照，随时能在「已改过」里看到客户原单</div></div>`;
 }
 async function saveOrder(o) {
   const d = odraft[o.id]; if (!d) return;
-  const f = { ...d, total: d.total === '' ? null : +d.total, discount: d.discount === '' ? 0 : +d.discount };
+  const f = { ...d }; if ('discount' in f) f.discount = f.discount === '' ? 0 : +f.discount;
   try {
     const r = await fetch(API + '/oedit', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: o.id, f }) });
     const j = await r.json(); if (!j.ok) throw new Error(j.e || '');
