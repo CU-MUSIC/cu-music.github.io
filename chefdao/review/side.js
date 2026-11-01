@@ -78,10 +78,10 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
   const cover = (p, t) => '<span class="cv"' + (p.cover ? ' style="background-image:url(' + API + p.cover + ')"' : '') + '>' + (p.cover ? '' : esc([...(t || '·')][0])) + '</span>';
   const projRow = p => {
     const one = p.tracks.length === 1, t0 = p.tracks[0];
-    const url = one ? t0.url : p.url, on = isHere(url) || p.tracks.some(t => isHere(t.url));
+    const url = p.url || t0.url, on = isHere(url) || p.tracks.some(t => isHere(t.url));
     const sub = [p.artist || (t0 && t0.artist), one ? '' : p.tracks.length + ' 首'].filter(Boolean).join(' · ');
     let h = '<div class="it' + (isHere(url) ? ' on' : '') + '" data-u="' + esc(url) + '">' + cover(p, p.title) + '<span class="tx"><span class="tt">' + esc(p.title) + '</span>' + (sub ? '<span class="ar">' + esc(sub) + '</span>' : '') + '</span>' + (one ? tag(t0.prog) : '') + '</div>';
-    if (!one && on) h += p.tracks.map(t => '<div class="it tr' + (isHere(t.url) ? ' on' : '') + '" data-u="' + esc(t.url) + '"><span class="tx"><span class="tt">' + esc(t.title) + '</span></span>' + tag(t.prog) + '</div>').join('');
+    if (on) h += p.tracks.map(t => '<div class="it tr' + (isHere(t.url) ? ' on' : '') + '" data-u="' + esc(t.url) + '"><span class="tx"><span class="tt">' + esc(t.title) + '</span></span>' + tag(t.prog) + '</div>').join('');
     return h;
   };
   function draw() {
