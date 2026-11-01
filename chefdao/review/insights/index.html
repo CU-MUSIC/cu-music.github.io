@@ -178,6 +178,13 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .rs-a button,.rs-a a{font-size:12.5px;padding:4px 11px;border-radius:999px;background:var(--fill-2);color:var(--text-2);text-decoration:none}
 .rs-a button:first-child{background:var(--pearl);color:var(--ink);font-weight:600}
 .rs-a .danger{color:var(--red)}
+.emg{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-height:210px;overflow-y:auto;padding:4px;background:var(--fill);border-radius:12px}
+.emg button{font-size:26px;line-height:1;padding:7px 0;border-radius:9px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.emg button.on{background:var(--pearl)}
+.emn{display:flex;gap:4px;padding:3px;background:var(--fill);border-radius:10px}
+.emn button{flex:1;padding:8px;border-radius:8px;font-size:14px;color:var(--text-2)}
+.emn button.on{background:var(--pearl);color:var(--ink);font-weight:600}
+.emp{display:block;width:220px;max-width:70%;aspect-ratio:1;margin:0 auto;border-radius:12px;background:#f4f2ee;box-shadow:0 0 0 .5px rgba(255,255,255,.12)}
 .upbtn{display:block;width:100%;margin:-8px 0 22px;padding:12px;border-radius:12px;background:var(--fill);color:var(--text);font-size:16px;font-weight:600}
 .upbtn:active{background:var(--fill-2)}
 .up{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55)}
@@ -913,6 +920,7 @@ function openProject(slug) {
       <div class="row"><label>类型<select id="pjK">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}"${p.kind === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
       <label>密码<input type="tel" id="pjP" maxlength="4" value="${esc(p.pass)}" placeholder="不设密码"></label></div>
       <label>审听方式<select id="pjM"><option value="pass"${p.mode === 'approve' ? '' : ' selected'}>密码（默认）</option><option value="approve"${p.mode === 'approve' ? ' selected' : ''}>申请制：客户填 ID，你批准</option></select></label></div></div>
+    <button type="button" class="ghost" id="pjEm">用苹果 emoji 做封面</button>
     <input type="file" id="pjFile" accept="image/*" hidden>
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
     <div class="sect">曲目<span>${p.tracks.length} 首</span></div>
@@ -944,6 +952,7 @@ function openProject(slug) {
   if ($p('pjAdd')) $p('pjAdd').onchange = () => { const v = $p('pjAdd').value; if (v) setTracks(order.concat(v)); };
   $p('pjUp').onclick = () => { close(); openUpload({ project: p }); };
   $p('pjCv').onclick = () => $p('pjFile').click();
+  $p('pjEm').onclick = () => openEmojiCover(slug);
   $p('pjFile').onchange = async () => {
     const f = $p('pjFile').files[0]; if (!f) return;
     msg('上传封面…');
@@ -967,6 +976,57 @@ function openProject(slug) {
   $p('pjDel').onclick = async () => {
     if (prompt('删除项目《' + p.title + '》？里面的歌和审听链接都还在，只是不再属于这个项目。\n确认请输入项目名：') !== p.title) return;
     try { await lib('/lib/drop', { slug }); close(); await libReload(); } catch (e) { msg('没删掉，检查网络再试', true); }
+  };
+}
+// ───── 用苹果 emoji 做封面 ─────
+// 1:1 方图、1200×1200（和现有封面同一上限，也是专辑封面的通用比例）；emoji 占宽约 46%，四周留白，按实际墨迹居中（略偏上，给地面阴影留位置）
+const EMOJIS = ('🎵🎶🎤🎧🎹🎸🥁🎷🎺🎻🪕🎼📻💿📀🎚️🎛️🔊🎙️🪩🌙☀️⭐️🌟✨💫🌈🌊🔥⚡️❄️🌸🌹🌴🍀🌵🍂🦋🐱🐶🦊🐻🐼🐯🐸🐢🐙🦄🐟🦉🕊️'
+  + '🍜🍚🍣🍙🍔🍕🍰🍩🍓🍑🍋🍎🍇🍒🥑☕️🍷🥂🧊🍫🍿🧁🥐🍳🥟🍤🍉🌶️'
+  + '👑💎🕶️🎭🎨🎬📷🚀✈️🚗🏠🎂🎁💌🧸🫧💡🔮🪐🧿🖤🤍💚🩶❤️🧡💛💙💜').match(/(?:\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)/gu);
+// 白天版：暖白底（中心 #f9f8f6 → 边缘 #ece9e4，不用纯 #fff，夜里不刺眼）+ 一层很淡的地面阴影 + emoji 自带柔和投影；夜间版：深色底 + 淡淡的光晕
+function emojiCover(ch, size, night) {
+  size = size || 1200;
+  const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d');
+  const bg = g.createRadialGradient(size / 2, size * .46, size * .08, size / 2, size / 2, size * .78);
+  if (night) { bg.addColorStop(0, '#26262a'); bg.addColorStop(1, '#0c0c0d'); } else { bg.addColorStop(0, '#f9f8f6'); bg.addColorStop(1, '#ebe8e3'); }
+  g.fillStyle = bg; g.fillRect(0, 0, size, size); g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  const face = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  let fs = size * .4; g.font = fs + 'px ' + face;
+  const w0 = g.measureText(ch).width || fs; fs = fs * (size * .46) / w0; g.font = fs + 'px ' + face;
+  const m = g.measureText(ch), asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent, ew = m.width;
+  const cy = size * .47, y = asc || desc ? cy + (asc - desc) / 2 : cy + fs * .35, bottom = cy + (asc || fs * .4) * .5 + (desc || 0) * .5;
+  // 地面阴影：emoji 正下方一块压扁的椭圆，虚化
+  g.save(); g.filter = 'blur(' + Math.round(size * .022) + 'px)'; g.fillStyle = night ? 'rgba(0,0,0,.55)' : 'rgba(40,36,30,.20)';
+  g.beginPath(); g.ellipse(size / 2, Math.min(size * .84, cy + (asc ? (asc + desc) / 2 : fs * .45) + size * .035), ew * .36, size * .026, 0, 0, Math.PI * 2); g.fill(); g.restore();
+  // emoji 本体：柔和投影
+  g.save(); g.shadowColor = night ? 'rgba(0,0,0,.6)' : 'rgba(40,36,30,.30)'; g.shadowBlur = size * .045; g.shadowOffsetY = size * .018; g.fillText(ch, size / 2, y); g.restore();
+  return c;
+}
+function openEmojiCover(slug) {
+  const old = document.getElementById('emo'); if (old) old.remove();
+  const apple = /Mac|iPhone|iPad/.test(navigator.userAgent);
+  const el = document.createElement('div'); el.className = 'up'; el.id = 'emo'; let cur = EMOJIS[0], night = 0;
+  el.innerHTML = `<div class="up-s"><div class="up-h">emoji 封面<button type="button" id="emX">关闭</button></div>
+    <canvas class="emp" id="emP" width="440" height="440"></canvas>
+    <div class="emg" id="emG">${EMOJIS.map((e, i) => `<button type="button" data-e="${i}"${i ? '' : ' class="on"'}>${e}</button>`).join('')}</div>
+    <label>或者粘贴任意一个 emoji<input type="text" id="emI" placeholder="点这里，用键盘的 emoji 面板选"></label>
+    <div class="emn" id="emN"><button type="button" data-n="0" class="on">白天版</button><button type="button" data-n="1">夜间版</button></div>
+    ${apple ? '' : '<div class="msg2 err">这台设备不是苹果设备，下面看到的不是苹果 emoji；要苹果原生的，请在 Mac 或 iPhone 上做。</div>'}
+    <div class="msg2" id="emM">正方形，emoji 约占一半、略偏上居中，带柔和阴影；晚上听的人看白天版不刺眼，需要的话选夜间版</div>
+    <button type="button" class="go" id="emGo">用作封面</button></div>`;
+  document.body.appendChild(el);
+  const $e = id => document.getElementById(id), draw = () => { const c = emojiCover(cur, 440, night); const g = $e('emP').getContext('2d'); g.clearRect(0, 0, 440, 440); g.drawImage(c, 0, 0); };
+  const close = () => el.remove(); $e('emX').onclick = close; el.onclick = e => { if (e.target === el) close(); }; draw();
+  $e('emN').onclick = e => { const b = e.target.closest('button'); if (!b) return; night = +b.dataset.n; $e('emN').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); draw(); };
+  $e('emG').onclick = e => { const b = e.target.closest('button'); if (!b) return; cur = EMOJIS[+b.dataset.e]; $e('emG').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); $e('emI').value = ''; draw(); };
+  $e('emI').oninput = () => { const m = ($e('emI').value.match(/(?:\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)/u) || [])[0]; if (m) { cur = m; $e('emG').querySelectorAll('button').forEach(x => x.classList.remove('on')); draw(); } };
+  $e('emGo').onclick = async () => {
+    $e('emM').textContent = '上传封面…'; $e('emM').className = 'msg2';
+    try {
+      const blob = await new Promise(ok => emojiCover(cur, 1200, night).toBlob(ok, 'image/png'));
+      const r = await fetch(API + '/lib/cover?p=' + slug, { method: 'PUT', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/png' }, body: blob });
+      const j = await r.json(); if (!j.ok) throw new Error(); close(); await libReload(slug);
+    } catch (e) { $e('emM').textContent = '封面没传上，检查网络再试'; $e('emM').className = 'msg2 err'; }
   };
 }
 // 项目密码校验块在浏览器里算（和审听页同一套 PBKDF2 → AES-GCM 'ok'），接口只存结果
