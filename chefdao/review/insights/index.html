@@ -181,10 +181,15 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .emg{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-height:210px;overflow-y:auto;padding:4px;background:var(--fill);border-radius:12px}
 .emg button{font-size:26px;line-height:1;padding:7px 0;border-radius:9px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
 .emg button.on{background:var(--pearl)}
+.emt{display:flex;gap:8px;align-items:center}
+.emt button{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.16) inset;flex:none}
+.emt button.on{box-shadow:0 0 0 2px #161617,0 0 0 4px var(--pearl)}
+.emt span{font-size:12px;color:var(--text-3);margin-left:4px}
+.emt.off button{opacity:.3;pointer-events:none}
 .emn{display:flex;gap:4px;padding:3px;background:var(--fill);border-radius:10px}
 .emn button{flex:1;padding:8px;border-radius:8px;font-size:14px;color:var(--text-2)}
 .emn button.on{background:var(--pearl);color:var(--ink);font-weight:600}
-.emp{display:block;width:220px;max-width:70%;aspect-ratio:1;margin:0 auto;border-radius:12px;background:#f4f2ee;box-shadow:0 0 0 .5px rgba(255,255,255,.12)}
+.emp{display:block;width:220px;max-width:70%;aspect-ratio:1;margin:0 auto;border-radius:12px;background:#f2f0ec;box-shadow:0 0 0 .5px rgba(255,255,255,.12)}
 .upbtn{display:block;width:100%;margin:-8px 0 22px;padding:12px;border-radius:12px;background:var(--fill);color:var(--text);font-size:16px;font-weight:600}
 .upbtn:active{background:var(--fill-2)}
 .up{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55)}
@@ -980,15 +985,21 @@ function openProject(slug) {
 }
 // ───── 用苹果 emoji 做封面 ─────
 // 1:1 方图、1200×1200（和现有封面同一上限，也是专辑封面的通用比例）；emoji 占宽约 46%，四周留白，按实际墨迹居中（略偏上，给地面阴影留位置）
-const EMOJIS = ('🎵🎶🎤🎧🎹🎸🥁🎷🎺🎻🪕🎼📻💿📀🎚️🎛️🔊🎙️🪩🌙☀️⭐️🌟✨💫🌈🌊🔥⚡️❄️🌸🌹🌴🍀🌵🍂🦋🐱🐶🦊🐻🐼🐯🐸🐢🐙🦄🐟🦉🕊️'
+const TONES = ['', '\u{1F3FB}', '\u{1F3FC}', '\u{1F3FD}', '\u{1F3FE}', '\u{1F3FF}'], TONE_BG = ['#ffcc33', '#f7d7c4', '#e7b98f', '#c58c5e', '#8d5a3a', '#4f3322'];
+const isBase = ch => /^\p{Emoji_Modifier_Base}/u.test(ch);   // 能换肤色的（人、手势）
+// 肤色要插在第一个人物字符后面：🧑‍🎤 → 🧑🏽‍🎤；👍 → 👍🏽
+const withTone = (ch, t) => !t || !isBase(ch) ? ch : (() => { const a = [...ch.replace(/[\u{1F3FB}-\u{1F3FF}]/gu, '').replace(/\uFE0F/g, '')]; a.splice(1, 0, t); return a.join(''); })();
+const EMOJIS = ('🧑‍🎤👩‍🎤👨‍🎤🧑‍🍳👩‍🍳👨‍🍳🧑‍💻🧑‍🎨🧑‍🚀🧑‍🏫🕺💃🙋🙌👏🤘🤟✌️👍👋🫶🤙💪🙏🧑👩👨🧒👶🫡🤝'
+  + '🎵🎶🎤🎧🎹🎸🥁🎷🎺🎻🪕🎼📻💿📀🎚️🎛️🔊🎙️🪩🌙☀️⭐️🌟✨💫🌈🌊🔥⚡️❄️🌸🌹🌴🍀🌵🍂🦋🐱🐶🦊🐻🐼🐯🐸🐢🐙🦄🐟🦉🕊️'
   + '🍜🍚🍣🍙🍔🍕🍰🍩🍓🍑🍋🍎🍇🍒🥑☕️🍷🥂🧊🍫🍿🧁🥐🍳🥟🍤🍉🌶️'
   + '👑💎🕶️🎭🎨🎬📷🚀✈️🚗🏠🎂🎁💌🧸🫧💡🔮🪐🧿🖤🤍💚🩶❤️🧡💛💙💜').match(/(?:\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)/gu);
 // 白天版：暖白底（中心 #f9f8f6 → 边缘 #ece9e4，不用纯 #fff，夜里不刺眼）+ 一层很淡的地面阴影 + emoji 自带柔和投影；夜间版：深色底 + 淡淡的光晕
 function emojiCover(ch, size, night) {
   size = size || 1200;
   const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d');
-  const bg = g.createRadialGradient(size / 2, size * .46, size * .08, size / 2, size / 2, size * .78);
-  if (night) { bg.addColorStop(0, '#26262a'); bg.addColorStop(1, '#0c0c0d'); } else { bg.addColorStop(0, '#f9f8f6'); bg.addColorStop(1, '#ebe8e3'); }
+  // 不做中心高光：高光会和 emoji 自带的高光打架，银色 / 白色的 emoji 还会糊进背景。只留极轻的上下渐变
+  const bg = g.createLinearGradient(0, 0, 0, size);
+  if (night) { bg.addColorStop(0, '#18181a'); bg.addColorStop(1, '#101012'); } else { bg.addColorStop(0, '#f5f3ef'); bg.addColorStop(1, '#eeebe6'); }
   g.fillStyle = bg; g.fillRect(0, 0, size, size); g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   const face = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
   let fs = size * .4; g.font = fs + 'px ' + face;
@@ -1005,25 +1016,28 @@ function emojiCover(ch, size, night) {
 function openEmojiCover(slug) {
   const old = document.getElementById('emo'); if (old) old.remove();
   const apple = /Mac|iPhone|iPad/.test(navigator.userAgent);
-  const el = document.createElement('div'); el.className = 'up'; el.id = 'emo'; let cur = EMOJIS[0], night = 0;
+  const el = document.createElement('div'); el.className = 'up'; el.id = 'emo'; let base = EMOJIS[0], tone = 0, night = 0; const curE = () => withTone(base, TONES[tone]);
   el.innerHTML = `<div class="up-s"><div class="up-h">emoji 封面<button type="button" id="emX">关闭</button></div>
     <canvas class="emp" id="emP" width="440" height="440"></canvas>
-    <div class="emg" id="emG">${EMOJIS.map((e, i) => `<button type="button" data-e="${i}"${i ? '' : ' class="on"'}>${e}</button>`).join('')}</div>
+    <div class="emt" id="emT">${TONES.map((t, i) => `<button type="button" data-t="${i}" style="background:${TONE_BG[i]}" aria-label="肤色 ${i}"${i ? '' : ' class="on"'}></button>`).join('')}<span id="emTn">人物和手势可以换肤色</span></div>
+    <div class="emg" id="emG"></div>
     <label>或者粘贴任意一个 emoji<input type="text" id="emI" placeholder="点这里，用键盘的 emoji 面板选"></label>
     <div class="emn" id="emN"><button type="button" data-n="0" class="on">白天版</button><button type="button" data-n="1">夜间版</button></div>
     ${apple ? '' : '<div class="msg2 err">这台设备不是苹果设备，下面看到的不是苹果 emoji；要苹果原生的，请在 Mac 或 iPhone 上做。</div>'}
     <div class="msg2" id="emM">正方形，emoji 约占一半、略偏上居中，带柔和阴影；晚上听的人看白天版不刺眼，需要的话选夜间版</div>
     <button type="button" class="go" id="emGo">用作封面</button></div>`;
   document.body.appendChild(el);
-  const $e = id => document.getElementById(id), draw = () => { const c = emojiCover(cur, 440, night); const g = $e('emP').getContext('2d'); g.clearRect(0, 0, 440, 440); g.drawImage(c, 0, 0); };
-  const close = () => el.remove(); $e('emX').onclick = close; el.onclick = e => { if (e.target === el) close(); }; draw();
+  const $e = id => document.getElementById(id), draw = () => { const c = emojiCover(curE(), 440, night); const g = $e('emP').getContext('2d'); g.clearRect(0, 0, 440, 440); g.drawImage(c, 0, 0); };
+  const grid = () => { $e('emG').innerHTML = EMOJIS.map((e, i) => `<button type="button" data-e="${i}"${EMOJIS[i] === base ? ' class="on"' : ''}>${withTone(e, TONES[tone])}</button>`).join(''); $e('emTn').textContent = isBase(base) ? '肤色' : '这个 emoji 没有肤色'; $e('emT').classList.toggle('off', !isBase(base)); };
+  const close = () => el.remove(); $e('emX').onclick = close; el.onclick = e => { if (e.target === el) close(); }; grid(); draw();
   $e('emN').onclick = e => { const b = e.target.closest('button'); if (!b) return; night = +b.dataset.n; $e('emN').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); draw(); };
-  $e('emG').onclick = e => { const b = e.target.closest('button'); if (!b) return; cur = EMOJIS[+b.dataset.e]; $e('emG').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); $e('emI').value = ''; draw(); };
-  $e('emI').oninput = () => { const m = ($e('emI').value.match(/(?:\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)/u) || [])[0]; if (m) { cur = m; $e('emG').querySelectorAll('button').forEach(x => x.classList.remove('on')); draw(); } };
+  $e('emG').onclick = e => { const b = e.target.closest('button'); if (!b) return; base = EMOJIS[+b.dataset.e]; $e('emI').value = ''; grid(); draw(); };
+  $e('emT').onclick = e => { const b = e.target.closest('button'); if (!b) return; tone = +b.dataset.t; $e('emT').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); grid(); draw(); };
+  $e('emI').oninput = () => { const m = ($e('emI').value.match(/(?:\p{Extended_Pictographic}[\u{1F3FB}-\u{1F3FF}]?(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}[\u{1F3FB}-\u{1F3FF}]?\uFE0F?)*)/u) || [])[0]; if (m) { const t = (m.match(/[\u{1F3FB}-\u{1F3FF}]/u) || [''])[0]; base = m.replace(/[\u{1F3FB}-\u{1F3FF}]/gu, ''); if (t) { tone = TONES.indexOf(t); $e('emT').querySelectorAll('button').forEach((x, i) => x.classList.toggle('on', i === tone)); } grid(); draw(); } };
   $e('emGo').onclick = async () => {
     $e('emM').textContent = '上传封面…'; $e('emM').className = 'msg2';
     try {
-      const blob = await new Promise(ok => emojiCover(cur, 1200, night).toBlob(ok, 'image/jpeg', .93));
+      const blob = await new Promise(ok => emojiCover(curE(), 1200, night).toBlob(ok, 'image/jpeg', .93));
       const r = await fetch(API + '/lib/cover?p=' + slug, { method: 'PUT', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg' }, body: blob });
       const j = await r.json(); if (!j.ok) throw new Error(); close(); await libReload(slug);
     } catch (e) { $e('emM').textContent = '封面没传上，检查网络再试'; $e('emM').className = 'msg2 err'; }
