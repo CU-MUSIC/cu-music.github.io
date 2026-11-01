@@ -46,6 +46,8 @@ svg{display:block}
 .lock::before{content:"";position:absolute;left:50%;top:42%;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;
   background:radial-gradient(closest-side,rgba(236,234,230,.10),transparent);opacity:0;transition:opacity .8s var(--ios);pointer-events:none}
 .lock.splash::before{opacity:1}
+.cv-light .lock.splash::before{opacity:0}   /* 浅色封面：不要封面背后那团白雾 */
+.cv-light .lock .art,.cv-light .head .art{filter:brightness(.95);box-shadow:0 22px 44px -14px rgba(0,0,0,.8),0 0 0 .5px rgba(255,255,255,.08) inset}
 .lock>*{transition:opacity .35s var(--ios),transform .6s var(--ios)}
 .lock.splash .ask,.lock.splash .dots,.lock.splash .spin{opacity:0;pointer-events:none}
 .lock.splash .art{transform:scale(1.12)}

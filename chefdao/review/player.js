@@ -285,6 +285,7 @@ async function tryUnlock(pw, typed) {
     document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
+    if (WK && apAdopted && myName) { apAdopted = false; fetch(API_BASE + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, lid, name: myName }) }).catch(() => {}); }
     if (QUICK) { enterApp(true); loadAudio(key); clientFb(); ownerTools(); loadReplies(); quickRestore(); return; }
     splash();
     if (S.artist) { const by = $('#by'); by.classList.add('hi'); by.textContent = '欢迎，' + S.artist; }
@@ -320,7 +321,7 @@ function prefetchOthers() {
 }
 // 项目封面：页头那块方形封面换成项目的封面图
 if (S.cover) { const art = document.querySelector('#app .head .art'); if (art) art.style.backgroundImage = 'url(' + API_BASE + S.cover + ')'; }
-if (S.cover) { const sc = document.createElement('script'); sc.src = '../tint.js?v=20261025d'; sc.onload = () => window.cuTint(API_BASE + S.cover); document.head.appendChild(sc); }
+if (S.cover) { const sc = document.createElement('script'); sc.src = '../tint.js?v=20261101a'; sc.onload = () => window.cuTint(API_BASE + S.cover); document.head.appendChild(sc); }
 /* ───────── 费用：每位歌手自己选人声制作和音频编辑，点「确定」；每人各付各的，定金 / 尾款各一半。收了这个人的定金，他的选择就锁定 ───────── */
 let Q = S.quote || null, feeOpen = null, feeOwner = null, feeOwnerP = null;
 const yuan = n => '¥' + n.toLocaleString('en-US');
@@ -1718,7 +1719,8 @@ const ME = store.get('review:me') === '1';
 let lid = store.get('review:lid');
 if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.set('review:lid', lid); }
 // 听众自己留名字：看板和微信通知里显示名字而不是随机编号（你自己的设备不显示这个按钮）
-let myName = store.get('review:name') || '';
+let myName = store.get('review:name') || ''; let apAdopted = false;
+if (!myName) { const ap = store.get('review:ap:name'); if (ap) { myName = ap.slice(0, 30); store.set('review:name', myName); apAdopted = true; } }   // 申请时填过 ID：直接沿用，不再弹「你的艺名」
 const meLabel = () => myName ? myName + '（' + lid + '）' : '听众 ' + lid;
 const showMe = () => { $('#meName').textContent = myName ? '我是 ' + myName : '留个名字'; $('#meName').classList.toggle('set', !!myName); };
 showMe();

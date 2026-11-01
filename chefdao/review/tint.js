@@ -9,15 +9,19 @@
       + 'html{background:var(--bg)!important}';
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', 'hsl(' + h + ',11%,6.6%)');
   };
+  // 浅色封面（比如白底 emoji 封面）：封面自己的高光和背后那圈「封面色光晕」会在深色页面上泛出一团白雾，也就是眩光——给页面打个标记，样式里把这两层关掉
+  const setLight = on => document.documentElement.classList.toggle('cv-light', !!on);
   window.cuTint = async function (url) {
     if (!url) return;
-    let cached = null; try { cached = localStorage.getItem(KEY + url); } catch (e) {}
+    let cached = null; try { cached = localStorage.getItem(KEY + url); setLight(localStorage.getItem(KEY + 'L:' + url) === '1'); } catch (e) {}
     if (cached !== null && cached !== '') apply(+cached);
     try {
       const blob = await (await fetch(url + (url.indexOf('?') < 0 ? '?c=1' : ''), { mode: 'cors' })).blob();
       const bmp = await createImageBitmap(blob), N = 24, c = document.createElement('canvas'); c.width = c.height = N;
       const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(bmp, 0, 0, N, N);
-      const d = x.getImageData(0, 0, N, N).data; let sx = 0, sy = 0, wsum = 0;
+      const d = x.getImageData(0, 0, N, N).data; let sx = 0, sy = 0, wsum = 0, lum = 0;
+      for (let i = 0; i < d.length; i += 4) lum += (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+      lum /= d.length / 4; const light = lum > 0.62; setLight(light); try { localStorage.setItem(KEY + 'L:' + url, light ? '1' : '0'); } catch (e) {}
       for (let i = 0; i < d.length; i += 4) {
         const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), v = mx, s = mx ? (mx - mn) / mx : 0;
         if (v < 0.14 || s < 0.12) continue;   // 近黑、近灰的像素不参与（封面的黑边、灰底不决定颜色）
