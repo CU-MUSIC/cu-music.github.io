@@ -1797,7 +1797,16 @@ a.addEventListener('timeupdate', () => {
   lastPos = t;
 });
 a.addEventListener('seeking', () => { lastPos = null; });
-a.addEventListener('ended', () => { st().ends++; });
+a.addEventListener('ended', () => { st().ends++; nextInQueue(); });
+// 项目页点了「播放」：按曲目顺序连播，这首放完自动切到下一首接着放（和播放列表切歌同一套快速进入）
+function nextInQueue() {
+  let q = null; try { q = JSON.parse(sessionStorage.getItem('review:queue') || 'null'); } catch (e) {}
+  const i = q && Array.isArray(q.list) ? q.list.findIndex(x => x.s === S.slug) : -1; if (i < 0) return;
+  const nx = q.list[i + 1];
+  try { if (!nx) { sessionStorage.removeItem('review:queue'); return; } sessionStorage.setItem('review:quick', JSON.stringify({ s: nx.s, play: true })); } catch (e) { return; }
+  document.body.style.transition = 'opacity .14s'; document.body.style.opacity = '0';
+  const u = new URL(nx.u, location.href); setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
+}
 a.addEventListener('play', () => {
   const s = st(); if (s.pinged) return; s.pinged = true; track(vi);
   beacon('▶ 听众 ' + lid + ' 在听《' + S.title + '》' + cur.ver,

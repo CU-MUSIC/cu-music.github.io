@@ -71,6 +71,11 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .tr .m{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
 @keyframes in{to{opacity:1;transform:none}}
 .empty{margin-top:30px;color:var(--text-3);font-size:14px}
+/* 播放全部：从第一首开始按顺序连播 */
+.pa{margin-top:22px;display:inline-flex;align-items:center;gap:9px;padding:11px 26px 11px 22px;border:0;border-radius:999px;background:#ebe9e5;color:#121213;font:inherit;font-size:15px;font-weight:600;cursor:pointer;
+  opacity:0;animation:in .5s cubic-bezier(.2,.8,.2,1) forwards;transition:transform .15s}
+.pa:active{transform:scale(.96)}
+.pa svg{width:15px;height:15px;fill:currentColor}
 /* 曲目进度 */
 .tr .t em.pg{display:flex;align-items:center;gap:8px;font-style:normal;font-weight:500;font-size:12px;color:var(--text-2);margin-top:6px}
 .pg .bar{display:inline-flex;gap:3px}.pg .bar s{width:12px;height:3px;border-radius:2px;background:rgba(236,234,230,.14)}
@@ -261,9 +266,16 @@ async function open(pw, key) {
     ls.set('review:pw:' + t.slug, spw);
   }
   document.getElementById('gate').remove();
-  document.getElementById('list').innerHTML = P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
+  const playable = P.tracks.filter(t => t.dur > 0);
+  document.getElementById('list').innerHTML = (playable.length ? '<button class="pa" id="pa" type="button"><svg viewBox="0 0 16 16"><path d="M4.5 2.6v10.8c0 .6.7 1 1.2.7l8.3-5.4c.5-.3.5-1.1 0-1.4L5.7 1.9c-.5-.3-1.2.1-1.2.7z"/></svg>播放</button>' : '')
+    + (P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
-    : '<div class="empty">曲目还在准备中</div>';
+    : '<div class="empty">曲目还在准备中</div>');
+  // 播放：记下连播顺序，进第一首直接开播；每首放完曲目页自己切到下一首（见 player.js nextInQueue）
+  const pa = document.getElementById('pa');
+  if (pa) pa.onclick = e => { e.stopPropagation();
+    try { sessionStorage.setItem('review:queue', JSON.stringify({ pj: slug, list: playable.map(t => ({ s: t.slug, u: t.url })) })); sessionStorage.setItem('review:quick', JSON.stringify({ s: playable[0].slug, play: true })); } catch (er) {}
+    location.href = playable[0].url; };
   if (ls.get('insights:key')) { progPanel(); payPanel();
     const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261029k';
     sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), tracks: P.tracks.map(t => ({ slug: t.slug, artist: t.artist })), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
