@@ -291,7 +291,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261101.1709';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261102.1120';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -1202,6 +1202,7 @@ function renderOrders() {
     ${place('o' + o.sid) || place(o.sid) ? `<div class="wx">下单地点 <b>${esc(place('o' + o.sid) || place(o.sid))}</b></div>` : ''}
     <div class="wx">${o.wechat ? `微信 <b>${esc(o.wechat)}</b><button data-copy="${esc(o.wechat)}">复制</button>` : '微信没填（客户说已经加过你）'}</div>
     <div class="plan"><b>${esc(o.plan || '—')}</b>${o.total != null ? ' · <b>' + money(o.total, o.cur) + '</b>' : ''}</div>
+    ${o.paid != null ? `<div class="wx">已收定金 <b>${money(o.paid, o.cur)}</b> · 尾款 <b>${money(Math.max(0, (o.total || 0) - (o.discount || 0) - o.paid), o.cur)}</b></div>` : ''}
     ${o.promo ? `<div class="wx">优惠码 <b>${esc(o.promo)}</b> · −${money(o.discount || 0, o.cur)} · 应付 <b>${money((o.total || 0) - (o.discount || 0), o.cur)}</b></div>` : ''}
     ${o.note ? `<div class="note">${esc(o.note)}</div>` : ''}
     ${o.detail ? `<details data-id="${o.id}"><summary>完整报价单${o.lid ? ' · ' + (lnote(o.lid) && lnote(o.lid).name ? esc(lnote(o.lid).name) + ' ' : '访客 ') + esc(o.lid) : ''}${o.lang !== 'zh' ? ' · ' + esc(o.lang) : ''}${o.pushed ? '' : ' · 未推送'}</summary><pre>${esc(o.detail)}</pre></details>` : ''}
@@ -1234,25 +1235,25 @@ function renderOrders() {
 }
 // 改单：每次保存前服务端把改前那行存成快照；最早的一条 = 客户下单时的原样
 
-const OLBL = { name: '称呼', wechat: '微信', song: '歌名', plan: '方案', total: '总价', discount: '优惠', note: '备注', detail: '报价单' };
+const OLBL = { name: '称呼', wechat: '微信', song: '歌名', plan: '方案', total: '总价', discount: '优惠', paid: '已收定金', note: '备注', detail: '报价单' };
 function orderRev(o) {
   if (!o.orig) return '';
   let g; try { g = JSON.parse(o.orig); } catch (e) { return ''; }
-  const fmt = (k, v) => k === 'total' || k === 'discount' ? (v == null ? '—' : money(v, o.cur)) : (v == null || v === '' ? '—' : String(v));
+  const fmt = (k, v) => k === 'total' || k === 'discount' || k === 'paid' ? (v == null ? '—' : money(v, o.cur)) : (v == null || v === '' ? '—' : String(v));
   const rows = Object.keys(OLBL).filter(k => k !== 'detail' && String(g[k] ?? '') !== String(o[k] ?? '')).map(k =>
     `<div class="rw">${OLBL[k]}：<s>${esc(fmt(k, g[k]))}</s> → <b>${esc(fmt(k, o[k]))}</b></div>`).join('');
   const det = g.detail && g.detail !== o.detail ? `<details><summary>客户下单时的完整报价单</summary><pre>${esc(g.detail)}</pre></details>` : '';
   return `<details class="rev"><summary>已改过 ${o.nrev || 1} 次 · 看客户原单</summary>${rows || '<div class="rw">只改了报价单文字</div>'}${det}</details>`;
 }
 function orderForm(o) {
-  const d = odraft[o.id] || (odraft[o.id] = { name: o.name || '', wechat: o.wechat || '', song: o.song || '', discount: o.discount || 0, note: o.note || '' });
+  const d = odraft[o.id] || (odraft[o.id] = { name: o.name || '', wechat: o.wechat || '', song: o.song || '', discount: o.discount || 0, paid: o.paid == null ? '' : o.paid, note: o.note || '' });
   const inp = (k, t, lbl) => `<label>${lbl}<input ${t} data-od="${k}" value="${esc(d[k])}"></label>`;
   const pu = `/chefdao/price/?edit=${o.id}&lang=${encodeURIComponent(o.lang || 'zh')}${o.promo ? '&promo=' + encodeURIComponent(o.promo) + '&off=' + (o.discount || 0) : ''}${o.q ? '#q=' + o.q : ''}`;
   return `<div class="eform" data-oform="${o.id}">
     <a class="epick" href="${esc(pu)}"><b>用价格页的选择器改方案和总价 →</b><span>${o.q ? '已带入客户当时的选择，改完点「保存到订单」' : '这单下得早，没存下当时的选择，要从头选一遍'}</span></a>
     <div class="flds">
     <div class="two">${inp('name', '', '称呼')}${inp('wechat', '', '微信')}</div>
-    ${inp('song', '', '歌名')}${o.promo ? inp('discount', 'type="number" inputmode="numeric"', '优惠金额（' + esc(o.promo) + '）') : ''}${inp('note', '', '备注')}
+    ${inp('song', '', '歌名')}${inp('paid', 'type="number" inputmode="numeric" placeholder="还没收就留空"', '已收定金' + (o.total != null ? '（应付 ' + money((o.total || 0) - (o.discount || 0), o.cur) + '）' : ''))}${o.promo ? inp('discount', 'type="number" inputmode="numeric"', '优惠金额（' + esc(o.promo) + '）') : ''}${inp('note', '', '备注')}
   </div>
   <div class="acts"><button class="go" data-oact="save" data-id="${o.id}">保存修改</button><button data-oact="cancel" data-id="${o.id}">放弃</button></div>
   <div class="hint">每次保存都会先留一份改之前的快照，随时能在「已改过」里看到客户原单</div></div>`;
@@ -1260,12 +1261,13 @@ function orderForm(o) {
 async function saveOrder(o) {
   const d = odraft[o.id]; if (!d) return;
   const f = { ...d }; if ('discount' in f) f.discount = f.discount === '' ? 0 : +f.discount;
+  if ('paid' in f) f.paid = f.paid === '' ? null : +f.paid;
   try {
     const r = await fetch(API + '/oedit', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: o.id, f }) });
     const j = await r.json(); if (!j.ok) throw new Error(j.e || '');
     if (j.row) Object.assign(o, j.row, { orig: j.orig || o.orig, nrev: j.nrev || o.nrev });
     delete odraft[o.id]; oedit = 0; render();
-  } catch (e) { alert(e.message === 'name' ? '称呼不能空' : e.message === 'total' || e.message === 'discount' ? '金额要填数字' : '没保存成功，检查网络再试'); }
+  } catch (e) { alert(e.message === 'name' ? '称呼不能空' : e.message === 'total' || e.message === 'discount' || e.message === 'paid' ? '金额要填数字' : '没保存成功，检查网络再试'); }
 }
 // 推进 / 退回 / 取消 / 改日期和链接：先改本地立刻重画，失败再退回
 async function stage(o, body) {
