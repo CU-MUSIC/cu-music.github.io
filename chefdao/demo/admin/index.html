@@ -208,7 +208,7 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
       <button data-f="all" aria-pressed="true">全部</button><button data-f="mem" aria-pressed="false">刀门</button><button data-f="pub" aria-pressed="false">访客</button><button data-f="pick" aria-pressed="false">入选</button><button data-f="vis" aria-pressed="false">访问</button>
     </div>
     <div class="ctrls">
-      <div class="seg2" id="hf"><button data-h="all" aria-pressed="true">全部</button><button data-h="new" aria-pressed="false">没听过</button><button data-h="heard" aria-pressed="false">听过</button></div>
+      <div class="seg2" id="hf"><button data-h="all" aria-pressed="true">全部</button><button data-h="new" aria-pressed="false">没听过</button><button data-h="heard" aria-pressed="false">听过</button><button data-h="nofb" aria-pressed="false">没反馈</button></div>
       <select id="so" aria-label="排序"><option value="time">最新</option><option value="hi">评分高→低</option><option value="lo">评分低→高</option></select>
     </div>
     <div id="list"></div>
@@ -264,7 +264,7 @@ function renderList() {
   const box = $('#list'); box.textContent = '';
   { const nn = D.filter(d => d.status === 'new').length; $('#cnt').textContent = nn ? nn + ' 首没听过' : ''; }
   if (filter === 'vis') return;
-  let rows = D.filter(d => (filter === 'all' || (filter === 'pick' ? d.pick > 0 : d.kind === filter)) && (heardF === 'all' || (heardF === 'new' ? d.status === 'new' : d.status !== 'new')));
+  let rows = D.filter(d => (filter === 'all' || (filter === 'pick' ? d.pick > 0 : d.kind === filter)) && (heardF === 'all' || (heardF === 'nofb' ? !d.pub : heardF === 'new' ? d.status === 'new' : d.status !== 'new')));   // 没反馈 = 还没发布给对方
   if (sortM !== 'time') rows = rows.slice().sort((a, b) => { const x = nrated(a) ? total(a.scores) : -1, y = nrated(b) ? total(b.scores) : -1; if (x < 0 && y < 0) return b.ts - a.ts; if (x < 0) return 1; if (y < 0) return -1; return sortM === 'hi' ? y - x || b.ts - a.ts : x - y || b.ts - a.ts; });
   if (!rows.length) box.append(el('div', 'empty', '没有符合条件的投递'));
   rows.forEach(d => {
