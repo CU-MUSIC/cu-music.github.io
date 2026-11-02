@@ -140,6 +140,17 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .rqa{display:flex;align-items:center;gap:8px;flex-shrink:0}.rqa em{font-style:normal;font-size:12.5px;color:var(--text-3)}
 .rqa button{padding:6px 12px;border-radius:99px;background:var(--pearl);color:var(--ink);font-size:13px;font-weight:600}.rqa button.dz{background:none;color:var(--red);border:1px solid var(--line,rgba(255,255,255,.18))}
 .rqold summary{padding:8px 4px;font-size:13px;color:var(--text-3);cursor:pointer}
+.lvt{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--fill-2,rgba(255,255,255,.06));margin-left:auto;margin-right:10px}
+.lvt button{width:32px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--text-3)}
+.lvt button.on{background:var(--fill-3,rgba(255,255,255,.14));color:var(--text)}
+.lvt svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.lgrid.list{grid-template-columns:1fr;gap:4px}
+.lgrid.list .lcard{display:grid;grid-template-columns:56px minmax(0,1fr);grid-template-rows:auto auto;column-gap:14px;row-gap:2px;align-content:center;align-items:center;padding:6px 8px;border-radius:12px}
+.lgrid.list .lcard:hover{background:var(--fill,rgba(255,255,255,.05))}
+.lgrid.list .lc{grid-row:1/3;width:56px;border-radius:9px}
+.lgrid.list .lcard:hover .lc{transform:none}
+.lgrid.list .lcard b{margin-top:0;align-self:end}
+.lgrid.list .lcard span:not(.lc){align-self:start}
 .lcard.arch{opacity:.55}.lcard.arch:hover{opacity:.9}
 .archbar{display:flex;justify-content:space-between;align-items:center;width:100%;margin:22px 0 14px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06));color:var(--text-2,inherit);font-size:14px}
 .archbar span{color:var(--text-3)}
@@ -291,7 +302,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261102.1330';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261102.1410';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -574,6 +585,7 @@ function render() {
   });
   root.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => editNote(b.dataset.ln));
   root.querySelectorAll('.lcard[data-p]').forEach(b => b.onclick = () => openProject(b.dataset.p));
+  const lvt = document.getElementById('lvt'); if (lvt) lvt.onclick = e => { const b = e.target.closest('[data-lv]'); if (b) { store.set('insights:libview', b.dataset.lv); render(); } };
   const ln = document.getElementById('lNew'); if (ln) ln.onclick = newProject;
   const la = document.getElementById('lArch'); if (la) la.onclick = () => { showArch = !showArch; render(); };
   root.querySelectorAll('[data-rq]').forEach(b => b.onclick = () => reqAct(b.dataset.id, b.dataset.rq));
@@ -929,12 +941,13 @@ function renderReqs() {
 }
 async function reqAct(id, status) { try { await lib('/ap/decide', { id: +id, status }); REQS = null; render(); } catch (e) { alert('没成功，检查网络再试'); } }
 function renderLib() {
+  const lv = store.get('insights:libview') === 'list' ? 'list' : 'grid';
   const act = LIB.projects.filter(p => !p.archived), arch = LIB.projects.filter(p => p.archived);
   const card = (p, a) => `<button class="lcard${a ? ' arch' : ''}" data-p="${esc(p.slug)}">${coverOf(p)}
     <b>${esc(p.title)}</b><span>${esc(p.artist || '未填歌手')} · ${KINDS[p.kind] || 'EP'}${p.tracks.length > 1 ? ' · ' + p.tracks.length + ' 首' : ''}</span></button>`;
-  return `<div class="lbar"><span>${act.length} 个项目</span><button class="go" id="lNew">＋ 新项目</button></div>
-  <div class="lgrid">${act.map(p => card(p, false)).join('')}</div>
-  ${arch.length ? `<button class="archbar" id="lArch">已归档 ${arch.length} 个<span>${showArch ? '收起' : '展开'}</span></button>${showArch ? `<div class="lgrid">${arch.map(p => card(p, true)).join('')}</div>` : ''}` : ''}
+  return `<div class="lbar"><span>${act.length} 个项目</span><span class="lvt" id="lvt" role="group" aria-label="视图"><button data-lv="grid" class="${lv === 'grid' ? 'on' : ''}" aria-label="网格" title="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${lv === 'list' ? 'on' : ''}" aria-label="单列" title="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span><button class="go" id="lNew">＋ 新项目</button></div>
+  <div class="lgrid ${lv}">${act.map(p => card(p, false)).join('')}</div>
+  ${arch.length ? `<button class="archbar" id="lArch">已归档 ${arch.length} 个<span>${showArch ? '收起' : '展开'}</span></button>${showArch ? `<div class="lgrid ${lv}">${arch.map(p => card(p, true)).join('')}</div>` : ''}` : ''}
   ${renderReqs()}
   ${LIB.loose.length ? `<div class="sect">未归入项目<span>${LIB.loose.length}</span></div><div class="lloose">${LIB.loose.map(x => `<div>《${esc(x.title)}》<a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a></div>`).join('')}</div>` : ''}`;
 }
