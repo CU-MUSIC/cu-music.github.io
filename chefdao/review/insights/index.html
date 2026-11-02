@@ -140,7 +140,9 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .rqa{display:flex;align-items:center;gap:8px;flex-shrink:0}.rqa em{font-style:normal;font-size:12.5px;color:var(--text-3)}
 .rqa button{padding:6px 12px;border-radius:99px;background:var(--pearl);color:var(--ink);font-size:13px;font-weight:600}.rqa button.dz{background:none;color:var(--red);border:1px solid var(--line,rgba(255,255,255,.18))}
 .rqold summary{padding:8px 4px;font-size:13px;color:var(--text-3);cursor:pointer}
-.lvt{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--fill-2,rgba(255,255,255,.06));margin-left:auto;margin-right:10px}
+.lsort{margin-left:auto;margin-right:8px}
+.lsort select{appearance:none;-webkit-appearance:none;height:32px;padding:0 28px 0 12px;border-radius:9px;border:0;background:var(--fill-2,rgba(255,255,255,.06)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center/14px;color:var(--text-2,inherit);font:inherit;font-size:13px;cursor:pointer}
+.lvt{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--fill-2,rgba(255,255,255,.06));margin-right:10px}
 .lvt button{width:32px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--text-3)}
 .lvt button.on{background:var(--fill-3,rgba(255,255,255,.14));color:var(--text)}
 .lvt svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -302,7 +304,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261102.1410';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261102.1500';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -585,6 +587,7 @@ function render() {
   });
   root.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => editNote(b.dataset.ln));
   root.querySelectorAll('.lcard[data-p]').forEach(b => b.onclick = () => openProject(b.dataset.p));
+  const lso = document.getElementById('lsort'); if (lso) lso.onchange = () => { store.set('insights:libsort', lso.value); render(); };
   const lvt = document.getElementById('lvt'); if (lvt) lvt.onclick = e => { const b = e.target.closest('[data-lv]'); if (b) { store.set('insights:libview', b.dataset.lv); render(); } };
   const ln = document.getElementById('lNew'); if (ln) ln.onclick = newProject;
   const la = document.getElementById('lArch'); if (la) la.onclick = () => { showArch = !showArch; render(); };
@@ -940,12 +943,21 @@ function renderReqs() {
   return `<div class="sect">审听申请<span>${pend.length ? '待批准 ' + pend.length : '无待批准'}</span></div><div class="rqbox">${pend.map(row).join('')}${rest.length ? `<details class="rqold"><summary>已处理 ${rest.length}</summary>${rest.map(row).join('')}</details>` : ''}</div>`;
 }
 async function reqAct(id, status) { try { await lib('/ap/decide', { id: +id, status }); REQS = null; render(); } catch (e) { alert('没成功，检查网络再试'); } }
+const pAct = p => Math.max(p.updated || 0, ...p.tracks.map(t => t.updTs || 0));
+const zh = (a, b) => String(a || '').localeCompare(String(b || ''), 'zh-Hans-CN', { numeric: true, sensitivity: 'base' });
+const LSORT = {
+  upd: { n: '最近更新', f: ps => ps.slice().sort((a, b) => pAct(b) - pAct(a)) },
+  title: { n: '项目名称', f: ps => ps.slice().sort((a, b) => zh(a.title, b.title)) },
+  artist: { n: '歌手', f: ps => ps.slice().sort((a, b) => zh(a.artist || '\uffff', b.artist || '\uffff') || zh(a.title, b.title)) },
+};
 function renderLib() {
   const lv = store.get('insights:libview') === 'list' ? 'list' : 'grid';
-  const act = LIB.projects.filter(p => !p.archived), arch = LIB.projects.filter(p => p.archived);
+  // 排序：最近更新 = 项目信息或任一曲目最新上传版本的时间；名称、歌手按中文拼音 / 字母
+  const ls = LSORT[store.get('insights:libsort')] ? store.get('insights:libsort') : 'upd';
+  const act = LSORT[ls].f(LIB.projects.filter(p => !p.archived)), arch = LSORT[ls].f(LIB.projects.filter(p => p.archived));
   const card = (p, a) => `<button class="lcard${a ? ' arch' : ''}" data-p="${esc(p.slug)}">${coverOf(p)}
     <b>${esc(p.title)}</b><span>${esc(p.artist || '未填歌手')} · ${KINDS[p.kind] || 'EP'}${p.tracks.length > 1 ? ' · ' + p.tracks.length + ' 首' : ''}</span></button>`;
-  return `<div class="lbar"><span>${act.length} 个项目</span><span class="lvt" id="lvt" role="group" aria-label="视图"><button data-lv="grid" class="${lv === 'grid' ? 'on' : ''}" aria-label="网格" title="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${lv === 'list' ? 'on' : ''}" aria-label="单列" title="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span><button class="go" id="lNew">＋ 新项目</button></div>
+  return `<div class="lbar"><span>${act.length} 个项目</span><label class="lsort"><select id="lsort" aria-label="排序">${Object.entries(LSORT).map(([k, o]) => `<option value="${k}"${k === ls ? ' selected' : ''}>${o.n}</option>`).join('')}</select></label><span class="lvt" id="lvt" role="group" aria-label="视图"><button data-lv="grid" class="${lv === 'grid' ? 'on' : ''}" aria-label="网格" title="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${lv === 'list' ? 'on' : ''}" aria-label="单列" title="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span><button class="go" id="lNew">＋ 新项目</button></div>
   <div class="lgrid ${lv}">${act.map(p => card(p, false)).join('')}</div>
   ${arch.length ? `<button class="archbar" id="lArch">已归档 ${arch.length} 个<span>${showArch ? '收起' : '展开'}</span></button>${showArch ? `<div class="lgrid ${lv}">${arch.map(p => card(p, true)).join('')}</div>` : ''}` : ''}
   ${renderReqs()}
