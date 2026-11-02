@@ -1,11 +1,13 @@
 // 审听外壳：只在你自己的设备（带看板钥匙）上用，客户看到的页面不变。
-// 播放器页放在 iframe 里，侧边栏在外壳里：切项目 / 曲目时，正在播的那首留在后台继续放，
-// 顶上出现一个小条（播放 / 暂停、回到这首、停止）；在新页面里开始播放，后台那首自动让位。
+// 播放器页放在 iframe 里，侧边栏在外壳里：切项目 / 曲目时，正在播的那首留在后台继续放。
+// 底部常驻播放条（参考 Samply）：封面、歌名、后退 / 播放 / 前进、波形拖动、时间；后台在播时多一个「回到这首」。
+// 在新页面里开始播放，后台那首自动让位。播放条的数据来自播放器页的 window.cuP（player.js）。
 (() => {
   if (window.__cuShellOn) return; window.__cuShellOn = 1;
   const me = document.currentScript, ver = me && me.src.indexOf('?') > 0 ? me.src.slice(me.src.indexOf('?')) : '';
   const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } } };
   const W = 272;
+  const fmt = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 
   // 外壳自己整页重写：去掉原页面的样式和「正在载入」
   document.querySelectorAll('link[rel="stylesheet"], head style').forEach(n => n.remove());
@@ -15,35 +17,65 @@
 html,body{margin:0;height:100%;background:#0e0e0f;overflow:hidden}
 #cuStage{position:fixed;inset:0;transition:left .22s}
 html.cu-side-pin #cuStage{left:${W}px}
+html.cu-bar #cuStage{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
 #cuStage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0e0e0f}
 #cuStage iframe.bg{visibility:hidden;pointer-events:none}
-#cuNow{position:fixed;z-index:65;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-8px);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s,left .22s;
-  display:flex;align-items:center;gap:6px;max-width:calc(100vw - 130px);padding:4px 5px 4px 6px;border-radius:99px;background:rgba(34,34,38,.88);border:1px solid rgba(236,234,230,.12);
-  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 6px 22px rgba(0,0,0,.4);color:#e8e6e2;font:13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;-webkit-font-smoothing:antialiased}
-#cuNow.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
-html.cu-side-pin #cuNow{left:calc(50% + ${W / 2}px)}
-#cuNow button{border:0;background:none;color:inherit;font:inherit;cursor:pointer;padding:0}
-#cuNow .pp{flex:none;width:30px;height:30px;border-radius:50%;background:rgba(236,234,230,.12);display:grid;place-items:center}
-#cuNow .pp svg{width:14px;height:14px;fill:currentColor}
-#cuNow .tt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px;max-width:34vw;color:#c9c7c3}
-#cuNow .bk{flex:none;padding:7px 11px;border-radius:99px;background:rgba(236,234,230,.1);color:#e8e6e2;white-space:nowrap}
-#cuNow .x{flex:none;width:28px;height:28px;border-radius:50%;color:#8a8886;font-size:15px}
-#cuNow .pp:hover,#cuNow .bk:hover{background:rgba(236,234,230,.2)}`;
+#cuBar{position:fixed;z-index:65;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));height:62px;
+  display:flex;align-items:center;gap:14px;padding:0 14px 0 9px;border-radius:16px;background:#1b1b1e;border:1px solid rgba(236,234,230,.07);box-shadow:0 8px 30px rgba(0,0,0,.45);
+  color:#e8e6e2;font:13px/1.3 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;-webkit-font-smoothing:antialiased;transform:translateY(calc(100% + 20px));transition:transform .26s cubic-bezier(.3,.7,.2,1),left .22s}
+html.cu-bar #cuBar{transform:none}
+html.cu-side-pin #cuBar{left:${W + 12}px}
+#cuBar button{border:0;background:none;color:inherit;font:inherit;cursor:pointer;padding:0;flex:none}
+#cuBar .cv{flex:none;width:44px;height:44px;border-radius:8px;background:#2a2a2e center/cover;display:grid;place-items:center;color:#5c5a58}
+#cuBar .cv svg{width:22px;height:22px}
+#cuBar .tx{flex:0 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
+#cuBar .tx small{font-size:11px;color:#8a8886;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cuBar .tx b{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cuBar .tr{display:flex;align-items:center;gap:6px}
+#cuBar .sk{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#c9c7c3}
+#cuBar .sk:hover{background:rgba(236,234,230,.08);color:#fff}
+#cuBar .sk svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#cuBar .pp{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#ebe9e5;color:#111}
+#cuBar .pp:disabled{opacity:.4;cursor:default}
+#cuBar .pp svg{width:16px;height:16px;fill:currentColor}
+#cuBar .t{flex:none;font-size:12px;color:#8a8886;font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
+#cuBar .wv{flex:1;min-width:60px;height:34px;position:relative;cursor:pointer;touch-action:none}
+#cuBar .wv canvas{position:absolute;inset:0;width:100%;height:100%}
+#cuBar .bk{padding:7px 12px;border-radius:99px;background:rgba(236,234,230,.1);white-space:nowrap;font-size:12.5px}
+#cuBar .bk:hover{background:rgba(236,234,230,.18)}
+#cuBar .x{width:28px;height:28px;border-radius:50%;color:#8a8886;font-size:15px}
+#cuBar .x:hover{color:#e8e6e2}
+#cuBar .pg{display:none;position:absolute;left:14px;right:14px;bottom:5px;height:2px;border-radius:2px;background:rgba(236,234,230,.12);overflow:hidden}
+#cuBar .pg i{display:block;height:100%;width:0;background:#ebe9e5}
+@media(max-width:760px){
+  #cuBar{gap:10px}
+  #cuBar .sk,#cuBar .t,#cuBar .wv{display:none}
+  #cuBar .tx{flex:1}
+  #cuBar .pg{display:block}
+}`;
   document.head.appendChild(css);
 
   const stage = document.createElement('div'); stage.id = 'cuStage';
-  const now = document.createElement('div'); now.id = 'cuNow';
-  const ICON = { play: '<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg>', pause: '<svg viewBox="0 0 16 16"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>' };
-  now.innerHTML = '<button class="pp" aria-label="播放 / 暂停"></button><span class="tt"></span><button class="bk">回到这首</button><button class="x" aria-label="停止">✕</button>';
-  document.body.append(stage, now);
-  const $pp = now.querySelector('.pp'), $tt = now.querySelector('.tt');
+  const bar = document.createElement('div'); bar.id = 'cuBar'; bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', '播放');
+  const MARK = '<svg viewBox="272 164 456 456" fill="none" stroke="currentColor" stroke-width="34" stroke-linecap="round"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
+  const ICON = { play: '<svg viewBox="0 0 16 16"><path d="M4.5 2.6v10.8c0 .6.7 1 1.2.7l8.3-5.4c.5-.3.5-1.1 0-1.4L5.7 1.9c-.5-.3-1.2.1-1.2.7z"/></svg>', pause: '<svg viewBox="0 0 16 16"><rect x="3.5" y="2.5" width="3.2" height="11" rx="1"/><rect x="9.3" y="2.5" width="3.2" height="11" rx="1"/></svg>' };
+  bar.innerHTML = `<button class="cv" aria-label="打开这首">${MARK}</button>
+    <button class="tx" aria-label="打开这首"><small></small><b></b></button>
+    <div class="tr"><button class="sk" data-k="-5" aria-label="后退 5 秒"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v3.7h3.7"/></svg></button>
+    <button class="pp" aria-label="播放">${ICON.play}</button>
+    <button class="sk" data-k="5" aria-label="前进 5 秒"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v3.7h-3.7"/></svg></button></div>
+    <span class="t" id="cuT0">0:00</span><div class="wv"><canvas></canvas></div><span class="t" id="cuT1">0:00</span>
+    <button class="bk" hidden>回到这首</button><button class="x" hidden aria-label="停止后台播放">✕</button><div class="pg"><i></i></div>`;
+  document.body.append(stage, bar);
+  const $ = q => bar.querySelector(q);
+  const $pp = $('.pp'), $cv = $('.cv'), $sm = $('.tx small'), $tt = $('.tx b'), $t0 = $('#cuT0'), $t1 = $('#cuT1'), $wv = $('.wv'), cvs = $('.wv canvas'), $bk = $('.bk'), $x = $('.x'), $pg = $('.pg i');
 
-  let view = null, bg = null, lastKey = null;
+  let view = null, bg = null;
   const keyOf = u => u.pathname + u.hash;
   const doc = f => { try { return f.el.contentDocument; } catch (e) { return null; } };
-  const audio = f => { const d = f && doc(f); return d && d.getElementById('a'); };
+  const api = f => { try { return f && f.el.contentWindow.cuP || null; } catch (e) { return null; } };
+  const audio = f => { const p = api(f); if (p) return p.a; const d = f && doc(f); return d && d.getElementById('a'); };
   const playing = f => { const a = audio(f); return !!(a && !a.paused && !a.ended); };
-  const titleOf = f => { const d = doc(f); let t = d && d.title; if (!t || t === 'CU MUSIC') { try { t = f.el.contentWindow.SONG.title; } catch (e) { t = ''; } } return t || '正在播放'; };
   const curUrl = f => { try { const l = f.el.contentWindow.location; return l.href === 'about:blank' ? null : l; } catch (e) { return null; } };
 
   function destroy(f) {
@@ -70,8 +102,6 @@ html.cu-side-pin #cuNow{left:calc(50% + ${W / 2}px)}
     if (p !== location.pathname + location.search + location.hash) history.replaceState(null, '', p);
     tick(true);
   }
-  function show(f) { f.el.classList.remove('bg'); }
-  function hide(f) { f.el.classList.add('bg'); }
 
   function nav(url, push = true) {
     const u = new URL(url, location.href);
@@ -79,11 +109,11 @@ html.cu-side-pin #cuNow{left:calc(50% + ${W / 2}px)}
     const key = keyOf(u);
     if (view && view.key === key) return;
     const old = view;
-    if (bg && bg.key === key) { view = bg; bg = null; show(view); }
+    if (bg && bg.key === key) { view = bg; bg = null; }
     else view = make(u);
-    show(view);
+    view.el.classList.remove('bg');
     // 离开时还在播的那首留在后台；没在播的直接丢掉
-    if (old) { if (playing(old)) { destroy(bg); bg = old; hide(old); } else destroy(old); }
+    if (old) { if (playing(old)) { destroy(bg); bg = old; old.el.classList.add('bg'); } else destroy(old); }
     if (push) history.pushState(null, '', u.pathname + u.search + u.hash);
     try { view.el.contentWindow && view.el.contentWindow.focus(); } catch (e) {}
     tick(true);
@@ -91,28 +121,66 @@ html.cu-side-pin #cuNow{left:calc(50% + ${W / 2}px)}
   window.cuNav = nav;
   addEventListener('popstate', () => nav(location.href, false));
 
-  // 后台条 + 侧边栏的「正在播」标记
-  let shown = '', pk = '';
+  // 播放条跟着谁：后台有在播（或暂停着）的就跟后台那首，否则跟当前页面
+  const target = () => bg || view;
+  let pk = '', sig = '', drag = null, wsig = '';
   function tick(force) {
     if (bg && playing(view)) destroy(bg);   // 新页面里开始播了，后台那首让位
-    const bp = !!bg && playing(bg), vp = playing(view);
-    const k = bp ? bg.key : vp ? view.key : '';
+    const k = bg && playing(bg) ? bg.key : playing(view) ? view.key : '';
     if (k !== pk || force) { pk = k; window.cuPlayingKey = k; if (window.cuSideDraw) window.cuSideDraw(); }
-    now.classList.toggle('on', !!bg);
-    if (bg) {
-      const s = (bp ? 'p' : 's') + titleOf(bg);
-      if (s !== shown) { shown = s; $pp.innerHTML = bp ? ICON.pause : ICON.play; $tt.textContent = titleOf(bg); $pp.setAttribute('aria-label', bp ? '暂停' : '播放'); }
-    } else shown = '';
+    const f = target(), p = api(f);
+    document.documentElement.classList.toggle('cu-bar', !!p);
+    if (!p) { sig = ''; return; }
+    const S = p.song, on = playing(f), apiBase = (() => { try { return f.el.contentWindow.SONG_LIVE.api; } catch (e) { return ''; } })();
+    const s = [S.slug, p.ver(), on, p.ready(), !!bg, S.cover].join('|');
+    if (s !== sig || force) {
+      sig = s;
+      $tt.textContent = S.title || '';
+      $sm.textContent = [S.project && S.project.title !== S.title ? S.project.title : (S.artist || ''), p.ver()].filter(Boolean).join(' · ');
+      if (S.cover && apiBase) { $cv.style.backgroundImage = 'url(' + apiBase + S.cover + ')'; $cv.innerHTML = ''; } else { $cv.style.backgroundImage = ''; $cv.innerHTML = MARK; }
+      $pp.innerHTML = on ? ICON.pause : ICON.play; $pp.setAttribute('aria-label', on ? '暂停' : '播放'); $pp.disabled = !p.ready();
+      $bk.hidden = $x.hidden = !bg;
+    }
   }
   setInterval(tick, 400);
-  $pp.onclick = () => {
-    const a = audio(bg); if (!a) return;
-    const b = doc(bg).querySelector('#play');   // 走播放器自己的按钮，它的界面状态才对得上
-    if (b && !b.disabled) b.click(); else a.paused ? a.play() : a.pause();
-    setTimeout(() => tick(), 60);
-  };
-  now.querySelector('.bk').onclick = () => { if (bg) nav(bg.url); };
-  now.querySelector('.x').onclick = () => { destroy(bg); tick(true); };
+
+  // 波形：已播的部分亮、没播的暗；拖动时按手指位置预览
+  function draw() {
+    requestAnimationFrame(draw);
+    const p = api(target()); if (!p || !document.documentElement.classList.contains('cu-bar')) return;
+    const d = p.dur() || 0, t = drag ? drag.t : p.time(), fr = d ? Math.min(1, t / d) : 0;
+    $pg.style.width = (fr * 100) + '%';
+    const w = cvs.clientWidth, h = cvs.clientHeight;
+    const s = [w, h, Math.round(fr * w), p.song.slug, p.ver()].join('|');
+    if (s === wsig) return; wsig = s;
+    $t0.textContent = fmt(t); $t1.textContent = fmt(d);
+    if (!w || !h) return;
+    const dpr = devicePixelRatio || 1; if (cvs.width !== Math.round(w * dpr)) { cvs.width = Math.round(w * dpr); cvs.height = Math.round(h * dpr); }
+    const c = cvs.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+    const pk = p.peaks(), gap = 2, bw = 2, n = Math.max(1, Math.floor((w + gap) / (bw + gap))), mid = h / 2, px = fr * w;
+    for (let k = 0; k < n; k++) {
+      const x = k * (bw + gap), q = pk.length ? k / Math.max(1, n - 1) * (pk.length - 1) : 0, i = Math.floor(q), u = q - i;
+      const v = pk.length ? (pk[i] || 0) * (1 - u) + (pk[Math.min(pk.length - 1, i + 1)] || 0) * u : .15;
+      const bh = Math.max(2, v * (h - 4));
+      c.fillStyle = x < px ? '#ebe9e5' : 'rgba(236,234,230,.3)';
+      c.beginPath(); c.roundRect ? c.roundRect(x, mid - bh / 2, bw, bh, 1) : c.rect(x, mid - bh / 2, bw, bh); c.fill();
+    }
+  }
+  requestAnimationFrame(draw);
+  const at = e => { const p = api(target()), r = $wv.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * ((p && p.dur()) || 0); };
+  $wv.addEventListener('pointerdown', e => { const p = api(target()); if (!p || !p.ready()) return; $wv.setPointerCapture(e.pointerId); drag = { t: at(e) }; });
+  $wv.addEventListener('pointermove', e => { if (drag) drag.t = at(e); });
+  $wv.addEventListener('pointerup', e => { if (!drag) return; const p = api(target()); if (p) p.seek(at(e)); drag = null; });
+  $wv.addEventListener('pointercancel', () => { drag = null; });
+
+  const toggle = () => { const p = api(target()); if (p && p.ready()) { p.toggle(); setTimeout(tick, 50); } };
+  $pp.onclick = toggle;
+  bar.querySelectorAll('.sk').forEach(b => b.onclick = () => { const p = api(target()); if (p && p.ready()) p.seek(p.a.currentTime + +b.dataset.k); });
+  const back = () => { if (bg) nav(bg.url); };
+  $bk.onclick = back; $cv.onclick = back; $('.tx').onclick = back;
+  $x.onclick = () => { destroy(bg); tick(true); };
+  // 焦点在外壳里（刚点过侧边栏）时，空格也能播放 / 暂停
+  addEventListener('keydown', e => { if (e.code === 'Space' && !/INPUT|TEXTAREA|SELECT|BUTTON/.test((e.target && e.target.tagName) || '')) { e.preventDefault(); toggle(); } });
 
   nav(location.href, false);
   // 侧边栏放在外壳里：它的 go() 会调用 cuNav，不再整页跳转

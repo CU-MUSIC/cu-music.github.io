@@ -695,6 +695,9 @@ const toggle = () => { if ($('#play').disabled) return; a.paused ? a.play() : a.
 $('#play').onclick = toggle;
 $('#back').onclick = () => seek(a.currentTime - 5);
 $('#fwd').onclick = () => seek(a.currentTime + 5);
+// 看板外壳（shell.js，只在你的设备上）的底部播放条：从这里读状态、发指令；在外壳里就不显示页内的迷你播放条
+window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled };
+if (window.top !== window) document.documentElement.classList.add('inshell');
 document.addEventListener('keydown', e => {
   if (/TEXTAREA|INPUT/.test(e.target.tagName)) return;
   if (e.code === 'Space') { e.preventDefault(); toggle(); }
