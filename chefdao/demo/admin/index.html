@@ -53,7 +53,7 @@ a{color:inherit}
 .it{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .scb{flex:none;font:600 12px var(--mono);color:var(--text-2);font-style:normal;font-variant-numeric:tabular-nums}
 .scb.hi{color:var(--green-soft)}
-.scb.no{color:var(--text-3);font-weight:400}
+.scb.no{color:var(--text-3);font-weight:400}.scb small{font:400 11px var(--font);color:var(--text-3);margin-right:4px}
 .item{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;transition:border-color .25s var(--ease),background .25s}
 .item:hover{border-color:var(--border-hover)}
 .item.on{background:var(--lift);border-color:rgba(255,255,255,.22)}
@@ -190,6 +190,20 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 .v em{grid-column:2;grid-row:1/4;align-self:center;font-style:normal;color:var(--text-2);font-size:12px;text-align:right}
 [hidden]{display:none!important}
 @media (max-width:820px){.wrap{grid-template-columns:1fr}.side{border-right:0;border-bottom:1px solid var(--border);max-height:42vh}.main{padding:22px 20px 80px}.note button.x{opacity:1}.clock{font-size:30px}}
+/* 后台播放条：切到别的投递时，正在放的那首留在后台继续放 */
+#bgb{position:fixed;z-index:40;left:352px;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:820px;height:62px;display:flex;align-items:center;gap:14px;padding:0 12px 0 10px;border-radius:16px;background:#161616;border:1px solid var(--border);box-shadow:0 10px 34px rgba(0,0,0,.55);transform:translateY(calc(100% + 24px));transition:transform .26s var(--ease)}
+body.has-bg #bgb{transform:none}body.has-bg .main{padding-bottom:120px}
+#bgb button{flex:none;color:var(--text)}
+#bgb .pp{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--pearl);color:var(--ink)}#bgb .pp svg{width:20px;height:20px;fill:currentColor}
+#bgb .tx{flex:0 1 200px;min-width:0;display:flex;flex-direction:column;gap:1px;text-align:left}
+#bgb .tx small{font-size:11px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#bgb .tx b{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#bgb .wv{flex:1;min-width:60px;height:32px;position:relative;cursor:pointer;touch-action:none}#bgb .wv canvas{position:absolute;inset:0;width:100%;height:100%}
+#bgb .t{flex:none;font:12px var(--mono);color:var(--text-3);white-space:nowrap}
+#bgb .bk{padding:7px 12px;border-radius:99px;background:var(--fill-2);font-size:12.5px;white-space:nowrap}#bgb .bk:hover{background:var(--fill-3)}
+#bgb .x{width:28px;height:28px;border-radius:50%;color:var(--text-3);font-size:15px}#bgb .x:hover{color:var(--text)}
+#bgb .pg{display:none;position:absolute;left:14px;right:14px;bottom:5px;height:2px;border-radius:2px;background:var(--fill-2);overflow:hidden}#bgb .pg i{display:block;height:100%;width:0;background:var(--pearl)}
+.item .pl8{color:var(--green-soft);margin-right:4px}
+@media (max-width:820px){#bgb{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));gap:10px}#bgb .wv,#bgb .t{display:none}#bgb .tx{flex:1}#bgb .pg{display:block}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -214,6 +228,7 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
     <div id="list"></div>
   </aside>
   <section class="main" id="main"><div class="empty">选一首开始听</div></section>
+  <div id="bgb" role="region" aria-label="后台播放"><button class="pp" type="button" aria-label="暂停"><svg viewBox="0 0 24 24"></svg></button><button class="tx" type="button" aria-label="回到这首"><small></small><b></b></button><div class="wv"><canvas></canvas></div><span class="t"></span><button class="bk" type="button">回到这首</button><button class="x" type="button" aria-label="停止">✕</button><div class="pg"><i></i></div></div>
 </div>
 
 <script src="/chefdao/review/lufs.js"></script>
@@ -258,6 +273,10 @@ async function load(keep) {
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { filter = b.dataset.f; document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (filter === 'vis') return showVisits(); renderList(); });
 let heardF = 'all', sortM = 'time';
 const nrated = d => CRIT.filter(([k]) => (d.scores || {})[k] > 0).length;
+// 列表上显示的分：有逐项打分用综合分；没有逐项、只拖了「给歌手的分数」就用那个；10 月底以前的旧版四项（1–5 分）换算成 10 分制
+const OLD = [['w', '作品力'], ['o', '产出'], ['i', '影响力'], ['c', '配合度']];
+const oldAvg = sc => { const v = OLD.map(([k]) => +(sc || {})[k] || 0).filter(x => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length * 2 : 0; };
+const shown = d => nrated(d) ? [total(d.scores), ''] : d.ascore > 0 ? [+d.ascore, '给歌手'] : oldAvg(d.scores) ? [oldAvg(d.scores), '旧版'] : [0, ''];
 document.querySelectorAll('#hf button').forEach(b => b.onclick = () => { heardF = b.dataset.h; document.querySelectorAll('#hf button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderList(); });
 $('#so').onchange = e => { sortM = e.target.value; renderList(); };
 function renderList() {
@@ -265,12 +284,12 @@ function renderList() {
   { const nn = D.filter(d => d.status === 'new').length; $('#cnt').textContent = nn ? nn + ' 首没听过' : ''; }
   if (filter === 'vis') return;
   let rows = D.filter(d => (filter === 'all' || (filter === 'pick' ? d.pick > 0 : d.kind === filter)) && (heardF === 'all' || (heardF === 'nofb' ? !d.pub : heardF === 'new' ? d.status === 'new' : d.status !== 'new')));   // 没反馈 = 还没发布给对方
-  if (sortM !== 'time') rows = rows.slice().sort((a, b) => { const x = nrated(a) ? total(a.scores) : -1, y = nrated(b) ? total(b.scores) : -1; if (x < 0 && y < 0) return b.ts - a.ts; if (x < 0) return 1; if (y < 0) return -1; return sortM === 'hi' ? y - x || b.ts - a.ts : x - y || b.ts - a.ts; });
+  if (sortM !== 'time') rows = rows.slice().sort((a, b) => { const x = shown(a)[0] || -1, y = shown(b)[0] || -1; if (x < 0 && y < 0) return b.ts - a.ts; if (x < 0) return 1; if (y < 0) return -1; return sortM === 'hi' ? y - x || b.ts - a.ts : x - y || b.ts - a.ts; });
   if (!rows.length) box.append(el('div', 'empty', '没有符合条件的投递'));
   rows.forEach(d => {
     const b = el('button', 'item' + (cur && cur.id === d.id ? ' on' : '')); b.type = 'button';
-    const top = el('div', 'it'); top.append(el('b', '', d.title));
-    const t = total(d.scores), has = nrated(d) > 0, sb = el('i', 'scb' + (has ? (t >= 7.5 ? ' hi' : '') : ' no'), has ? f1(t) : '未评分'); top.append(sb); b.append(top);
+    const top = el('div', 'it'), tb = el('b', '', d.title); if (bgP && bgP.d.id === d.id) tb.prepend(el('span', 'pl8', '♪')); top.append(tb);
+    const [t, src] = shown(d), has = t > 0, sb = el('i', 'scb' + (has ? (t >= 7.5 ? ' hi' : '') : ' no'), has ? f1(t) : '未评分'); if (src) { sb.prepend(el('small', '', src)); sb.title = src === '旧版' ? '旧版四项打分（1–5 分）换算成 10 分制' : '没有逐项打分，这是给歌手的分数'; } top.append(sb); b.append(top);
     const s = el('span'); s.append(el('i', 'dot ' + (d.pub ? 'done' : d.status === 'heard' ? 'heard' : '')), el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode((d.pick ? '★ ' : '') + d.who + ' · ' + ago(d.ts) + (d.status === 'new' ? ' · 没听过' : '') + (d.notes.length ? ' · ' + d.notes.length + ' 条' : '')));
     b.append(s); b.onclick = () => open(d); box.append(b);
   });
@@ -289,7 +308,7 @@ function srcOf(v) {
   return [/微信/.test(dev) ? '微信内打开（来源未记）' : '直接打开', false];
 }
 async function showVisits() {
-  $('#list').textContent = ''; cur = null; if (audio) audio.pause();
+  stash(); $('#list').textContent = ''; cur = null;
   const m = $('#main'); m.textContent = ''; m.append(el('h1', '', '访问'));
   const j = await (await api('/demo/visits')).json();
   const rows = j.visits || [];
@@ -311,6 +330,9 @@ async function showVisits() {
 /* 播放器：带钥匙取音频 → blob */
 let audio = null, url = null, raf = 0;
 async function open(d) {
+  if (cur && cur.id === d.id && audio) return;
+  const adopt = bgP && bgP.d.id === d.id ? bgP : null; if (adopt) bgP = null;
+  stash();   // 正在放的那首留在后台
   cur = { id: d.id, d };
   renderList();
   const m = $('#main'); m.textContent = '';
@@ -334,20 +356,20 @@ async function open(d) {
     as.oninput = paint; sm.querySelectorAll('button').forEach(b => b.onclick = () => { mode = +b.dataset.m; paint(); });
     sm.dataset.mode = mode; sm.getMode = () => mode; paint();
   }
-  renderMeta(); renderNotes(); renderScore(); bindPlayer(d);
+  renderMeta(); renderNotes(); renderScore(); bindPlayer(d, adopt); drawBg();
   m.scrollTop = 0; window.scrollTo(0, 0);
 }
 const PLAY = 'M8 5v14l11-7z', PAUSE = 'M6 5h4v14H6zm8 0h4v14h-4z';
 /* 响度平衡：按 BS.1770 测整体响度，把每首都推到同一个目标（默认 −10 LUFS）；用 Web Audio 增益 + 限幅，所以能放大超过 100% */
 let ac = null, gainN = null, comp = null, lvOn = true, lvT = -10;
 try { const sv = JSON.parse(localStorage.getItem('demo:lv') || 'null'); if (sv) { lvOn = sv.on !== false; lvT = [-16, -14, -12, -10, -8].includes(sv.t) ? sv.t : -10; } } catch (e) {}
-let graphFor = null;
+let graphFor = null, srcN = null;
 // 音频图要等第一次点播放（用户手势）时再接，否则浏览器会把还没解锁的音频环境接管，音频就不走了
 function ensureGraph() {
   if (!audio || graphFor === audio) { if (ac && ac.state === 'suspended') ac.resume(); return; }
   try {
     const AC = window.AudioContext || window.webkitAudioContext; if (!ac) ac = new AC();
-    const src = ac.createMediaElementSource(audio); gainN = ac.createGain(); comp = ac.createDynamicsCompressor();
+    const src = ac.createMediaElementSource(audio); srcN = src; gainN = ac.createGain(); comp = ac.createDynamicsCompressor();
     comp.threshold.value = -1; comp.knee.value = 0; comp.ratio.value = 20; comp.attack.value = .003; comp.release.value = .12;
     src.connect(gainN); gainN.connect(comp); comp.connect(ac.destination); graphFor = audio;
     if (ac.state === 'suspended') ac.resume();
@@ -373,12 +395,12 @@ function applyGain() {
   out.textContent = '原曲 ' + lu.lufs.toFixed(1).replace('-', '−') + ' LUFS' + (lvOn ? ' → 播放 ' + String(lvT).replace('-', '−') + ' LUFS（' + fmt(g) + ' dB）' + lim : ' · 响度平衡已关');
 }
 let peaks = null, grow = 1;
-function bindPlayer(d) {
-  if (audio) { audio.pause(); cancelAnimationFrame(raf); } if (url) URL.revokeObjectURL(url);
-  audio = new Audio(); audio.preload = 'auto'; url = null; peaks = null; grow = 1; cur.lu = null;
-  wireGain();
+function bindPlayer(d, adopt) {
+  if (adopt) { audio = adopt.audio; url = adopt.url; peaks = adopt.peaks; grow = 1; cur.lu = adopt.lu; }   // 从后台接回来：同一个音频，接着放
+  else { audio = new Audio(); audio.preload = 'auto'; url = null; peaks = null; grow = 1; cur.lu = null; }
+  wireGain(); if (adopt && adopt.gain) { gainN = adopt.gain; comp = adopt.comp; srcN = adopt.src; graphFor = audio; }
   const ico = $('#ico'); const setIco = p => ico.innerHTML = '<path d="' + p + '"/>'; setIco(PLAY);
-  api('/demo/a?id=' + d.id).then(async r => { const buf = await r.arrayBuffer(), u = new Uint8Array(buf.slice(0, 12)), at = (x, o = 0) => x.every((v, i) => u[o + i] === v); const ty = at([82, 73, 70, 70]) ? 'audio/wav' : (at([73, 68, 51]) || (u[0] === 255 && (u[1] & 224) === 224)) ? 'audio/mpeg' : at([102, 116, 121, 112], 4) ? 'audio/mp4' : at([102, 76, 97, 67]) ? 'audio/flac' : at([79, 103, 103, 83]) ? 'audio/ogg' : (r.headers.get('content-type') || 'audio/mpeg'); return new Blob([buf], { type: ty }); }).then(async b => {
+  if (!adopt) api('/demo/a?id=' + d.id).then(async r => { const buf = await r.arrayBuffer(), u = new Uint8Array(buf.slice(0, 12)), at = (x, o = 0) => x.every((v, i) => u[o + i] === v); const ty = at([82, 73, 70, 70]) ? 'audio/wav' : (at([73, 68, 51]) || (u[0] === 255 && (u[1] & 224) === 224)) ? 'audio/mpeg' : at([102, 116, 121, 112], 4) ? 'audio/mp4' : at([102, 76, 97, 67]) ? 'audio/flac' : at([79, 103, 103, 83]) ? 'audio/ogg' : (r.headers.get('content-type') || 'audio/mpeg'); return new Blob([buf], { type: ty }); }).then(async b => {
     if (!cur || cur.id !== d.id) return;
     url = URL.createObjectURL(b); audio.src = url; $('#ld').textContent = '';
     try { // 解码出波形（和播放用同一份文件）
@@ -395,8 +417,9 @@ function bindPlayer(d) {
   }).catch(() => { $('#ld').textContent = '音频加载失败'; $('#ldw').textContent = '音频加载失败'; });
   audio.onloadedmetadata = () => { $('#dur').textContent = '/ ' + clock(audio.duration); drawAxis(); drawWave(); };
   const tick = () => { const t = audio.currentTime || 0; $('#cur').textContent = clock(t); $('#add').textContent = '在 ' + clock(t) + ' 添加'; drawWave(); raf = requestAnimationFrame(tick); };
-  audio.onplay = () => { setIco(PAUSE); cancelAnimationFrame(raf); tick(); if (cur && cur.d && cur.d.status === 'new') { const dd = cur.d; dd.status = 'heard'; renderList(); api('/demo/seen', { id: dd.id }).catch(() => {}); } }; audio.onpause = () => { setIco(PLAY); cancelAnimationFrame(raf); tick(); cancelAnimationFrame(raf); };
+  audio.onplay = () => { dropBg(); setIco(PAUSE); cancelAnimationFrame(raf); tick(); if (cur && cur.d && cur.d.status === 'new') { const dd = cur.d; dd.status = 'heard'; renderList(); api('/demo/seen', { id: dd.id }).catch(() => {}); } }; audio.onpause = () => { setIco(PLAY); cancelAnimationFrame(raf); tick(); cancelAnimationFrame(raf); };
   audio.onended = () => setIco(PLAY);
+  if (adopt) { $('#ld').textContent = ''; $('#ldw').classList.add('off'); if (isFinite(audio.duration)) audio.onloadedmetadata(); applyGain(); if (!audio.paused) { setIco(PAUSE); tick(); } else tick(), cancelAnimationFrame(raf); }
   $('#play').onclick = toggle;
   document.querySelectorAll('.sk').forEach(b => b.onclick = () => skip(+b.dataset.s));
   const tr = $('#track'); let drag = false;
@@ -452,6 +475,52 @@ addEventListener('resize', () => { drawWave(); });
 const toggle = () => { if (!audio || !audio.src) return; ensureGraph(); audio.paused ? audio.play() : audio.pause(); };
 const skip = s => { if (audio && audio.duration) audio.currentTime = Math.min(audio.duration, Math.max(0, audio.currentTime + s)); };
 function drawMarks() { drawAxis(); drawWave(); }
+/* 后台播放：离开时还在放的那首不停（底部条可暂停 / 拖进度 / 回到这首 / 停止）；在新的一首点播放，后台那首让位 */
+let bgP = null, bgRaf = 0, bgDrag = null;
+function stash() {
+  if (!audio) return;
+  cancelAnimationFrame(raf);
+  if (cur && !audio.paused && !audio.ended) {
+    dropBg(true);
+    audio.onplay = audio.onpause = audio.onended = audio.onloadedmetadata = null;
+    bgP = { audio, url, d: cur.d, peaks, lu: cur.lu, gain: graphFor === audio ? gainN : null, comp: graphFor === audio ? comp : null, src: graphFor === audio ? srcN : null };
+  } else { audio.pause(); if (url) URL.revokeObjectURL(url); }
+  audio = null; url = null; peaks = null; gainN = null; graphFor = null; srcN = null;
+  drawBg(); renderList();
+}
+function dropBg(quiet) {
+  if (!bgP) return;
+  bgP.audio.pause(); try { bgP.src && bgP.src.disconnect(); } catch (e) {} if (bgP.url) URL.revokeObjectURL(bgP.url);
+  bgP = null; if (!quiet) { drawBg(); renderList(); }
+}
+const bgb = $('#bgb'), bq = s => bgb.querySelector(s);
+function drawBg() {
+  document.body.classList.toggle('has-bg', !!bgP); cancelAnimationFrame(bgRaf); if (!bgP) return;
+  const d = bgP.d; bq('.tx b').textContent = d.title; bq('.tx small').textContent = (d.kind === 'mem' ? '刀门' : '访客') + ' · ' + d.who;
+  let last = '';
+  const loop = () => {
+    if (!bgP) return; bgRaf = requestAnimationFrame(loop);
+    const a = bgP.audio, du = isFinite(a.duration) ? a.duration : 0, t = bgDrag ? bgDrag.t : a.currentTime, fr = du ? Math.min(1, t / du) : 0, on = !a.paused && !a.ended;
+    const cv = bq('.wv canvas'), w = cv.clientWidth, h = cv.clientHeight, sig = [on, Math.round(fr * Math.max(w, 300)), w, Math.floor(t)].join('|'); if (sig === last) return; last = sig;
+    bq('.pp svg').innerHTML = '<path d="' + (on ? PAUSE : PLAY) + '"/>'; bq('.pp').setAttribute('aria-label', on ? '暂停' : '播放');
+    bq('.t').textContent = clock(t) + ' / ' + clock(du); bq('.pg i').style.width = fr * 100 + '%';
+    if (!w) return; const dpr = devicePixelRatio || 1; if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const g = cv.getContext('2d'), pk = bgP.peaks || [], bw = 2, gap = 2, n = Math.max(1, Math.floor(w / (bw + gap))); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    for (let i = 0; i < n; i++) { const k = pk.length ? Math.floor(i / n * pk.length) : 0, v = pk.length ? Math.max(.06, pk[k] || 0) : .15, bh = Math.max(2, v * (h - 4)), x = i * (bw + gap);
+      g.fillStyle = (i + .5) / n <= fr ? '#ebe9e5' : 'rgba(236,234,230,.28)'; g.beginPath(); g.roundRect ? g.roundRect(x, h / 2 - bh / 2, bw, bh, 1) : g.rect(x, h / 2 - bh / 2, bw, bh); g.fill(); }
+  };
+  loop();
+}
+const bgToggle = () => { if (!bgP) return; const a = bgP.audio; if (a.paused) { if (ac && ac.state === 'suspended') ac.resume(); a.play().catch(() => {}); } else a.pause(); };
+bq('.pp').onclick = bgToggle;
+const bgBack = () => { if (bgP) open(bgP.d); };
+bq('.bk').onclick = bgBack; bq('.tx').onclick = bgBack;
+bq('.x').onclick = () => dropBg();
+{ const wv = bq('.wv'), at = e => { const r = wv.getBoundingClientRect(), a = bgP.audio; return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * (isFinite(a.duration) ? a.duration : 0); };
+  wv.onpointerdown = e => { if (!bgP) return; wv.setPointerCapture(e.pointerId); bgDrag = { t: at(e) }; };
+  wv.onpointermove = e => { if (bgDrag && bgP) bgDrag.t = at(e); };
+  wv.onpointerup = e => { if (bgDrag && bgP) bgP.audio.currentTime = at(e); bgDrag = null; };
+  wv.onpointercancel = () => { bgDrag = null; }; }
 let noteT = null;
 async function addNote() {
   const ta = $('#nt'), text = ta.value.trim(); if (!text) return;
@@ -521,6 +590,7 @@ function renderScore() {
     });
   };
   group('这首歌', SONG, ''); group('补充 · 不进六边形', XTRA, ''); group('商业评估', BIZ, 'bz');
+  if (!nrated(d) && oldAvg(d.scores)) side.prepend(el('div', 'hint', '旧版打分：' + OLD.filter(([k]) => d.scores[k] > 0).map(([k, n]) => n + ' ' + d.scores[k]).join(' · ') + '（满分 5）。重新打分会替换掉旧版的。'));
   const used = D.filter(x => x.pick > 0).length, pb = $('#pick');
   pb.textContent = d.pick ? '★ 已入选 · 取消' : '入选主厨之选'; pb.className = 'btn' + (d.pick ? '' : ' ghost');
   pb.disabled = !d.pick && used >= 5;
@@ -540,7 +610,9 @@ async function remove() {
 }
 document.addEventListener('keydown', e => {
   const typing = /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName);
-  if (typing || e.metaKey || e.ctrlKey || !cur) return;
+  if (typing || e.metaKey || e.ctrlKey) return;
+  if (e.code === 'Space' && bgP) { e.preventDefault(); bgToggle(); return; }   // 后台有在放的，空格先管它
+  if (!cur) return;
   if (e.code === 'Space') { e.preventDefault(); toggle(); }
   else if (e.key === 'ArrowLeft') skip(-5); else if (e.key === 'ArrowRight') skip(5);
   else if (e.key.toLowerCase() === 'n') { e.preventDefault(); noteT = audio ? audio.currentTime : 0; $('#nt').focus(); $('#add').textContent = '在 ' + clock(noteT) + ' 添加'; }
