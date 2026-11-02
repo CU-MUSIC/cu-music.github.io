@@ -291,7 +291,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261102.1120';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261102.1330';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -311,7 +311,7 @@ const m = /[#&]k=([\w-]+)/.exec(location.hash);
 if (m) { store.set('insights:key', m[1]); history.replaceState(null, '', location.pathname); }
 if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
 let KEY = store.get('insights:key');
-let days = +store.get('insights:days') || 30, song = '', lis = '', data = null, pdata = null;
+let days = +store.get('insights:days') || 30, song = '', ver = '', lis = '', data = null, pdata = null;
 let tab = store.get('insights:tab') || 'listen', ofilter = '';
 let oedit = 0, pmOpen = false; const odraft = {};   // 改单表单的草稿；优惠码默认折叠，展开状态记在内存里，刷新重画时保持
 const TABS = [['lib', 'Library'], ['listen', '审听'], ['beat', '伴奏'], ['home', '主页'], ['price', '价格页'], ['orders', '订单']];
@@ -452,6 +452,23 @@ function when(t, now) {
   if (new Date(now - 864e5).toDateString() === a.toDateString()) return '昨天 ' + hm;
   return (a.getMonth() + 1) + '月' + a.getDate() + '日 ' + hm;
 }
+// 一个版本的汇总：多少人听、听了几次、每一段有几个人听到
+function verSummary(rows) {
+  if (!rows.length) return '<div class="ver"><div class="facts">这个版本这段时间还没人听</div></div>';
+  const dur = rows[0].dur || 0, len = dur / 60, people = new Map();
+  rows.forEach(x => { const b = x.bins || []; let a = people.get(x.lid); if (!a) people.set(x.lid, a = new Array(60).fill(0)); b.forEach((v, j) => { if (v > a[j]) a[j] = v; }); });
+  const n = people.size, reach = new Array(60).fill(0);
+  people.forEach(a => a.forEach((v, j) => { if (len && v >= len * .5) reach[j]++; }));
+  const hasBins = rows.some(x => x.bins && x.bins.length);
+  let half = -1; reach.forEach((v, j) => { if (v * 2 >= n) half = j; });
+  const sec = rows.reduce((t, x) => t + (x.sec || 0), 0), ends = rows.reduce((t, x) => t + (x.ends || 0), 0);
+  const facts = ['<b>' + n + '</b> 位听众', '<b>' + rows.length + '</b> 次播放', '累计听了 <b>' + mins(sec) + '</b>'];
+  if (ends) facts.push('完整听完 <b>' + ends + '</b> 次');
+  const mid = hasBins && half >= 0 ? '<br>过半数的人听到 <b>' + fmt((half + 1) * len) + '</b>' : '';
+  return `<div class="ver"><div class="t"><b>${esc(rows[0].ver)} 汇总</b><span>${fmt(dur)}</span></div>
+    ${hasBins ? '<div class="heat">' + reach.map(v => `<i style="height:${Math.max(8, v / n * 100)}%;opacity:${v > 0 ? .25 + .75 * v / n : .08}"></i>`).join('') + '</div><div class="facts" style="font-size:12px;color:var(--text-3)">条越高，听到这一段的人越多</div>' : ''}
+    <div class="facts">${facts.join(' · ')}${mid}</div></div>`;
+}
 function verBlock(x) {
   const len = x.dur / 60, b = x.bins || [];
   const cover = b.length ? Math.round(b.filter(v => v >= len * .5).length / 60 * 100) : 0;
@@ -518,7 +535,9 @@ function render() {
   const sg = document.getElementById('seg');
   if (sg) sg.onclick = e => { const d = +e.target.dataset.d; if (d) { days = d; store.set('insights:days', d); render(); } };
   const c = document.getElementById('chips');
-  if (c) c.onclick = e => { if (e.target.dataset.s !== undefined) { song = e.target.dataset.s; render(); } };
+  if (c) c.onclick = e => { if (e.target.dataset.s !== undefined) { song = e.target.dataset.s; ver = ''; render(); } };
+  const vc = document.getElementById('vchips');
+  if (vc) vc.onclick = e => { if (e.target.dataset.v !== undefined) { ver = e.target.dataset.v; render(); } };
   const lc = document.getElementById('lchips');
   if (lc) lc.onclick = e => { if (e.target.dataset.l !== undefined) { lis = e.target.dataset.l; render(); } };
   root.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => promoAct(b.dataset.pm, b.dataset.code, b));
@@ -580,7 +599,10 @@ function renderListen() {
   const now = data.now, since = now - days * 864e5;
   const all = data.rows.filter(x => x.started >= since);
   const songs = [...new Map(data.rows.map(x => [x.slug, x.title || x.slug])).entries()];
-  const rows = song ? all.filter(x => x.slug === song) : all;
+  // 选了一首歌后可以再选某个版本：只看这个版本的听众、播放和每段的覆盖
+  const vers = song ? [...new Set(all.filter(x => x.slug === song).map(x => x.ver))].sort((p, q) => String(p).localeCompare(String(q), 'zh', { numeric: true })) : [];
+  if (ver && !vers.includes(ver)) ver = '';
+  const rows = song ? all.filter(x => x.slug === song && (!ver || x.ver === ver)) : all;
   const s = series(rows, now);
   const listeners = new Set(rows.map(x => x.lid)).size;
 
@@ -604,6 +626,9 @@ function renderListen() {
   return `
   ${songs.length > 1 ? `<div class="chips" id="chips"><button data-s="" class="${song ? '' : 'on'}">全部</button>${songs.map(([k, t]) =>
     `<button data-s="${esc(k)}" class="${song === k ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>` : ''}
+  ${vers.length > 1 ? `<div class="chips" id="vchips"><button data-v="" class="${ver ? '' : 'on'}">全部版本</button>${vers.map(v =>
+    `<button data-v="${esc(v)}" class="${ver === v ? 'on' : ''}">${esc(v)} · ${new Set(all.filter(x => x.slug === song && x.ver === v).map(x => x.lid)).size} 人</button>`).join('')}</div>` : ''}
+  ${song && ver ? verSummary(rows) : ''}
   <div class="cards">
     <div class="card"><div class="lb">播放次数</div><div class="n">${rows.length}</div><div class="d">近 ${days} 天</div>${spark(s.plays)}</div>
     <div class="card"><div class="lb">听众</div><div class="n">${listeners}</div><div class="d">近 ${days} 天</div>${spark(s.listeners)}</div>
