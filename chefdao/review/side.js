@@ -8,10 +8,12 @@
   const STAGE = ['待付款', '准备中', '编辑中', '混音中', '待审听', '已交付', '人声制作中', '修改中', '交付结算'];
   const HOT = { 4: '#9fb7e8', 7: '#e8c98a', 8: '#e8c98a' };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const here = location.pathname + location.hash;
-  const isHere = url => { try { const u = new URL(url); return u.pathname + u.hash === here || (!u.hash && u.pathname === location.pathname); } catch (e) { return false; } };
+  // 在审听外壳里切曲目不会重载页面，所以「当前在哪」每次现读
+  const isHere = url => { try { const u = new URL(url, location.href); return u.pathname + u.hash === location.pathname + location.hash || (!u.hash && u.pathname === location.pathname); } catch (e) { return false; } };
+  // 后台正在播的那首（外壳设置）：侧边栏里标个 ♪
+  const isPlay = url => { try { const u = new URL(url, location.href); return !!window.cuPlayingKey && u.pathname + u.hash === window.cuPlayingKey; } catch (e) { return false; } };
   // 同一个页面只改了 # 后面的码，浏览器不会重新载入：手动刷新一次
-  const go = url => { const u = new URL(url, location.href); if (u.pathname === location.pathname && u.origin === location.origin) { location.hash = u.hash; location.reload(); } else location.href = u.href; };
+  const go = url => { if (window.cuNav) return window.cuNav(url); const u = new URL(url, location.href); if (u.pathname === location.pathname && u.origin === location.origin) { location.hash = u.hash; location.reload(); } else location.href = u.href; };
 
   const css = document.createElement('style');
   css.textContent = `
@@ -49,6 +51,7 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
 #cuSide .tt{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 #cuSide .ar{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#74726f}
 #cuSide .st{flex:none;font-size:11px;color:#74726f}
+#cuSide .it.pl .tt::before{content:'♪ ';color:#e8c98a}
 #cuSide .tr{padding:5px 8px 5px 48px}
 #cuSide .tr .tt{font-weight:400;font-size:13.5px}
 #cuSide .empty{padding:20px 12px;color:#74726f;font-size:13px}`;
@@ -80,8 +83,8 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
     const one = p.tracks.length === 1, t0 = p.tracks[0];
     const url = p.url || t0.url, on = isHere(url) || p.tracks.some(t => isHere(t.url));
     const sub = [p.artist || (t0 && t0.artist), one ? '' : p.tracks.length + ' 首'].filter(Boolean).join(' · ');
-    let h = '<div class="it' + (isHere(url) ? ' on' : '') + '" data-u="' + esc(url) + '">' + cover(p, p.title) + '<span class="tx"><span class="tt">' + esc(p.title) + '</span>' + (sub ? '<span class="ar">' + esc(sub) + '</span>' : '') + '</span>' + (one ? tag(t0.prog) : '') + '</div>';
-    if (on) h += p.tracks.map(t => '<div class="it tr' + (isHere(t.url) ? ' on' : '') + '" data-u="' + esc(t.url) + '"><span class="tx"><span class="tt">' + esc(t.title) + '</span></span>' + tag(t.prog) + '</div>').join('');
+    let h = '<div class="it' + (isHere(url) ? ' on' : '') + (isPlay(url) || p.tracks.some(t => isPlay(t.url)) ? ' pl' : '') + '" data-u="' + esc(url) + '">' + cover(p, p.title) + '<span class="tx"><span class="tt">' + esc(p.title) + '</span>' + (sub ? '<span class="ar">' + esc(sub) + '</span>' : '') + '</span>' + (one ? tag(t0.prog) : '') + '</div>';
+    if (on) h += p.tracks.map(t => '<div class="it tr' + (isHere(t.url) ? ' on' : '') + (isPlay(t.url) ? ' pl' : '') + '" data-u="' + esc(t.url) + '"><span class="tx"><span class="tt">' + esc(t.title) + '</span></span>' + tag(t.prog) + '</div>').join('');
     return h;
   };
   function draw() {
@@ -92,14 +95,14 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
     const live = ps.filter(p => !p.archived), arch = ps.filter(p => p.archived);
     const loose = (DATA.loose || []).filter(x => !q || (x.title + ' ' + x.artist).toLowerCase().includes(q));
     let h = live.map(projRow).join('');
-    if (loose.length) h += '<div class="sec" style="cursor:default">未归项目</div>' + loose.map(x => '<div class="it' + (isHere(x.url) ? ' on' : '') + '" data-u="' + esc(x.url) + '">' + cover({}, x.title) + '<span class="tx"><span class="tt">' + esc(x.title) + '</span>' + (x.artist ? '<span class="ar">' + esc(x.artist) + '</span>' : '') + '</span></div>').join('');
+    if (loose.length) h += '<div class="sec" style="cursor:default">未归项目</div>' + loose.map(x => '<div class="it' + (isHere(x.url) ? ' on' : '') + (isPlay(x.url) ? ' pl' : '') + '" data-u="' + esc(x.url) + '">' + cover({}, x.title) + '<span class="tx"><span class="tt">' + esc(x.title) + '</span>' + (x.artist ? '<span class="ar">' + esc(x.artist) + '</span>' : '') + '</span></div>').join('');
     if (arch.length) { const o = archOpen || !!q; h += '<button class="sec" id="cuSideA" aria-expanded="' + o + '"><i>▾</i>已归档 ' + arch.length + '</button>' + (o ? arch.map(projRow).join('') : ''); }
     L.innerHTML = h || '<div class="empty">' + (q ? '没有匹配的项目' : '还没有项目') + '</div>';
     const a = L.querySelector('#cuSideA'); if (a) a.onclick = () => { archOpen = !archOpen; ls.set('cu:side:arch', archOpen ? '1' : '0'); draw(); };
     const cur = L.querySelector('.it.on'); if (cur && !q) cur.scrollIntoView({ block: 'nearest' });
   }
-  L.onclick = e => { const it = e.target.closest('.it[data-u]'); if (it) { if (isHere(it.dataset.u)) { if (!PIN.matches) apply(false); return; } go(it.dataset.u); } };
-  Q.oninput = draw;
+  L.onclick = e => { const it = e.target.closest('.it[data-u]'); if (it) { if (isHere(it.dataset.u)) { if (!PIN.matches) apply(false); return; } go(it.dataset.u); if (window.cuNav && !PIN.matches) apply(false); } };
+  Q.oninput = draw; window.cuSideDraw = draw;
 
   // 先用本机存的列表马上画出来，再去服务端拿新的（两分钟内打开过就不再拿，省数据库读取）
   try { const c = JSON.parse(ls.get('cu:side:lib') || 'null'); if (c && c.d) { DATA = c.d; draw(); } } catch (e) {}
