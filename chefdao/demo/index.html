@@ -59,6 +59,12 @@ body.intro{overflow:hidden}
 .titled .hero h1 span:not(.it){animation:letter 1s var(--ease) forwards;animation-delay:calc(var(--i) * 45ms)}
 .hero h1 span.sp{width:.26em}
 @keyframes letter{to{opacity:1;transform:none;filter:none}}
+/* 入选席位：大家都能看到已入选几席 */
+.seats{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px;font:500 11px/1 var(--mono);letter-spacing:.2em;color:var(--text-3);font-variant-numeric:tabular-nums;opacity:0}
+.titled .seats{animation:fadein .8s var(--ease) .6s forwards}
+.seats span{display:flex;gap:6px}.seats i{width:7px;height:7px;border-radius:50%;border:1px solid rgba(255,255,255,.28)}
+.seats i.on{background:#5fd0a0;border-color:#5fd0a0;box-shadow:0 0 8px rgba(95,208,160,.45)}
+.seats b{font-weight:500;color:var(--green-soft)}
 .status{height:20px;margin-top:14px;font:500 11px/20px var(--mono);letter-spacing:.24em;color:var(--text-3);font-variant-numeric:tabular-nums;opacity:0;transition:opacity .4s var(--ease)}
 .status.on{opacity:1}
 
@@ -143,6 +149,13 @@ button.chip.ok{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;b
 button.chip.ok:hover{background:rgba(31,138,91,.26)}
 button.chip.ok::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .3s var(--ease)}
 button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1px,-1px)}
+/* 入选主厨之选：只有歌手本人在自己的反馈页能看到 */
+.seat{display:flex;align-items:center;gap:14px;margin:12px 0 4px;padding:14px 16px;border-radius:var(--r);border:1px solid var(--green-line);background:linear-gradient(135deg,var(--green-fill),transparent 70%)}
+.seat .st{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(31,138,91,.22);color:var(--green-soft);font-size:18px}
+.seat div{min-width:0;display:flex;flex-direction:column;gap:2px}
+.seat small{font:500 11px var(--mono);letter-spacing:.14em;color:var(--green-soft)}
+.seat b{font-size:16px;font-weight:600;letter-spacing:.01em}
+.seat span{font-size:12.5px;color:var(--text-2)}
 .fbp{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
 .fbp[hidden]{display:none}
 .sbar{margin:2px 0 14px}
@@ -190,6 +203,7 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
     <path class="p" id="p1" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="p" id="p2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>
   </svg></div>
   <h1 id="h1" aria-label="Chef’s Table"><span class="it">Chef’s</span> Table</h1>
+  <div class="seats" id="seats" hidden></div>
   <div class="status" id="status"></div>
 </section>
 
@@ -449,6 +463,7 @@ function card(d) {
   if (d.pub) { chip = el('button', 'chip ok', '反馈已发布' + (n ? ' · ' + n + ' 条' : '')); chip.type = 'button'; chip.setAttribute('aria-expanded', 'true'); }
   else chip = el('span', 'chip', STATUS[d.status] || '已收到');
   h.append(el('b', '', d.title), chip); c.append(h);
+  if (d.seat) { const s = el('div', 'seat'), tx = el('div'); tx.append(el('small', '', "CHEF'S TABLE · SEAT " + d.seat + ' / 5'), el('b', '', '入选主厨之选'), el('span', '', '这首歌被选进本期 5 席之一 · Selected for Chef\'s Table')); s.append(el('i', 'st', '★'), tx); c.append(s); }
   const pl = player(API + '/demo/a?id=' + d.id + '&t=' + encodeURIComponent(d.tok)); c.append(pl);
   if (d.pub) {
     const box = el('div', 'fbp'); box.append(el('h4', '', 'FEEDBACK · 点时间可以跳到那一刻'));
@@ -468,6 +483,10 @@ function card(d) {
   return c;
 }
 load();
+// 已入选几席（5 席）
+fetch(API + '/demo/wall').then(r => r.json()).then(j => { if (!j || !j.ok) return; const n = j.n || 0, max = j.max || 5, s = $('#seats'), dots = el('span');
+  for (let i = 0; i < max; i++) dots.append(el('i', i < n ? 'on' : ''));
+  const t = el('em'); t.style.fontStyle = 'normal'; t.append('SEATS ', el('b', '', String(n)), ' / ' + max); s.append(dots, t); s.setAttribute('aria-label', '主厨之选已入选 ' + n + ' / ' + max + ' 席'); s.hidden = false; }).catch(() => {});
 })();
 </script>
 </body>
