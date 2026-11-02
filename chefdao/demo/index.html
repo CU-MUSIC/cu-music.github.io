@@ -215,9 +215,11 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
       <div class="row" style="--k:1"><label class="fl"><input id="t" maxlength="60" placeholder=" "><span>歌名</span></label></div>
       <div class="row" style="--k:2"><label class="fl"><input id="l" maxlength="200" inputmode="url" placeholder=" "><span>主页链接（选填）</span></label></div>
       <div class="row" style="--k:3"><span class="lab" id="memLab">刀门会员</span><button type="button" class="switch" id="mem" role="switch" aria-checked="false" aria-labelledby="memLab"></button></div>
-      <div class="row file" style="--k:4"><input id="file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.amr,.wma,.aif,.aiff,.mp4" aria-label="选择音频"><span class="lab empty" id="fl">选择音频</span><em id="fmeta">MP3 · M4A · WAV</em></div>
+      <div class="row" style="--k:4"><span class="lab" id="frLab">已是刀大厨微信好友</span><button type="button" class="switch" id="fr" role="switch" aria-checked="false" aria-labelledby="frLab"></button></div>
+      <div class="row" id="wxRow" style="--k:5"><label class="fl"><input id="wx" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder=" "><span>微信号（方便刀大厨加你）</span></label></div>
+      <div class="row file" style="--k:6"><input id="file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.amr,.wma,.aif,.aiff,.mp4" aria-label="选择音频"><span class="lab empty" id="fl">选择音频</span><em id="fmeta">MP3 · M4A · WAV</em></div>
     </div>
-    <button class="go idle" id="go" type="submit" style="--k:5">投递</button>
+    <button class="go idle" id="go" type="submit" style="--k:7">投递</button>
     <div class="err" id="err" role="alert"></div>
     <button class="find" id="findBtn" type="button">已经投递过？查看反馈</button>
     <div class="fbox" id="fbox" hidden>
@@ -301,7 +303,13 @@ function progress() {
 ['n', 't'].forEach(id => $('#' + id).addEventListener('input', progress));
 
 const sw = $('#mem');
-sw.onclick = () => { sw.setAttribute('aria-checked', String(sw.getAttribute('aria-checked') !== 'true')); if (navigator.vibrate) navigator.vibrate(8); };
+sw.onclick = () => { sw.setAttribute('aria-checked', String(sw.getAttribute('aria-checked') !== 'true')); if (sw.getAttribute('aria-checked') === 'true') setFr(true); if (navigator.vibrate) navigator.vibrate(8); };
+// 不是微信好友的要留微信号，不然刀大厨按艺名搜不到人；上次填的记在本机
+const fr = $('#fr'), isFr = () => fr.getAttribute('aria-checked') === 'true';
+function setFr(on) { fr.setAttribute('aria-checked', String(on)); $('#wxRow').hidden = on; store.set('demo:fr', on ? '1' : '0'); }
+fr.onclick = () => { setFr(!isFr()); if (navigator.vibrate) navigator.vibrate(8); if (!isFr()) $('#wx').focus({ preventScroll: true }); };
+$('#wx').value = store.get('demo:wx') || ''; if (store.get('demo:fr') === '1') setFr(true);
+const WX = /^[A-Za-z0-9_\-+.@ ]{5,40}$/;
 
 /* 音频：点这一行选择（透明的文件输入盖在行上，安卓/微信里直接触发系统选择器）或拖进窗口 */
 // 安卓（尤其华为浏览器 / 微信内核）常常把 accept 当成「只能录音」或根本弹不出选择器，所以安卓上去掉 accept，选完再自己按文件头判断是不是音频
@@ -336,20 +344,24 @@ const fmtSize = n => n < 1048576 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (
 /* 投递：标的内圈变成上传进度；完成后两圈画满、轻弹一下 */
 let shown = 0, goal = 0;
 const loop = () => { shown += (goal - shown) * .12; if (Math.abs(goal - shown) < .002) shown = goal; p2.style.strokeDashoffset = off(shown); if (busy) $('#status').textContent = Math.round(shown * 100) + '%'; if (busy || shown < goal) requestAnimationFrame(loop); };
-const ERR = { quota: '今天已经投过了，明天再来。', full: '今天的投递已满，明天再来。', size: '文件超过 24MB，请导出 mp3。', rate: '操作太频繁，稍后再试。', who: '请填写艺名。', title: '请填写歌名。' };
+const ERR = { quota: '今天已经投过了，明天再来。', full: '今天的投递已满，明天再来。', size: '文件超过 24MB，请导出 mp3。', rate: '操作太频繁，稍后再试。', wx: '请填写正确的微信号。', who: '请填写艺名。', title: '请填写歌名。' };
 const nudge = () => { const g = $('#go'); g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); };
 $('#form').addEventListener('submit', e => {
   e.preventDefault(); if (busy) return;
   const n = $('#n').value.trim(), t = $('#t').value.trim(), err = $('#err');
   if (!n) { err.textContent = '请填写艺名。'; $('#n').focus(); return nudge(); }
   if (!t) { err.textContent = '请填写歌名。'; $('#t').focus(); return nudge(); }
+  const wx = $('#wx').value.trim();
+  if (!isFr() && !wx) { err.textContent = '请填写微信号，方便刀大厨加你。'; $('#wx').focus(); return nudge(); }
+  if (!isFr() && !WX.test(wx)) { err.textContent = '微信号填字母、数字或下划线（手机号也可以）。'; $('#wx').focus(); return nudge(); }
   if (!file) { err.textContent = '请选择音频。'; return nudge(); }
+  if (wx) store.set('demo:wx', wx);
   let link = $('#l').value.trim(); if (link && !/^https?:\/\//i.test(link)) { const m = link.match(/https?:\/\/\S+/i); link = m ? m[0] : ''; }
     err.textContent = ''; busy = true; $('#go').disabled = true; shown = goal = 0;
   p1.style.strokeDashoffset = 0; p2.style.transition = 'none'; $('#status').classList.add('on'); $('#status').textContent = '0%';
   if ($('#mark').getBoundingClientRect().bottom < 40) window.scrollTo({ top: 0, behavior: REDUCE ? 'auto' : 'smooth' });
   loop();
-  const q = new URLSearchParams({ n, mem: sw.getAttribute('aria-checked') === 'true' ? '1' : '0', lid: LID, title: t, l: link, ct: file.type || 'audio/mpeg' });
+  const q = new URLSearchParams({ n, mem: sw.getAttribute('aria-checked') === 'true' ? '1' : '0', lid: LID, title: t, l: link, fr: isFr() ? '1' : '0', wx: isFr() ? '' : wx, ct: file.type || 'audio/mpeg' });
   const x = new XMLHttpRequest();
   x.open('POST', API + '/demo/up?' + q);
   x.upload.onprogress = ev => { if (ev.lengthComputable) goal = Math.min(.97, ev.loaded / ev.total); };
