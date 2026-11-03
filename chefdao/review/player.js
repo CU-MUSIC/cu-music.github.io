@@ -65,7 +65,7 @@ function etaBlock(g) {
   }
   const ed = store.get('insights:key') ? `<label class="etaed" title="改下一版预计日期（清空 = 自动按 2 个工作日）">改<input type="date" value="${eta.next || ''}"></label>` : '';
   const big = next ? `<div class="etan"><span>${lab}预计</span><b>${wdate(next)}</b><i>20:00 前</i>${ed}</div>`
-    : g.s === 4 ? `<div class="etan wait"><span>下一版</span><b>收到意见后 2 个工作日内</b>${ed}</div>` : '';
+    : g.s === 4 ? `<div class="etan wait"><span>下一版</span><b>意见发送后 2 个工作日内</b>${ed}</div>` : '';
   const row = ETA_K.filter(([k]) => eta[k]).map(([k, n]) => `<span class="${rank[k] < curR ? 'd' : k === curK && g.s !== 4 ? 'c' : ''}">${n}<b>${cdate(eta[k])}</b></span>`)
     .concat(g.due && g.s !== 8 ? [`<span class="etd">交付<b>${cdate(g.due)}</b></span>`] : []);
   return big || row.length ? `<div class="eta">${big}${row.length ? '<div class="etar">' + row.join('') + '</div>' : ''}</div>` : '';
@@ -966,6 +966,9 @@ $('#cta').onclick = async () => {
       body: JSON.stringify({ token: PUSH, title: '《' + S.title + '》' + cur.ver + ' 反馈 · ' + notes.length + ' 条', content: html, template: 'html' }) });
     const j = await r.json(); if (j.code !== 200) throw new Error(j.msg);
     done('已发送'); hud('已发送，刀大厨会在微信收到'); track(vi, true, true);
+    // 待审听的最新版发了意见：页面上马上换成「下一版预计 X月X日」（服务端同时转成修改中）
+    if (S.prog && S.prog.s === 4 && cur === V[V.length - 1]) { const g = S.prog; g.s = 7; g.r = (g.r || 0) + 1; g.at = { ...(g.at || {}), 7: Date.now() };
+      const box = document.querySelector('.sprog .eta'), html = etaBlock(g); if (box) box.outerHTML = html; else { const sp = document.querySelector('.sprog'); if (sp) sp.insertAdjacentHTML('beforeend', html); } }
   } catch (e) {
     await copy(plainText()); done('已复制'); hud('发送没成功，已帮你复制，请粘贴到微信发给我', 4000);
   } finally { busy = false; }
