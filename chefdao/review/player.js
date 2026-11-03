@@ -64,10 +64,10 @@ function etaBlock(g) {
     if (next && ymdEnd(next) < now) next = '';
   }
   const ed = store.get('insights:key') ? `<label class="etaed" title="改下一版预计日期（清空 = 自动按 2 个工作日）">改<input type="date" value="${eta.next || ''}"></label>` : '';
-  const big = next ? `<div class="etan"><span>${lab} · 预计</span><b>${wdate(next)}</b><i>20:00 前</i>${ed}</div>`
+  const big = next ? `<div class="etan"><span>${lab}预计</span><b>${wdate(next)}</b><i>20:00 前</i>${ed}</div>`
     : g.s === 4 ? `<div class="etan wait"><span>下一版</span><b>收到意见后 2 个工作日内</b>${ed}</div>` : '';
   const row = ETA_K.filter(([k]) => eta[k]).map(([k, n]) => `<span class="${rank[k] < curR ? 'd' : k === curK && g.s !== 4 ? 'c' : ''}">${n}<b>${cdate(eta[k])}</b></span>`)
-    .concat(g.due && g.s !== 8 ? [`<span class="dl">交付<b>${cdate(g.due)}</b></span>`] : []);
+    .concat(g.due && g.s !== 8 ? [`<span class="etd">交付<b>${cdate(g.due)}</b></span>`] : []);
   return big || row.length ? `<div class="eta">${big}${row.length ? '<div class="etar">' + row.join('') + '</div>' : ''}</div>` : '';
 }
 const stageOf = v => { if (v.stage) return v.stage === 'none' ? '' : v.stage;   // 手动改过类别的优先
@@ -1375,13 +1375,13 @@ async function clientFb() {
       {
         const kt = o.t == null ? 0 : o.t, km = o.mk || o.m;   // 整体评论：时间记 0，文字取前 120 字做键
         const k = rk(o.ver, kt, km), acts = document.createElement('div'); acts.className = 'acts';
-        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button><button class="press qb" data-a="quote">报价</button><span class="ab" hidden>助理已改</span><select class="cat" aria-label="分类"><option value="">分类</option>' + CATS.map(c => '<option>' + c + '</option>').join('') + '</select>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
+        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button><button class="press qb" data-a="quote">报价</button><span class="asd" hidden>助理已改</span><select class="cat" aria-label="分类"><option value="">分类</option>' + CATS.map(c => '<option>' + c + '</option>').join('') + '</select>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
         const sync = () => { const r = mine.get(k); decorate(row, r); { const rp = row.querySelector('.rp'); if (rp && !rp.querySelector('.mx')) { const bx = document.createElement('button'); bx.className = 'mx'; bx.textContent = '×'; bx.setAttribute('aria-label', '删除这条回复'); bx.onclick = () => save({ reply: '' }); rp.appendChild(bx); } } const sb = acts.querySelector('[data-a=st]'), pc = r && r.done ? 100 : r && r.read ? 50 : 0, pv = stPrev.has(k) ? stPrev.get(k) : pc;   // 圆圈：空心 = 未读，半圆 = 已读，实心 ✓ = 已完成；状态变了就从上一个状态补间过去
           sb.innerHTML = '<i class="ring' + (pc === 100 ? ' full' : '') + '" style="--p:' + pv + '"></i><span>' + (pc === 100 ? '已完成' : pc === 50 ? '已读' : '未读') + '</span>';
           const ring = sb.querySelector('.ring'); if (pv !== pc) { requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.setProperty('--p', pc); ring.classList.add('pop'); })); }
           stPrev.set(k, pc); sb.classList.toggle('on', pc > 0); sb.classList.toggle('dn', pc === 100);
           acts.querySelector('[data-a=reply]').textContent = r && r.reply ? '改回复' : '回复';
-          acts.querySelector('.ab').hidden = !(r && r.adone);
+          acts.querySelector('.asd').hidden = !(r && r.adone);
           { const cs = acts.querySelector('.cat'); cs.value = r && r.cat || ''; cs.classList.toggle('on', !!cs.value); }
           { const qb = acts.querySelector('[data-a=quote]'); qb.textContent = r && r.quote ? '取消报价' : '报价'; qb.classList.toggle('on', !!(r && r.quote)); } };
         const save = async body => {
