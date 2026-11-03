@@ -1345,6 +1345,12 @@ async function clientFb() {
     // 只显示正在听的这一版的评论；切版本时重画
     const CATS_ALL = ['音频编辑', '基础混音', '人声制作', '母带', '其他'];
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
+    // 重画并让每条评论从原位置滑到新位置（FLIP），点完成时沉底不是瞬移
+    const cfbFlip = () => { const box = $('#cfl'), pos = new Map([...box.querySelectorAll('.row[data-k]')].map(r => [r.dataset.k, r.getBoundingClientRect().top]));
+      cfbRender();
+      box.querySelectorAll('.row[data-k]').forEach(r => { const p = pos.get(r.dataset.k); if (p == null) return; const d = p - r.getBoundingClientRect().top; if (Math.abs(d) < 1) return;
+        r.animate([{ transform: 'translateY(' + d + 'px)' }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' }); });
+      box.querySelectorAll('.donesep').forEach(x => x.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 120, fill: 'backwards' })); };
     let catF = '';   // 当前按哪个分类筛选
     const stPrev = new Map();   // 每条评论上一次的状态圈，用来做过渡动画
     cfbRender = () => {
@@ -1369,7 +1375,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
     here.forEach(o => {
       if (grp && o.who !== lastWho) { lastWho = o.who; const h = document.createElement('div'); h.className = 'cgh'; h.textContent = o.who + ' · ' + here.filter(x => x.who === o.who).length + ' 条'; box.appendChild(h); }
       if (!grp && !sep && done(o)) { sep = true; box.appendChild(doneSep()); }
-      const row = document.createElement('div'); row.className = 'row';
+      const row = document.createElement('div'); row.className = 'row'; row.dataset.k = rk(o.ver, o.t == null ? 0 : o.t, o.mk || o.m);
       row.innerHTML = '<button class="t press"></button><div class="m"></div>';
       const tb = row.querySelector('.t');
       tb.textContent = o.t == null ? '整体' : fmt(o.t);
@@ -1392,14 +1398,15 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
         // lazy：先在这一行上改好、圆圈立刻动，后台再存，不整块重画（不跳位置）；没存上就退回去
         const save = async (body, lazy) => {
           const before = mine.get(k);
-          if (lazy) { mine.set(k, { ...(before || {}), ...body }); sync(); updAll(); }
+          const moved = lazy && body.done !== undefined && !!body.done !== !!(before && before.done);   // 完成 / 取消完成：要换位置（沉底 / 回来），滑过去
+          if (lazy) { mine.set(k, { ...(before || {}), ...body }); if (moved) cfbFlip(); else { sync(); updAll(); } }
           try {
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
             if (!j.reply && !j.done && !j.read && !j.quote && !j.cat) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read, quote: j.quote, cat: j.cat });
-            if (lazy) { sync(); updAll(); } else cfbRender();
-          } catch (e) { if (lazy) { if (before) mine.set(k, before); else mine.delete(k); sync(); updAll(); } alert('没存上，检查网络再试'); }
+            if (!lazy) cfbRender(); else if (row.isConnected) try { sync(); updAll(); } catch (x) {}   // 已经滑到新位置重画过的，旧行不用再更新
+          } catch (e) { if (lazy) { if (before) mine.set(k, before); else mine.delete(k); if (moved) cfbFlip(); else { sync(); updAll(); } } alert('没存上，检查网络再试'); }
         };
         if (!o.del) unread.push({ k, mark: () => save({ read: true }, true) });
         acts.querySelector('[data-a=reply]').onclick = async () => {
