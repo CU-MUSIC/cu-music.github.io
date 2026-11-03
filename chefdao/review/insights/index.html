@@ -297,6 +297,7 @@ button.av{cursor:pointer;padding:0}
 .eform .hint{margin-top:8px;font-size:12.5px;color:var(--text-3)}
 .order .rev{margin-top:8px;font-size:14px;color:var(--text-3)}.order .rev summary{color:#e8c98a}
 .order .rev .rw{margin-top:6px;color:var(--text-2);font-size:14px}.order .rev .rw s{color:var(--text-3)}.order .rev .rw b{color:var(--text);font-weight:600}
+.delc span{text-decoration:line-through;opacity:.5}.delc b{opacity:.5;font-weight:500}
 </style>
 </head>
 <body>
@@ -304,7 +305,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261102.1500';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261103.0140';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -498,7 +499,7 @@ function verBlock(x) {
   let rep = reps >= 1.8 && (hi - lo + 1) * len >= 3 ? '<br>反复听最多：<b>' + fmt(lo * len) + '–' + fmt((hi + 1) * len) + '</b>（约 ' + Math.round(reps) + ' 遍）' : '';
   return `<div class="ver"><div class="t"><b>《${esc(x.title || x.slug)}》${esc(x.ver)}</b><span>${fmt(x.dur)}</span></div>
     ${b.length ? '<div class="heat">' + b.map(v => `<i style="height:${Math.max(8, v / mx * 100)}%;opacity:${v > 0 ? .25 + .75 * Math.min(1, v / mx) : .08}"></i>`).join('') + '</div>' : ''}
-    ${x.fb && x.fb.comments.length && x.dur ? '<div class="pins">' + x.fb.comments.map(c => `<i style="left:${Math.min(100, c.t / x.dur * 100)}%"></i>`).join('') + '</div>' : ''}
+    ${x.fb && x.fb.comments.some(c => !c.del) && x.dur ? '<div class="pins">' + x.fb.comments.filter(c => !c.del).map(c => `<i style="left:${Math.min(100, c.t / x.dur * 100)}%"></i>`).join('') + '</div>' : ''}
     <div class="facts">${facts.join(' · ')}${rep}</div>${cmts(x)}</div>`;
 }
 // 刀大厨的回复 / 完成标记（审听页客户能看到）
@@ -523,8 +524,9 @@ function atUrl(slug, ver, t) {
 // 客户写的评论：时间点 + 内容，整体感觉放最后
 function cmts(x) {
   const f = x.fb; if (!f || (!f.comments.length && !f.overall)) return x.notes ? '<div class="facts">写了 <b>' + x.notes + '</b> 条评论</div>' : '';
-  return `<div class="cm"><div class="cmh">评论 ${f.comments.length} 条</div>
+  return `<div class="cm"><div class="cmh">评论 ${f.comments.filter(c => !c.del).length} 条${f.comments.some(c => c.del) ? '（另有 ' + f.comments.filter(c => c.del).length + ' 条已删除）' : ''}</div>
     ${f.comments.map(c => [c, reply(x.slug, x.ver, c.t, c.m)]).sort((p, q) => (p[1] && p[1].done ? 1 : 0) - (q[1] && q[1].done ? 1 : 0)).map(([c, r], i, arr) => {
+      if (c.del) return `<div class="cmr delc"><b>${fmt(c.t)}</b><span>${esc(c.m)}</span></div>`;
       const sep = r && r.done && !(i > 0 && arr[i - 1][1] && arr[i - 1][1].done) ? '<div class="cmsep">已处理</div>' : '';
       return sep + `<div class="cmr${r && r.done ? ' done' : ''}" data-go="${esc(atUrl(x.slug, x.ver, c.t))}"><a href="${esc(atUrl(x.slug, x.ver, c.t))}" target="_blank" rel="noopener" title="在审听页打开这一处">${fmt(c.t)}</a><span>${esc(c.m)}${r && r.done ? ' <i class="dn">✓ 已处理</i>' : ''}${r && r.reply ? `<em class="rp">刀大厨：${esc(r.reply)}</em>` : ''}
         <span class="cma"><a class="golink" href="${esc(atUrl(x.slug, x.ver, c.t))}" target="_blank" rel="noopener">去听 ↗</a><button data-cr="reply" data-k="${esc(JSON.stringify([x.slug, x.ver, c.t, c.m]))}">${r && r.reply ? '改回复' : '回复'}</button><button data-cr="done" class="${r && r.done ? 'on' : ''}" data-k="${esc(JSON.stringify([x.slug, x.ver, c.t, c.m]))}">✓ 完成</button></span></span></div>`; }).join('')}

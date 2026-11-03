@@ -668,3 +668,5 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .cfcat{display:flex;gap:6px;flex-wrap:wrap;padding:2px 16px 10px}
 .cfcat button{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
 .cfcat button.on{background:var(--pearl);color:var(--ink)}
+#cfl .row.delc .m{text-decoration:line-through;opacity:.5}#cfl .row.delc .cwho{text-decoration:none}
+#cfl .row.delc .t{opacity:.5}

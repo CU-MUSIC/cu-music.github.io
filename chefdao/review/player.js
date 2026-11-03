@@ -1294,13 +1294,14 @@ async function clientFb() {
     (j.feedback || []).filter(f => f.slug === S.slug).forEach(f => {
       let cm = []; try { cm = JSON.parse(f.comments || '[]'); } catch (e) {}
       const who = names.get(f.lid) || ('听众 ' + f.lid);
-      cm.forEach(c => items.push({ ver: f.ver, t: c.t, m: c.m, who, sent: f.sent, at: f.updated }));
+      cm.forEach(c => items.push({ ver: f.ver, t: c.t, m: c.m, who, sent: f.sent, at: f.updated, del: !!c.del }));
       if (f.overall) items.push({ ver: f.ver, t: null, m: '整体：' + f.overall, mk: '整体：' + String(f.overall).trim().slice(0, 120), who, sent: f.sent, at: f.updated });
     });
     if (!items.length) return;
     // 同一条评论客户可能在两次打开里都同步过：按 版本+时间点+内容 去重
-    const seen = new Set(), list = items.sort((x, y) => x.ver.localeCompare(y.ver, 'en', { numeric: true }) || (x.t ?? 1e9) - (y.t ?? 1e9))
-      .filter(x => { const k = x.ver + '|' + x.t + '|' + x.m; if (seen.has(k)) return false; seen.add(k); return true; });
+    // 同一条评论在多条记录里：以最近同步的那条为准（客户后来删了就是「已删除」）
+    const latest = new Map(); items.forEach(x => { const k = x.ver + '|' + x.t + '|' + x.m, p = latest.get(k); if (!p || (x.at || 0) > (p.at || 0)) latest.set(k, x); });
+    const list = [...latest.values()].sort((x, y) => x.ver.localeCompare(y.ver, 'en', { numeric: true }) || (x.t ?? 1e9) - (y.t ?? 1e9));
     const mine = new Map();
     try {   // 已有的回复 / 完成
       const rj = await (await fetch(API + '/cr?s=' + S.slug, { headers: { Authorization: 'Bearer ' + key }, cache: 'no-store' })).json();
@@ -1315,13 +1316,13 @@ async function clientFb() {
     // 默认按时间点排、处理完的沉底；点「按歌手」就按人分组，每组里再按时间点排
     const CATS = ['音频编辑', '基础混音', '人声制作', '母带', '其他'], catOf = o => (mine.get(rk(o.ver, o.t == null ? 0 : o.t, o.mk || o.m)) || {}).cat || '';
     const ver = list.filter(o => o.ver === cur.ver); if (catF && !ver.some(o => catOf(o) === catF || catF === '未分类' && !catOf(o))) catF = '';
-    { const cb = $('#cfcat'), cnt = c => ver.filter(o => c === '' ? true : c === '未分类' ? !catOf(o) : catOf(o) === c).length;
+    { const cb = $('#cfcat'), cnt = c => ver.filter(o => !o.del && c === '' ? true : c === '未分类' ? !catOf(o) : catOf(o) === c).length;
       cb.hidden = !ver.some(catOf);   // 一条都没分类时不占地方
       cb.innerHTML = ['', ...CATS, '未分类'].filter(c => c === '' || cnt(c)).map(c => '<button class="press' + (catF === c ? ' on' : '') + '" data-c="' + c + '">' + (c || '全部') + ' ' + cnt(c) + '</button>').join('');
       cb.querySelectorAll('button').forEach(b => b.onclick = () => { catF = b.dataset.c; cfbRender(); }); }
     const grp = store.get('review:cfbgroup') === '1', all = ver.filter(o => !catF || (catF === '未分类' ? !catOf(o) : catOf(o) === catF));
     const here = grp ? [...all].sort((x, y) => x.who.localeCompare(y.who, 'zh') || done(x) - done(y) || (x.t ?? 1e9) - (y.t ?? 1e9))
-      : all.filter(o => !done(o)).concat(all.filter(done));
+      : all.filter(o => !o.del && !done(o)).concat(all.filter(o => !o.del && done(o)), all.filter(o => o.del));
     box.classList.toggle('grouped', grp); $('#cgrp').classList.toggle('on', grp); $('#cgrp').setAttribute('aria-pressed', grp);
     const rows = []; let sep = false, lastWho = null;
     here.forEach(o => {
@@ -1334,6 +1335,7 @@ async function clientFb() {
       if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
       row.querySelector('.m').textContent = o.m;
       const wb = document.createElement('div'); wb.className = 'cwho'; wb.textContent = o.who + (o.at ? ' · ' + tstr(o.at) : ''); row.querySelector('.m').prepend(wb);   // 谁写的 · 什么时候
+      if (o.del) { row.classList.add('delc'); wb.textContent += ' · 客户已删除'; box.appendChild(row); return; }   // 客户删掉的评论：划线留底，不能再操作
       {
         const kt = o.t == null ? 0 : o.t, km = o.mk || o.m;   // 整体评论：时间记 0，文字取前 120 字做键
         const k = rk(o.ver, kt, km), acts = document.createElement('div'); acts.className = 'acts';
@@ -1376,7 +1378,7 @@ async function clientFb() {
       box.appendChild(row);
     });
     rows.forEach(f => f());
-    $('#cfn').textContent = here.length ? here.length + ' 条 · ' + [...new Set(here.map(x => x.who))].join('、') : '这一版还没有';
+    { const lv = here.filter(x => !x.del); $('#cfn').textContent = lv.length ? lv.length + ' 条 · ' + [...new Set(lv.map(x => x.who))].join('、') : '这一版还没有'; }
     $('#cfb').hidden = false;
     };
     { const hd = $('#cfb .sect'); if (store.get('review:fold:cfb') === '1') $('#cfb').classList.add('fold');
