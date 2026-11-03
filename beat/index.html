@@ -73,6 +73,7 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 
 /* ── 头部 ── */
 .hero{padding:44px 0 34px;max-width:720px}
+.eyebrow::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red-hi);margin-right:10px;vertical-align:2px}
 .eyebrow{font-size:12px;font-weight:600;letter-spacing:.16em;color:var(--text-3);text-transform:uppercase}
 .hero h1{font-size:clamp(40px,7vw,68px);line-height:1;font-weight:850;letter-spacing:-.035em;margin:12px 0 14px}
 .hero h1 span{color:var(--text-2);font-weight:300}
@@ -134,11 +135,11 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
 @keyframes flash{0%,40%{background:var(--surface-on)}}
 .trk .art{width:52px;border-radius:8px}
 .trk:hover .play-o{opacity:1}.trk:hover .play-o span{transform:none}
-.trk.on .play-o{opacity:1}.trk.on .play-o span{transform:none}
+.trk.on .play-o{opacity:1}.trk.on .play-o span{transform:none;background:var(--red)}
 .trk.on.playing .play-o .pl{display:none}
 .trk.on.playing .play-o .eq{display:flex}
 .eq{display:none;gap:2px;align-items:flex-end;justify-content:center;height:12px}
-.eq i{width:2.5px;background:var(--bg);border-radius:1px;animation:eq 1s ease-in-out infinite}
+.eq i{width:2.5px;background:#f3e9e3;border-radius:1px;animation:eq 1s ease-in-out infinite}
 .eq i:nth-child(2){animation-delay:-.4s}.eq i:nth-child(3){animation-delay:-.7s}
 @keyframes eq{0%,100%{height:3px}50%{height:12px}}
 .trk .t{min-width:0}
@@ -181,7 +182,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .track .rail2{position:relative;width:100%;height:3px;background:var(--surface-on);transition:height .2s}
 .track .buf,.track .fill{position:absolute;left:0;top:0;bottom:0;width:0}
 .track .buf{background:rgba(237,227,221,.14)}
-.track .fill{background:var(--text)}
+.track .fill{background:var(--red-hi)}
 .track .fill::after{content:"";position:absolute;right:-6px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#f3e9e3;transform:scale(0);transition:transform .2s}
 .track:hover .rail2,.track.drag .rail2{height:5px}
 .track:hover .fill::after,.track.drag .fill::after{transform:scale(1)}
