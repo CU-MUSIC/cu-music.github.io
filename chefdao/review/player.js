@@ -199,7 +199,7 @@ document.body.innerHTML = `
   <div class="sect">我的评论<span class="n" id="n">0</span></div>
   <div class="group" id="list"></div>
   <div class="empty" id="empty">还没有评论，播放时随时写下来</div>
-  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><button class="cgrp press" id="cas">助理链接</button><span class="r" id="cfn"></span></div><div class="cfcat" id="cfcat" hidden></div><div class="group" id="cfl"></div></section>
+  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><button class="cgrp press" id="cas">助理链接</button><button class="cgrp press" id="call" hidden>全部已读</button><span class="r" id="cfn"></span></div><div class="cfcat" id="cfcat" hidden></div><div class="group" id="cfl"></div></section>
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
@@ -1361,7 +1361,11 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
     const here = grp ? [...all].sort((x, y) => x.who.localeCompare(y.who, 'zh') || done(x) - done(y) || (x.t ?? 1e9) - (y.t ?? 1e9))
       : all.filter(o => !o.del && !done(o)).concat(all.filter(o => !o.del && done(o)), all.filter(o => o.del));
     box.classList.toggle('grouped', grp); $('#cgrp').classList.toggle('on', grp); $('#cgrp').setAttribute('aria-pressed', grp);
-    const rows = []; let sep = false, lastWho = null;
+    const rows = [], unread = []; let sep = false, lastWho = null;
+    // 顶部「全部已读」：这一版还没看过的评论一次标成已读
+    const isUn = x => { const r = mine.get(x.k); return !(r && (r.read || r.done)); };
+    const updAll = () => { const n = unread.filter(isUn).length, b = $('#call'); b.hidden = !n; b.textContent = '全部已读 · ' + n; };
+    $('#call').onclick = ev => { ev.stopPropagation(); unread.filter(isUn).forEach(x => x.mark()); };
     here.forEach(o => {
       if (grp && o.who !== lastWho) { lastWho = o.who; const h = document.createElement('div'); h.className = 'cgh'; h.textContent = o.who + ' · ' + here.filter(x => x.who === o.who).length + ' 条'; box.appendChild(h); }
       if (!grp && !sep && done(o)) { sep = true; box.appendChild(doneSep()); }
@@ -1385,15 +1389,19 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
           acts.querySelector('.asd').hidden = !(r && r.adone);
           { const cs = acts.querySelector('.cat'); cs.value = r && r.cat || ''; cs.classList.toggle('on', !!cs.value); }
           { const qb = acts.querySelector('[data-a=quote]'); qb.textContent = r && r.quote ? '取消报价' : '报价'; qb.classList.toggle('on', !!(r && r.quote)); } };
-        const save = async body => {
+        // lazy：先在这一行上改好、圆圈立刻动，后台再存，不整块重画（不跳位置）；没存上就退回去
+        const save = async (body, lazy) => {
+          const before = mine.get(k);
+          if (lazy) { mine.set(k, { ...(before || {}), ...body }); sync(); updAll(); }
           try {
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
             if (!j.reply && !j.done && !j.read && !j.quote && !j.cat) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read, quote: j.quote, cat: j.cat });
-            cfbRender();
-          } catch (e) { alert('没存上，检查网络再试'); }
+            if (lazy) { sync(); updAll(); } else cfbRender();
+          } catch (e) { if (lazy) { if (before) mine.set(k, before); else mine.delete(k); sync(); updAll(); } alert('没存上，检查网络再试'); }
         };
+        if (!o.del) unread.push({ k, mark: () => save({ read: true }, true) });
         acts.querySelector('[data-a=reply]').onclick = async () => {
           const v = await replyBox({ quote: o.m }).catch(() => prompt('回复这条评论：\n「' + o.m + '」', '')); if (!v || !v.trim()) return;
           try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, text: v.trim() }) });
@@ -1402,7 +1410,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
         // 标成「新方案 · 需报价」：客户在这条评论下看到标记，知道这条要另外报价（¥150 / 次）
         acts.querySelector('[data-a=quote]').onclick = () => { const r = mine.get(k) || {}; save({ quote: !r.quote, ...(r.read ? {} : { read: true }) }); };
         // 一个按钮走三步：未读 → 已读 → 已完成 → 回到未读（客户那边同步显示「已读」「已处理」）
-        acts.querySelector('[data-a=st]').onclick = () => { const r = mine.get(k) || {}; save(!r.read && !r.done ? { read: true } : !r.done ? { read: true, done: true } : { read: false, done: false }); };
+        acts.querySelector('[data-a=st]').onclick = () => { const r = mine.get(k) || {}; save(!r.read && !r.done ? { read: true } : !r.done ? { read: true, done: true } : { read: false, done: false }, true); };
         // 一点就回一个表情，歌手在评论下的对话里看到
         acts.querySelectorAll('.emo').forEach(b => b.onclick = async () => { try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, text: b.dataset.e }) });
           const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(kt * 10) / 10, m: km, who: 'o', text: b.dataset.e, ts: j.ts }); if (!(mine.get(k) || {}).read) save({ read: true }); else cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } });
@@ -1415,7 +1423,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
       }
       box.appendChild(row);
     });
-    rows.forEach(f => f());
+    rows.forEach(f => f()); updAll();
     { const lv = here.filter(x => !x.del); $('#cfn').textContent = lv.length ? lv.length + ' 条 · ' + [...new Set(lv.map(x => x.who))].join('、') : '这一版还没有'; }
     $('#cfb').hidden = false;
     };
