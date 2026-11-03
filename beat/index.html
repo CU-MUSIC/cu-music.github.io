@@ -141,6 +141,9 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
 .chip[aria-pressed="true"]{background:var(--text);border-color:var(--text);color:var(--bg)}
 .chip small{font-size:12px;opacity:.6;margin-left:5px;font-variant-numeric:tabular-nums}
 .chip.clear{border-style:dashed}
+.chip.favchip{display:inline-flex;align-items:center;gap:6px}
+.chip.favchip svg{width:14px;height:14px;stroke:var(--red-hi);stroke-width:2;fill:none}
+.chip.favchip[aria-pressed="true"] svg{fill:var(--red-hi)}
 
 /* ── 曲目表 ── */
 .trk{display:grid;grid-template-columns:52px minmax(0,1fr) 56px auto;gap:18px;align-items:center}
@@ -348,7 +351,7 @@ const GENRE_ORDER = ['Trap','R&B','Hyperpop','K-Pop','UK Rap','Drill','Lofi','ED
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const ARTIST = 'Uin';   // 前台只署 Uin，品牌是 CU MUSIC
 let BEATS = [];
-const st = {genres:new Set(), tags:new Set(), q:'', sort:'pop', tagsOpen:false};
+const st = {genres:new Set(), tags:new Set(), q:'', sort:'pop', tagsOpen:false, fav:false};
 let view = [];          // 当前筛选后的列表
 let queue = [];         // 播放队列（开始播放时的列表）
 let cur = null;         // 正在播放的 beat
@@ -480,12 +483,14 @@ function toggleFav(b){
   FAV.has(b.id) ? FAV.delete(b.id) : FAV.add(b.id);
   try { localStorage.setItem('beat:fav', JSON.stringify([...FAV])); } catch (e) {}
   document.querySelectorAll(`[data-fid="${CSS.escape(b.id)}"]`).forEach(x => x.setAttribute('aria-pressed', FAV.has(b.id)));
+  st.fav ? render() : renderChips();
   toast(FAV.has(b.id) ? '已收藏' : '已取消收藏');
 }
 
-function clearAll(){ st.genres.clear(); st.tags.clear(); st.q=''; $('q').value=''; render(); }
+function clearAll(){ st.genres.clear(); st.tags.clear(); st.q=''; st.fav=false; $('q').value=''; render(); }
 
 function matches(b, skip){
+  if (st.fav && !FAV.has(b.id)) return false;
   if (skip !== 'g' && st.genres.size && !b.genres.some(g => st.genres.has(g))) return false;
   if (skip !== 't' && st.tags.size && !b.tags.some(t => st.tags.has(t))) return false;
   if (st.q) {
@@ -510,22 +515,29 @@ function chipRow(el, key, all, sel, order, limit, clear){
   el.hidden = false;
   const more = limit && items.length > limit && !st.tagsOpen;
   const shown = more ? items.slice(0, limit) : items;
-  el.innerHTML = (clear ? '<button class="chip clear press" data-clear>清除筛选</button>' : '') + shown.map(x =>
+  // 风格那一行最前面放「收藏」，有收藏才出现
+  const fav = key === 'g' && (FAV.size || st.fav) ? `<button class="chip favchip press" data-favf aria-pressed="${st.fav}">${HEART}收藏<small>${BEATS.filter(b => FAV.has(b.id)).length}</small></button>` : '';
+  el.innerHTML = (clear ? '<button class="chip clear press" data-clear>清除筛选</button>' : '') + fav + shown.map(x =>
     `<button class="chip press" data-v="${esc(x)}" aria-pressed="${sel.has(x)}">${esc(x)}<small>${cnt[x]}</small></button>`).join('')
     + (more ? `<button class="chip press" data-more>更多 +${items.length - limit}</button>` : '');
   el.onclick = e => {
     const c = e.target.closest('button'); if (!c) return;
     if (c.hasAttribute('data-clear')) return clearAll();
+    if (c.hasAttribute('data-favf')) { st.fav = !st.fav; render(); return; }
     if (c.hasAttribute('data-more')) { st.tagsOpen = true; render(); return; }
     const v = c.dataset.v; sel.has(v) ? sel.delete(v) : sel.add(v); render();
   };
 }
 
+function renderChips(){
+  const allG = new Set(); BEATS.forEach(b => b.genres.forEach(g => allG.add(g)));
+  chipRow($('genreChips'), 'g', allG, st.genres, GENRE_ORDER, 0, st.genres.size || st.tags.size || st.q || st.fav);
+}
 function render(){
   const allG = new Set(), allT = new Set();
   BEATS.forEach(b => { b.genres.forEach(g => allG.add(g)); b.tags.forEach(t => allT.add(t)); });
-  const filtered = st.genres.size || st.tags.size || st.q;
-  chipRow($('genreChips'), 'g', allG, st.genres, GENRE_ORDER, 0, filtered);
+  const filtered = st.genres.size || st.tags.size || st.q || st.fav;
+  renderChips();
 
   view = BEATS.filter(b => matches(b));
   const byDate = (a,b) => (b.date||'').localeCompare(a.date||'');
