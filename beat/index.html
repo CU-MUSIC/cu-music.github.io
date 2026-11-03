@@ -52,7 +52,7 @@ html{-webkit-text-size-adjust:100%;background:var(--bg)}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.7;
   -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
 body::before{content:"";position:fixed;inset:0 0 auto;height:720px;pointer-events:none;z-index:-1;
-  background:radial-gradient(70% 70% at 18% 0%,rgba(184,40,47,.30),transparent 70%),radial-gradient(50% 60% at 92% 8%,rgba(120,22,30,.22),transparent 70%)}
+  background:radial-gradient(70% 60% at 20% 0%,rgba(150,34,40,.14),transparent 70%)}
 button,input,select{font:inherit;color:inherit}
 button{border:0;background:none;cursor:pointer}
 a{color:inherit;text-decoration:none}
@@ -73,7 +73,7 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 
 /* ── 头部 ── */
 .hero{padding:44px 0 34px;max-width:720px}
-.eyebrow{font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--red-hi);text-transform:uppercase}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.16em;color:var(--text-3);text-transform:uppercase}
 .hero h1{font-size:clamp(40px,7vw,68px);line-height:1;font-weight:850;letter-spacing:-.035em;margin:12px 0 14px}
 .hero h1 span{color:var(--text-2);font-weight:300}
 .hero p{color:var(--text-2);font-size:17px}
@@ -85,51 +85,26 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 .hero .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 22px;border-radius:22px;font-weight:650;font-size:15px;white-space:nowrap}
 .btn svg{width:16px;height:16px;fill:currentColor}
-.btn.primary{background:var(--red);color:#f6ece8}
-.btn.primary:hover{background:var(--red-hi)}
+.btn.primary{background:var(--text);color:var(--bg)}
+.btn.primary:hover{background:#f3e9e3}
 .btn.ghost{background:var(--surface-hi)}
 .btn.ghost:hover{background:var(--surface-on)}
 
-/* ── 区块标题 ── */
-.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:34px 0 16px}
-.sec-h h2{font-size:22px;font-weight:800;letter-spacing:-.02em}
-.sec-h .ctl2{display:flex;gap:6px}
-.round{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--surface-hi)}
-.round:hover{background:var(--surface-on)}
-.round svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none}
 
 /* ── 封面（没传封面的自动生成一张） ── */
 .art{position:relative;overflow:hidden;background:var(--bg-soft);aspect-ratio:1;container-type:inline-size}
 .art img{width:100%;height:100%;object-fit:cover}
 .gen{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:10%;
-  background:radial-gradient(120% 90% at var(--x,30%) 0%,hsl(var(--h) 62% 34%),hsl(calc(var(--h) + 8) 55% 12%) 70%)}
+  background:radial-gradient(120% 90% at var(--x,30%) 0%,hsl(var(--h) 38% 26%),hsl(calc(var(--h) + 8) 30% 11%) 72%)}
 .gen b{font-size:calc(var(--fs,20) * 1cqw);overflow-wrap:anywhere;font-weight:850;letter-spacing:-.03em;line-height:1;color:#f1e6e1;word-break:break-word;text-transform:uppercase}
 .gen.mini{justify-content:center;align-items:center;padding:0}.gen.mini b{font-size:46cqw;overflow-wrap:normal}
 .gen i{font-style:normal;font-size:max(6px,6cqw);font-weight:700;letter-spacing:.2em;color:rgba(241,230,225,.6)}
 
-/* ── 热门卡片 ── */
-.rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(168px,1fr);gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;
-  scrollbar-width:none;padding-bottom:6px;margin:0 calc(-1 * max(16px,env(safe-area-inset-left)));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));
-  scroll-padding-left:max(16px,env(safe-area-inset-left))}
-.rail::-webkit-scrollbar{display:none}
-@media (min-width:900px){.rail{grid-auto-columns:calc((100% - 5 * 18px) / 6)}}
-.card{scroll-snap-align:start;cursor:pointer;min-width:0;opacity:0;transform:translateY(14px);animation:up .6s var(--ease) forwards;animation-delay:calc(var(--i,0) * 50ms)}
-.card .art{border-radius:12px;box-shadow:0 18px 40px -22px rgba(0,0,0,.8);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
-.card:hover .art{transform:translateY(-4px);box-shadow:0 26px 50px -22px rgba(120,16,22,.7)}
-.card>b{display:block;font-weight:650;font-size:15px;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
-.card>small{display:block;font-size:13px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card .rank{position:absolute;right:8px;top:8px;z-index:2;min-width:26px;height:22px;padding:0 7px;border-radius:11px;background:rgba(21,13,14,.72);
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-size:12px;font-weight:700;display:grid;place-items:center;font-variant-numeric:tabular-nums}
-.play-o{position:absolute;inset:0;z-index:1;display:grid;place-items:center;background:rgba(21,13,14,.32);opacity:0;transition:opacity .25s}
-.play-o span{width:48px;height:48px;border-radius:50%;background:var(--red);display:grid;place-items:center;transform:scale(.8);transition:transform .35s var(--ease);
-  box-shadow:0 8px 24px -6px rgba(184,40,47,.8)}
-.play-o svg{width:20px;height:20px;fill:#f6ece8}
+
+.play-o{position:absolute;inset:0;z-index:1;display:grid;place-items:center;background:rgba(21,13,14,.4);opacity:0;transition:opacity .25s}
+.play-o span{width:30px;height:30px;border-radius:50%;background:var(--text);display:grid;place-items:center;transform:scale(.8);transition:transform .35s var(--ease)}
+.play-o svg{width:13px;height:13px;fill:var(--bg)}
 .play-o .pa{display:none}
-.card:hover .play-o,.card.on .play-o{opacity:1}
-.card:hover .play-o span,.card.on .play-o span{transform:none}
-.card.on.playing .play-o .pl{display:none}
-.card.on.playing .play-o .pa{display:block}
-@keyframes up{to{opacity:1;transform:none}}
 
 /* ── 筛选 ── */
 .filters{position:sticky;top:0;z-index:5;padding:12px 0 10px;margin:0 calc(-1 * max(16px,env(safe-area-inset-left)));
@@ -145,42 +120,35 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:32px;padding:0 14px;border-radius:16px;font-size:14px;font-weight:550;border:1px solid var(--border);color:var(--text-2);white-space:nowrap}
 .chip:hover{border-color:var(--border-hi);color:var(--text)}
-.chip[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#f6ece8}
+.chip[aria-pressed="true"]{background:var(--text);border-color:var(--text);color:var(--bg)}
 .chip small{font-size:12px;opacity:.6;margin-left:5px;font-variant-numeric:tabular-nums}
 .chip.clear{border-style:dashed}
 
 /* ── 曲目表 ── */
-.thead,.trk{display:grid;grid-template-columns:56px minmax(0,1fr) 64px 70px 56px 118px;gap:16px;align-items:center}
-.thead{font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--text-3);text-transform:uppercase;padding:14px 10px 8px;border-bottom:1px solid var(--border)}
-.thead span:nth-child(n+3){text-align:center}
+.trk{display:grid;grid-template-columns:52px minmax(0,1fr) 72px 44px 48px 96px;gap:16px;align-items:center}
 .list{list-style:none;padding:6px 0 calc(var(--bar) + 60px + env(safe-area-inset-bottom))}
 .trk{padding:9px 10px;border-radius:12px;cursor:pointer;transition:background-color .2s;opacity:0;transform:translateY(10px);animation:up .5s var(--ease) forwards;animation-delay:calc(var(--i,0) * 28ms)}
 .trk:hover{background:var(--surface)}
-.trk.on{background:var(--red-soft)}
+.trk.on{background:var(--surface-hi)}
 .trk.flash{animation:up .5s var(--ease) forwards,flash 1.8s var(--ease)}
 @keyframes flash{0%,40%{background:var(--surface-on)}}
-.trk .art{width:56px;border-radius:8px}
-.trk .art .play-o span{width:30px;height:30px;box-shadow:none}
-.trk .art .play-o svg{width:13px;height:13px}
+.trk .art{width:52px;border-radius:8px}
 .trk:hover .play-o{opacity:1}.trk:hover .play-o span{transform:none}
 .trk.on .play-o{opacity:1}.trk.on .play-o span{transform:none}
 .trk.on.playing .play-o .pl{display:none}
 .trk.on.playing .play-o .eq{display:flex}
 .eq{display:none;gap:2px;align-items:flex-end;justify-content:center;height:12px}
-.eq i{width:2.5px;background:#f6ece8;border-radius:1px;animation:eq 1s ease-in-out infinite}
+.eq i{width:2.5px;background:var(--bg);border-radius:1px;animation:eq 1s ease-in-out infinite}
 .eq i:nth-child(2){animation-delay:-.4s}.eq i:nth-child(3){animation-delay:-.7s}
 @keyframes eq{0%,100%{height:3px}50%{height:12px}}
 .trk .t{min-width:0}
 .trk .t b{display:block;font-weight:650;font-size:16px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.trk.on .t b{color:#f3d9d6}
-.trk .t .sub{display:flex;gap:6px;margin-top:5px;overflow:hidden;white-space:nowrap}
-.tag{flex:none;font-size:12px;line-height:22px;height:22px;padding:0 9px;border-radius:11px;background:var(--surface-hi);color:var(--text-2)}
-.tag:hover{color:var(--text);background:var(--surface-on)}
-.tag.hot{background:var(--red-soft);color:#e7a9a6}
+.trk.on .t b{color:#e7a9a6}
+.trk .t .sub{font-size:13px;color:var(--text-3);margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .trk .c{text-align:center;font-size:14px;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
-.buy{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;font-size:14px;font-weight:700;
-  background:var(--red);color:#f6ece8;white-space:nowrap;font-variant-numeric:tabular-nums}
-.buy:hover{background:var(--red-hi)}
+.buy{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border-radius:17px;font-size:14px;font-weight:600;
+  border:1px solid var(--border-hi);color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums}
+.buy:hover,.trk.on .buy{border-color:var(--red);background:var(--red-soft)}
 .buy svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .empty{text-align:center;color:var(--text-2);padding:60px 0;font-size:15px}
 .empty button{margin-top:14px}
@@ -256,19 +224,18 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
 @media (max-width:860px){
-  .thead,.trk{grid-template-columns:52px minmax(0,1fr) 58px 96px}
-  .thead span:nth-child(3),.thead span:nth-child(5),.trk .c.d,.trk .c.k{display:none}
+  .trk{grid-template-columns:52px minmax(0,1fr) 72px 96px}
+  .trk .c.d,.trk .c.k{display:none}
 }
 @media (max-width:640px){
   .hero{padding:22px 0 18px}
   .hero p{font-size:15px}
   .big-search input{height:50px}
   .big-search svg{top:16px}
-  .thead{display:none}
   .trk{grid-template-columns:48px minmax(0,1fr) auto;gap:12px;padding:8px 6px;margin:0 -6px}
   .trk .art{width:48px}
   .trk .c{display:none}
-  .trk .t .sub .mm{display:inline-block}
+  .trk .t .sub .mm{display:inline}
   .buy{height:34px;padding:0 12px}
   .bar .in{grid-template-columns:minmax(0,1fr) auto;gap:10px}
   .right{display:none}
@@ -282,8 +249,9 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   .terms ul{grid-template-columns:1fr 1fr;gap:10px 12px}
   .terms li{font-size:13px}
 }
-.mm{display:none;font-size:12px;line-height:22px;color:var(--text-3);font-variant-numeric:tabular-nums}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.card,.trk{opacity:1;transform:none}}
+.mm{display:none}
+@keyframes up{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.trk{opacity:1;transform:none}}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -303,20 +271,12 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   <section class="hero">
     <div class="eyebrow">CU MUSIC × Uin 尤因</div>
     <h1>Beats <span id="stat"></span></h1>
-    <p>Trap、R&amp;B、Hyperpop、K-Pop，按风格、BPM、调性挑。</p>
     <label class="big-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="q" type="search" placeholder="搜曲名、风格、艺人、BPM、调性" autocomplete="off"></label>
     <div class="actions">
       <button class="btn primary press" id="playAll"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>全部播放</button>
       <button class="btn ghost press" id="shuffle"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-2.4 3.2-1.25-1.67L13.4 6H17V3zM3 6h4l9.4 12H17v-3l4 4-4 4v-3h-1.6L6 8H3V6zm0 10h3l2.35-3.13 1.25 1.66L7 18H3v-2z"/></svg>随机</button>
     </div>
-  </section>
-
-  <section id="trendSec" hidden>
-    <div class="sec-h"><h2>最热门</h2><div class="ctl2">
-      <button class="round press" data-rail="-1" aria-label="向左"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <button class="round press" data-rail="1" aria-label="向右"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div></div>
-    <div class="rail" id="trend"></div>
   </section>
 
   <section class="filters" id="filters" aria-label="筛选">
@@ -329,9 +289,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
       </select>
     </div>
     <div class="chips" id="genreChips" aria-label="风格"></div>
-    <div class="chips" id="tagChips" aria-label="艺人风格"></div>
   </section>
-  <div class="thead" aria-hidden="true"><span></span><span>曲名</span><span>时长</span><span>BPM</span><span>调</span><span></span></div>
   <ol class="list" id="list"></ol>
   <footer>CU MUSIC × UIN</footer>
 </div>
@@ -432,7 +390,6 @@ function init(){
   $('stat').textContent = BEATS.length ? BEATS.length : '';
   $('q').oninput = e => { st.q = e.target.value.trim().toLowerCase(); render(); };
   $('sort').onchange = e => { st.sort = e.target.value; render(); };
-  trending();
   render();
   if (location.hash.length > 1) {
     const b = BEATS.find(x => x.id === decodeURIComponent(location.hash.slice(1)));
@@ -442,24 +399,6 @@ function init(){
 }
 
 function clearAll(){ st.genres.clear(); st.tags.clear(); st.q=''; $('q').value=''; render(); }
-
-// 最热门：近 30 天播放和购买意向排前 10（有热度的才上）
-function trending(){
-  const top = BEATS.filter(b => b.pop > 0).sort((a,b) => b.pop - a.pop || (b.plays||0) - (a.plays||0)).slice(0, 10);
-  if (top.length < 3) return;
-  $('trendSec').hidden = false;
-  $('trend').innerHTML = top.map((b, i) => `<div class="card" data-id="${esc(b.id)}" style="--i:${i}">
-    <div class="art"><span class="rank">${i + 1}</span>${art(b, 180, PLAY_O)}</div>
-    <b>${esc(b.title)}</b><small>${esc([meta(b), LICENSES[0].price].filter(Boolean).join(' · '))}</small></div>`).join('');
-  $('trend').onclick = e => {
-    const c = e.target.closest('.card'); if (!c) return;
-    const b = BEATS.find(x => x.id === c.dataset.id);
-    if (cur === b) return toggle();
-    queue = top.slice(); play(b);
-  };
-  document.querySelectorAll('[data-rail]').forEach(btn => btn.onclick = () =>
-    $('trend').scrollBy({left: +btn.dataset.rail * $('trend').clientWidth * .8, behavior:'smooth'}));
-}
 
 function matches(b, skip){
   if (skip !== 'g' && st.genres.size && !b.genres.some(g => st.genres.has(g))) return false;
@@ -502,7 +441,6 @@ function render(){
   BEATS.forEach(b => { b.genres.forEach(g => allG.add(g)); b.tags.forEach(t => allT.add(t)); });
   const filtered = st.genres.size || st.tags.size || st.q;
   chipRow($('genreChips'), 'g', allG, st.genres, GENRE_ORDER, 0, filtered);
-  chipRow($('tagChips'), 't', allT, st.tags, [], 12);
 
   view = BEATS.filter(b => matches(b));
   const byDate = (a,b) => (b.date||'').localeCompare(a.date||'');
@@ -515,19 +453,16 @@ function render(){
   if (!view.length) { $('list').innerHTML = '<li class="empty">没有符合条件的伴奏<br><button class="btn ghost press" data-clearall>清除筛选</button></li>';
     $('list').querySelector('[data-clearall]').onclick = clearAll; return; }
 
-  const hot = new Set(BEATS.filter(b => b.pop >= 60).map(b => b.id));
   $('list').innerHTML = view.map((b,i) => {
-    const tags = [...(hot.has(b.id) ? ['<span class="tag hot">热门</span>'] : []),
-      ...b.genres.slice(0, 2).map(g => `<span class="tag" data-g="${esc(g)}">${esc(g)}</span>`),
-      ...b.tags.slice(0, 2).map(t => `<span class="tag" data-t="${esc(t)}">${esc(t)}</span>`)];
+    const sub = [b.genres[0], ...b.tags.slice(0, 1)].filter(Boolean).join(' · ');
     const mm = meta(b);
     return `<li class="trk" data-id="${esc(b.id)}" style="--i:${firstPaint ? Math.min(i, 16) : Math.min(i, 8)}">
       <div class="art">${art(b, 56, PLAY_O)}</div>
-      <div class="t"><b>${esc(b.title)}</b><div class="sub">${mm ? `<span class="mm">${esc(mm)}</span>` : ''}${tags.join('')}</div></div>
+      <div class="t"><b>${esc(b.title)}</b><div class="sub">${mm ? `<span class="mm">${esc(mm)}${sub ? ' · ' : ''}</span>` : ''}${esc(sub)}</div></div>
+      <span class="c">${b.bpm ? b.bpm + ' BPM' : ''}</span>
+      <span class="c k">${esc(b.key || '')}</span>
       <span class="c d">${b.duration ? fmt(b.duration) : ''}</span>
-      <span class="c">${b.bpm || '—'}</span>
-      <span class="c k">${esc(b.key || '—')}</span>
-      <span style="text-align:right"><button class="buy press" data-ask aria-label="购买 ${esc(b.title)}"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>${LICENSES[0].price}</button></span>
+      <span style="text-align:right"><button class="buy press" data-ask aria-label="购买 ${esc(b.title)}">${LICENSES[0].price}</button></span>
     </li>`;
   }).join('');
   firstPaint = false;
@@ -538,8 +473,6 @@ $('list').addEventListener('click', e => {
   const li = e.target.closest('.trk'); if (!li) return;
   const b = BEATS.find(x => x.id === li.dataset.id);
   if (e.target.closest('[data-ask]')) { openLic(b); return; }
-  const tg = e.target.closest('[data-g],[data-t]');
-  if (tg) { (tg.dataset.g ? st.genres : st.tags).add(tg.dataset.g || tg.dataset.t); render(); $('filters').scrollIntoView({behavior:'smooth'}); return; }
   if (cur === b) { toggle(); return; }
   queue = view.slice(); play(b);
 });
@@ -553,7 +486,7 @@ function play(b){
   $('barCv').innerHTML = art(b, 52);
   $('barT').textContent = b.title;
   $('barS').textContent = [ARTIST, meta(b)].filter(Boolean).join(' · ');
-  $('barAsk').innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>${LICENSES[0].price}`;
+  $('barAsk').textContent = '购买 ' + LICENSES[0].price;
   $('fill').style.width = $('buf').style.width = '0';
   $('cur').textContent = '0:00'; $('dur').textContent = b.duration ? fmt(b.duration) : '0:00';
   if ('mediaSession' in navigator) {
@@ -573,7 +506,7 @@ function step(d){
   if (nb) play(nb);
 }
 function markPlaying(){
-  document.querySelectorAll('.trk,.card').forEach(li => {
+  document.querySelectorAll('.trk').forEach(li => {
     const on = cur && li.dataset.id === cur.id;
     li.classList.toggle('on', !!on); li.classList.toggle('playing', !!on && !audio.paused);
   });
