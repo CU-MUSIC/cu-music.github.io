@@ -97,13 +97,19 @@
 		.container { max-width: 960px; margin: 0 auto; padding: 72px 24px; padding-bottom: calc(130px + env(safe-area-inset-bottom)); }
 
 		/* reveal animation */
-		.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
+		.reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
 		.reveal.in { opacity: 1; transform: none; }
 		@media (prefers-reduced-motion: reduce) {
 			html { scroll-behavior: auto; }
 			.reveal { opacity: 1; transform: none; transition: none; }
 			#entry-gate { transition: none !important; }
 		}
+
+		/* 小按钮的可点区域扩到 44px，外观不变 */
+		.lang-btn, .theme-btn, .sec-nav-btn, .qb-prog-jump { position: relative; }
+		.lang-btn::after, .theme-btn::after, .sec-nav-btn::after, .qb-prog-jump::after, .qb-q::after { content: ""; position: absolute; top: 50%; left: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+		.loc-map { position: relative; }
+		.loc-map::after { content: ""; position: absolute; left: 0; right: 0; top: -14px; bottom: -14px; }
 
 		/* ── Entry gate (开屏选择) ─────────────────────────── */
 		#entry-gate { position: fixed; inset: 0; z-index: 200; background: rgba(var(--veil), 0.94); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 1; transition: opacity 0.55s var(--ease); }
@@ -121,12 +127,13 @@
 		.gate-card.primary .gate-card-title { color: var(--cta-fg); }
 		.gate-card.primary .gate-card-desc, .gate-card.primary .gate-arrow { color: rgba(10, 10, 10, 0.6); }
 		.gate-card.primary:hover { background: var(--cta-bg); border-color: transparent; }
-		.gate-card:hover { transform: translateY(-3px); border-color: rgba(var(--ink), 0.3); background: var(--surface-hover); }
+		.gate-card:hover { border-color: rgba(var(--ink), 0.3); background: var(--surface-hover); }
+		@media (hover: hover) { .gate-card:hover { transform: translateY(-3px); } }
 		.gate-card:active { transform: translateY(-1px); }
 		.gate-card-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
 		.gate-card-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; flex-grow: 1; }
 		.gate-arrow { font-size: 14px; color: var(--text-secondary); transition: transform 0.3s var(--ease); }
-		.gate-card:hover .gate-arrow { transform: translateX(4px); }
+		@media (hover: hover) { .gate-card:hover .gate-arrow { transform: translateX(4px); } }
 
 		/* ── Top bar ───────────────────────────────────────── */
 		.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 48px; gap: 12px; }
@@ -492,21 +499,22 @@
 			.qb-pb-sub { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
 			.qb-payback.dim .qb-pb-main { color: var(--text-primary); }
 			.qb-payback { display: block; width: 100%; margin-top: 10px; background: rgba(var(--green-ink), 0.10); border: 0.5px solid var(--green-line); border-radius: 9px; padding: 11px 13px; color: var(--green-soft); font-size: 12px; font-weight: 600; font-family: var(--font); text-align: left; cursor: pointer; line-height: 1.55; transition: background 0.2s; }
-			.qb-payback:hover { background: rgba(var(--green-ink), 0.18); transform: translateY(-1px); }
+			.qb-payback:hover { background: rgba(var(--green-ink), 0.18); }
+			@media (hover: hover) { .qb-payback:hover { transform: translateY(-1px); } }
 		.qb-payback:active { transform: scale(0.99); }
 		/* 深绿呼吸光：这是全页唯一持续动的元素，视线自然被吸过去 */
 		@keyframes pbBreathe {
 			0%, 100% { box-shadow: 0 0 0 0 rgba(var(--green-ink), 0.26), 0 0 16px -6px rgba(var(--green-ink), 0.30); }
 			50%      { box-shadow: 0 0 0 5px rgba(var(--green-ink), 0.09), 0 0 30px -4px rgba(var(--green-ink), 0.55); }
 		}
-		.qb-payback { animation: pbBreathe 2.8s var(--ease) infinite; transition: background 0.2s, transform 0.15s; }
+		.qb-payback { animation: pbBreathe 3.6s ease-in-out infinite; transition: background 0.2s, transform 0.15s; }
 		.qb-payback.dim { animation: none; }
 		/* 交付提速是会员的第二个卖点，单独给它一层呼吸，和按钮的光错开节奏 */
 		@keyframes hlBreathe {
 			0%, 100% { background: rgba(var(--green-ink), 0.10); box-shadow: 0 0 0 0 rgba(var(--green-ink), 0); }
 			50%      { background: rgba(var(--green-ink), 0.22); box-shadow: 0 0 14px -2px rgba(var(--green-ink), 0.5); }
 		}
-		.qb-hl { display: inline-block; padding: 1px 7px; margin: 0 1px; border-radius: 6px; color: var(--green-soft); font-weight: 700; animation: hlBreathe 2.2s var(--ease) infinite; }
+		.qb-hl { display: inline-block; padding: 1px 7px; margin: 0 1px; border-radius: 6px; color: var(--green-soft); font-weight: 700; animation: hlBreathe 3.6s ease-in-out 0.9s infinite; }
 		.qb-payback.dim .qb-hl { animation: none; background: rgba(var(--green-ink), 0.14); }
 		/* 会员生效后：交付也是卖点，给一档更轻、更慢的呼吸——存在感有，但不抢戏 */
 		@keyframes hlSoft {
@@ -534,7 +542,8 @@
 		.qb-cal-wd.off { color: rgba(var(--ink), 0.26); }
 		.qb-cal-d { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 44px; padding: 5px 2px; border: 1px solid transparent; border-radius: 8px; background: rgba(var(--ink), 0.035); font: inherit; color: rgba(var(--ink), 0.85); text-align: center; }
 		button.qb-cal-d { cursor: pointer; transition: transform 0.1s ease, border-color 0.15s ease; }
-		button.qb-cal-d:hover { transform: translateY(-1px); border-color: rgba(var(--ink), 0.35); }
+		button.qb-cal-d:hover { border-color: rgba(var(--ink), 0.35); }
+		@media (hover: hover) { button.qb-cal-d:hover { transform: translateY(-1px); } }
 		.qb-cal-n { font-size: 13px; font-weight: 650; line-height: 1.1; }
 		.qb-cal-t { min-height: 12px; font-size: 9.5px; font-weight: 700; line-height: 1.2; opacity: 0.9; }
 		.qb-cal-d.past { opacity: 0.2; }
