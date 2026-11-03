@@ -317,7 +317,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   <section class="filters" id="filters" aria-label="筛选">
     <div class="row1"><h2>全部伴奏<small id="count"></small></h2>
       <select class="sort" id="sort" aria-label="排序">
-        <option value="mix">随机</option>
+        <option value="mix">为你排序</option>
         <option value="pop">最热门</option>
         <option value="new">最新</option>
         <option value="bpm-asc">BPM 从慢到快</option>
@@ -394,6 +394,7 @@ const trk = (() => {
       if (!s) return;
       const t = audio.currentTime, d = s.last == null ? 0 : t - s.last; s.last = t;
       if (d > 0 && d < 1.5 && !audio.paused) { s.heard += d; if (audio.duration) s.bins[Math.min(39, Math.floor(t / audio.duration * 40))] = 1; }
+      if (s.heard >= 10) markHeard(s.beat);
       if ((s.sent < 10 && s.heard >= 10) || s.heard - s.sent >= 30) flush(false);
     },
     flush() { if (s) s.last = null; flush(false); },
@@ -414,8 +415,9 @@ const meta = b => [b.bpm ? b.bpm + ' BPM' : '', b.key || ''].filter(Boolean).joi
 
 fetch(API + '/beats', {cache:'no-cache'}).then(r => r.json()).then(d => {
   BEATS = (d.beats || []).filter(b => b && b.file);
-  // 随机顺序每次打开重排一次，同一次访问里保持不变（筛选、搜索时不会乱跳）
-  BEATS.forEach(b => { b.genres = b.genres || []; b.tags = b.tags || []; b.rk = Math.random(); });
+  // 排序键打开页面时算一次：没在这台设备上听过的在前，播放少的稍微靠前，再加随机；同一次访问里不再变（边听边排会乱跳）
+  const mx = Math.max(1, ...BEATS.map(b => b.plays || 0));
+  BEATS.forEach(b => { b.genres = b.genres || []; b.tags = b.tags || []; b.rk = (HEARD.has(b.id) ? 1 : 0) + .7 * Math.random() + .3 * (b.plays || 0) / mx; });
   init();
 }).catch(() => { $('list').innerHTML = '<li class="empty">加载失败，请刷新</li>'; });
 
@@ -447,7 +449,8 @@ const heatOf = b => { const s = b.heat && b.heat.n >= 5 ? b.heat.bins : b.wave; 
 const hotAt = h => h ? h.indexOf(Math.max(...h)) : -1;
 function featured(){
   if (BEATS.length < 2) return;
-  FEAT = BEATS.map(b => [beta((b.fp || 0) + 1, Math.max(0, (b.fs || 0) - (b.fp || 0)) + 1), b]).sort((x, y) => y[0] - x[0])[0][1];
+  const pool = BEATS.filter(b => !HEARD.has(b.id)), cand = pool.length ? pool : BEATS;
+  FEAT = cand.map(b => [beta((b.fp || 0) + 1, Math.max(0, (b.fs || 0) - (b.fp || 0)) + 1), b]).sort((x, y) => y[0] - x[0])[0][1];
   const b = FEAT, h = heatOf(b) || new Array(40).fill(4), hi = hotAt(heatOf(b)), hs = b.duration ? fmt((hi + .5) / 40 * b.duration) : '';
   $('feat').innerHTML = `<div class="art" data-fplay>${art(b, 132, PLAY_O)}</div>
     <div class="fx"><div class="lab">为你推荐</div><h3>${esc(b.title)}</h3><div class="fs">${esc([ARTIST, meta(b), b.genres[0]].filter(Boolean).join('\u2002·\u2002'))}</div></div>
@@ -473,6 +476,13 @@ function featProgress(){
   if (!FEAT || cur !== FEAT || !audio.duration) return;
   const n = Math.floor(audio.currentTime / audio.duration * 40);
   $('heat') && $('heat').querySelectorAll('i').forEach((el, i) => el.classList.toggle('p', i < n));
+}
+
+// ── 听过哪些：只存在这台设备上，没听过的优先排前面 ──
+const HEARD = new Set((() => { try { return JSON.parse(localStorage.getItem('beat:heard') || '[]'); } catch (e) { return []; } })());
+function markHeard(id){
+  if (HEARD.has(id)) return; HEARD.add(id);
+  try { localStorage.setItem('beat:heard', JSON.stringify([...HEARD])); } catch (e) {}
 }
 
 // ── 收藏：只存在这台设备上 ──
