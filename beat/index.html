@@ -317,6 +317,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   <section class="filters" id="filters" aria-label="筛选">
     <div class="row1"><h2>全部伴奏<small id="count"></small></h2>
       <select class="sort" id="sort" aria-label="排序">
+        <option value="mix">随机</option>
         <option value="pop">最热门</option>
         <option value="new">最新</option>
         <option value="bpm-asc">BPM 从慢到快</option>
@@ -351,7 +352,7 @@ const GENRE_ORDER = ['Trap','R&B','Hyperpop','K-Pop','UK Rap','Drill','Lofi','ED
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const ARTIST = 'Uin';   // 前台只署 Uin，品牌是 CU MUSIC
 let BEATS = [];
-const st = {genres:new Set(), tags:new Set(), q:'', sort:'pop', tagsOpen:false, fav:false};
+const st = {genres:new Set(), tags:new Set(), q:'', sort:'mix', tagsOpen:false, fav:false};
 let view = [];          // 当前筛选后的列表
 let queue = [];         // 播放队列（开始播放时的列表）
 let cur = null;         // 正在播放的 beat
@@ -413,7 +414,8 @@ const meta = b => [b.bpm ? b.bpm + ' BPM' : '', b.key || ''].filter(Boolean).joi
 
 fetch(API + '/beats', {cache:'no-cache'}).then(r => r.json()).then(d => {
   BEATS = (d.beats || []).filter(b => b && b.file);
-  BEATS.forEach(b => { b.genres = b.genres || []; b.tags = b.tags || []; });
+  // 随机顺序每次打开重排一次，同一次访问里保持不变（筛选、搜索时不会乱跳）
+  BEATS.forEach(b => { b.genres = b.genres || []; b.tags = b.tags || []; b.rk = Math.random(); });
   init();
 }).catch(() => { $('list').innerHTML = '<li class="empty">加载失败，请刷新</li>'; });
 
@@ -541,7 +543,8 @@ function render(){
 
   view = BEATS.filter(b => matches(b));
   const byDate = (a,b) => (b.date||'').localeCompare(a.date||'');
-  if (st.sort === 'new') view.sort(byDate);
+  if (st.sort === 'mix') view.sort((a,b) => a.rk - b.rk);
+  else if (st.sort === 'new') view.sort(byDate);
   else if (st.sort === 'pop') view.sort((a,b) => (b.pop||0) - (a.pop||0) || (b.plays||0) - (a.plays||0) || byDate(a,b));
   else view.sort((a,b) => ((a.bpm||999) - (b.bpm||999)) * (st.sort==='bpm-asc' ? 1 : -1) || byDate(a,b));
   $('count').textContent = BEATS.length ? (filtered ? `${view.length} / ${BEATS.length}` : `${view.length}`) : '';
