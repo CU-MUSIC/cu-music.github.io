@@ -394,7 +394,7 @@ const trk = (() => {
       if (!s) return;
       const t = audio.currentTime, d = s.last == null ? 0 : t - s.last; s.last = t;
       if (d > 0 && d < 1.5 && !audio.paused) { s.heard += d; if (audio.duration) s.bins[Math.min(39, Math.floor(t / audio.duration * 40))] = 1; }
-      if (s.heard >= 10) markHeard(s.beat);
+      if (s.heard >= 10 && !s.tasted) { s.tasted = true; markHeard(s.beat); likeGenres(s.beat, 1); }
       if ((s.sent < 10 && s.heard >= 10) || s.heard - s.sent >= 30) flush(false);
     },
     flush() { if (s) s.last = null; flush(false); },
@@ -416,8 +416,9 @@ const meta = b => [b.bpm ? b.bpm + ' BPM' : '', b.key || ''].filter(Boolean).joi
 fetch(API + '/beats', {cache:'no-cache'}).then(r => r.json()).then(d => {
   BEATS = (d.beats || []).filter(b => b && b.file);
   // 排序键打开页面时算一次：没在这台设备上听过的在前，播放少的稍微靠前，再加随机；同一次访问里不再变（边听边排会乱跳）
-  const mx = Math.max(1, ...BEATS.map(b => b.plays || 0));
-  BEATS.forEach(b => { b.genres = b.genres || []; b.tags = b.tags || []; b.rk = (HEARD.has(b.id) ? 1 : 0) + .7 * Math.random() + .3 * (b.plays || 0) / mx; });
+  MAXP = Math.max(1, ...BEATS.map(b => b.plays || 0));
+  BEATS.forEach(b => { b.genres = b.genres || []; b.tags = b.tags || []; b.r = Math.random(); });
+  BEATS.forEach(b => { b.rk = scoreOf(b); });
   init();
 }).catch(() => { $('list').innerHTML = '<li class="empty">加载失败，请刷新</li>'; });
 
@@ -485,6 +486,24 @@ function markHeard(id){
   try { localStorage.setItem('beat:heard', JSON.stringify([...HEARD])); } catch (e) {}
 }
 
+// ── 口味：听满 10 秒、收藏、点购买给这首的风格加分，刚开头就切走扣一点；只存在这台设备上 ──
+let TASTE = (() => { try { return JSON.parse(localStorage.getItem('beat:taste') || '{}'); } catch (e) { return {}; } })();
+TASTE.g = TASTE.g || {}; TASTE.n = TASTE.n || 0;
+const SESS = new Set();   // 这次访问里已经播过的
+function likeGenres(id, w){
+  const b = BEATS.find(x => x.id === id); if (!b || !b.genres.length) return;
+  b.genres.forEach(g => { TASTE.g[g] = Math.max(0, (TASTE.g[g] || 0) + w / b.genres.length); });
+  if (w > 0) TASTE.n += 1;
+  try { localStorage.setItem('beat:taste', JSON.stringify(TASTE)); } catch (e) {}
+}
+// 越小越靠前：没听过的在前；全站播放少的优先；听得多了再按口味；留一点随机
+let MAXP = 1;
+function scoreOf(b){
+  const gm = Math.max(1, ...Object.values(TASTE.g)), w = Math.min(1, TASTE.n / 4);
+  const taste = b.genres.length ? b.genres.reduce((a, g) => a + (TASTE.g[g] || 0) / gm, 0) / b.genres.length : 0;
+  return (HEARD.has(b.id) ? 2 : 0) - .5 * (1 - (b.plays || 0) / MAXP) - .6 * w * taste + .35 * b.r;
+}
+
 // ── 收藏：只存在这台设备上 ──
 const FAV = new Set((() => { try { return JSON.parse(localStorage.getItem('beat:fav') || '[]'); } catch (e) { return []; } })());
 const HEART = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.2-9A4.9 4.9 0 0 1 12 6.2 4.9 4.9 0 0 1 21.2 11C19 15.6 12 20 12 20z"/></svg>';
@@ -492,6 +511,7 @@ const CART = '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h
 const icons = b => `<button class="ic fav" data-fav data-fid="${esc(b.id)}" aria-pressed="${FAV.has(b.id)}" aria-label="收藏 ${esc(b.title)}">${HEART}</button>`
   + `<button class="ic" data-ask aria-label="购买 ${esc(b.title)}">${CART}</button>`;
 function toggleFav(b){
+  if (!FAV.has(b.id)) likeGenres(b.id, 2);
   FAV.has(b.id) ? FAV.delete(b.id) : FAV.add(b.id);
   try { localStorage.setItem('beat:fav', JSON.stringify([...FAV])); } catch (e) {}
   document.querySelectorAll(`[data-fid="${CSS.escape(b.id)}"]`).forEach(x => x.setAttribute('aria-pressed', FAV.has(b.id)));
@@ -586,6 +606,8 @@ $('list').addEventListener('click', e => {
 });
 
 function play(b, at){
+  if (cur && cur !== b && !audio.ended && audio.currentTime < 5) likeGenres(cur.id, -.5);
+  SESS.add(b.id);
   trk.start(b);
   cur = b;
   audio.src = API + '/ba/' + b.file;
@@ -612,6 +634,11 @@ function step(d){
   if (!cur) return;
   const q = queue.length ? queue : view;
   if (d < 0 && audio.currentTime > 3) { audio.currentTime = 0; return; }
+  // 为你排序：下一首按口味现算（没听过的、风格对口的先来），像抖音一样越听越准
+  if (d > 0 && st.sort === 'mix' && !queue.shuf) {
+    const nx = view.filter(x => x !== cur && !SESS.has(x.id)).sort((a, c) => scoreOf(a) - scoreOf(c))[0];
+    if (nx) return play(nx);
+  }
   const i = q.indexOf(cur);
   const nb = q[(i + d + q.length) % q.length];
   if (nb) play(nb);
@@ -627,7 +654,7 @@ function markPlaying(){
 $('playAll').onclick = () => { if (!view.length) return; queue = view.slice(); play(queue[0]); };
 $('shuffle').onclick = () => {
   if (!view.length) return;
-  queue = view.slice();
+  queue = view.slice(); queue.shuf = true;
   for (let i = queue.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [queue[i], queue[j]] = [queue[j], queue[i]]; }
   play(queue[0]);
 };
@@ -713,7 +740,7 @@ function pickLic(i){
   $('licGo').textContent = l.id === 'exclusive' ? '微信议价' : '微信购买';
 }
 function openLic(b){
-  licBeat = b;
+  licBeat = b; likeGenres(b.id, 2);
   $('licCv').innerHTML = art(b, 64);
   $('licT').textContent = b.title;
   $('licB').textContent = [ARTIST, meta(b)].filter(Boolean).join(' · ');
