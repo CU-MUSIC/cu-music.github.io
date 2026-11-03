@@ -172,7 +172,7 @@ document.body.innerHTML = `
   <div class="sect">我的评论<span class="n" id="n">0</span></div>
   <div class="group" id="list"></div>
   <div class="empty" id="empty">还没有评论，播放时随时写下来</div>
-  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><span class="r" id="cfn"></span></div><div class="cfcat" id="cfcat" hidden></div><div class="group" id="cfl"></div></section>
+  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><button class="cgrp press" id="cas">助理链接</button><span class="r" id="cfn"></span></div><div class="cfcat" id="cfcat" hidden></div><div class="group" id="cfl"></div></section>
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
@@ -1308,13 +1308,14 @@ async function clientFb() {
       if (rj.ok) { rj.replies.forEach(x => mine.set(rk(x.ver, x.t, x.m), x)); MSGS = rj.msgs || []; }
     } catch (e) {}
     // 只显示正在听的这一版的评论；切版本时重画
+    const CATS_ALL = ['音频编辑', '基础混音', '人声制作', '母带', '其他'];
     let catF = '';   // 当前按哪个分类筛选
     const stPrev = new Map();   // 每条评论上一次的状态圈，用来做过渡动画
     cfbRender = () => {
     const box = $('#cfl'); box.innerHTML = '';
     const done = o => { const r = mine.get(rk(o.ver, o.t, o.m)); return !!(r && r.done); };
     // 默认按时间点排、处理完的沉底；点「按歌手」就按人分组，每组里再按时间点排
-    const CATS = ['音频编辑', '基础混音', '人声制作', '母带', '其他'], catOf = o => (mine.get(rk(o.ver, o.t == null ? 0 : o.t, o.mk || o.m)) || {}).cat || '';
+    const CATS = CATS_ALL, catOf = o => (mine.get(rk(o.ver, o.t == null ? 0 : o.t, o.mk || o.m)) || {}).cat || '';
     const ver = list.filter(o => o.ver === cur.ver); if (catF && !ver.some(o => catOf(o) === catF || catF === '未分类' && !catOf(o))) catF = '';
     { const cb = $('#cfcat'), cnt = c => ver.filter(o => !o.del && c === '' ? true : c === '未分类' ? !catOf(o) : catOf(o) === c).length;
       cb.hidden = !ver.some(catOf);   // 一条都没分类时不占地方
@@ -1339,12 +1340,13 @@ async function clientFb() {
       {
         const kt = o.t == null ? 0 : o.t, km = o.mk || o.m;   // 整体评论：时间记 0，文字取前 120 字做键
         const k = rk(o.ver, kt, km), acts = document.createElement('div'); acts.className = 'acts';
-        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button><button class="press qb" data-a="quote">报价</button><select class="cat" aria-label="分类"><option value="">分类</option>' + CATS.map(c => '<option>' + c + '</option>').join('') + '</select>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
+        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button><button class="press qb" data-a="quote">报价</button><span class="ab" hidden>助理已改</span><select class="cat" aria-label="分类"><option value="">分类</option>' + CATS.map(c => '<option>' + c + '</option>').join('') + '</select>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
         const sync = () => { const r = mine.get(k); decorate(row, r); { const rp = row.querySelector('.rp'); if (rp && !rp.querySelector('.mx')) { const bx = document.createElement('button'); bx.className = 'mx'; bx.textContent = '×'; bx.setAttribute('aria-label', '删除这条回复'); bx.onclick = () => save({ reply: '' }); rp.appendChild(bx); } } const sb = acts.querySelector('[data-a=st]'), pc = r && r.done ? 100 : r && r.read ? 50 : 0, pv = stPrev.has(k) ? stPrev.get(k) : pc;   // 圆圈：空心 = 未读，半圆 = 已读，实心 ✓ = 已完成；状态变了就从上一个状态补间过去
           sb.innerHTML = '<i class="ring' + (pc === 100 ? ' full' : '') + '" style="--p:' + pv + '"></i><span>' + (pc === 100 ? '已完成' : pc === 50 ? '已读' : '未读') + '</span>';
           const ring = sb.querySelector('.ring'); if (pv !== pc) { requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.setProperty('--p', pc); ring.classList.add('pop'); })); }
           stPrev.set(k, pc); sb.classList.toggle('on', pc > 0); sb.classList.toggle('dn', pc === 100);
           acts.querySelector('[data-a=reply]').textContent = r && r.reply ? '改回复' : '回复';
+          acts.querySelector('.ab').hidden = !(r && r.adone);
           { const cs = acts.querySelector('.cat'); cs.value = r && r.cat || ''; cs.classList.toggle('on', !!cs.value); }
           { const qb = acts.querySelector('[data-a=quote]'); qb.textContent = r && r.quote ? '取消报价' : '报价'; qb.classList.toggle('on', !!(r && r.quote)); } };
         const save = async body => {
@@ -1383,6 +1385,13 @@ async function clientFb() {
     };
     { const hd = $('#cfb .sect'); if (store.get('review:fold:cfb') === '1') $('#cfb').classList.add('fold');
       if (!hd.dataset.f) { hd.dataset.f = '1'; hd.style.cursor = 'pointer'; hd.addEventListener('click', ev => { if (ev.target.closest('button')) return; $('#cfb').classList.toggle('fold'); store.set('review:fold:cfb', $('#cfb').classList.contains('fold') ? '1' : '0'); }); } }
+    $('#cas').onclick = async ev => { ev.stopPropagation();
+      const v = prompt('给助理看哪些类别？用逗号分隔（可选：' + CATS_ALL.join('、') + '）', '音频编辑,基础混音'); if (!v) return;
+      const cats = v.split(/[,，、\s]+/).filter(c => CATS_ALL.includes(c)); if (!cats.length) return alert('类别没写对');
+      try { const r = await fetch(API + '/as/new', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, cats }) });
+        const j = await r.json(); if (!j.ok) throw 0; const url = location.origin + '/chefdao/review/assist/#' + j.tok;
+        try { await navigator.clipboard.writeText(url); alert('助理链接已复制，发给他就行：\n' + url + '\n（他只能看 ' + cats.join('、') + ' 的评论，改完点「改好了」）'); } catch (e) { prompt('复制这个链接发给助理：', url); }
+      } catch (e) { alert('没生成，检查网络再试'); } };
     $('#cgrp').onclick = () => { store.set('review:cfbgroup', store.get('review:cfbgroup') === '1' ? '0' : '1'); cfbRender(); };
     cfbRender();
   } catch (e) {}

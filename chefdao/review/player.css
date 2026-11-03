@@ -670,3 +670,4 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .cfcat button.on{background:var(--pearl);color:var(--ink)}
 #cfl .row.delc .m{text-decoration:line-through;opacity:.5}#cfl .row.delc .cwho{text-decoration:none}
 #cfl .row.delc .t{opacity:.5}
+#cfl .acts .ab{font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(47,107,79,.55);color:#d8f0e3}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a1c20">
+<title>修改清单</title>
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<style>
+:root{--bg:#1a1c20;--card:#23262b;--line:#32363d;--text:#d6d3cd;--dim:#8f8c86;--acc:#9fb8a6}
+@media (prefers-color-scheme:light){:root{--bg:#f3f1ec;--card:#fff;--line:#e0ddd6;--text:#2a2a2a;--dim:#8a867e;--acc:#4f7a5e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.7 -apple-system,"PingFang SC",sans-serif;padding:20px 16px calc(40px + env(safe-area-inset-bottom))}
+main{max-width:640px;margin:0 auto}
+h1{font-size:22px;margin:4px 0 2px;font-weight:600}
+.sub{color:var(--dim);font-size:15px;margin-bottom:18px}
+.vh{font-size:15px;color:var(--acc);margin:22px 0 8px;font-weight:600;letter-spacing:.04em}
+.it{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.it.dn{opacity:.5}.it.dn .m{text-decoration:line-through}
+.tm{flex:none;font-variant-numeric:tabular-nums;color:var(--acc);text-decoration:none;font-weight:600;padding-top:1px}
+.m{flex:1;word-break:break-word}
+.ct{display:inline-block;font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:99px;padding:0 8px;margin-left:8px;line-height:1.6;vertical-align:2px}
+.ck{flex:none;font:inherit;font-size:14px;border:1px solid var(--line);background:none;color:var(--text);border-radius:99px;padding:3px 12px;cursor:pointer}
+.it.dn .ck{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+.empty{color:var(--dim);text-align:center;padding:60px 0}
+</style>
+</head>
+<body><main id="app"><div class="empty">加载中…</div></main>
+<script>
+(() => {
+  const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
+  const tok = location.hash.slice(1), app = document.getElementById('app');
+  const fmt = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let D = null;
+  const draw = () => {
+    const left = D.items.filter(x => !x.done).length;
+    let h = `<h1>${esc(D.title)}</h1><div class="sub">${esc(D.cats.join(' · '))} · 还剩 ${left} 条</div>`;
+    if (!D.items.length) h += '<div class="empty">暂时没有需要改的</div>';
+    let lv = '';
+    D.items.forEach((x, i) => {
+      if (x.ver !== lv) { lv = x.ver; h += `<div class="vh">${esc(x.ver)}</div>`; }
+      h += `<div class="it${x.done ? ' dn' : ''}"><a class="tm" href="../s/?at=${x.ver}-${x.t}#${D.slug}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(x.cat)}</span></div><button class="ck" data-i="${i}">${x.done ? '已改' : '改好了'}</button></div>`;
+    });
+    app.innerHTML = h;
+    app.querySelectorAll('.ck').forEach(b => b.onclick = async () => {
+      const x = D.items[+b.dataset.i], on = !x.done; x.done = on ? 1 : 0; draw();
+      try { const r = await fetch(API + '/as/done', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tok, ver: x.ver, t: x.t, m: x.m, done: on }) }); if (!(await r.json()).ok) throw 0; }
+      catch (e) { x.done = on ? 0 : 1; draw(); alert('没存上，检查网络再试'); }
+    });
+  };
+  const load = async () => {
+    try { const r = await fetch(API + '/as?t=' + encodeURIComponent(tok), { cache: 'no-store' }), j = await r.json(); if (!j.ok) throw 0; D = j; draw(); }
+    catch (e) { app.innerHTML = '<div class="empty">链接无效或已失效</div>'; }
+  };
+  load(); setInterval(() => { if (!document.hidden) load(); }, 60000);
+})();
+</script>
+</body>
+</html>
