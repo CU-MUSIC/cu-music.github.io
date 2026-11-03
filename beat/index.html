@@ -143,7 +143,7 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
 .chip.clear{border-style:dashed}
 
 /* ── 曲目表 ── */
-.trk{display:grid;grid-template-columns:52px minmax(0,1fr) 56px 88px;gap:18px;align-items:center}
+.trk{display:grid;grid-template-columns:52px minmax(0,1fr) 56px auto;gap:18px;align-items:center}
 .list{list-style:none;padding:6px 0 calc(var(--bar) + 60px + env(safe-area-inset-bottom))}
 .trk{padding:9px 10px;border-radius:12px;cursor:pointer;transition:background-color .2s;animation:up .5s var(--ease) backwards;animation-delay:calc(var(--i,0) * 28ms)}
 .trk:hover{background:var(--surface)}
@@ -168,6 +168,15 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
   border:1px solid var(--border-hi);color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums}
 .buy:hover,.trk.on .buy{border-color:var(--red);background:var(--red-soft)}
 .buy svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* 收藏 / 购买：两个圆形图标按钮 */
+.ib{display:flex;gap:6px;justify-content:flex-end}
+.ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--text-2);transition:color .2s,background-color .2s,transform .14s ease-out}
+.ic:hover{background:var(--surface-hi);color:var(--text)}
+.ic:active{transform:scale(.9)}
+.ic svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ic.fav[aria-pressed="true"]{color:var(--red-hi)}
+.ic.fav[aria-pressed="true"] svg{fill:currentColor;animation:pop .4s var(--ease)}
+@keyframes pop{40%{transform:scale(1.25)}}
 .empty{text-align:center;color:var(--text-2);padding:60px 0;font-size:15px}
 .empty button{margin-top:14px}
 footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var(--bar) + 40px + env(safe-area-inset-bottom));margin-top:-40px;letter-spacing:.04em}
@@ -438,7 +447,7 @@ function featured(){
   $('feat').innerHTML = `<div class="art" data-fplay>${art(b, 132, PLAY_O)}</div>
     <div class="fx"><div class="lab">为你推荐</div><h3>${esc(b.title)}</h3><div class="fs">${esc([ARTIST, meta(b), b.genres[0]].filter(Boolean).join('\u2002·\u2002'))}</div></div>
     <div class="heat" id="heat" aria-label="高能进度条，点击跳转">${h.map((v, i) => `<i class="${i === hi ? 'hot' : ''}" style="height:${12 + v * 9.8}%"></i>`).join('')}</div>
-    <div class="acts">${hi >= 0 ? `<button class="hotbtn press" data-fhot><i></i>高能 ${hs}</button>` : ''}<button class="buy press" data-fbuy>${LICENSES[0].price}</button></div>`;
+    <div class="acts">${hi >= 0 ? `<button class="hotbtn press" data-fhot><i></i>高能 ${hs}</button>` : ''}<span class="ib" style="margin-left:auto">${icons(b)}</span></div>`;
   // 手机上进度条和按钮另起一行，电脑上放在右侧那一栏里
   if (matchMedia('(min-width:641px)').matches) { const fx = $('feat').querySelector('.fx'); fx.append($('heat'), $('feat').querySelector('.acts')); }
   $('feat').dataset.id = b.id;
@@ -446,7 +455,8 @@ function featured(){
   trk.feat(b, 'show');
   const go = at => { if (cur !== b) { trk.feat(b, 'play'); queue = [b, ...view.filter(x => x !== b)]; play(b, at); } else if (at == null) toggle(); else if (audio.duration) audio.currentTime = at * audio.duration; };
   $('feat').onclick = e => {
-    if (e.target.closest('[data-fbuy]')) return openLic(b);
+    if (e.target.closest('[data-ask]')) return openLic(b);
+    if (e.target.closest('[data-fav]')) return toggleFav(b);
     if (e.target.closest('[data-fhot]')) return go(hi / 40);
     const hb = e.target.closest('.heat');
     if (hb) { const r = hb.getBoundingClientRect(); return go(Math.min(.98, Math.max(0, (e.clientX - r.left) / r.width))); }
@@ -458,6 +468,19 @@ function featProgress(){
   if (!FEAT || cur !== FEAT || !audio.duration) return;
   const n = Math.floor(audio.currentTime / audio.duration * 40);
   $('heat') && $('heat').querySelectorAll('i').forEach((el, i) => el.classList.toggle('p', i < n));
+}
+
+// ── 收藏：只存在这台设备上 ──
+const FAV = new Set((() => { try { return JSON.parse(localStorage.getItem('beat:fav') || '[]'); } catch (e) { return []; } })());
+const HEART = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.2-9A4.9 4.9 0 0 1 12 6.2 4.9 4.9 0 0 1 21.2 11C19 15.6 12 20 12 20z"/></svg>';
+const CART = '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>';
+const icons = b => `<button class="ic fav" data-fav data-fid="${esc(b.id)}" aria-pressed="${FAV.has(b.id)}" aria-label="收藏 ${esc(b.title)}">${HEART}</button>`
+  + `<button class="ic" data-ask aria-label="购买 ${esc(b.title)}">${CART}</button>`;
+function toggleFav(b){
+  FAV.has(b.id) ? FAV.delete(b.id) : FAV.add(b.id);
+  try { localStorage.setItem('beat:fav', JSON.stringify([...FAV])); } catch (e) {}
+  document.querySelectorAll(`[data-fid="${CSS.escape(b.id)}"]`).forEach(x => x.setAttribute('aria-pressed', FAV.has(b.id)));
+  toast(FAV.has(b.id) ? '已收藏' : '已取消收藏');
 }
 
 function clearAll(){ st.genres.clear(); st.tags.clear(); st.q=''; $('q').value=''; render(); }
@@ -521,7 +544,7 @@ function render(){
       <div class="art">${art(b, 56, PLAY_O)}</div>
       <div class="t"><b>${esc(b.title)}</b><div class="sub">${esc(sub)}</div></div>
       <span class="c">${b.duration ? fmt(b.duration) : ''}</span>
-      <span style="text-align:right"><button class="buy press" data-ask aria-label="购买 ${esc(b.title)}">${LICENSES[0].price}</button></span>
+      <span class="ib">${icons(b)}</span>
     </li>`;
   }).join('');
   firstPaint = false;
@@ -532,6 +555,7 @@ $('list').addEventListener('click', e => {
   const li = e.target.closest('.trk'); if (!li) return;
   const b = BEATS.find(x => x.id === li.dataset.id);
   if (e.target.closest('[data-ask]')) { openLic(b); return; }
+  if (e.target.closest('[data-fav]')) { toggleFav(b); return; }
   if (cur === b) { toggle(); return; }
   queue = view.slice(); play(b);
 });
@@ -548,7 +572,7 @@ function play(b, at){
   $('barCv').innerHTML = art(b, 52);
   $('barT').textContent = b.title;
   $('barS').textContent = [ARTIST, meta(b)].filter(Boolean).join(' · ');
-  $('barAsk').textContent = '购买 ' + LICENSES[0].price;
+  $('barAsk').textContent = '购买';
   $('fill').style.width = $('buf').style.width = '0';
   $('cur').textContent = '0:00'; $('dur').textContent = b.duration ? fmt(b.duration) : '0:00';
   if ('mediaSession' in navigator) {
