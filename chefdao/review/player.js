@@ -172,7 +172,7 @@ document.body.innerHTML = `
   <div class="sect">我的评论<span class="n" id="n">0</span></div>
   <div class="group" id="list"></div>
   <div class="empty" id="empty">还没有评论，播放时随时写下来</div>
-  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><span class="r" id="cfn"></span></div><div class="group" id="cfl"></div></section>
+  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><span class="r" id="cfn"></span></div><div class="cfcat" id="cfcat" hidden></div><div class="group" id="cfl"></div></section>
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
@@ -1307,12 +1307,19 @@ async function clientFb() {
       if (rj.ok) { rj.replies.forEach(x => mine.set(rk(x.ver, x.t, x.m), x)); MSGS = rj.msgs || []; }
     } catch (e) {}
     // 只显示正在听的这一版的评论；切版本时重画
+    let catF = '';   // 当前按哪个分类筛选
     const stPrev = new Map();   // 每条评论上一次的状态圈，用来做过渡动画
     cfbRender = () => {
     const box = $('#cfl'); box.innerHTML = '';
     const done = o => { const r = mine.get(rk(o.ver, o.t, o.m)); return !!(r && r.done); };
     // 默认按时间点排、处理完的沉底；点「按歌手」就按人分组，每组里再按时间点排
-    const grp = store.get('review:cfbgroup') === '1', all = list.filter(o => o.ver === cur.ver);
+    const CATS = ['音频编辑', '基础混音', '人声制作', '母带', '其他'], catOf = o => (mine.get(rk(o.ver, o.t == null ? 0 : o.t, o.mk || o.m)) || {}).cat || '';
+    const ver = list.filter(o => o.ver === cur.ver); if (catF && !ver.some(o => catOf(o) === catF || catF === '未分类' && !catOf(o))) catF = '';
+    { const cb = $('#cfcat'), cnt = c => ver.filter(o => c === '' ? true : c === '未分类' ? !catOf(o) : catOf(o) === c).length;
+      cb.hidden = !ver.some(catOf);   // 一条都没分类时不占地方
+      cb.innerHTML = ['', ...CATS, '未分类'].filter(c => c === '' || cnt(c)).map(c => '<button class="press' + (catF === c ? ' on' : '') + '" data-c="' + c + '">' + (c || '全部') + ' ' + cnt(c) + '</button>').join('');
+      cb.querySelectorAll('button').forEach(b => b.onclick = () => { catF = b.dataset.c; cfbRender(); }); }
+    const grp = store.get('review:cfbgroup') === '1', all = ver.filter(o => !catF || (catF === '未分类' ? !catOf(o) : catOf(o) === catF));
     const here = grp ? [...all].sort((x, y) => x.who.localeCompare(y.who, 'zh') || done(x) - done(y) || (x.t ?? 1e9) - (y.t ?? 1e9))
       : all.filter(o => !done(o)).concat(all.filter(done));
     box.classList.toggle('grouped', grp); $('#cgrp').classList.toggle('on', grp); $('#cgrp').setAttribute('aria-pressed', grp);
@@ -1330,19 +1337,20 @@ async function clientFb() {
       {
         const kt = o.t == null ? 0 : o.t, km = o.mk || o.m;   // 整体评论：时间记 0，文字取前 120 字做键
         const k = rk(o.ver, kt, km), acts = document.createElement('div'); acts.className = 'acts';
-        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button><button class="press qb" data-a="quote">报价</button>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
+        acts.innerHTML = '<button class="press st" data-a="st"></button><button class="press" data-a="reply">回复</button><button class="press qb" data-a="quote">报价</button><select class="cat" aria-label="分类"><option value="">分类</option>' + CATS.map(c => '<option>' + c + '</option>').join('') + '</select>' + ['👍', '❤️', '🔥', '🙏', '😂'].map(e => '<button class="press emo" data-e="' + e + '">' + e + '</button>').join('');
         const sync = () => { const r = mine.get(k); decorate(row, r); { const rp = row.querySelector('.rp'); if (rp && !rp.querySelector('.mx')) { const bx = document.createElement('button'); bx.className = 'mx'; bx.textContent = '×'; bx.setAttribute('aria-label', '删除这条回复'); bx.onclick = () => save({ reply: '' }); rp.appendChild(bx); } } const sb = acts.querySelector('[data-a=st]'), pc = r && r.done ? 100 : r && r.read ? 50 : 0, pv = stPrev.has(k) ? stPrev.get(k) : pc;   // 圆圈：空心 = 未读，半圆 = 已读，实心 ✓ = 已完成；状态变了就从上一个状态补间过去
           sb.innerHTML = '<i class="ring' + (pc === 100 ? ' full' : '') + '" style="--p:' + pv + '"></i><span>' + (pc === 100 ? '已完成' : pc === 50 ? '已读' : '未读') + '</span>';
           const ring = sb.querySelector('.ring'); if (pv !== pc) { requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.setProperty('--p', pc); ring.classList.add('pop'); })); }
           stPrev.set(k, pc); sb.classList.toggle('on', pc > 0); sb.classList.toggle('dn', pc === 100);
           acts.querySelector('[data-a=reply]').textContent = r && r.reply ? '改回复' : '回复';
+          { const cs = acts.querySelector('.cat'); cs.value = r && r.cat || ''; cs.classList.toggle('on', !!cs.value); }
           { const qb = acts.querySelector('[data-a=quote]'); qb.textContent = r && r.quote ? '取消报价' : '报价'; qb.classList.toggle('on', !!(r && r.quote)); } };
         const save = async body => {
           try {
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
-            if (!j.reply && !j.done && !j.read && !j.quote) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read, quote: j.quote });
+            if (!j.reply && !j.done && !j.read && !j.quote && !j.cat) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read, quote: j.quote, cat: j.cat });
             cfbRender();
           } catch (e) { alert('没存上，检查网络再试'); }
         };
@@ -1350,6 +1358,7 @@ async function clientFb() {
           const v = prompt('回复这条评论（客户会在审听页看到，可以继续对话）：\n「' + o.m + '」', ''); if (!v || !v.trim()) return;
           try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, text: v.trim() }) });
             const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(kt * 10) / 10, m: km, who: 'o', text: v.trim(), ts: j.ts }); cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } };
+        acts.querySelector('.cat').onchange = e => save({ cat: e.target.value });
         // 标成「新方案 · 需报价」：客户在这条评论下看到标记，知道这条要另外报价（¥150 / 次）
         acts.querySelector('[data-a=quote]').onclick = () => { const r = mine.get(k) || {}; save({ quote: !r.quote, ...(r.read ? {} : { read: true }) }); };
         // 一个按钮走三步：未读 → 已读 → 已完成 → 回到未读（客户那边同步显示「已读」「已处理」）
