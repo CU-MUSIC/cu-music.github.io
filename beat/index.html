@@ -90,16 +90,13 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 .btn.ghost:hover{background:var(--surface-on)}
 
 
-/* ── 封面（没传封面的自动生成一张） ── */
+/* ── 封面 ── */
 .art{position:relative;overflow:hidden;background:var(--bg-soft);aspect-ratio:1;container-type:inline-size}
 .art img{width:100%;height:100%;object-fit:cover}
-.gen{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:10%;
-  background:radial-gradient(120% 90% at var(--x,30%) 0%,hsl(var(--h) 10% 24%),hsl(var(--h) 8% 11%) 72%)}
-.gen b{font-size:calc(var(--fs,20) * 1cqw);overflow-wrap:anywhere;font-weight:850;letter-spacing:-.03em;line-height:1;color:#f1e6e1;word-break:break-word;text-transform:uppercase}
-.gen.mini{justify-content:center;align-items:center;padding:0;background:linear-gradient(145deg,#2a2826,#1c1b19);color:rgba(232,227,220,.32)}
-.gen.mini .cu{width:42%;height:42%}
-.gen.mini .em{font-size:50cqw;line-height:1;filter:saturate(.85)}
-.gen i{font-style:normal;font-size:max(6px,6cqw);font-weight:700;letter-spacing:.2em;color:rgba(241,230,225,.6)}
+/* 列表里的封面默认黑白；电脑上悬停、手机上按下和正在播放的那首变回原色 */
+.trk .art img{filter:grayscale(1) brightness(.8);transition:filter .45s var(--ease)}
+.trk.on .art img,.trk:active .art img{filter:none}
+@media (hover:hover){.trk:hover .art img{filter:none}}
 
 
 .play-o{position:absolute;inset:0;z-index:1;display:grid;place-items:center;background:rgba(23,22,21,.4);opacity:0;transition:opacity .25s}
@@ -365,23 +362,10 @@ audio.preload = 'none';
 
 const fmt = s => { s = Math.max(0, Math.round(s||0)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const hash = s => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
-// 没传封面时按曲名配一个 emoji，没配的显示 CU 标志
-const EMOJI = {
-  'run-to-hongdae':'🏃', 'a-girl':'👧', 'kawaii':'🎀', 'see-u':'👋', 'tokyo':'🗼', 'squish':'🍡', 'scream':'😱', 'october':'🍂',
-  'mint':'🌿', 'all-around':'🌀', 'beauty-and-beast':'🌹', 'crash':'💥', 'dope':'🔥', 'ea':'🎹', 'el':'⚡', 'forever-young':'🌱',
-  'gum':'🍬', 'hate':'😤', 'intro':'🎬', 'mask':'🎭', 'one-more-chance':'🎲', 'speed':'🏎️', 'sin-city':'🎰', 'sparkling-cute':'✨',
-  'walky':'🚶', 'blue':'💙', 'eye':'👁️', 'new-era':'🌅', 'robot':'🤖', 'weichengnian':'🎒', 'igloo-everyday':'🧊', 'in-the-air':'🎈', 'south':'🌴',
-};
-const CU_MARK = '<svg class="cu" viewBox="272 164 456 456" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="46" stroke-linecap="round"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></g></svg>';
 const PLAY_O = '<div class="play-o"><span><svg class="pl" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg class="pa" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg><div class="eq"><i></i><i></i><i></i></div></span></div>';
-// 封面：传了就用，没传按曲名生成一张深红系的字封面（每首色相略不同）
+// 封面：传了就用，没传统一用 Uin 的头像
 function art(b, size, extra = ''){
-  if (b.cover) return `<img src="${API}/bc/${esc(b.cover)}" alt="" loading="lazy" draggable="false">${extra}`;
-  const h = hash(b.id), hue = 345 + h % 30, x = 20 + h % 60;
-  // 小图只放首字，大图放全名
-  if (size <= 64) return `<div class="gen mini">${EMOJI[b.id] ? `<span class="em">${EMOJI[b.id]}</span>` : CU_MARK}</div>${extra}`;
-  return `<div class="gen" style="--h:30;--x:${x}%;--fs:${b.title.length > 12 ? 12 : b.title.length > 7 ? 15 : 20}"><b>${esc(b.title)}</b><i>CU MUSIC</i></div>${extra}`;
+  return `<img src="${b.cover ? API + '/bc/' + esc(b.cover) : 'img/uin.jpg'}" alt="" loading="lazy" draggable="false">${extra}`;
 }
 const meta = b => [b.bpm ? b.bpm + ' BPM' : '', b.key || ''].filter(Boolean).join(' · ');
 
