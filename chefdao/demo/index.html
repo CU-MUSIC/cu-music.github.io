@@ -88,9 +88,11 @@ body:not(.ready) .notice{visibility:hidden}   /* 开场动画还没走完时不�
 .fl input:focus+span{color:var(--green-soft)}
 .row .lab{flex:1}
 /* 微信号这一行：打开「已是刀大厨微信好友」时收起，关掉时展开（高度和内容一起过渡，不是一下子消失） */
-#wxRow{max-height:56px;overflow:hidden;transition:max-height .45s var(--ease),min-height .45s var(--ease),background .3s var(--ease)}
+#wxRow{flex-direction:column;align-items:stretch;max-height:104px;overflow:hidden;transition:max-height .45s var(--ease),min-height .45s var(--ease),background .3s var(--ease)}
 #wxRow .fl{transition:opacity .3s var(--ease),transform .45s var(--ease)}
 #wxRow.off{max-height:0;min-height:0}
+.wxhint{font-size:13px;line-height:1.6;color:var(--text-2);padding:2px 0 10px}
+.wxhint b{color:var(--green-soft);font-weight:600;user-select:all}
 #wxRow.off .fl{opacity:0;transform:translateY(-8px)}
 .switch{position:relative;width:46px;height:28px;border-radius:28px;background:rgba(255,255,255,.14);transition:background .3s var(--ease);flex:none}
 .switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#f0f0f0;transition:transform .45s var(--spring),background .3s}
@@ -222,7 +224,7 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
       <div class="row" style="--k:2"><label class="fl"><input id="l" maxlength="200" inputmode="url" placeholder=" "><span>主页链接（选填）</span></label></div>
       <div class="row" style="--k:3"><span class="lab" id="memLab">刀门会员</span><button type="button" class="switch" id="mem" role="switch" aria-checked="false" aria-labelledby="memLab"></button></div>
       <div class="row" style="--k:4"><span class="lab" id="frLab">已是刀大厨微信好友</span><button type="button" class="switch" id="fr" role="switch" aria-checked="false" aria-labelledby="frLab"></button></div>
-      <div class="row" id="wxRow" style="--k:5"><label class="fl"><input id="wx" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder=" "><span>微信号（方便刀大厨加你）</span></label></div>
+      <div class="row" id="wxRow" style="--k:5"><label class="fl"><input id="wx" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder=" "><span>你的微信号</span></label><div class="wxhint">还不是好友？请先加刀大厨微信 <b>Cookdao</b>，备注艺名。</div></div>
       <div class="row file" style="--k:6"><input id="file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.amr,.wma,.aif,.aiff,.mp4" aria-label="选择音频"><span class="lab empty" id="fl">选择音频</span><em id="fmeta">MP3 · M4A · WAV</em></div>
     </div>
     <button class="go idle" id="go" type="submit" style="--k:7">投递</button>
