@@ -175,6 +175,7 @@ document.body.innerHTML = `
       <svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg>
     </button>
     <button class="skip press" id="fwd" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 3.5v3.7h-3.7"/></svg><span>5</span></button>
+    <button class="rpt press" id="rpt" aria-label="单曲循环" aria-pressed="false" title="单曲循环"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/><path d="M11.2 10.2l1.3-.8v5.2"/></svg></button>
   </div>
   <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
@@ -1868,7 +1869,12 @@ a.addEventListener('timeupdate', () => {
   lastPos = t;
 });
 a.addEventListener('seeking', () => { lastPos = null; });
-a.addEventListener('ended', () => { st().ends++; nextInQueue(); });
+// 单曲循环：放完从头接着放（记在本机，下次打开还是开着）；开着时不连播下一首
+let RPT = store.get('review:repeat') === '1';
+const rptUi = () => { const b = $('#rpt'); if (b) { b.setAttribute('aria-pressed', RPT); b.classList.toggle('on', RPT); } };
+$('#rpt').onclick = () => { RPT = !RPT; store.set('review:repeat', RPT ? '1' : '0'); rptUi(); hud(RPT ? '单曲循环已开' : '单曲循环已关'); };
+rptUi();
+a.addEventListener('ended', () => { st().ends++; if (RPT) { seek(0); a.play().catch(() => {}); return; } nextInQueue(); });
 // 项目页点了「播放」：按曲目顺序连播，这首放完自动切到下一首接着放（和播放列表切歌同一套快速进入）
 function nextInQueue() {
   let q = null; try { q = JSON.parse(sessionStorage.getItem('review:queue') || 'null'); } catch (e) {}

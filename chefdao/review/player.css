@@ -690,3 +690,10 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 /* 手机上工具按钮一行横滑，不再剩一个孤零零换到第二行 */
 @media (max-width:560px){.loudrow{flex-wrap:nowrap;overflow-x:auto;justify-content:safe center;scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:0 16px}.loudrow::-webkit-scrollbar{display:none}.loudrow>*{flex:none}}
 .empty{padding:14px 0 2px;font-size:14px}
+.transport{position:relative}
+.rpt{position:absolute;right:4px;top:50%;width:40px;height:40px;margin-top:-20px;display:grid;place-items:center;border-radius:50%;color:var(--text-3);transition:color .2s,background-color .2s,transform .2s}
+.rpt svg{width:21px;height:21px}
+.rpt:hover{color:var(--text-2)}
+.rpt.on{color:var(--text);background:var(--fill-2)}
+.rpt.on svg{animation:rptOn .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes rptOn{from{transform:rotate(-90deg) scale(.8)}}
