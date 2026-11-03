@@ -104,6 +104,26 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 .play-o svg{width:13px;height:13px;fill:var(--bg)}
 .play-o .pa{display:none}
 
+/* ── 为你推荐 ── */
+.feat{display:grid;grid-template-columns:132px minmax(0,1fr);gap:22px;align-items:center;padding:18px;margin:6px 0 30px;border-radius:18px;
+  background:var(--surface);border:1px solid var(--border);animation:up .6s var(--ease) backwards}
+.feat .art{width:132px;border-radius:12px;cursor:pointer}
+.feat .art:hover .play-o,.feat.on .play-o{opacity:1}.feat .art:hover .play-o span,.feat.on .play-o span{transform:none}
+.feat.on .play-o span{background:var(--red)}
+.feat.on.playing .play-o .pl{display:none}.feat.on.playing .play-o .eq{display:flex}
+.feat .lab{font-size:11.5px;font-weight:700;letter-spacing:.16em;color:var(--text-3);text-transform:uppercase}
+.feat h3{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feat .fs{font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.heat{position:relative;display:flex;align-items:flex-end;gap:2px;height:34px;margin:12px 0 10px;cursor:pointer;touch-action:manipulation}
+.heat i{flex:1;min-height:3px;border-radius:1.5px;background:rgba(232,227,220,.16);transition:background-color .3s,height .5s var(--ease)}
+.heat i.p{background:rgba(232,227,220,.55)}
+.heat i.hot{background:var(--red-hi)}
+.heat:hover i{background:rgba(232,227,220,.24)}.heat:hover i.p{background:rgba(232,227,220,.6)}.heat:hover i.hot{background:var(--red-hi)}
+.feat .acts{display:flex;gap:10px;align-items:center}
+.hotbtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:17px;font-size:13.5px;font-weight:600;background:var(--surface-hi);font-variant-numeric:tabular-nums}
+.hotbtn:hover{background:var(--surface-on)}
+.hotbtn i{width:6px;height:6px;border-radius:50%;background:var(--red-hi)}
+
 /* ── 筛选 ── */
 .filters{position:sticky;top:0;z-index:5;padding:12px 0 10px;margin:0 calc(-1 * max(16px,env(safe-area-inset-left)));
   padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));
@@ -180,6 +200,8 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .track .buf,.track .fill{position:absolute;left:0;top:0;bottom:0;width:0}
 .track .buf{background:rgba(232,227,220,.14)}
 .track .fill{background:var(--red-hi)}
+.track .hotmark{position:absolute;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--red-hi);z-index:1;pointer-events:none}
+.track .rail2{overflow:visible}
 .track .fill::after{content:"";position:absolute;right:-6px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#f3e9e3;transform:scale(0);transition:transform .2s}
 .track:hover .rail2,.track.drag .rail2{height:5px}
 .track:hover .fill::after,.track.drag .fill::after{transform:scale(1)}
@@ -228,6 +250,11 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   .hero p{font-size:15px}
   .big-search input{height:50px}
   .big-search svg{top:16px}
+  .feat{grid-template-columns:88px minmax(0,1fr);gap:14px;padding:14px;margin-bottom:22px}
+  .feat .art{width:88px}
+  .feat h3{font-size:19px}
+  .feat .heat{grid-column:1/-1;margin:2px 0 0}
+  .feat .acts{grid-column:1/-1}
   .trk{grid-template-columns:48px minmax(0,1fr) auto;gap:12px;padding:8px 6px;margin:0 -6px}
   .trk .art{width:48px}
   .trk .c{display:none}
@@ -273,6 +300,8 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
     </div>
   </section>
 
+  <section class="feat" id="feat" hidden aria-label="为你推荐"></section>
+
   <section class="filters" id="filters" aria-label="筛选">
     <div class="row1"><h2>全部伴奏<small id="count"></small></h2>
       <select class="sort" id="sort" aria-label="排序">
@@ -289,7 +318,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 </div>
 
 <div class="bar" id="bar">
-  <div class="seekwrap"><div class="track" id="seek"><div class="rail2"><div class="buf" id="buf"></div><div class="fill" id="fill"></div></div></div></div>
+  <div class="seekwrap"><div class="track" id="seek"><div class="rail2"><div class="buf" id="buf"></div><div class="fill" id="fill"></div><i class="hotmark" id="hotmark" hidden></i></div></div></div>
   <div class="in">
     <div class="now"><div class="art" id="barCv"></div><div class="t"><b id="barT"></b><span id="barS"></span></div></div>
     <div class="ctl">
@@ -337,25 +366,26 @@ const trk = (() => {
       else fetch(API + path, { method: 'POST', body, keepalive: true }).catch(() => {});
     } catch (e) {}
   };
-  let s = null;   // 当前这次播放：{pid, beat, heard, sent, last}
+  let s = null;   // 当前这次播放：{pid, beat, heard, sent, last, bins}
   const flush = beacon => {
     if (!s || s.heard - s.sent < 1 || s.heard < 10) return;
     s.sent = s.heard;
-    send('/bp', { pid: s.pid, beat: s.beat, sec: Math.round(s.heard), dur: Math.round(audio.duration || 0), device }, beacon);
+    send('/bp', { pid: s.pid, beat: s.beat, sec: Math.round(s.heard), dur: Math.round(audio.duration || 0), device, bins: s.bins.join('') }, beacon);
   };
   addEventListener('pagehide', () => flush(true));
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); });
   return {
-    start(b) { flush(true); s = { pid: Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6), beat: b.id, heard: 0, sent: 0, last: null }; },
+    start(b) { flush(true); s = { pid: Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6), beat: b.id, heard: 0, sent: 0, last: null, bins: new Array(40).fill(0) }; },
     // 只累计真正播过的时间，拖进度条不算
     tick() {
       if (!s) return;
       const t = audio.currentTime, d = s.last == null ? 0 : t - s.last; s.last = t;
-      if (d > 0 && d < 1.5 && !audio.paused) s.heard += d;
+      if (d > 0 && d < 1.5 && !audio.paused) { s.heard += d; if (audio.duration) s.bins[Math.min(39, Math.floor(t / audio.duration * 40))] = 1; }
       if ((s.sent < 10 && s.heard >= 10) || s.heard - s.sent >= 30) flush(false);
     },
     flush() { if (s) s.last = null; flush(false); },
     buy(b, kind, license) { send('/bb', { beat: b.id, kind, license }, kind === 'copy'); },
+    feat(b, kind) { send('/bf', { beat: b.id, kind }, false); },
   };
 })();
 audio.preload = 'none';
@@ -379,12 +409,55 @@ function init(){
   $('stat').textContent = BEATS.length ? BEATS.length : '';
   $('q').oninput = e => { st.q = e.target.value.trim().toLowerCase(); render(); };
   $('sort').onchange = e => { st.sort = e.target.value; render(); };
+  featured();
   render();
   if (location.hash.length > 1) {
     const b = BEATS.find(x => x.id === decodeURIComponent(location.hash.slice(1)));
     const li = b && document.querySelector(`.trk[data-id="${CSS.escape(b.id)}"]`);
     if (li) { setTimeout(() => li.scrollIntoView({block:'center', behavior:'smooth'}), 300); li.classList.add('flash'); }
   }
+}
+
+// ── 为你推荐：Thompson 抽样。每首按「推上去被点播的比例」抽一个数，抽到最大的上推荐位；
+// 数据少的歌抽出来的数波动大，所以新歌也会被轮到 ──
+let FEAT = null;
+function gamma(k){ // Marsaglia–Tsang
+  if (k < 1) return gamma(k + 1) * Math.pow(Math.random(), 1 / k);
+  const d = k - 1/3, c = 1 / Math.sqrt(9 * d);
+  for (;;) { let x, v; do { const u1 = Math.random(), u2 = Math.random(); x = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2); v = 1 + c * x; } while (v <= 0);
+    v = v * v * v; const u = Math.random(); if (u < 1 - .0331 * x ** 4 || Math.log(u) < .5 * x * x + d * (1 - v + Math.log(v))) return d * v; }
+}
+const beta = (a, b) => { const x = gamma(a); return x / (x + gamma(b)); };
+// 高能：播放够 5 次用真实收听分布，不够先用音量起伏
+const heatOf = b => { const s = b.heat && b.heat.n >= 5 ? b.heat.bins : b.wave; return s ? [...s].map(Number) : null; };
+const hotAt = h => h ? h.indexOf(Math.max(...h)) : -1;
+function featured(){
+  if (BEATS.length < 2) return;
+  FEAT = BEATS.map(b => [beta((b.fp || 0) + 1, Math.max(0, (b.fs || 0) - (b.fp || 0)) + 1), b]).sort((x, y) => y[0] - x[0])[0][1];
+  const b = FEAT, h = heatOf(b) || new Array(40).fill(4), hi = hotAt(heatOf(b)), hs = b.duration ? fmt((hi + .5) / 40 * b.duration) : '';
+  $('feat').innerHTML = `<div class="art" data-fplay>${art(b, 132, PLAY_O)}</div>
+    <div class="fx"><div class="lab">为你推荐</div><h3>${esc(b.title)}</h3><div class="fs">${esc([ARTIST, meta(b), b.genres[0]].filter(Boolean).join('\u2002·\u2002'))}</div></div>
+    <div class="heat" id="heat" aria-label="高能进度条，点击跳转">${h.map((v, i) => `<i class="${i === hi ? 'hot' : ''}" style="height:${12 + v * 9.8}%"></i>`).join('')}</div>
+    <div class="acts">${hi >= 0 ? `<button class="hotbtn press" data-fhot><i></i>高能 ${hs}</button>` : ''}<button class="buy press" data-fbuy>${LICENSES[0].price}</button></div>`;
+  // 手机上进度条和按钮另起一行，电脑上放在右侧那一栏里
+  if (matchMedia('(min-width:641px)').matches) { const fx = $('feat').querySelector('.fx'); fx.append($('heat'), $('feat').querySelector('.acts')); }
+  $('feat').dataset.id = b.id;
+  $('feat').hidden = false;
+  trk.feat(b, 'show');
+  const go = at => { if (cur !== b) { trk.feat(b, 'play'); queue = [b, ...view.filter(x => x !== b)]; play(b, at); } else if (at == null) toggle(); else if (audio.duration) audio.currentTime = at * audio.duration; };
+  $('feat').onclick = e => {
+    if (e.target.closest('[data-fbuy]')) return openLic(b);
+    if (e.target.closest('[data-fhot]')) return go(hi / 40);
+    const hb = e.target.closest('.heat');
+    if (hb) { const r = hb.getBoundingClientRect(); return go(Math.min(.98, Math.max(0, (e.clientX - r.left) / r.width))); }
+    if (e.target.closest('[data-fplay]')) go(null);
+  };
+}
+// 推荐卡上的高能条兼做进度条
+function featProgress(){
+  if (!FEAT || cur !== FEAT || !audio.duration) return;
+  const n = Math.floor(audio.currentTime / audio.duration * 40);
+  $('heat') && $('heat').querySelectorAll('i').forEach((el, i) => el.classList.toggle('p', i < n));
 }
 
 function clearAll(){ st.genres.clear(); st.tags.clear(); st.q=''; $('q').value=''; render(); }
@@ -463,10 +536,13 @@ $('list').addEventListener('click', e => {
   queue = view.slice(); play(b);
 });
 
-function play(b){
+function play(b, at){
   trk.start(b);
   cur = b;
   audio.src = API + '/ba/' + b.file;
+  if (at) audio.addEventListener('loadedmetadata', () => { audio.currentTime = at * audio.duration; }, { once: true });
+  const hi = hotAt(heatOf(b));
+  $('hotmark').hidden = hi < 0; if (hi >= 0) $('hotmark').style.left = ((hi + .5) / 40 * 100) + '%';
   audio.play().catch(() => {});
   $('bar').classList.add('show');
   $('barCv').innerHTML = art(b, 52);
@@ -492,7 +568,7 @@ function step(d){
   if (nb) play(nb);
 }
 function markPlaying(){
-  document.querySelectorAll('.trk').forEach(li => {
+  document.querySelectorAll('.trk,.feat').forEach(li => {
     const on = cur && li.dataset.id === cur.id;
     li.classList.toggle('on', !!on); li.classList.toggle('playing', !!on && !audio.paused);
   });
@@ -520,6 +596,7 @@ audio.addEventListener('timeupdate', () => {
   if (dragging || !audio.duration) return;
   $('fill').style.width = (audio.currentTime / audio.duration * 100) + '%';
   $('cur').textContent = fmt(audio.currentTime);
+  featProgress();
 });
 audio.addEventListener('progress', () => {
   if (audio.buffered.length && audio.duration) $('buf').style.width = (audio.buffered.end(audio.buffered.length - 1) / audio.duration * 100) + '%';
