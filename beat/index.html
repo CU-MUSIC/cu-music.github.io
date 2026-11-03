@@ -96,7 +96,8 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 .gen{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:10%;
   background:radial-gradient(120% 90% at var(--x,30%) 0%,hsl(var(--h) 10% 24%),hsl(var(--h) 8% 11%) 72%)}
 .gen b{font-size:calc(var(--fs,20) * 1cqw);overflow-wrap:anywhere;font-weight:850;letter-spacing:-.03em;line-height:1;color:#f1e6e1;word-break:break-word;text-transform:uppercase}
-.gen.mini{justify-content:center;align-items:center;padding:0}.gen.mini b{font-size:46cqw;overflow-wrap:normal}
+.gen.mini{justify-content:center;align-items:center;padding:0;background:linear-gradient(145deg,#2a2826,#1c1b19);color:rgba(232,227,220,.32)}
+.gen.mini .cu{width:42%;height:42%}
 .gen i{font-style:normal;font-size:max(6px,6cqw);font-weight:700;letter-spacing:.2em;color:rgba(241,230,225,.6)}
 
 
@@ -124,7 +125,7 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
 .chip.clear{border-style:dashed}
 
 /* ── 曲目表 ── */
-.trk{display:grid;grid-template-columns:52px minmax(0,1fr) 72px 44px 48px 96px;gap:16px;align-items:center}
+.trk{display:grid;grid-template-columns:52px minmax(0,1fr) 56px 88px;gap:18px;align-items:center}
 .list{list-style:none;padding:6px 0 calc(var(--bar) + 60px + env(safe-area-inset-bottom))}
 .trk{padding:9px 10px;border-radius:12px;cursor:pointer;transition:background-color .2s;opacity:0;transform:translateY(10px);animation:up .5s var(--ease) forwards;animation-delay:calc(var(--i,0) * 28ms)}
 .trk:hover{background:var(--surface)}
@@ -143,8 +144,8 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
 .trk .t{min-width:0}
 .trk .t b{display:block;font-weight:650;font-size:16px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .trk.on .t b{color:var(--text)}
-.trk .t .sub{font-size:13px;color:var(--text-3);margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.trk .c{text-align:center;font-size:14px;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.trk .t .sub{font-size:13px;color:var(--text-3);margin-top:2px;font-variant-numeric:tabular-nums;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.trk .c{text-align:right;font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .buy{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border-radius:17px;font-size:14px;font-weight:600;
   border:1px solid var(--border-hi);color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums}
 .buy:hover,.trk.on .buy{border-color:var(--red);background:var(--red-soft)}
@@ -223,8 +224,6 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
 @media (max-width:860px){
-  .trk{grid-template-columns:52px minmax(0,1fr) 72px 96px}
-  .trk .c.d,.trk .c.k{display:none}
 }
 @media (max-width:640px){
   .hero{padding:22px 0 18px}
@@ -234,7 +233,6 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   .trk{grid-template-columns:48px minmax(0,1fr) auto;gap:12px;padding:8px 6px;margin:0 -6px}
   .trk .art{width:48px}
   .trk .c{display:none}
-  .trk .t .sub .mm{display:inline}
   .buy{height:34px;padding:0 12px}
   .bar .in{grid-template-columns:minmax(0,1fr) auto;gap:10px}
   .right{display:none}
@@ -248,7 +246,6 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   .terms ul{grid-template-columns:1fr 1fr;gap:10px 12px}
   .terms li{font-size:13px}
 }
-.mm{display:none}
 @keyframes up{to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.trk{opacity:1;transform:none}}
 </style>
@@ -281,8 +278,8 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   <section class="filters" id="filters" aria-label="筛选">
     <div class="row1"><h2>全部伴奏<small id="count"></small></h2>
       <select class="sort" id="sort" aria-label="排序">
-        <option value="new">最新</option>
         <option value="pop">最热门</option>
+        <option value="new">最新</option>
         <option value="bpm-asc">BPM 从慢到快</option>
         <option value="bpm-desc">BPM 从快到慢</option>
       </select>
@@ -315,7 +312,7 @@ const GENRE_ORDER = ['Trap','R&B','Hyperpop','K-Pop','UK Rap','Drill','Lofi','ED
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const ARTIST = 'Uin';   // 前台只署 Uin，品牌是 CU MUSIC
 let BEATS = [];
-const st = {genres:new Set(), tags:new Set(), q:'', sort:'new', tagsOpen:false};
+const st = {genres:new Set(), tags:new Set(), q:'', sort:'pop', tagsOpen:false};
 let view = [];          // 当前筛选后的列表
 let queue = [];         // 播放队列（开始播放时的列表）
 let cur = null;         // 正在播放的 beat
@@ -368,13 +365,14 @@ audio.preload = 'none';
 const fmt = s => { s = Math.max(0, Math.round(s||0)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hash = s => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+const CU_MARK = '<svg class="cu" viewBox="272 164 456 456" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="46" stroke-linecap="round"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></g></svg>';
 const PLAY_O = '<div class="play-o"><span><svg class="pl" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg class="pa" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg><div class="eq"><i></i><i></i><i></i></div></span></div>';
 // 封面：传了就用，没传按曲名生成一张深红系的字封面（每首色相略不同）
 function art(b, size, extra = ''){
   if (b.cover) return `<img src="${API}/bc/${esc(b.cover)}" alt="" loading="lazy" draggable="false">${extra}`;
   const h = hash(b.id), hue = 345 + h % 30, x = 20 + h % 60;
   // 小图只放首字，大图放全名
-  if (size <= 64) return `<div class="gen mini" style="--h:30;--x:${x}%"><b>${esc([...b.title][0].toUpperCase())}</b></div>${extra}`;
+  if (size <= 64) return `<div class="gen mini">${CU_MARK}</div>${extra}`;
   return `<div class="gen" style="--h:30;--x:${x}%;--fs:${b.title.length > 12 ? 12 : b.title.length > 7 ? 15 : 20}"><b>${esc(b.title)}</b><i>CU MUSIC</i></div>${extra}`;
 }
 const meta = b => [b.bpm ? b.bpm + ' BPM' : '', b.key || ''].filter(Boolean).join(' · ');
@@ -453,14 +451,11 @@ function render(){
     $('list').querySelector('[data-clearall]').onclick = clearAll; return; }
 
   $('list').innerHTML = view.map((b,i) => {
-    const sub = [b.genres[0], ...b.tags.slice(0, 1)].filter(Boolean).join(' · ');
-    const mm = meta(b);
+    const sub = [b.bpm ? b.bpm + ' BPM' : '', b.key, b.genres[0]].filter(Boolean).join('\u2002·\u2002');
     return `<li class="trk" data-id="${esc(b.id)}" style="--i:${firstPaint ? Math.min(i, 16) : Math.min(i, 8)}">
       <div class="art">${art(b, 56, PLAY_O)}</div>
-      <div class="t"><b>${esc(b.title)}</b><div class="sub">${mm ? `<span class="mm">${esc(mm)}${sub ? ' · ' : ''}</span>` : ''}${esc(sub)}</div></div>
-      <span class="c">${b.bpm ? b.bpm + ' BPM' : ''}</span>
-      <span class="c k">${esc(b.key || '')}</span>
-      <span class="c d">${b.duration ? fmt(b.duration) : ''}</span>
+      <div class="t"><b>${esc(b.title)}</b><div class="sub">${esc(sub)}</div></div>
+      <span class="c">${b.duration ? fmt(b.duration) : ''}</span>
       <span style="text-align:right"><button class="buy press" data-ask aria-label="购买 ${esc(b.title)}">${LICENSES[0].price}</button></span>
     </li>`;
   }).join('');
