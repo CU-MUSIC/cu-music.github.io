@@ -97,6 +97,7 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .pyr .n{color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pyr .n i{display:block;font-style:normal;font-size:11.5px;color:var(--text-3);margin-top:1px;overflow:hidden;text-overflow:ellipsis}
 .pyr .a{color:var(--text)}.pyr .ok{color:var(--text)}.pyr .due{color:#e2b26f}
 .boot{color:var(--text-3);font-size:15px;margin-top:30vh}
+.pge{display:flex;gap:6px;flex-wrap:wrap;margin:-2px 0 10px;font-size:12px;color:var(--text-3,#888)}.pge label{display:inline-flex;align-items:center;gap:4px}.pge input{font-size:12px;max-width:128px}
 </style>
 </head>
 <body>
@@ -315,12 +316,14 @@ function progPanel() {
     return '<div class="pgr"><span class="n">' + esc(t.title) + ((g.r || 0) >= 5 ? ' <b title="修改轮数偏多，建议和客户对一下是否该收口" style="color:#e0b55a;font-weight:600">● 第 ' + g.r + ' 轮</b>' : '') + '</span><select data-i="' + i + '"><option value="-1"' + (g.s < 0 ? ' selected' : '') + '>不显示</option>'
       + ORDER.map(k => '<option value="' + k + '"' + (g.s === k ? ' selected' : '') + '>' + STAGES[k] + '</option>').join('') + '</select>'
       + '<input type="date" data-i="' + i + '" value="' + esc(g.due || '') + '" aria-label="预计交付">'
-      + '<input type="number" class="rn" data-r="' + i + '" min="0" max="99" value="' + (g.r || 0) + '" title="修改轮数：修改中显示「第 N 轮」，待审听显示「第 N+1 轮」" aria-label="修改轮数" style="width:44px;text-align:center"></div>';
+      + '<input type="number" class="rn" data-r="' + i + '" min="0" max="99" value="' + (g.r || 0) + '" title="修改轮数：修改中显示「第 N 轮」，待审听显示「第 N+1 轮」" aria-label="修改轮数" style="width:44px;text-align:center"></div>'
+      + '<div class="pge">' + [['edit', '编辑'], ['vocal', '人声'], ['mix', '混音'], ['master', '母带']].map(([k, n]) => '<label>' + n + '<input type="date" data-e="' + i + '" data-k="' + k + '" value="' + esc((g.eta || {})[k] || '') + '"></label>').join('') + '</div>';
   }).join('') + '<div class="pgall"><span>全部改成</span><select id="pgAll"><option value="">选择阶段</option>' + ORDER.map(k => '<option value="' + k + '">' + STAGES[k] + '</option>').join('') + '</select></div>';
   document.getElementById('list').appendChild(el);
   const save = async (i, s, due, rManual) => {
     const t = P.tracks[i], oldS = t.prog ? t.prog.s : -1, rr = rManual !== undefined ? rManual : ((t.prog && t.prog.r) || 0) + (s === 7 && oldS !== 7 ? 1 : 0);   // 每进入一次「修改中」算一轮
-    const prog = s < 0 ? null : { s, due, r: rr, at: (t.prog && t.prog.at) || {} };
+    const eta = {}; el.querySelectorAll('input[data-e="' + i + '"]').forEach(x => { if (x.value) eta[x.dataset.k] = x.value; });   // 各环节预计完成，没填就按上一版往后 2 个工作日自动算
+    const prog = s < 0 ? null : { s, due, r: rr, at: (t.prog && t.prog.at) || {}, eta };
     try {
       const r = await fetch(API + '/radm/meta', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: t.slug, prog }) });
       if (!(await r.json()).ok) throw 0;
@@ -333,6 +336,7 @@ function progPanel() {
   el.querySelectorAll('select[data-i]').forEach(x => x.onchange = () => save(+x.dataset.i, +x.value, el.querySelector('input[data-i="' + x.dataset.i + '"]').value));
   el.querySelectorAll('input[data-i]').forEach(x => x.onchange = () => { const sel = el.querySelector('select[data-i="' + x.dataset.i + '"]'); if (+sel.value >= 0) save(+x.dataset.i, +sel.value, x.value); });
   el.querySelectorAll('input[data-r]').forEach(x => x.onchange = () => { const i = +x.dataset.r, sel = el.querySelector('select[data-i="' + i + '"]'); if (+sel.value < 0) return; save(i, +sel.value, el.querySelector('input[data-i="' + i + '"][type=date]').value, Math.max(0, Math.min(99, Math.round(+x.value) || 0))); });
+  el.querySelectorAll('input[data-e]').forEach(x => x.onchange = () => { const i = +x.dataset.e, sel = el.querySelector('select[data-i="' + i + '"]'); if (+sel.value < 0) return; save(i, +sel.value, el.querySelector('input[data-i="' + i + '"][type=date]').value); });
   el.querySelector('#pgAll').onchange = e => { const v = e.target.value; if (v === '') return;
     el.querySelectorAll('select[data-i]').forEach(x => { x.value = v; save(+x.dataset.i, +v, el.querySelector('input[data-i="' + x.dataset.i + '"]').value); }); e.target.value = ''; };
 }

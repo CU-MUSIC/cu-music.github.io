@@ -43,6 +43,31 @@ const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户
 const V = S.versions.filter(v => v.ver !== 'REF');
 // 版本名精简：「舞步 Edit @ChefDao_V2_1018」→「编辑 V2」；按文件名里的 Edit / Mix / Master 分阶段，编辑在前、混音在后
 const STAGE = { demo: 'Demo', edit: '编辑', mix: '混音', master: '母带' };
+// 预计时间：下一版什么时候出（大字），下面一排各环节预计完成日。都按北京时间、工作日（周一到周五）、18:00 下班算
+const BJ = 8 * 3600e3, WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const bjYmd = ms => new Date(ms + BJ).toISOString().slice(0, 10);
+const ymdEnd = d => Date.parse(d + 'T18:00:00+08:00');
+function plusWd(ms, n) { const d = new Date(ms + BJ); d.setUTCHours(0, 0, 0, 0); while (n > 0) { d.setUTCDate(d.getUTCDate() + 1); const w = d.getUTCDay(); if (w && w < 6) n--; } return d.toISOString().slice(0, 10); }
+const wdate = d => cdate(d) + ' ' + WD[new Date(d + 'T12:00:00+08:00').getUTCDay()];
+const ETA_K = [['edit', '音频编辑'], ['vocal', '人声制作'], ['mix', '基础混音'], ['master', '母带']];
+function etaBlock(g) {
+  if (g.s === 5 || g.s === 0) return '';
+  const eta = g.eta || {}, now = Date.now(), rank = { edit: 0, vocal: 1, mix: 2, master: 3 };
+  const curK = g.s === 2 ? 'edit' : g.s === 6 ? 'vocal' : g.s === 3 || g.s === 7 ? 'mix' : g.s === 8 ? 'master' : g.s === 4 ? 'mix' : '';
+  const curR = g.s === 1 ? -1 : g.s === 4 ? 2.5 : g.s === 8 ? 3 : rank[curK];
+  // 下一版：在做的环节填了日期就用它；没填就按上一版（或进入这个环节的时间）往后 2 个工作日。待审听要等反馈，不给日期；过期的不显示
+  let next = '', lab = '下一版';
+  if ([1, 2, 3, 6, 7].includes(g.s)) {
+    const lastV = Math.max(0, ...V.map(v => v.ts || (v.date ? Date.parse(v.date + 'T12:00:00+08:00') : 0))), base = Math.max(lastV, (g.at && g.at[g.s]) || 0);
+    next = eta[curK] || (base ? plusWd(base, 2) : '');
+    if (next && ymdEnd(next) < now) next = '';
+  }
+  const big = next ? `<div class="etan"><span>${lab} · 预计</span><b>${wdate(next)}</b><i>18:00 前</i></div>`
+    : g.s === 4 ? '<div class="etan wait"><span>下一版</span><b>收到意见后 2 个工作日内</b></div>' : '';
+  const row = ETA_K.filter(([k]) => eta[k]).map(([k, n]) => `<span class="${rank[k] < curR ? 'd' : k === curK && g.s !== 4 ? 'c' : ''}">${n}<b>${cdate(eta[k])}</b></span>`)
+    .concat(g.due && g.s !== 8 ? [`<span class="dl">交付<b>${cdate(g.due)}</b></span>`] : []);
+  return big || row.length ? `<div class="eta">${big}${row.length ? '<div class="etar">' + row.join('') + '</div>' : ''}</div>` : '';
+}
 const stageOf = v => { if (v.stage) return v.stage === 'none' ? '' : v.stage;   // 手动改过类别的优先
   const f = String(v.file || '').replace(/@ChefDao.*$/i, '').replace(/_/g, ' ');
   if (/\bpre-?master/i.test(f)) return 'mix';
@@ -123,7 +148,7 @@ document.body.innerHTML = `
     const ST = ['待付款', '准备中', '编辑中', g.s === 6 ? '人声制作中' : '混音中', g.s === 7 ? '修改中 · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? '待审听 · 第 ' + (g.r + 1) + ' 轮' : '待审听', g.s === 8 ? '交付结算' : '已交付'];
     const W = [3.4, 1, .7, .55];   // 当前阶段占最宽，离得越远越窄（透视感）
     return `<div class="sprog${g.s === 8 ? ' settle' : ''}"><div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
-      + (g.s !== 5 && g.s !== 8 && g.due ? `<div class="spdue">预计 ${cdate(g.due)} 交付</div>` : '') + '</div>';
+      + etaBlock(g) + '</div>';
   })()}
   <section class="vpick" id="seg"${V.length > 1 ? '' : ' hidden'}>${(() => {
     // 版本选择：按阶段一组一排小按钮「编辑 V1 V2 · 混音 V3」，当前版本高亮
