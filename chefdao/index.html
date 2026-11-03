@@ -116,7 +116,7 @@ body {
   display:flex; justify-content:center; align-items:center; overflow:hidden;
 }
 #intro-grid {
-  display:grid; width:100vw; height:100vh;
+  display:grid; width:100vw; height:100vh; height:100dvh;
   grid-template-columns: repeat(var(--cols), 1fr);
   grid-auto-rows: calc(100vw / var(--cols));
   gap:0; align-content:start;
@@ -177,7 +177,7 @@ body {
   75%  { transform:translate3d(-2%,-2%,0); }
   100% { transform:translate3d(3%,1%,0); }
 }
-@media (prefers-reduced-motion:reduce){ #grain { animation:none; } }
+@media (prefers-reduced-motion:reduce), (hover:none){ #grain { animation:none; will-change:auto; } }
 
 /* ================= Content Nav ================= */
 #content-nav {
@@ -221,7 +221,7 @@ body {
 
 .album-row {
   display:flex; align-items:center; gap:80px; margin-bottom:200px;
-  opacity:0; transform:translateY(60px); transition:all 1.2s var(--easing);
+  opacity:0; transform:translateY(60px); transition:opacity 1.2s var(--easing), transform 1.2s var(--easing);
 }
 .album-row.is-visible { opacity:1; transform:translateY(0); }
 
@@ -404,7 +404,7 @@ body {
 .year-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:24px 20px; }
 
 .album-compact {
-  opacity:0; transform:translateY(24px); transition:all 0.8s var(--easing);
+  opacity:0; transform:translateY(24px); transition:opacity 0.8s var(--easing), transform 0.8s var(--easing);
   cursor:pointer;
 }
 .album-compact.is-visible { opacity:1; transform:translateY(0); }
@@ -843,10 +843,12 @@ function thumbUrl(url, size = 200) {
 }
 
 function preloadImages(imageUrls) {
-  return Promise.all(imageUrls.map(url => new Promise(resolve => {
+  const all = Promise.all(imageUrls.map(url => new Promise(resolve => {
     const img = new Image(); img.src = url;
     img.onload = img.onerror = () => resolve(url);
   })));
+  // 慢网下最多等 3.5 秒，不让一张慢图把整个开场卡成黑屏
+  return Promise.race([all, new Promise(r => setTimeout(r, 3500))]);
 }
 
 /* ========= Build album row ========= */
@@ -1294,7 +1296,18 @@ async function initHybridAnimation() {
   const flyingCount = Math.min(maxFlying, cells.length);
   let settledCount = 0;
 
+  const introUi = document.getElementById('intro-ui');
+  // 保底：无论飞入是否走完，8 秒后一定露出「进入」按钮
+  setTimeout(() => { grid.classList.add('dimmed'); introUi.classList.add('visible'); }, 8000);
+
   await preloadImages(displayPool.slice(0, maxFlying).map(item => thumbUrl(item.image)));
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    cells.forEach(c => { const im = c.querySelector('img'); if (im) im.style.opacity = 1; });
+    grid.classList.add('dimmed');
+    introUi.classList.add('visible');
+    return;
+  }
 
   cells.forEach((cell, i) => {
     const targetImg = cell.querySelector('img');
