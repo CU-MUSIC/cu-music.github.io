@@ -43,10 +43,10 @@ const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户
 const V = S.versions.filter(v => v.ver !== 'REF');
 // 版本名精简：「舞步 Edit @ChefDao_V2_1018」→「编辑 V2」；按文件名里的 Edit / Mix / Master 分阶段，编辑在前、混音在后
 const STAGE = { demo: 'Demo', edit: '编辑', mix: '混音', master: '母带' };
-// 预计时间：下一版什么时候出（大字），下面一排各环节预计完成日。都按北京时间、工作日（周一到周五）、18:00 下班算
+// 预计时间：下一版什么时候出（大字），下面一排各环节预计完成日。都按北京时间、工作日（周一到周五）、20:00 前
 const BJ = 8 * 3600e3, WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 const bjYmd = ms => new Date(ms + BJ).toISOString().slice(0, 10);
-const ymdEnd = d => Date.parse(d + 'T18:00:00+08:00');
+const ymdEnd = d => Date.parse(d + 'T20:00:00+08:00');
 function plusWd(ms, n) { const d = new Date(ms + BJ); d.setUTCHours(0, 0, 0, 0); while (n > 0) { d.setUTCDate(d.getUTCDate() + 1); const w = d.getUTCDay(); if (w && w < 6) n--; } return d.toISOString().slice(0, 10); }
 const wdate = d => cdate(d) + ' ' + WD[new Date(d + 'T12:00:00+08:00').getUTCDay()];
 const ETA_K = [['edit', '音频编辑'], ['vocal', '人声制作'], ['mix', '基础混音'], ['master', '母带']];
@@ -56,14 +56,16 @@ function etaBlock(g) {
   const curK = g.s === 2 ? 'edit' : g.s === 6 ? 'vocal' : g.s === 3 || g.s === 7 ? 'mix' : g.s === 8 ? 'master' : g.s === 4 ? 'mix' : '';
   const curR = g.s === 1 ? -1 : g.s === 4 ? 2.5 : g.s === 8 ? 3 : rank[curK];
   // 下一版：在做的环节填了日期就用它；没填就按上一版（或进入这个环节的时间）往后 2 个工作日。待审听要等反馈，不给日期；过期的不显示
-  let next = '', lab = '下一版';
-  if ([1, 2, 3, 6, 7].includes(g.s)) {
+  // 你在黄卡旁边手动改的日期（eta.next）优先，过了就失效回到自动
+  let next = eta.next && ymdEnd(eta.next) >= now ? eta.next : '', lab = '下一版';
+  if (!next && [1, 2, 3, 6, 7].includes(g.s)) {
     const lastV = Math.max(0, ...V.map(v => v.ts || (v.date ? Date.parse(v.date + 'T12:00:00+08:00') : 0))), base = Math.max(lastV, (g.at && g.at[g.s]) || 0);
     next = eta[curK] || (base ? plusWd(base, 2) : '');
     if (next && ymdEnd(next) < now) next = '';
   }
-  const big = next ? `<div class="etan"><span>${lab} · 预计</span><b>${wdate(next)}</b><i>18:00 前</i></div>`
-    : g.s === 4 ? '<div class="etan wait"><span>下一版</span><b>收到意见后 2 个工作日内</b></div>' : '';
+  const ed = IS_OWNER ? `<label class="etaed" title="改下一版预计日期（清空 = 自动按 2 个工作日）">改<input type="date" value="${eta.next || ''}"></label>` : '';
+  const big = next ? `<div class="etan"><span>${lab} · 预计</span><b>${wdate(next)}</b><i>20:00 前</i>${ed}</div>`
+    : g.s === 4 ? `<div class="etan wait"><span>下一版</span><b>收到意见后 2 个工作日内</b>${ed}</div>` : '';
   const row = ETA_K.filter(([k]) => eta[k]).map(([k, n]) => `<span class="${rank[k] < curR ? 'd' : k === curK && g.s !== 4 ? 'c' : ''}">${n}<b>${cdate(eta[k])}</b></span>`)
     .concat(g.due && g.s !== 8 ? [`<span class="dl">交付<b>${cdate(g.due)}</b></span>`] : []);
   return big || row.length ? `<div class="eta">${big}${row.length ? '<div class="etar">' + row.join('') + '</div>' : ''}</div>` : '';
@@ -1081,6 +1083,14 @@ function ownerTools() {
     const r = await fetch(live.api + path, { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({ ok: false })); if (!j.ok) throw new Error(j.e || r.status); return j;
   };
+  // 黄卡旁边直接改「下一版预计」：存进进度的 eta.next，客户那边同步变；清空就回到自动算
+  const etaWire = () => { const inp = document.querySelector('.etaed input'); if (!inp) return;
+    inp.onclick = () => { try { inp.showPicker(); } catch (e) {} };
+    inp.onchange = async () => { const g = S.prog, eta = { ...(g.eta || {}) }; if (inp.value) eta.next = inp.value; else delete eta.next;
+      try { await post('/radm/meta', { slug: S.slug, prog: { ...g, eta } }); g.eta = eta; const box = document.querySelector('.sprog .eta'), html = etaBlock(g);
+        if (box) box.outerHTML = html; else document.querySelector('.sprog').insertAdjacentHTML('beforeend', html); etaWire(); busy(inp.value ? '下一版预计已改成 ' + wdate(inp.value) : '已改回自动预计'); }
+      catch (e) { busy('没保存上，检查网络再试'); } }; };
+  etaWire();
   // 分享：一键复制「歌名 / 链接 / 密码」三行发给客户。「分享」发这首歌；在多首的项目里另有「分享项目」
   const share = {}, line = x => '《' + x.title + '》\n' + x.url + (x.pass ? '\n密码 ' + x.pass : '');
   const get = p => fetch(live.api + p, { headers: { Authorization: 'Bearer ' + key } }).then(r => r.json());
