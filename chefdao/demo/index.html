@@ -222,6 +222,7 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
       <div class="row" style="--k:0"><label class="fl"><input id="n" maxlength="20" placeholder=" "><span>艺名</span></label></div>
       <div class="row" style="--k:1"><label class="fl"><input id="t" maxlength="60" placeholder=" "><span>歌名</span></label></div>
       <div class="row" style="--k:2"><label class="fl"><input id="l" maxlength="200" inputmode="url" placeholder=" "><span>主页链接（选填）</span></label></div>
+      <div class="row" style="--k:2"><label class="fl"><input id="nt" maxlength="100" placeholder=" "><span>想对刀大厨说的一句话（选填）</span></label></div>
       <div class="row" style="--k:3"><span class="lab" id="memLab">刀门会员</span><button type="button" class="switch" id="mem" role="switch" aria-checked="false" aria-labelledby="memLab"></button></div>
       <div class="row" style="--k:4"><span class="lab" id="frLab">已是刀大厨微信好友</span><button type="button" class="switch" id="fr" role="switch" aria-checked="false" aria-labelledby="frLab"></button></div>
       <div class="row" id="wxRow" style="--k:5"><label class="fl"><input id="wx" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder=" "><span>你的微信号</span></label><div class="wxhint">还不是好友？请先加刀大厨微信 <b>Cookdao</b>，备注艺名。</div></div>
@@ -372,7 +373,7 @@ $('#form').addEventListener('submit', e => {
   p1.style.strokeDashoffset = 0; p2.style.transition = 'none'; $('#status').classList.add('on'); $('#status').textContent = '0%';
   if ($('#mark').getBoundingClientRect().bottom < 40) window.scrollTo({ top: 0, behavior: REDUCE ? 'auto' : 'smooth' });
   loop();
-  const q = new URLSearchParams({ n, mem: sw.getAttribute('aria-checked') === 'true' ? '1' : '0', lid: LID, title: t, l: link, fr: isFr() ? '1' : '0', wx: isFr() ? '' : wx, ct: file.type || 'audio/mpeg' });
+  const q = new URLSearchParams({ n, mem: sw.getAttribute('aria-checked') === 'true' ? '1' : '0', lid: LID, title: t, l: link, note: $('#nt').value.trim(), fr: isFr() ? '1' : '0', wx: isFr() ? '' : wx, ct: file.type || 'audio/mpeg' });
   const x = new XMLHttpRequest();
   x.open('POST', API + '/demo/up?' + q);
   x.upload.onprogress = ev => { if (ev.lengthComputable) goal = Math.min(.97, ev.loaded / ev.total); };
@@ -395,7 +396,7 @@ function done(tok) {
   $('#cp').onclick = async () => { try { await navigator.clipboard.writeText(url); $('#cp').textContent = '已复制'; $('#cp').classList.add('ok'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('#lk')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
   const f = $('#form'); f.classList.add('fade-out');
   setTimeout(() => { f.hidden = true; f.classList.remove('fade-out'); const o = $('#ok'); o.hidden = false; requestAnimationFrame(() => o.classList.add('on')); }, 450);
-  file = null; $('#t').value = ''; $('#l').value = ''; $('#fl').textContent = '选择音频'; $('#fl').classList.add('empty'); $('#fmeta').textContent = 'MP3 · WAV'; $('#file').value = '';
+  file = null; $('#t').value = ''; $('#l').value = ''; $('#nt').value = ''; $('#fl').textContent = '选择音频'; $('#fl').classList.add('empty'); $('#fmeta').textContent = 'MP3 · WAV'; $('#file').value = '';
   load();
 }
 $('#again').onclick = () => {
