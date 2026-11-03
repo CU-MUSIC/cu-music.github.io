@@ -305,7 +305,9 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261103.0140';   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
+const BUILD = '261104.0100';
+const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
+   // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 const store = {
@@ -600,10 +602,10 @@ function render() {
     if (e.target.closest('a,button')) return;
     window.open(row.dataset.go, '_blank', 'noopener');
   });
-  root.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => {
+  root.querySelectorAll('[data-cr]').forEach(b => b.onclick = async () => {
     const k = JSON.parse(b.dataset.k), r = reply(...k);
     if (b.dataset.cr === 'done') return setReply(k, { done: !(r && r.done) });
-    const v = prompt('回复这条评论（客户会在审听页看到）：\n「' + k[3] + '」', (r && r.reply) || '');
+    const v = await replyBox({ quote: k[3], init: (r && r.reply) || '', send: '保存回复', max: 1000, empty: true }).catch(() => prompt('回复这条评论（客户会在审听页看到）：\n「' + k[3] + '」', (r && r.reply) || ''));
     if (v !== null) setReply(k, { reply: v });
   });
   root.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {

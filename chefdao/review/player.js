@@ -1344,6 +1344,7 @@ async function clientFb() {
     } catch (e) {}
     // 只显示正在听的这一版的评论；切版本时重画
     const CATS_ALL = ['音频编辑', '基础混音', '人声制作', '母带', '其他'];
+const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
     let catF = '';   // 当前按哪个分类筛选
     const stPrev = new Map();   // 每条评论上一次的状态圈，用来做过渡动画
     cfbRender = () => {
@@ -1394,7 +1395,7 @@ async function clientFb() {
           } catch (e) { alert('没存上，检查网络再试'); }
         };
         acts.querySelector('[data-a=reply]').onclick = async () => {
-          const v = prompt('回复这条评论（客户会在审听页看到，可以继续对话）：\n「' + o.m + '」', ''); if (!v || !v.trim()) return;
+          const v = await replyBox({ quote: o.m }).catch(() => prompt('回复这条评论：\n「' + o.m + '」', '')); if (!v || !v.trim()) return;
           try { const r = await fetch(API + '/cm', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, text: v.trim() }) });
             const j = await r.json(); if (!j.ok) throw 0; MSGS.push({ ver: o.ver, t: Math.round(kt * 10) / 10, m: km, who: 'o', text: v.trim(), ts: j.ts }); cfbRender(); } catch (e) { alert('没发出去，检查网络再试'); } };
         acts.querySelector('.cat').onchange = e => save({ cat: e.target.value });
