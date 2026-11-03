@@ -98,6 +98,7 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 .gen b{font-size:calc(var(--fs,20) * 1cqw);overflow-wrap:anywhere;font-weight:850;letter-spacing:-.03em;line-height:1;color:#f1e6e1;word-break:break-word;text-transform:uppercase}
 .gen.mini{justify-content:center;align-items:center;padding:0;background:linear-gradient(145deg,#2a2826,#1c1b19);color:rgba(232,227,220,.32)}
 .gen.mini .cu{width:42%;height:42%}
+.gen.mini .em{font-size:50cqw;line-height:1;filter:saturate(.85)}
 .gen i{font-style:normal;font-size:max(6px,6cqw);font-weight:700;letter-spacing:.2em;color:rgba(241,230,225,.6)}
 
 
@@ -127,10 +128,10 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
 /* ── 曲目表 ── */
 .trk{display:grid;grid-template-columns:52px minmax(0,1fr) 56px 88px;gap:18px;align-items:center}
 .list{list-style:none;padding:6px 0 calc(var(--bar) + 60px + env(safe-area-inset-bottom))}
-.trk{padding:9px 10px;border-radius:12px;cursor:pointer;transition:background-color .2s;opacity:0;transform:translateY(10px);animation:up .5s var(--ease) forwards;animation-delay:calc(var(--i,0) * 28ms)}
+.trk{padding:9px 10px;border-radius:12px;cursor:pointer;transition:background-color .2s;animation:up .5s var(--ease) backwards;animation-delay:calc(var(--i,0) * 28ms)}
 .trk:hover{background:var(--surface)}
 .trk.on{background:var(--surface-hi)}
-.trk.flash{animation:up .5s var(--ease) forwards,flash 1.8s var(--ease)}
+.trk.flash{animation:up .5s var(--ease) backwards,flash 1.8s var(--ease)}
 @keyframes flash{0%,40%{background:var(--surface-on)}}
 .trk .art{width:52px;border-radius:8px}
 .trk:hover .play-o{opacity:1}.trk:hover .play-o span{transform:none}
@@ -246,8 +247,8 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   .terms ul{grid-template-columns:1fr 1fr;gap:10px 12px}
   .terms li{font-size:13px}
 }
-@keyframes up{to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.trk{opacity:1;transform:none}}
+@keyframes up{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -365,6 +366,13 @@ audio.preload = 'none';
 const fmt = s => { s = Math.max(0, Math.round(s||0)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hash = s => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+// 没传封面时按曲名配一个 emoji，没配的显示 CU 标志
+const EMOJI = {
+  'run-to-hongdae':'🏃', 'a-girl':'👧', 'kawaii':'🎀', 'see-u':'👋', 'tokyo':'🗼', 'squish':'🍡', 'scream':'😱', 'october':'🍂',
+  'mint':'🌿', 'all-around':'🌀', 'beauty-and-beast':'🌹', 'crash':'💥', 'dope':'🔥', 'ea':'🎹', 'el':'⚡', 'forever-young':'🌱',
+  'gum':'🍬', 'hate':'😤', 'intro':'🎬', 'mask':'🎭', 'one-more-chance':'🎲', 'speed':'🏎️', 'sin-city':'🎰', 'sparkling-cute':'✨',
+  'walky':'🚶', 'blue':'💙', 'eye':'👁️', 'new-era':'🌅', 'robot':'🤖', 'weichengnian':'🎒', 'igloo-everyday':'🧊', 'in-the-air':'🎈', 'south':'🌴',
+};
 const CU_MARK = '<svg class="cu" viewBox="272 164 456 456" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="46" stroke-linecap="round"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></g></svg>';
 const PLAY_O = '<div class="play-o"><span><svg class="pl" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg class="pa" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg><div class="eq"><i></i><i></i><i></i></div></span></div>';
 // 封面：传了就用，没传按曲名生成一张深红系的字封面（每首色相略不同）
@@ -372,7 +380,7 @@ function art(b, size, extra = ''){
   if (b.cover) return `<img src="${API}/bc/${esc(b.cover)}" alt="" loading="lazy" draggable="false">${extra}`;
   const h = hash(b.id), hue = 345 + h % 30, x = 20 + h % 60;
   // 小图只放首字，大图放全名
-  if (size <= 64) return `<div class="gen mini">${CU_MARK}</div>${extra}`;
+  if (size <= 64) return `<div class="gen mini">${EMOJI[b.id] ? `<span class="em">${EMOJI[b.id]}</span>` : CU_MARK}</div>${extra}`;
   return `<div class="gen" style="--h:30;--x:${x}%;--fs:${b.title.length > 12 ? 12 : b.title.length > 7 ? 15 : 20}"><b>${esc(b.title)}</b><i>CU MUSIC</i></div>${extra}`;
 }
 const meta = b => [b.bpm ? b.bpm + ' BPM' : '', b.key || ''].filter(Boolean).join(' · ');
