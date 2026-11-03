@@ -63,7 +63,7 @@ function etaBlock(g) {
     next = eta[curK] || (base ? plusWd(base, 2) : '');
     if (next && ymdEnd(next) < now) next = '';
   }
-  const ed = IS_OWNER ? `<label class="etaed" title="改下一版预计日期（清空 = 自动按 2 个工作日）">改<input type="date" value="${eta.next || ''}"></label>` : '';
+  const ed = store.get('insights:key') ? `<label class="etaed" title="改下一版预计日期（清空 = 自动按 2 个工作日）">改<input type="date" value="${eta.next || ''}"></label>` : '';
   const big = next ? `<div class="etan"><span>${lab} · 预计</span><b>${wdate(next)}</b><i>20:00 前</i>${ed}</div>`
     : g.s === 4 ? `<div class="etan wait"><span>下一版</span><b>收到意见后 2 个工作日内</b>${ed}</div>` : '';
   const row = ETA_K.filter(([k]) => eta[k]).map(([k, n]) => `<span class="${rank[k] < curR ? 'd' : k === curK && g.s !== 4 ? 'c' : ''}">${n}<b>${cdate(eta[k])}</b></span>`)
