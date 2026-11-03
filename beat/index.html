@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover" />
-<meta name="theme-color" content="#150d0e">
+<meta name="theme-color" content="#171615">
 <meta name="description" content="CU MUSIC × Uin 尤因 伴奏商店，按风格、BPM、调性挑伴奏，在线试听、选授权。" />
 <title>Beats · CU MUSIC</title>
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
@@ -25,17 +25,17 @@
 <style>
 /* 深红暖黑：不用纯黑纯白，强调色是压低饱和的酒红 */
 :root{
-  --bg:#150d0e;
-  --bg-soft:#1e1415;
-  --bg-card:#211617;
-  --surface:rgba(255,232,226,.04);
-  --surface-hi:rgba(255,232,226,.075);
-  --surface-on:rgba(255,232,226,.12);
-  --text:#ede3dd;
-  --text-2:#a99791;
-  --text-3:#7a6863;
-  --border:rgba(237,227,221,.09);
-  --border-hi:rgba(237,227,221,.2);
+  --bg:#171615;
+  --bg-soft:#201f1d;
+  --bg-card:#232120;
+  --surface:rgba(255,250,244,.04);
+  --surface-hi:rgba(255,250,244,.075);
+  --surface-on:rgba(255,250,244,.12);
+  --text:#e8e3dc;
+  --text-2:#a39d96;
+  --text-3:#76716b;
+  --border:rgba(232,227,220,.09);
+  --border-hi:rgba(232,227,220,.2);
   --red:#b8282f;
   --red-hi:#cf363d;
   --red-soft:rgba(184,40,47,.16);
@@ -51,8 +51,6 @@
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.7;
   -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
-body::before{content:"";position:fixed;inset:0 0 auto;height:720px;pointer-events:none;z-index:-1;
-  background:radial-gradient(70% 60% at 20% 0%,rgba(150,34,40,.09),transparent 70%)}
 button,input,select{font:inherit;color:inherit}
 button{border:0;background:none;cursor:pointer}
 a{color:inherit;text-decoration:none}
@@ -79,7 +77,7 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 .hero h1 span{color:var(--text-2);font-weight:300}
 .hero p{color:var(--text-2);font-size:17px}
 .big-search{display:block;position:relative;margin-top:26px}
-.big-search input{width:100%;height:56px;border-radius:28px;border:1px solid var(--border-hi);background:rgba(30,20,21,.7);
+.big-search input{width:100%;height:56px;border-radius:28px;border:1px solid var(--border-hi);background:rgba(32,31,29,.7);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);padding:0 22px 0 52px;font-size:16px;outline:none;transition:border-color .2s,box-shadow .3s}
 .big-search input:focus{border-color:var(--red);box-shadow:0 0 0 4px var(--red-soft)}
 .big-search svg{position:absolute;z-index:1;pointer-events:none;left:20px;top:19px;width:18px;height:18px;stroke:var(--text-2);fill:none;stroke-width:2}
@@ -102,7 +100,7 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 .gen i{font-style:normal;font-size:max(6px,6cqw);font-weight:700;letter-spacing:.2em;color:rgba(241,230,225,.6)}
 
 
-.play-o{position:absolute;inset:0;z-index:1;display:grid;place-items:center;background:rgba(21,13,14,.4);opacity:0;transition:opacity .25s}
+.play-o{position:absolute;inset:0;z-index:1;display:grid;place-items:center;background:rgba(23,22,21,.4);opacity:0;transition:opacity .25s}
 .play-o span{width:30px;height:30px;border-radius:50%;background:var(--text);display:grid;place-items:center;transform:scale(.8);transition:transform .35s var(--ease)}
 .play-o svg{width:13px;height:13px;fill:var(--bg)}
 .play-o .pa{display:none}
@@ -110,7 +108,7 @@ img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
 /* ── 筛选 ── */
 .filters{position:sticky;top:0;z-index:5;padding:12px 0 10px;margin:0 calc(-1 * max(16px,env(safe-area-inset-left)));
   padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));
-  background:rgba(21,13,14,.84);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+  background:rgba(23,22,21,.84);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
   border-bottom:1px solid transparent;transition:border-color .2s}
 .filters.stuck{border-bottom-color:var(--border)}
 .row1{display:flex;gap:10px;align-items:center}
@@ -157,7 +155,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 
 /* ── 底部播放条 ── */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:20;
-  background:rgba(26,17,18,.9);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+  background:rgba(28,27,25,.9);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
   border-top:1px solid var(--border);transform:translateY(110%);transition:transform .55s var(--ios)}
 .bar.show{transform:none}
 .bar .seekwrap{position:absolute;left:0;right:0;top:-11px}
@@ -181,14 +179,14 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .track{height:22px;display:flex;align-items:center;cursor:pointer;touch-action:none}
 .track .rail2{position:relative;width:100%;height:3px;background:var(--surface-on);transition:height .2s}
 .track .buf,.track .fill{position:absolute;left:0;top:0;bottom:0;width:0}
-.track .buf{background:rgba(237,227,221,.14)}
+.track .buf{background:rgba(232,227,220,.14)}
 .track .fill{background:var(--red-hi)}
 .track .fill::after{content:"";position:absolute;right:-6px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#f3e9e3;transform:scale(0);transition:transform .2s}
 .track:hover .rail2,.track.drag .rail2{height:5px}
 .track:hover .fill::after,.track.drag .fill::after{transform:scale(1)}
 
 /* ── 授权弹窗 ── */
-.lic{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:rgba(12,6,7,.7);
+.lic{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:rgba(10,10,9,.7);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .25s}
 .lic.show{opacity:1;pointer-events:auto}
 .lic .box{width:min(900px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--bg-soft);border:1px solid var(--border);border-radius:20px;
@@ -260,7 +258,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
   <header class="top">
     <a class="brand" href="/" aria-label="CU MUSIC 主页">
       <svg viewBox="272 164 456 456" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <g fill="none" stroke="#ede3dd" stroke-width="46" stroke-linecap="round">
+        <g fill="none" stroke="#e8e3dc" stroke-width="46" stroke-linecap="round">
           <path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/>
           <path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>
         </g>
@@ -376,8 +374,8 @@ function art(b, size, extra = ''){
   if (b.cover) return `<img src="${API}/bc/${esc(b.cover)}" alt="" loading="lazy" draggable="false">${extra}`;
   const h = hash(b.id), hue = 345 + h % 30, x = 20 + h % 60;
   // 小图只放首字，大图放全名
-  if (size <= 64) return `<div class="gen mini" style="--h:${hue % 360};--x:${x}%"><b>${esc([...b.title][0].toUpperCase())}</b></div>${extra}`;
-  return `<div class="gen" style="--h:${hue % 360};--x:${x}%;--fs:${b.title.length > 12 ? 12 : b.title.length > 7 ? 15 : 20}"><b>${esc(b.title)}</b><i>CU MUSIC</i></div>${extra}`;
+  if (size <= 64) return `<div class="gen mini" style="--h:30;--x:${x}%"><b>${esc([...b.title][0].toUpperCase())}</b></div>${extra}`;
+  return `<div class="gen" style="--h:30;--x:${x}%;--fs:${b.title.length > 12 ? 12 : b.title.length > 7 ? 15 : 20}"><b>${esc(b.title)}</b><i>CU MUSIC</i></div>${extra}`;
 }
 const meta = b => [b.bpm ? b.bpm + ' BPM' : '', b.key || ''].filter(Boolean).join(' · ');
 
