@@ -1968,21 +1968,30 @@ function lyrStep(force) {
   const fs = $('#lyfs'); if (fs) { const d = dur() || 1; fs.querySelector('.fpb i').style.width = Math.min(100, curTime() / d * 100) + '%'; fs.querySelector('.fcur').textContent = fmt(curTime()); fs.classList.toggle('playing', !a.paused); }
   if (i === lyrIdx && !force) return; lyrIdx = i; lyrSync(i);
 }
-// 自动滚动：当前这句滚到框中间，自己写缓动（各家浏览器 smooth 手感不一）。手指 / 滚轮在歌词上动过就先不抢，停 2.5 秒后再回到正在唱的那句
-function lyrHold(box) {
-  if (box._held) return; box._held = true;
-  const hold = () => { box._hold = performance.now() + 2500; const inn = box.querySelector('.lyin'); if (inn && inn.style.transform && inn.style.transform !== 'translate3d(0px, 0px, 0px)') { const m = new DOMMatrixReadOnly(getComputedStyle(inn).transform).m42 || 0; inn.style.transition = 'none'; inn.style.transform = ''; box.scrollTop -= m; } clearTimeout(box._ht); box._ht = setTimeout(() => lyrSync(lyrIdx), 2600); };
-  ['wheel', 'touchstart', 'touchmove', 'pointerdown'].forEach(ev => box.addEventListener(ev, hold, { passive: true }));
-}
-// 滚动：位置瞬间跳到目标，同时把歌词整体往回挪同样距离（看着没动），再用 transform 过渡归零。只动一个合成层，手机上也是 60 帧；手指照常能划
-function lyrScroll(box, to) {
+// 自动跟唱：框本身不滚（overflow hidden），整层歌词 .lyin 用 transform 平移到「当前句在中间」——纯合成层动画，手机上也不会跳帧。
+// 手指 / 滚轮一碰：把当前位移换成真的滚动位置、放开滚动给你划；停手 2.5 秒后换回来，再滑到正在唱的那句
+const lyrY = inn => new DOMMatrixReadOnly(getComputedStyle(inn).transform).m42 || 0;
+function lyrAuto(box) {
   const inn = box.querySelector('.lyin'); if (!inn) return;
-  const tgt = Math.max(0, Math.min(box.scrollHeight - box.clientHeight, to)), d = tgt - box.scrollTop; if (Math.abs(d) < 1) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { box.scrollTop = tgt; return; }
-  const cur = new DOMMatrixReadOnly(getComputedStyle(inn).transform).m42 || 0;   // 上一段还没走完：接着走，不跳
-  inn.style.transition = 'none'; inn.style.transform = 'translate3d(0,' + (d + cur) + 'px,0)';
-  box.scrollTop = tgt; void inn.offsetHeight;
-  inn.style.transition = 'transform ' + Math.min(.8, .5 + Math.abs(d) / 2000) + 's cubic-bezier(.22,.9,.24,1)'; inn.style.transform = 'translate3d(0,0,0)';
+  const st = box.scrollTop; box._man = false; box.classList.remove('man');
+  box.scrollTop = 0; inn.style.transition = 'none'; inn.style.transform = 'translate3d(0,' + (-st) + 'px,0)'; void inn.offsetHeight;
+}
+function lyrHold(box) {
+  if (box._held) return; box._held = true; lyrAuto(box);
+  const hold = () => {
+    clearTimeout(box._ht); box._ht = setTimeout(() => { lyrAuto(box); lyrSync(lyrIdx); }, 2500);
+    if (box._man) return; const inn = box.querySelector('.lyin'), y = inn ? lyrY(inn) : 0;
+    box._man = true; box.classList.add('man'); if (inn) { inn.style.transition = 'none'; inn.style.transform = ''; } box.scrollTop = -y;
+  };
+  ['wheel', 'touchstart', 'pointerdown'].forEach(ev => box.addEventListener(ev, hold, { passive: true }));
+}
+function lyrScroll(box, to) {
+  const inn = box.querySelector('.lyin'); if (!inn || box._man) return;
+  const max = Math.max(0, inn.offsetHeight + inn.offsetTop * 2 - box.clientHeight), tgt = Math.max(0, Math.min(max, to));
+  if (Math.abs(lyrY(inn) + tgt) < 1) return;
+  const far = Math.abs(lyrY(inn) + tgt) > box.clientHeight;   // 跳得很远（拖进度条）：直接到，不滑一大段
+  inn.style.transition = far || matchMedia('(prefers-reduced-motion: reduce)').matches ? 'none' : 'transform .7s cubic-bezier(.25,.8,.25,1)';
+  inn.style.transform = 'translate3d(0,' + (-tgt) + 'px,0)';
 }
 function lyrSync(i) {
   document.querySelectorAll('.lyrs').forEach(box => {
