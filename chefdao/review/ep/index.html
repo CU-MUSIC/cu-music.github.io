@@ -99,6 +99,12 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .boot{color:var(--text-3);font-size:15px;margin-top:30vh}
 .pge{display:flex;gap:6px;flex-wrap:wrap;margin:-2px 0 10px;font-size:12px;color:var(--text-3,#888)}.pge label{display:inline-flex;align-items:center;gap:4px}.pge input{font-size:12px;max-width:128px}
 .addtr{display:block;margin:10px 0 4px;padding:12px;border:1px dashed rgba(255,255,255,.16);border-radius:12px;text-align:center;font-size:14px;color:var(--text-2,#a9a6a0);text-decoration:none;transition:background .15s,color .15s}.addtr:hover{background:rgba(255,255,255,.05);color:var(--text,#e6e4e0)}
+.dropov{position:fixed;inset:12px;z-index:90;display:grid;place-items:center;border:2px dashed rgba(214,211,205,.35);border-radius:22px;background:rgba(20,21,24,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transform:scale(.985);transition:opacity .18s,transform .22s cubic-bezier(.2,.8,.2,1)}
+.dropov.on{opacity:1;transform:none;pointer-events:auto}
+.dropov>div{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:0 24px}
+.dropov b{font-size:20px;color:#e6e4e0;font-weight:600}.dropov span{font-size:14px;color:#a9a6a0}
+.dropov .dbar{display:none;width:240px;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px}.dropov.busy .dbar{display:block}
+.dropov .dbar i{display:block;height:100%;width:0;background:#d6d3cd;transition:width .2s}
 </style>
 </head>
 <body>
@@ -280,8 +286,9 @@ async function open(pw, key) {
     location.href = playable[0].url; };
   if (ls.get('insights:key')) {
     // 你的设备：曲目列表下面「＋ 加曲目」，跳到 Insights 直接打开这个项目的上传窗
-    const ad = document.createElement('a'); ad.className = 'addtr'; ad.textContent = '＋ 加曲目'; ad.href = '/chefdao/review/insights/#up=' + slug; ad.target = '_top';
+    const ad = document.createElement('a'); ad.className = 'addtr'; ad.textContent = '＋ 加曲目 · 或直接把音频拖进来'; ad.href = '/chefdao/review/insights/#up=' + slug; ad.target = '_top';
     document.getElementById('list').appendChild(ad);
+    dropAdd();
     progPanel(); payPanel();
     const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261029k';
     sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), tracks: P.tracks.map(t => ({ slug: t.slug, artist: t.artist })), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
@@ -313,6 +320,33 @@ function progTag(g) {
   if (!g) return '';
   return '<em class="pg"><span class="bar">' + [0, 1, 2, 3, 4, 5].map(i => '<s class="' + (i < BAR[g.s] ? 'd' : i === BAR[g.s] ? 'c' : '') + '"></s>').join('') + '</span>'
     + stageText(g) + (g.s !== 5 && g.s !== 8 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
+}
+// 你的设备：把音频拖到项目页任意位置就加进这个项目。文件名里的歌名和已有曲目一样 → 作为那首的新版本；不一样 → 新建一首（密码跟项目一样）
+function dropAdd() {
+  const key = ls.get('insights:key'); let pjInfo = null, libP = null, busy = false;
+  const lib = () => libP || (libP = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const ov = document.createElement('div'); ov.className = 'dropov'; ov.innerHTML = '<div><b>松手加进《' + esc(P.title) + '》</b><span id="dropMsg">同名的歌作为新版本，其他新建曲目</span><i class="dbar"><i id="dropBar"></i></i></div>'; document.body.appendChild(ov);
+  const isAudio = e => [...(e.dataTransfer && e.dataTransfer.items || [])].some(x => x.kind === 'file');
+  let depth = 0;
+  addEventListener('dragenter', e => { if (busy || !isAudio(e)) return; e.preventDefault(); depth++; ov.classList.add('on'); });
+  addEventListener('dragover', e => { if (isAudio(e)) e.preventDefault(); });
+  addEventListener('dragleave', () => { if (busy) return; if (--depth <= 0) { depth = 0; ov.classList.remove('on'); } });
+  addEventListener('drop', async e => {
+    e.preventDefault(); depth = 0; if (busy) return;
+    const files = [...e.dataTransfer.files].filter(f => /^audio\//.test(f.type) || /\.(m4a|mp3|wav|aiff?)$/i.test(f.name));
+    if (!files.length) { ov.classList.remove('on'); return; }
+    busy = true; ov.classList.add('busy'); const msg = t => { document.getElementById('dropMsg').textContent = t; }, bar = p => { document.getElementById('dropBar').style.width = Math.round(p * 100) + '%'; };
+    try {
+      await lib();
+      if (!pjInfo) { const j = await (await fetch(API + '/lib', { headers: { Authorization: 'Bearer ' + key } })).json(); pjInfo = j.ok && j.projects.find(x => x.slug === slug); if (!pjInfo) throw new Error('没读到项目信息'); }
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i], title = window.cuNameInfo(f.name).title || f.name.replace(/\.[^.]+$/, ''), tag = (files.length > 1 ? (i + 1) + '/' + files.length + ' · ' : '') + '《' + title + '》 ';
+        const same = P.tracks.find(t => t.title.trim().toLowerCase() === title.trim().toLowerCase());
+        await window.cuUpload({ api: API, key, file: f, ...(same ? { slug: same.slug } : { title, pass: pjInfo.pass || '' }), project: slug, step: t => msg(tag + t), bar });
+      }
+      msg('已加好，刷新中…'); bar(1); setTimeout(() => location.reload(), 700);
+    } catch (er) { msg('没传成功：' + (er.message || '检查网络再试')); ov.classList.remove('busy'); busy = false; setTimeout(() => ov.classList.remove('on'), 2600); }
+  });
 }
 function progPanel() {
   const key = ls.get('insights:key'), el = document.createElement('section'); el.className = 'pay';
