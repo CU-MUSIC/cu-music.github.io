@@ -170,7 +170,9 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .pjlink button{background:var(--pearl);color:var(--ink);font-weight:600}
 .pjtr{display:flex;flex-direction:column}
 .pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
-.pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
+.pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;padding:10px 6px;margin:-10px -6px}
+.pjtr>div.drag{position:relative;z-index:5;background:var(--bg-2,#26282d);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.45);cursor:grabbing}
+.pjtr>div.drag .n{color:var(--text)}
 .pjtr .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pjtr .t i{font-style:normal;color:var(--text-3);font-size:12px}
 .pjtr button{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
 .pjtr button:disabled{opacity:.3}
@@ -305,7 +307,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261104c"></script>
 <script>
 (() => {
-const BUILD = '261104.2200';
+const BUILD = '261104.2230';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1013,6 +1015,19 @@ function openProject(slug) {
   const setTracks = async list => { try { await lib('/lib/tracks', { project: slug, songs: list }); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } };
   const order = p.tracks.map(t => t.slug);
   el.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const i = +b.dataset.mv, j = i + +b.dataset.d; [order[i], order[j]] = [order[j], order[i]]; setTracks(order); });
+  // 拖着序号直接排序：按住「01」这类序号上下拖，松手一次保存（不用一格一格点箭头）
+  const prow = [...el.querySelectorAll('.pjtr > div')];
+  prow.forEach((row, i) => { const h = row.querySelector('.n'); if (!h) return;
+    h.onpointerdown = e => { e.preventDefault(); try { h.setPointerCapture(e.pointerId); } catch (x) {}
+      const rects = prow.map(r => r.getBoundingClientRect()), y0 = e.clientY, hg = rects[i].height; let to = i;
+      row.classList.add('drag'); prow.forEach(r => { r.style.transition = r === row ? 'none' : 'transform .16s'; });
+      const mv = ev => { const dy = ev.clientY - y0; row.style.transform = 'translateY(' + dy + 'px)';
+        const c = rects[i].top + dy + hg / 2; to = rects.findIndex(r => c < r.bottom); if (to < 0) to = prow.length - 1;
+        prow.forEach((r, k) => { if (k === i) return; const sft = i < to && k > i && k <= to ? -hg : i > to && k < i && k >= to ? hg : 0; r.style.transform = sft ? 'translateY(' + sft + 'px)' : ''; }); };
+      const up = () => { h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
+        if (to === i) { prow.forEach(r => { r.style.transform = ''; r.style.transition = ''; }); row.classList.remove('drag'); return; }
+        const [m] = order.splice(i, 1); order.splice(to, 0, m); setTracks(order); };
+      h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up); }; });
   // 曲目单独分享：复制这首歌自己的链接和密码（打开项目时先把歌曲清单取好，点的时候直接复制）
   const songsP = api('/radm/list').catch(() => null);
   el.querySelectorAll('[data-sh]').forEach(b => b.onclick = async () => {
