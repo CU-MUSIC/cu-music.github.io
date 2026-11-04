@@ -2030,6 +2030,10 @@ function lyrEdit() {
   document.body.appendChild(p);
   const tx = $('#lyTx'), list = $('#lyL'), hint = t => { $('#lyHint').textContent = t; };
   tx.value = lines.map(x => x.x).join('\n');
+  // 客户发来的歌词常夹着制作备注：全角括号（…）里的要求、「Hook 1(1min19s)」「1min45s」这种段落标记，贴进来就去掉，不让客户看到
+  const clean = v => v.split('\n').map(r => r.replace(/（[^）]*）/g, '').replace(/\(\s*\d+\s*min\s*\d*\s*s?\s*\)/gi, '').trim())
+    .filter(r => r && !/^(hook|verse|chorus|bridge|intro|outro|pre-?hook|副歌|主歌|桥段|前奏|尾奏)\s*\d*\s*[:：]?\s*$/i.test(r) && !/^\d+\s*min\s*\d*\s*s?$/i.test(r)).join('\n');
+  tx.addEventListener('paste', () => setTimeout(() => { const c = clean(tx.value); if (c !== tx.value) { tx.value = c; tx.oninput(); hint('已去掉括号里的制作备注和段落标记'); } }, 0));
   const parse = () => { const rows = tx.value.split('\n').map(s => s.trim()).filter(Boolean);
     lines = rows.map((x, i) => ({ x, t: lines[i] && lines[i].x === x ? lines[i].t : (lines[i] ? lines[i].t : null) })); draw(); };
   const draw = () => { list.innerHTML = lines.map((x, i) => `<div class="lr${tap && i === ptr ? ' cur' : ''}" data-i="${i}"><button class="lt press" title="设成现在的播放位置">${x.t == null ? '—' : fmt(x.t) + '.' + (Math.round(x.t * 10) % 10)}</button><button class="lm press" data-d="-0.1">−</button><button class="lm press" data-d="0.1">＋</button><span>${esc(x.x)}</span></div>`).join('');
