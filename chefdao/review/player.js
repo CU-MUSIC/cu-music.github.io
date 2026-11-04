@@ -910,21 +910,40 @@ async function renderOk() {
     if (S.prog && S.prog.s === 8 && !mine.length) { bar.hidden = false; bar.className = 'okbar auto done'; bar.textContent = '⏱ 无反馈已自动确认，交付结算中'; return; }
     const ai = !mine.length && !notes.length ? autoInfo(okAll.some(x => x.ver === 'ext:' + cur.ver)) : null;
     bar.hidden = !mine.length && !ai; if (ai) bar.className = 'okbar auto' + (ai.left <= 0 ? ' done' : '');
-    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过反馈时限无意见，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left) + (ai.ext ? ' · 已延长 24 小时' : '')) : ''; return;
+    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过反馈时限无意见，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left) + (ai.ext ? ' · 已延长 24 小时' : '')) : '';
+    // 客户页的「这一版没有问题了」默认不显示，这里手动开（早期版本用不上）；客户点了「反馈已完毕」也在这里看到
+    const fbd = okAll.filter(x => x.ver === 'fb:' + cur.ver);
+    if (fbd.length) { bar.hidden = false; bar.textContent = (bar.textContent ? bar.textContent + ' · ' : '') + '📝 ' + fbd.map(x => x.name || '歌手').join('、') + ' 已表示 ' + cur.ver + ' 反馈完毕'; }
+    if (S.prog && cur === V[V.length - 1] && [4, 7].includes(S.prog.s)) {
+      const on = !!S.prog.okb; bar.hidden = false; bar.insertAdjacentHTML('beforeend', '<button type="button" class="okown' + (on ? ' on' : '') + '">客户页「没有问题了」：' + (on ? '已显示 · 点击隐藏' : '已隐藏 · 点击显示') + '</button>');
+      bar.querySelector('.okown').onclick = async () => { const g = S.prog, n = { ...g, okb: on ? 0 : 1 };
+        try { const r = await fetch(API_BASE + '/radm/meta', { method: 'POST', headers: { Authorization: 'Bearer ' + store.get('insights:key'), 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, prog: n }) }); if (!(await r.json()).ok) throw 0; S.prog = n; renderOk(); } catch (e) { hud('没保存上，检查网络再试'); } };
+    }
+    return;
   }
   if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid + '&v=' + encodeURIComponent(cur.ver), { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); OKN = { need: j.need || 1, got: j.got || 0 }; } catch (e) {} }
   if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>'; return; }
   const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 4 ? '第 ' + rn + ' 轮 · 反馈时限 24 小时' : '';
+  const latest = cur === V[V.length - 1], fbOn = !!OKS['fb:' + cur.ver], showOk = !!(S.prog && S.prog.okb) || !!OKS[cur.ver];   // 「没有问题了」要你手动打开才对客户显示
+  const canFb = latest && S.prog && (S.prog.s === 4 || fbOn) && (fbOn || notes.length || $('#overall').value.trim());
   const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
   bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');
   bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题' + (OKN.need > 1 ? '，等其他歌手也确认后进入交付结算' : '，可以准备交付') + '</span><button type="button" class="okundo">撤回</button>'
     : auto ? '<span>✓ 超过反馈时限无意见，已视为没有意见，进入母带交付流程。有想法随时写在下面，会作为交付后微调处理</span>'
     : (() => { const hh = hint && !on ? '<div class="okhint">' + hint + '</div>' : '', txt = leftTxt(ai ? ai.left : 0) + '后自动确认' + (ai && ai.ext ? ' · 已延长 24 小时' : ''),
         f = ai ? Math.max(0, Math.min(1, ai.left / (winH() * 36e5 + (ai.ext ? 864e5 : 0)))) : 0;
-      const btn = '<button type="button" class="okbtn' + (ai ? ' cd' + (ai.left <= 432e5 ? ' late' : '') : '') + '">✓ 这一版没有问题了' + (ai ? '<small>' + txt + '</small><i class="okbar2"><b style="width:' + (f * 100).toFixed(1) + '%"></b></i>' : '') + '</button>';
-      return hh + btn + (ai && !ai.ext && ai.left <= 432e5 ? '<button type="button" class="okext">还需要时间？延长 24 小时</button>' : ''); })();
+      const fb = canFb ? (fbOn ? '<div class="fbok">✓ 已告诉刀大厨：这一版反馈已完毕</div>' : '<button type="button" class="fbbtn">这一版反馈已完毕</button>') : '';
+      const btn = !showOk ? '' : '<button type="button" class="okbtn' + (ai ? ' cd' + (ai.left <= 432e5 ? ' late' : '') : '') + '">✓ 这一版没有问题了' + (ai ? '<small>' + txt + '</small><i class="okbar2"><b style="width:' + (f * 100).toFixed(1) + '%"></b></i>' : '') + '</button>';
+      return (showOk ? hh : '') + btn + fb + (showOk && ai && !ai.ext && ai.left <= 432e5 ? '<button type="button" class="okext">还需要时间？延长 24 小时</button>' : ''); })();
+  if (!bar.innerHTML) bar.hidden = true;
   const set = async flag => { if (flag) OKS[v] = Date.now(); else delete OKS[v]; renderOk();
     try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: flag ? 1 : 0 }) }); } catch (e) {} };
+  const b4 = bar.querySelector('.fbbtn'); if (b4) b4.onclick = async () => {   // 反馈写完了：服务端立刻转修改中、开始算下一版；页面上马上换成下一版预计
+    OKS['fb:' + v] = Date.now();
+    if (S.prog && S.prog.s === 4 && cur === V[V.length - 1]) { const g = S.prog; g.s = 7; g.r = (g.r || 0) + 1; g.at = { ...(g.at || {}), 7: Date.now() };
+      const box = document.querySelector('.sprog .eta'), html = etaBlock(g); if (box) box.outerHTML = html; else { const sp = document.querySelector('.sprog'); if (sp) sp.insertAdjacentHTML('beforeend', html); } }
+    renderOk();
+    try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: 'fb:' + v, lid, on: 1 }) }); } catch (e) {} };
   const b1 = bar.querySelector('.okbtn'); if (b1) b1.onclick = () => set(true);
   const b2 = bar.querySelector('.okundo'); if (b2) b2.onclick = () => set(false);
   const b3 = bar.querySelector('.okext'); if (b3) b3.onclick = async () => { OKS['ext:' + v] = Date.now(); renderOk();   // 最后 12 小时可延长一次 24 小时
