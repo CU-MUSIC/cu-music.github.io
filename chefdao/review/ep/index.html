@@ -105,6 +105,21 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .dropov b{font-size:20px;color:#e6e4e0;font-weight:600}.dropov span{font-size:14px;color:#a9a6a0}
 .dropov .dbar{display:none;width:240px;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px}.dropov.busy .dbar{display:block}
 .dropov .dbar i{display:block;height:100%;width:0;background:#d6d3cd;transition:width .2s}
+.epbar{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));z-index:80;transform:translate(-50%,140%);width:min(560px,calc(100% - 24px));display:flex;align-items:center;gap:10px;padding:10px 10px 10px 10px;border-radius:16px;background:rgba(34,36,40,.86);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 14px 40px rgba(0,0,0,.4);overflow:hidden;transition:transform .42s cubic-bezier(.2,.8,.2,1)}
+.epbar.in{transform:translate(-50%,0)}
+.epbar .epp{position:absolute;left:0;right:0;top:0;height:3px;background:rgba(255,255,255,.08);cursor:pointer}.epbar .epp::before{content:'';position:absolute;inset:-6px 0 -8px}
+.epbar .epp i{display:block;height:100%;width:0;background:#ebe9e5}
+.epbar .epc{width:40px;height:40px;flex:none;border-radius:8px;background:#2b2e33 center/cover}
+.epbar .epi{flex:1;min-width:0;cursor:pointer;color:inherit;text-decoration:none}
+.epbar .epi b{display:block;font-size:14px;font-weight:600;color:#ebe9e5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.epbar .epi span{display:block;font-size:12px;color:#9d9a94;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.epbar .epb{flex:none;width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:50%;background:none;color:#ebe9e5;cursor:pointer;transition:transform .15s}
+.epbar .epb:active{transform:scale(.9)}.epbar .epb svg{width:20px;height:20px;fill:currentColor}
+.epbar .epm{background:#ebe9e5;color:#141518}.epbar .epm .pz{display:none}.epbar.playing .epm .pz{display:block}.epbar.playing .epm .pl{display:none}
+.epbar.loading .epm{opacity:.5}
+.tr.now .n{color:transparent;background:linear-gradient(#ebe9e5,#ebe9e5) 2px 50%/3px 10px no-repeat,linear-gradient(#ebe9e5,#ebe9e5) 8px 50%/3px 14px no-repeat,linear-gradient(#ebe9e5,#ebe9e5) 14px 50%/3px 8px no-repeat}
+.tr.now .t{color:#fff}
+body:has(.epbar.in) .app,body:has(.epbar.in) main{padding-bottom:96px}
 </style>
 </head>
 <body>
@@ -281,9 +296,10 @@ async function open(pw, key) {
     : '<div class="empty">曲目还在准备中</div>');
   // 播放：记下连播顺序，进第一首直接开播；每首放完曲目页自己切到下一首（见 player.js nextInQueue）
   const pa = document.getElementById('pa');
-  if (pa) pa.onclick = e => { e.stopPropagation();
-    try { sessionStorage.setItem('review:queue', JSON.stringify({ pj: slug, list: playable.map(t => ({ s: t.slug, u: t.url })) })); sessionStorage.setItem('review:quick', JSON.stringify({ s: playable[0].slug, play: true })); } catch (er) {}
-    location.href = playable[0].url; };
+  if (pa) pa.onclick = e => { e.stopPropagation(); epPlay(playable, 0); };
+  // 正在项目页里播的那首：点进去曲目页接着放，不从头来
+  document.querySelectorAll('#list .tr').forEach(r => r.addEventListener('click', () => { const x = EP.list[EP.i];
+    if (x && EP.a.src && r.getAttribute('href') === x.url) try { sessionStorage.setItem('review:quick', JSON.stringify({ s: x.slug, play: !EP.a.paused, t: EP.a.currentTime })); EP.a.pause(); } catch (er) {} }));
   if (ls.get('insights:key')) {
     // 你的设备：曲目列表下面「＋ 加曲目」，跳到 Insights 直接打开这个项目的上传窗
     const ad = document.createElement('a'); ad.className = 'addtr'; ad.textContent = '＋ 加曲目 · 或直接把音频拖进来'; ad.href = '/chefdao/review/insights/#up=' + slug; ad.target = '_top';
@@ -321,6 +337,68 @@ function progTag(g) {
   return '<em class="pg"><span class="bar">' + [0, 1, 2, 3, 4, 5].map(i => '<s class="' + (i < BAR[g.s] ? 'd' : i === BAR[g.s] ? 'c' : '') + '"></s>').join('') + '</span>'
     + stageText(g) + (g.s !== 5 && g.s !== 8 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
 }
+// 在项目页直接连播（不跳去曲目页）：每首用记下的密码解开最新一版，放完接下一首；底部一条迷你播放条。听歌统计照常记
+const EP = { a: new Audio(), list: [], i: -1, pre: {}, st: null };
+EP.a.preload = 'auto';
+async function epFetch(t) {   // → { url 解密后的音频, ver, title, wk 统计钥匙, dur }
+  if (EP.pre[t.slug]) return EP.pre[t.slug];
+  return EP.pre[t.slug] = (async () => {
+    const j = await (await fetch(API + '/rs?s=' + t.slug + '&tok=' + tok, { cache: 'no-store', headers: ls.get('insights:key') ? { Authorization: 'Bearer ' + ls.get('insights:key') } : {} })).json();
+    if (!j.ok) throw new Error('song'); const S = j.song, v = S.versions.filter(x => x.ver !== 'REF').pop(); if (!v) throw new Error('empty');
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(ls.get('review:pw:' + t.slug) || 'cu-open'), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: ub64(S.salt), iterations: S.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const au = await (await fetch(v.audio.startsWith('/') ? API + v.audio : v.audio)).arrayBuffer();
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(au, 0, 12) }, key, new Uint8Array(au, 12));
+    let wk = ''; try { if (S.wkey) wk = new TextDecoder().decode(await dec(key, S.wkey)); } catch (e) {}
+    return { url: URL.createObjectURL(new Blob([plain], { type: v.mime || 'audio/mp4' })), ver: v.ver, title: S.title, wk, dur: v.duration || t.dur };
+  })().catch(e => { delete EP.pre[t.slug]; throw e; });
+}
+// 统计：和曲目页一样发到 /e（不带评论），你的设备不记
+const epMe = () => ls.get('insights:key') || ls.get('review:me') === '1';
+function epSend() { const s = EP.st; if (!s || !s.wk || epMe() || s.sec - s.saved < 1) return; s.saved = s.sec;
+  fetch(API + '/e', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ k: s.wk, slug: s.slug, title: s.title, sid: s.sid, ver: s.ver, lid, device, visit: 1,
+    sec: Math.round(s.sec * 10) / 10, dur: s.dur, ends: s.ends, bins: s.bins.map(x => Math.round(x * 10) / 10), notes: 0 }) }).catch(() => {}); }
+let epLast = null;
+EP.a.addEventListener('timeupdate', () => { const s = EP.st, t = EP.a.currentTime; if (s && epLast != null) { const d = t - epLast; if (d > 0 && d < 1.5) { s.sec += d; s.bins[Math.min(59, Math.floor(t / (s.dur || 1) * 60))] += d; } } epLast = t; epBarTime(); });
+EP.a.addEventListener('seeking', () => { epLast = null; });
+EP.a.addEventListener('pause', () => { epSend(); epBarUi(); }); EP.a.addEventListener('play', epBarUi);
+EP.a.addEventListener('ended', () => { if (EP.st) EP.st.ends++; epSend(); if (EP.i + 1 < EP.list.length) epGo(EP.i + 1); else { EP.i = -1; epBarUi(); } });
+setInterval(() => { if (!EP.a.paused) epSend(); }, 30000); addEventListener('pagehide', epSend);
+async function epGo(i) {
+  const t = EP.list[i]; if (!t) return; epSend(); EP.i = i; epBarUi(true);
+  try {
+    const r = await epFetch(t); if (EP.list[EP.i] !== t) return;
+    EP.st = { slug: t.slug, title: r.title, ver: r.ver, wk: r.wk, dur: r.dur, sid: Math.random().toString(36).slice(2, 10) + Date.now().toString(36), sec: 0, saved: 0, ends: 0, bins: new Array(60).fill(0) };
+    epLast = null; EP.a.src = r.url; await EP.a.play().catch(() => {}); epBarUi();
+    if (navigator.mediaSession) { navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist || P.artist || '', album: P.title, artwork: P.cover ? [{ src: API + P.cover, sizes: '512x512' }] : [] });
+      navigator.mediaSession.setActionHandler('previoustrack', () => epPrev()); navigator.mediaSession.setActionHandler('nexttrack', () => epGo(EP.i + 1)); }
+    const nx = EP.list[i + 1]; if (nx) setTimeout(() => epFetch(nx).catch(() => {}), 2500);   // 提前解好下一首，接得上
+  } catch (e) { epBarUi(); const b = document.getElementById('epT'); if (b) b.textContent = '这首没加载出来，点 ▶ 再试'; }
+}
+const epPrev = () => { if (EP.a.currentTime > 3 || EP.i <= 0) EP.a.currentTime = 0; else epGo(EP.i - 1); };
+function epPlay(list, i) { EP.list = list; epGo(i); }
+function epBar() {
+  let b = document.getElementById('epbar'); if (b) return b;
+  b = document.createElement('div'); b.className = 'epbar'; b.id = 'epbar';
+  b.innerHTML = '<div class="epp"><i id="epP"></i></div><div class="epc"' + (P.cover ? ' style="background-image:url(' + API + P.cover + ')"' : '') + '></div><a class="epi" id="epI"><b id="epT"></b><span id="epA"></span></a>'
+    + '<button class="epb" id="epPrev" aria-label="上一首"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5.5v13c0 .8-.9 1.3-1.5.8L9.8 13c-.6-.4-.6-1.4 0-1.8l8.7-6.4c.6-.5 1.5 0 1.5.7z"/></svg></button>'
+    + '<button class="epb epm" id="epPl" aria-label="播放 / 暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg><svg class="pz" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg></button>'
+    + '<button class="epb" id="epNext" aria-label="下一首"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5.5v13c0 .8.9 1.3 1.5.8l8.7-6.3c.6-.4.6-1.4 0-1.8L5.5 4.8C4.9 4.3 4 4.8 4 5.5z"/></svg></button>';
+  document.body.appendChild(b); requestAnimationFrame(() => b.classList.add('in'));
+  b.querySelector('#epPl').onclick = () => { if (EP.i < 0) return epGo(0); EP.a.paused ? EP.a.play() : EP.a.pause(); };
+  b.querySelector('#epPrev').onclick = epPrev; b.querySelector('#epNext').onclick = () => epGo(EP.i + 1);
+  b.querySelector('.epp').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); if (EP.a.duration) EP.a.currentTime = (e.clientX - r.left) / r.width * EP.a.duration; };
+  // 点歌名：进这首的曲目页接着放（写评论、看歌词在那边）
+  b.querySelector('#epI').onclick = () => { const x = EP.list[EP.i]; if (!x) return; try { sessionStorage.setItem('review:quick', JSON.stringify({ s: x.slug, play: !EP.a.paused, t: EP.a.currentTime })); } catch (e) {} EP.a.pause(); location.href = x.url; };
+  return b;
+}
+function epBarUi(loading) {
+  const b = epBar(), t = EP.list[EP.i];
+  b.classList.toggle('playing', !EP.a.paused && !loading); b.classList.toggle('loading', !!loading);
+  b.querySelector('#epT').textContent = t ? t.title : '播放完毕'; b.querySelector('#epA').textContent = t ? (loading ? '加载中…' : (t.artist || P.artist || '')) : '';
+  document.querySelectorAll('#list .tr').forEach(r => r.classList.toggle('now', !!t && r.getAttribute('href') === t.url));
+}
+function epBarTime() { const p = document.getElementById('epP'); if (p && EP.a.duration) p.style.width = (EP.a.currentTime / EP.a.duration * 100) + '%'; }
 // 你的设备：把音频拖到项目页任意位置就加进这个项目。文件名里的歌名和已有曲目一样 → 作为那首的新版本；不一样 → 新建一首（密码跟项目一样）
 function dropAdd() {
   const key = ls.get('insights:key'); let pjInfo = null, libP = null, busy = false;
