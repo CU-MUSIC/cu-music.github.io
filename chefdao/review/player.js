@@ -2008,7 +2008,7 @@ function lyrEdit() {
   p.innerHTML = `<div class="lyh"><b>歌词</b><span id="lyHint">粘贴歌词，一行一句</span><button class="press" id="lyX">关闭</button></div>
     <textarea id="lyTx" placeholder="把歌词粘贴进来，一行一句（空行会去掉）"></textarea>
     <div class="lyl" id="lyL"></div>
-    <div class="lyb"><button class="press go" id="lyTap">开始打点</button><button class="press" id="lyNext" hidden>下一句 · 空格</button><button class="press" id="lyUndo" hidden>撤销</button>
+    <div class="lyb"><button class="press" id="lyAuto" hidden>自动对齐…</button><input type="file" id="lyFile" accept="audio/*,.wav,.aif,.aiff,.m4a,.mp3" hidden><button class="press go" id="lyTap">开始打点</button><button class="press" id="lyNext" hidden>下一句 · 空格</button><button class="press" id="lyUndo" hidden>撤销</button>
       <label>这一版整体偏移<input id="lyOff" type="number" step="0.1" value="${off[cur.ver] || 0}">秒</label><span class="sp"></span><button class="press" id="lyClr">清空</button><button class="press go" id="lySave">保存</button></div>`;
   document.body.appendChild(p);
   const tx = $('#lyTx'), list = $('#lyL'), hint = t => { $('#lyHint').textContent = t; };
@@ -2038,6 +2038,24 @@ function lyrEdit() {
     else seek(Math.max(0, lines[ptr - 1].t - 2));   // 接着上次没打完的地方：从上一句前 2 秒开始
     setTap(true); hint('第 ' + (ptr + 1) + ' / ' + lines.length + ' 句：唱到就按空格'); if (a.paused) a.play(); };
   $('#lyNext').onclick = next;
+  // 自动对齐：只有这台 Mac 上开着本机对齐服务（tools/lyrics-align）才出现。选 / 拖一个纯 vox，回来的 LRC 直接填进去
+  const AL = 'http://127.0.0.1:47821';
+  fetch(AL + '/ping', { signal: AbortSignal.timeout(1500) }).then(r => r.json()).then(j => { if (j.ok && $('#lyAuto')) $('#lyAuto').hidden = false; }).catch(() => {});
+  const auto = async f => {
+    if (!f) return; parse(); if (!lines.length) return hint('先把歌词粘贴进来，再选纯 vox');
+    const b = $('#lyAuto'); b.disabled = true; b.textContent = '对齐中…'; hint('正在听「' + f.name + '」，3 分钟的歌大约 30 秒');
+    try {
+      const r = await fetch(AL + '/align?l=' + encodeURIComponent(lines.map(x => x.x).join('\n')), { method: 'POST', headers: { 'X-Ext': (f.name.split('.').pop() || 'wav').toLowerCase() }, body: f });
+      const j = await r.json(); if (!j.ok) throw new Error(j.e || '没对齐成功');
+      tx.value = j.lrc; tx.oninput();
+      hint('对上 ' + Math.round(j.rate * 100) + '% 的字' + (j.weak.length ? '，第 ' + j.weak.join('、') + ' 句没怎么对上，重点检查' : '，边听边检查一遍再保存'));
+    } catch (e) { hint('自动对齐没成：' + (e.message || '本机服务没开')); }
+    b.disabled = false; b.textContent = '自动对齐…'; };
+  $('#lyAuto').onclick = () => $('#lyFile').click();
+  $('#lyFile').onchange = e => { auto(e.target.files[0]); e.target.value = ''; };
+  // 拖到面板上的音频是给对齐用的，不当成新版本上传
+  ['dragenter', 'dragover'].forEach(ev => p.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+  p.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); if ($('#lyAuto').hidden) return hint('本机对齐服务没开：双击 tools/lyrics-align/安装歌词对齐服务.command'); auto(e.dataTransfer.files[0]); });
   $('#lyUndo').onclick = () => { if (ptr > 0) { ptr--; lines[ptr].t = null; seek(Math.max(0, (ptr > 0 ? lines[ptr - 1].t : 0) || 0)); draw(); preview(); } };
   $('#lyOff').oninput = e => { const v = Math.round((+e.target.value || 0) * 10) / 10; if (v) off[cur.ver] = v; else delete off[cur.ver]; preview(); };
   $('#lyClr').onclick = () => { if (!confirm('清空这首歌的歌词？')) return; tx.value = ''; lines = []; draw(); };
