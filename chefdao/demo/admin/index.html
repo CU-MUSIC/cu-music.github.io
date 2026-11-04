@@ -290,7 +290,7 @@ function renderList() {
     const b = el('button', 'item' + (cur && cur.id === d.id ? ' on' : '')); b.type = 'button';
     const top = el('div', 'it'), tb = el('b', '', d.title); if (bgP && bgP.d.id === d.id) tb.prepend(el('span', 'pl8', '♪')); top.append(tb);
     const [t, src] = shown(d), has = t > 0, sb = el('i', 'scb' + (has ? (t >= 7.5 ? ' hi' : '') : ' no'), has ? f1(t) : '未评分'); if (src) { sb.prepend(el('small', '', src)); sb.title = src === '旧版' ? '旧版四项打分（1–5 分）换算成 10 分制' : '没有逐项打分，这是给歌手的分数'; } top.append(sb); b.append(top);
-    const s = el('span'); s.append(el('i', 'dot ' + (d.pub ? 'done' : d.status === 'heard' ? 'heard' : '')), el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode((d.pick ? '★ ' : '') + d.who + ' · ' + ago(d.ts) + (d.status === 'new' ? ' · 没听过' : '') + (d.friend === 0 ? ' · 未加微信' : '') + (d.notes.length ? ' · ' + d.notes.length + ' 条' : '')));
+    const s = el('span'); s.append(el('i', 'dot ' + (d.pub ? 'done' : d.status === 'heard' ? 'heard' : '')), el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode((d.pick ? '★ ' : '') + d.who + ' · ' + ago(d.ts) + (d.status === 'new' ? ' · 没听过' : '') + (d.friend === 0 ? ' · 未加微信' : '') + (d.pub ? (d.read_last ? ' · 已读' : ' · 未读') : '') + (d.notes.length ? ' · ' + d.notes.length + ' 条' : '')));
     b.append(s); b.onclick = () => open(d); box.append(b);
   });
 }
@@ -543,6 +543,7 @@ function renderMeta() {
   s.append(el('span', 'tag' + (d.kind === 'mem' ? '' : ' g'), d.kind === 'mem' ? '刀门' : '访客'), document.createTextNode(d.who + (d.role ? ' · ' + ROLE[d.role] : '') + ' · ' + ago(d.ts)));
   if (d.link) { const a = el('a', '', '主页 ↗'); a.href = d.link; a.target = '_blank'; a.rel = 'noopener'; a.className = 'lnk'; s.append(a); }
   if (d.pub && d.token) { const cp = el('button', '', '复制反馈链接'); cp.type = 'button'; cp.onclick = async () => { try { await navigator.clipboard.writeText(location.origin + '/chefdao/demo/?t=' + d.token); cp.textContent = '已复制'; setTimeout(() => cp.textContent = '复制反馈链接', 1800); } catch (e) { cp.textContent = location.origin + '/chefdao/demo/?t=' + d.token; } }; s.append(cp); }
+  if (d.pub) s.append(el('span', 'tag', d.read_last ? '已读 · ' + ago(d.read_last) + '看过' : '歌手还没看'));
   // 微信：不是好友的会留微信号，点一下复制去微信搜；加上之后点「已加好友」
   if (d.friend === 1) s.append(el('span', 'tag', '微信好友'));
   if (d.contact && d.friend !== 1) { const w = el('button', '', '微信 ' + d.contact + ' · 复制'); w.type = 'button'; w.onclick = async () => { try { await navigator.clipboard.writeText(d.contact); w.textContent = '已复制 ' + d.contact; setTimeout(() => w.textContent = '微信 ' + d.contact + ' · 复制', 1800); } catch (e) { w.textContent = d.contact; } }; s.append(w); }
