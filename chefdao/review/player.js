@@ -1965,7 +1965,10 @@ function lyrStep(force) {
   const L = LYR && LYR.lines; if (!L) return;
   const t = curTime() - lyrOff() + 0.05; let i = -1;
   for (let k = 0; k < L.length; k++) { if (L[k].t != null && L[k].t <= t) i = k; else if (L[k].t != null && L[k].t > t) break; }
-  const fs = $('#lyfs'); if (fs) { const d = dur() || 1; fs.querySelector('.fpb i').style.width = Math.min(100, curTime() / d * 100) + '%'; fs.querySelector('.fcur').textContent = fmt(curTime()); fs.classList.toggle('playing', !a.paused); }
+  const fs = $('#lyfs'); if (fs) {   // 进度条用 scaleX（不触发排版），时间每秒才改一次字
+    const d = dur() || 1, ct = curTime(); fs.querySelector('.fpb i').style.transform = 'scaleX(' + Math.min(1, ct / d) + ')';
+    const tx = fmt(ct); if (fs._t !== tx) { fs._t = tx; fs.querySelector('.fcur').textContent = tx; }
+    const pl = !a.paused; if (fs._p !== pl) { fs._p = pl; fs.classList.toggle('playing', pl); } }
   if (i === lyrIdx && !force) return; lyrIdx = i; lyrSync(i);
 }
 // 自动跟唱：框本身不滚（overflow hidden），整层歌词 .lyin 用 transform 平移到「当前句在中间」——纯合成层动画，手机上也不会跳帧。
@@ -1993,7 +1996,8 @@ function lyrScroll(box, to) {
   inn.style.transform = 'translate3d(0,' + (-tgt) + 'px,0)';
 }
 function lyrSync(i) {
-  document.querySelectorAll('.lyrs').forEach(box => {
+  const fs = $('#lyfs');
+  (fs ? fs.querySelectorAll('.lyrs') : document.querySelectorAll('.lyrs')).forEach(box => {   // 全屏时只动全屏这一层，背后那份不跟着滚
     lyrHold(box);
     box.querySelectorAll('.ln').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); d.classList.toggle('near', k === i + 1); });
     const on = box.querySelector('.ln.on');
@@ -2017,10 +2021,11 @@ function lyrFull() {
   f.querySelector('.fpb').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); seek((e.clientX - r.left) / r.width * dur()); };
   f._key = e => { if (e.key === 'Escape') lyrFullClose(); }; document.addEventListener('keydown', f._key);
   requestAnimationFrame(() => { f.classList.add('in'); lyrIdx = -2; });
+  setTimeout(() => { if ($('#lyfs') === f) document.documentElement.classList.add('lyfs-done'); }, 380);   // 全屏铺满后把背后的页面藏起来，手机少合成一整页
 }
 function lyrFullClose() {
   const f = $('#lyfs'); if (!f) return; document.removeEventListener('keydown', f._key);
-  f.classList.remove('in'); document.documentElement.classList.remove('lyfs-on'); setTimeout(() => f.remove(), 320);
+  f.classList.remove('in'); document.documentElement.classList.remove('lyfs-on', 'lyfs-done'); setTimeout(() => { f.remove(); lyrIdx = -2; lyrStep(true); }, 320);   // 回到页面：外面那份歌词对齐到当前句
 }
 async function lyrSeal(obj) {
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(store.get(PW_KEY) || OPEN), 'PBKDF2', false, ['deriveKey']);

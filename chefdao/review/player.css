@@ -773,3 +773,7 @@ html.lyfs-on,html.lyfs-on body{overflow:hidden}
 }
 .lyin{will-change:transform}
 .lyr.timed .lyrs,.lyfs .lyrs{overflow:hidden;touch-action:pan-x}
+/* 全屏歌词省电：背景先缩成 1/4 再模糊、放大回来（看起来一样，开销约 1/16）；进度条用 transform；铺满后背后页面不画 */
+.lyfs .fbg{inset:auto;left:50%;top:50%;width:40vmax;height:40vmax;margin:-20vmax 0 0 -20vmax;filter:blur(14px) saturate(1.2) brightness(.45);transform:scale(3.2);transform-origin:center}
+.lyfs .fpb i{width:100%;transform:scaleX(0);transform-origin:left center;will-change:transform}
+html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
