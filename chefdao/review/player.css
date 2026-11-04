@@ -757,3 +757,11 @@ html.lyfs-on,html.lyfs-on body{overflow:hidden}
 .lyfs .lc{flex:none;padding:4px 12px;border-radius:999px;opacity:0;transition:opacity .2s}
 .lyfs .ln:hover .lc,.lyfs .ln.on .lc{opacity:1}
 @media (hover:none){.lyfs .ln:not(.on) .lc{display:none}}
+/* 歌词动效：颜色和大小一起过渡，下一句稍亮一点（提示要来了），唱过的更暗 */
+.lyr .ln,.lyfs .ln{transition:color .45s cubic-bezier(.2,.8,.2,1),opacity .45s cubic-bezier(.2,.8,.2,1)}
+.lyr .ln span,.lyfs .ln span{transition:transform .5s cubic-bezier(.2,.8,.2,1);will-change:transform}
+.lyr .ln.near{color:var(--text-2)}.lyfs .ln.near{color:rgba(236,235,232,.55)}
+.lyr .ln.past{opacity:.5}.lyfs .ln.past{opacity:.6}
+.lyrs{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@media (prefers-reduced-motion:reduce){.lyr .ln span,.lyfs .ln span{transition:none}}
+.lyr.timed .lyrs{padding:110px 0}

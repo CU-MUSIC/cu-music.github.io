@@ -1958,19 +1958,36 @@ function lyrBind(el, L) {
     seek(t); if (a.paused && !$('#play').disabled) a.play();
   });
 }
-function lyrTick() {
-  lyrRaf = requestAnimationFrame(lyrTick);
+function lyrTick() { lyrRaf = requestAnimationFrame(lyrTick); lyrStep(); }
+a.addEventListener('timeupdate', () => lyrStep());   // 后台 / 锁屏回来时 rAF 停过：靠播放进度补上
+a.addEventListener('seeked', () => { lyrIdx = -2; lyrStep(true); });
+function lyrStep(force) {
   const L = LYR && LYR.lines; if (!L) return;
   const t = curTime() - lyrOff() + 0.05; let i = -1;
   for (let k = 0; k < L.length; k++) { if (L[k].t != null && L[k].t <= t) i = k; else if (L[k].t != null && L[k].t > t) break; }
   const fs = $('#lyfs'); if (fs) { const d = dur() || 1; fs.querySelector('.fpb i').style.width = Math.min(100, curTime() / d * 100) + '%'; fs.querySelector('.fcur').textContent = fmt(curTime()); fs.classList.toggle('playing', !a.paused); }
-  if (i === lyrIdx) return; lyrIdx = i; lyrSync(i);
+  if (i === lyrIdx && !force) return; lyrIdx = i; lyrSync(i);
+}
+// 自动滚动：当前这句滚到框中间，自己写缓动（各家浏览器 smooth 手感不一）。手指 / 滚轮在歌词上动过就先不抢，停 2.5 秒后再回到正在唱的那句
+function lyrHold(box) {
+  if (box._held) return; box._held = true;
+  const hold = () => { box._hold = performance.now() + 2500; cancelAnimationFrame(box._sa); clearTimeout(box._ht); box._ht = setTimeout(() => lyrSync(lyrIdx), 2600); };
+  ['wheel', 'touchstart', 'touchmove', 'pointerdown'].forEach(ev => box.addEventListener(ev, hold, { passive: true }));
+}
+function lyrScroll(box, to) {
+  cancelAnimationFrame(box._sa);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { box.scrollTop = to; return; }
+  const from = box.scrollTop, d = Math.max(0, Math.min(box.scrollHeight - box.clientHeight, to)) - from; if (Math.abs(d) < 1) return;
+  const t0 = performance.now(), T = Math.min(700, 380 + Math.abs(d) * .6), ease = x => 1 - Math.pow(1 - x, 4);   // 远的滚久一点，结尾慢慢停
+  const step = now => { const x = Math.min(1, (now - t0) / T); box.scrollTop = from + d * ease(x); if (x < 1) box._sa = requestAnimationFrame(step); };
+  box._sa = requestAnimationFrame(step);
 }
 function lyrSync(i) {
   document.querySelectorAll('.lyrs').forEach(box => {
-    box.querySelectorAll('.ln').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); });
+    lyrHold(box);
+    box.querySelectorAll('.ln').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); d.classList.toggle('near', k === i + 1); });
     const on = box.querySelector('.ln.on');
-    if (on && !box.matches(':hover')) box.scrollTo({ top: on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2, behavior: 'smooth' });   // 鼠标在歌词上就不抢滚动
+    if (on && !(box._hold > performance.now())) lyrScroll(box, on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2);
   });
 }
 // 全屏歌词（Spotify 那样）：封面糊成背景，大字歌词跟着走，底下播放 / 进度；Esc 或 ⌄ 退出
