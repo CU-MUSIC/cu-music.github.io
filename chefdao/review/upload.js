@@ -76,7 +76,9 @@ async function cuUpload(o) {
   const file = o.file, buf = await file.arrayBuffer();
   step('分析波形…'); bar(.12);
   const AC = window.AudioContext || window.webkitAudioContext;
-  const srcRate = wavRate(buf), want = srcRate === 44100 || srcRate === 48000 ? srcRate : 48000;
+  const ext0 = (file.name.split('.').pop() || '').toLowerCase(), big = buf.byteLength > 25 * 1048576 && ['m4a', 'mp4', 'aac', 'mp3'].includes(ext0);
+  // 很长的 m4a / mp3（不用重新编码）：只为画波形解码，用 16k 采样率解，内存少 2/3（40 分钟的歌全采样率要将近 1GB，页面会崩）
+  const srcRate = wavRate(buf), want = big ? 16000 : srcRate === 44100 || srcRate === 48000 ? srcRate : 48000;
   let ac; try { ac = new AC({ sampleRate: want }); } catch (e) { ac = new AC(); }
   const au = await new Promise((ok, no) => { const p = ac.decodeAudioData(buf.slice(0), ok, no); if (p && p.catch) p.catch(no); });
   const N = 400, ch = [...Array(au.numberOfChannels)].map((_, i) => au.getChannelData(i)), len = au.length, pk = [];
@@ -84,7 +86,7 @@ async function cuUpload(o) {
     for (const c of ch) for (let j = a; j < b; j += 2) { const v = c[j] < 0 ? -c[j] : c[j]; if (v > mx) mx = v; } pk.push(mx); }
   const pm = Math.max(...pk) || 1, peaks = pk.map(v => Math.round(v / pm * 100) / 100);
   step('测响度…');
-  let lufs; try { await loadLib('lufs.js', 'cuLufs'); lufs = await cuLufs(au); } catch (e) {}
+  let lufs; if (!big) try { await loadLib('lufs.js', 'cuLufs'); lufs = await cuLufs(au); } catch (e) {}   // 低采样率解出来的不测响度
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   let bytes, mime;
   if (ext === 'mp3') { bytes = new Uint8Array(buf); mime = 'audio/mpeg'; }
@@ -106,14 +108,6 @@ async function cuUpload(o) {
     });
     mime = 'audio/mpeg';
   }
-  // 存储每个文件最多 25MB（AAC 320k 约 10 分钟）。长歌超了：按时长算一个刚好放得下的码率重新压（256k 约 13 分钟、192k 约 17 分钟，审听听不出差别；最低 128k）
-  const LIM = 24.6 * 1048576;
-  if (bytes.length > LIM && await aacOk(au)) {
-    const kbps = Math.min(320, Math.floor(LIM * 8 / au.duration / 1000 * .96 / 32) * 32);
-    if (kbps < 128) throw new Error('歌太长（' + Math.round(au.duration / 60) + ' 分钟），超过能存的上限，分成两段再传');
-    step('文件超过 25MB，压成 AAC ' + kbps + 'k…');
-    bytes = await toM4A(au, p => bar(.15 + p * .45), kbps * 1000); mime = 'audio/mp4';
-  }
   if (ac.close) ac.close();
   step('加密…'); bar(.62);
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(prep.pass || 'cu-open'), 'PBKDF2', false, ['deriveKey']);   // 不设密码：用公开口令
@@ -121,21 +115,27 @@ async function cuUpload(o) {
   const seal = async u8 => { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, u8));
     const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return out; };
   const blob = await seal(bytes);
-  if (blob.length > 25 * 1048576) throw new Error('文件太大（超过 25MB），请导出 m4a 或 mp3 再传');
+  // 存储单块最多 25MB：超了就切成几块传（服务端按顺序接回一个文件），音质不动。最多 8 块（约 190MB，320k 约 80 分钟）
+  const PART = 24 * 1048576, nParts = Math.ceil(blob.length / PART);
+  if (nParts > 8) throw new Error('文件太大（' + Math.round(blob.length / 1048576) + 'MB），超过 190MB 的上限');
   let ver = (String(o.ver || '').trim().toUpperCase().replace(/^(\d)/, 'V$1')) || prep.next;
   // 和已有版本同号、但阶段不同（Mix V1 撞上 Edit V1）：不覆盖，顺延成下一个空号
   const clash = (prep.vers || []).find(x => x.ver === ver);
   if (clash && cuStage(clash.file) !== cuStage(cuNameInfo(file.name).raw)) ver = prep.next;
   if (!/^(V\d{1,3}|REF)$/.test(ver)) throw new Error('版本要写成 V1、V2 这样');
   const fname = ver.toLowerCase() + '-' + [...crypto.getRandomValues(new Uint8Array(8))].map(b => 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 55]).join('') + '.bin';
-  step('上传…'); bar(.7);
-  await new Promise((ok, no) => {   // 用 XHR 才有上传进度
-    const x = new XMLHttpRequest(); x.open('PUT', o.api + '/radm/audio?s=' + prep.slug + '&f=' + fname);
-    x.setRequestHeader('Authorization', 'Bearer ' + o.key); x.setRequestHeader('Content-Type', 'application/octet-stream');
-    x.upload.onprogress = e => { if (e.lengthComputable) bar(.7 + e.loaded / e.total * .27); };
-    x.onload = () => x.status === 200 ? ok() : no(new Error(x.status === 413 ? '文件太大（超过 25MB）' : '上传失败 ' + x.status));
-    x.onerror = () => no(new Error('网络断了，再试一次')); x.send(blob);
-  });
+  step(nParts > 1 ? '上传（' + Math.round(blob.length / 1048576) + 'MB，分 ' + nParts + ' 块）…' : '上传…'); bar(.7);
+  for (let pi = 0; pi < nParts; pi++) {
+    const part = nParts > 1 ? blob.subarray(pi * PART, Math.min(blob.length, (pi + 1) * PART)) : blob;
+    const q = nParts > 1 ? '&p=' + pi + '&n=' + nParts + '&t=' + blob.length : '';
+    await new Promise((ok, no) => {   // 用 XHR 才有上传进度
+      const x = new XMLHttpRequest(); x.open('PUT', o.api + '/radm/audio?s=' + prep.slug + '&f=' + fname + q);
+      x.setRequestHeader('Authorization', 'Bearer ' + o.key); x.setRequestHeader('Content-Type', 'application/octet-stream');
+      x.upload.onprogress = e => { if (e.lengthComputable) bar(.7 + (pi + e.loaded / e.total) / nParts * .27); };
+      x.onload = () => x.status === 200 ? ok() : no(new Error(x.status === 413 ? '文件太大' : '上传失败 ' + x.status));
+      x.onerror = () => no(new Error('网络断了，再试一次')); x.send(part);
+    });
+  }
   const n = cuNameInfo(file.name), date = /^\d{4}-\d{2}-\d{2}$/.test(o.date || '') ? o.date : new Date().toLocaleDateString('sv-SE');
   const te = new TextEncoder();
   const res = await api('/radm/commit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
