@@ -777,3 +777,8 @@ html.lyfs-on,html.lyfs-on body{overflow:hidden}
 .lyfs .fbg{inset:auto;left:50%;top:50%;width:40vmax;height:40vmax;margin:-20vmax 0 0 -20vmax;filter:blur(14px) saturate(1.2) brightness(.45);transform:scale(3.2);transform-origin:center}
 .lyfs .fpb i{width:100%;transform:scaleX(0);transform-origin:left center;will-change:transform}
 html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
+/* 「评论」不占排版：贴在每行右边，文字永远给它留同样的位置。出现 / 消失只改透明度，长句不会因为它换行跳动 */
+.lyr .ln,.lyfs .ln{position:relative;padding-right:58px}
+.lyr .lc,.lyfs .lc{position:absolute;right:0;top:50%;transform:translateY(-50%);display:block!important;opacity:0;pointer-events:none;transition:opacity .25s}
+.lyr .ln.on .lc,.lyfs .ln.on .lc{opacity:1;pointer-events:auto}
+@media (hover:hover){.lyr .ln:hover .lc,.lyfs .ln:hover .lc{opacity:1;pointer-events:auto}}
