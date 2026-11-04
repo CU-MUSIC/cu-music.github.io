@@ -27,7 +27,7 @@ function wavRate(buf) {
     for (let p = 12; p + 8 < d.byteLength;) { const id = d.getUint32(p), n = d.getUint32(p + 4, true); if (id === 0x666d7420) return d.getUint32(p + 12, true); p += 8 + n + (n & 1); }
   } catch (e) {} return 0;
 }
-const AAC = (au) => ({ codec: 'mp4a.40.2', sampleRate: au.sampleRate, numberOfChannels: Math.min(2, au.numberOfChannels), bitrate: 320000 });
+const AAC = (au, br = 320000) => ({ codec: 'mp4a.40.2', sampleRate: au.sampleRate, numberOfChannels: Math.min(2, au.numberOfChannels), bitrate: br });
 async function aacOk(au) {
   try { return !!(window.AudioEncoder && (await AudioEncoder.isConfigSupported(AAC(au))).supported); } catch (e) { return false; }
 }
@@ -40,9 +40,9 @@ function loadMuxer() {
     s.src = new URL('enc/mp4-muxer.min.js', here).href; s.onload = ok; s.onerror = () => no(new Error('m4a')); document.head.appendChild(s); });
 }
 // AAC 320k 编码 + 封装成 m4a（fastStart，边下边播）
-async function toM4A(au, onp) {
+async function toM4A(au, onp, br) {
   await loadMuxer();
-  const cfg = AAC(au), nch = cfg.numberOfChannels, sr = au.sampleRate, len = au.length;
+  const cfg = AAC(au, br), nch = cfg.numberOfChannels, sr = au.sampleRate, len = au.length;
   const target = new Mp4Muxer.ArrayBufferTarget();
   const mux = new Mp4Muxer.Muxer({ target, audio: { codec: 'aac', numberOfChannels: nch, sampleRate: sr }, fastStart: 'in-memory' });
   let err = null;
@@ -105,6 +105,14 @@ async function cuUpload(o) {
       w.postMessage({ id: 1, L, R, rate: au.sampleRate, kbps: 320 }, R ? [L.buffer, R.buffer] : [L.buffer]);
     });
     mime = 'audio/mpeg';
+  }
+  // 存储每个文件最多 25MB（AAC 320k 约 10 分钟）。长歌超了：按时长算一个刚好放得下的码率重新压（256k 约 13 分钟、192k 约 17 分钟，审听听不出差别；最低 128k）
+  const LIM = 24.6 * 1048576;
+  if (bytes.length > LIM && await aacOk(au)) {
+    const kbps = Math.min(320, Math.floor(LIM * 8 / au.duration / 1000 * .96 / 32) * 32);
+    if (kbps < 128) throw new Error('歌太长（' + Math.round(au.duration / 60) + ' 分钟），超过能存的上限，分成两段再传');
+    step('文件超过 25MB，压成 AAC ' + kbps + 'k…');
+    bytes = await toM4A(au, p => bar(.15 + p * .45), kbps * 1000); mime = 'audio/mp4';
   }
   if (ac.close) ac.close();
   step('加密…'); bar(.62);

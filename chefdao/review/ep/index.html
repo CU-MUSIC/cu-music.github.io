@@ -402,7 +402,7 @@ function epBarTime() { const p = document.getElementById('epP'); if (p && EP.a.d
 // 你的设备：把音频拖到项目页任意位置就加进这个项目。文件名里的歌名和已有曲目一样 → 作为那首的新版本；不一样 → 新建一首（密码跟项目一样）
 function dropAdd() {
   const key = ls.get('insights:key'); let pjInfo = null, libP = null, busy = false;
-  const lib = () => libP || (libP = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => libP || (libP = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261104b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   const ov = document.createElement('div'); ov.className = 'dropov'; ov.innerHTML = '<div><b>松手加进《' + esc(P.title) + '》</b><span id="dropMsg">同名的歌作为新版本，其他新建曲目</span><i class="dbar"><i id="dropBar"></i></i></div>'; document.body.appendChild(ov);
   const isAudio = e => [...(e.dataTransfer && e.dataTransfer.items || [])].some(x => x.kind === 'file');
   let depth = 0;
