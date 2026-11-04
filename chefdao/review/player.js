@@ -1969,21 +1969,20 @@ function lyrStep(force) {
   if (i === lyrIdx && !force) return; lyrIdx = i; lyrSync(i);
 }
 // 自动跟唱：框本身不滚（overflow hidden），整层歌词 .lyin 用 transform 平移到「当前句在中间」——纯合成层动画，手机上也不会跳帧。
-// 手指 / 滚轮一碰：把当前位移换成真的滚动位置、放开滚动给你划；停手 2.5 秒后换回来，再滑到正在唱的那句
+// 只有真的拖动（手指移动超过 6px）或滚轮才算「自己在看」：拖动直接改位移（不切换系统滚动，不跳），松手 2 秒后再滑回正在唱的那句。轻点一句不算
 const lyrY = inn => new DOMMatrixReadOnly(getComputedStyle(inn).transform).m42 || 0;
-function lyrAuto(box) {
-  const inn = box.querySelector('.lyin'); if (!inn) return;
-  const st = box.scrollTop; box._man = false; box.classList.remove('man');
-  box.scrollTop = 0; inn.style.transition = 'none'; inn.style.transform = 'translate3d(0,' + (-st) + 'px,0)'; void inn.offsetHeight;
-}
+const lyrMax = (box, inn) => Math.max(0, inn.offsetHeight + inn.offsetTop * 2 - box.clientHeight);
 function lyrHold(box) {
-  if (box._held) return; box._held = true; lyrAuto(box);
-  const hold = () => {
-    clearTimeout(box._ht); box._ht = setTimeout(() => { lyrAuto(box); lyrSync(lyrIdx); }, 2500);
-    if (box._man) return; const inn = box.querySelector('.lyin'), y = inn ? lyrY(inn) : 0;
-    box._man = true; box.classList.add('man'); if (inn) { inn.style.transition = 'none'; inn.style.transform = ''; } box.scrollTop = -y;
-  };
-  ['wheel', 'touchstart', 'pointerdown'].forEach(ev => box.addEventListener(ev, hold, { passive: true }));
+  if (box._held) return; box._held = true;
+  const inn = () => box.querySelector('.lyin');
+  const put = y => { const n = inn(); if (!n) return; n.style.transition = 'none'; n.style.transform = 'translate3d(0,' + Math.max(-lyrMax(box, n), Math.min(0, y)) + 'px,0)'; };
+  const back = ms => { clearTimeout(box._ht); box._ht = setTimeout(() => { box._man = false; lyrSync(lyrIdx); }, ms); };
+  let sy = 0, base = 0, drag = false;
+  box.addEventListener('touchstart', e => { const n = inn(); if (!n) return; sy = e.touches[0].clientY; base = lyrY(n); drag = false; }, { passive: true });
+  box.addEventListener('touchmove', e => { const dy = e.touches[0].clientY - sy; if (!drag && Math.abs(dy) < 6) return;
+    if (!drag) { drag = true; box._man = true; clearTimeout(box._ht); } e.preventDefault(); put(base + dy); }, { passive: false });
+  box.addEventListener('touchend', () => { if (drag) back(2000); }, { passive: true });
+  box.addEventListener('wheel', e => { const n = inn(); if (!n) return; e.preventDefault(); box._man = true; put(lyrY(n) - e.deltaY); back(2000); }, { passive: false });
 }
 function lyrScroll(box, to) {
   const inn = box.querySelector('.lyin'); if (!inn || box._man) return;

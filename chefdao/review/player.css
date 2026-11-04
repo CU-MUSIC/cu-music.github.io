@@ -772,4 +772,4 @@ html.lyfs-on,html.lyfs-on body{overflow:hidden}
   .lyr .ln span,.lyfs .ln span{transition:none}
 }
 .lyin{will-change:transform}
-.lyr.timed .lyrs,.lyfs .lyrs{overflow:hidden}.lyr.timed .lyrs.man,.lyfs .lyrs.man{overflow-y:auto}
+.lyr.timed .lyrs,.lyfs .lyrs{overflow:hidden;touch-action:pan-x}
