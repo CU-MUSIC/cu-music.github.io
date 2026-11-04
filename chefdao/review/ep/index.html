@@ -98,6 +98,7 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .pyr .a{color:var(--text)}.pyr .ok{color:var(--text)}.pyr .due{color:#e2b26f}
 .boot{color:var(--text-3);font-size:15px;margin-top:30vh}
 .pge{display:flex;gap:6px;flex-wrap:wrap;margin:-2px 0 10px;font-size:12px;color:var(--text-3,#888)}.pge label{display:inline-flex;align-items:center;gap:4px}.pge input{font-size:12px;max-width:128px}
+.addtr{display:block;margin:10px 0 4px;padding:12px;border:1px dashed rgba(255,255,255,.16);border-radius:12px;text-align:center;font-size:14px;color:var(--text-2,#a9a6a0);text-decoration:none;transition:background .15s,color .15s}.addtr:hover{background:rgba(255,255,255,.05);color:var(--text,#e6e4e0)}
 </style>
 </head>
 <body>
@@ -277,7 +278,11 @@ async function open(pw, key) {
   if (pa) pa.onclick = e => { e.stopPropagation();
     try { sessionStorage.setItem('review:queue', JSON.stringify({ pj: slug, list: playable.map(t => ({ s: t.slug, u: t.url })) })); sessionStorage.setItem('review:quick', JSON.stringify({ s: playable[0].slug, play: true })); } catch (er) {}
     location.href = playable[0].url; };
-  if (ls.get('insights:key')) { progPanel(); payPanel();
+  if (ls.get('insights:key')) {
+    // 你的设备：曲目列表下面「＋ 加曲目」，跳到 Insights 直接打开这个项目的上传窗
+    const ad = document.createElement('a'); ad.className = 'addtr'; ad.textContent = '＋ 加曲目'; ad.href = '/chefdao/review/insights/#up=' + slug; ad.target = '_top';
+    document.getElementById('list').appendChild(ad);
+    progPanel(); payPanel();
     const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261029k';
     sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), tracks: P.tracks.map(t => ({ slug: t.slug, artist: t.artist })), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
     document.head.appendChild(sc); }

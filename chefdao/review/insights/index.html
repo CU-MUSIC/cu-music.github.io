@@ -305,7 +305,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261024"></script>
 <script>
 (() => {
-const BUILD = '261104.0100';
+const BUILD = '261104.0700';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -323,6 +323,7 @@ const mins = s => s < 60 ? Math.round(s) + ' 秒' : Math.floor(s / 60) + ' 分 '
 // 打开过看板的设备就是刀大厨自己的，审听页不再统计这台设备
 store.set('review:me', '1');
 
+const UPTO = (/[#&]up=([a-z0-9-]{1,40})/.exec(location.hash) || [])[1] || '';   // 项目页点「＋ 加曲目」带过来：打开就进这个项目的上传窗
 const m = /[#&]k=([\w-]+)/.exec(location.hash);
 if (m) { store.set('insights:key', m[1]); history.replaceState(null, '', location.pathname); }
 if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
@@ -425,6 +426,7 @@ async function load() {
     const [r, r2, r3] = await Promise.all([fetch(API + '/q?days=90', auth), fetch(API + '/pq?days=90', auth).catch(() => null), fetch(API + '/radm/list', auth).catch(() => null)]);
     const j3 = r3 && r3.ok ? await r3.json().catch(() => null) : null;
     try { const jl = await (await fetch(API + '/lib', auth)).json(); if (jl.ok) { LIB = jl; setTimeout(ensureWraps, 1500); } } catch (e) {}
+    if (UPTO && !window.__upDone) { window.__upDone = 1; const p = LIB.projects.find(x => x.slug === UPTO); if (p) { history.replaceState(null, '', location.pathname); setTimeout(() => openUpload({ project: p }), 300); } }
     if (j3 && j3.ok) RSONGS = j3.songs;
     if (r.status === 401) { store.del('insights:key'); KEY = null; return login(true); }
     const j = await r.json(); if (!j.ok) throw new Error();
