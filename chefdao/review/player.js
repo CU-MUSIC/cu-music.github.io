@@ -2015,13 +2015,18 @@ function lyrEdit() {
   tx.value = lines.map(x => x.x).join('\n');
   const parse = () => { const rows = tx.value.split('\n').map(s => s.trim()).filter(Boolean);
     lines = rows.map((x, i) => ({ x, t: lines[i] && lines[i].x === x ? lines[i].t : (lines[i] ? lines[i].t : null) })); draw(); };
-  const draw = () => { list.innerHTML = lines.map((x, i) => `<div class="lr${tap && i === ptr ? ' cur' : ''}" data-i="${i}"><button class="lt press" title="设成现在的播放位置">${x.t == null ? '—' : fmt(x.t) + '.' + Math.floor((x.t % 1) * 10)}</button><button class="lm press" data-d="-0.1">−</button><button class="lm press" data-d="0.1">＋</button><span>${esc(x.x)}</span></div>`).join('');
+  const draw = () => { list.innerHTML = lines.map((x, i) => `<div class="lr${tap && i === ptr ? ' cur' : ''}" data-i="${i}"><button class="lt press" title="设成现在的播放位置">${x.t == null ? '—' : fmt(x.t) + '.' + (Math.round(x.t * 10) % 10)}</button><button class="lm press" data-d="-0.1">−</button><button class="lm press" data-d="0.1">＋</button><span>${esc(x.x)}</span></div>`).join('');
     list.querySelectorAll('.lr').forEach(r => { const i = +r.dataset.i;
       r.querySelector('.lt').onclick = () => { lines[i].t = Math.round(curTime() * 10) / 10; draw(); };
       r.querySelectorAll('.lm').forEach(b => b.onclick = () => { if (lines[i].t == null) return; lines[i].t = Math.max(0, Math.round((lines[i].t + +b.dataset.d) * 10) / 10); seek(lines[i].t); draw(); });
       r.querySelector('span').onclick = () => { if (lines[i].t != null) seek(lines[i].t); }; });
     const c = list.querySelector('.lr.cur'); if (c) c.scrollIntoView({ block: 'nearest' }); };
-  tx.oninput = parse;
+  // 贴进来的是 LRC（[01:23.45]歌词，本地「对齐歌词」工具的输出）：时间直接填上，文本框里只留歌词
+  tx.oninput = () => { const R = /^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)$/, rows = tx.value.split('\n').map(x => x.trim()).filter(Boolean);
+    if (rows.length && rows.filter(x => R.test(x)).length >= rows.length / 2) {
+      lines = rows.map(x => { const m = R.exec(x); return m ? { x: m[3], t: Math.round((+m[1] * 60 + +m[2]) * 10) / 10 } : { x, t: null }; }).filter(x => x.x);
+      tx.value = lines.map(x => x.x).join('\n'); draw(); preview(); hint('已按 LRC 填好 ' + lines.filter(x => x.t != null).length + ' 句时间，边听边检查'); return; }
+    parse(); };
   const preview = () => { LYR = { lines, off }; lyrDraw(); };
   const next = () => { if (!tap || ptr >= lines.length) return; lines[ptr].t = Math.max(0, Math.round((curTime() - 0.15) * 10) / 10); ptr++; draw(); preview();   // 按键比开口晚一点：往前补 0.15 秒
     if (ptr >= lines.length) { setTap(false); hint('打完了，检查一下再保存'); } else hint('第 ' + (ptr + 1) + ' / ' + lines.length + ' 句：唱到就按空格'); };
