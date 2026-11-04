@@ -1974,9 +1974,11 @@ function lyrHold(box) {
   const hold = () => { box._hold = performance.now() + 2500; cancelAnimationFrame(box._sa); clearTimeout(box._ht); box._ht = setTimeout(() => lyrSync(lyrIdx), 2600); };
   ['wheel', 'touchstart', 'touchmove', 'pointerdown'].forEach(ev => box.addEventListener(ev, hold, { passive: true }));
 }
+const TOUCH = matchMedia('(hover: none)').matches;
 function lyrScroll(box, to) {
   cancelAnimationFrame(box._sa);
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { box.scrollTop = to; return; }
+  if (TOUCH) { box.scrollTo({ top: to, behavior: 'smooth' }); return; }   // 手机：交给系统的平滑滚动（合成线程跑，不卡），不用脚本逐帧改 scrollTop
   const from = box.scrollTop, d = Math.max(0, Math.min(box.scrollHeight - box.clientHeight, to)) - from; if (Math.abs(d) < 1) return;
   const t0 = performance.now(), T = Math.min(700, 380 + Math.abs(d) * .6), ease = x => 1 - Math.pow(1 - x, 4);   // 远的滚久一点，结尾慢慢停
   const step = now => { const x = Math.min(1, (now - t0) / T); box.scrollTop = from + d * ease(x); if (x < 1) box._sa = requestAnimationFrame(step); };
