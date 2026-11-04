@@ -1941,28 +1941,58 @@ function lyrDraw() {
   const L = LYR && LYR.lines && LYR.lines.length ? LYR.lines : null;
   el.hidden = !L; lyrIdx = -2; if (!L) { cancelAnimationFrame(lyrRaf); return; }
   const timed = L.some(x => x.t != null);
-  el.innerHTML = '<div class="lyrs">' + L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('') + '</div>';
+  el.innerHTML = (timed ? '<button class="lyx press" aria-label="全屏歌词"><span>歌词</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>' : '') + '<div class="lyrs">' + L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('') + '</div>';
   el.classList.toggle('timed', timed);
+  const fx = el.querySelector('.lyx'); if (fx) fx.onclick = lyrFull;
+  lyrBind(el, L);
+  cancelAnimationFrame(lyrRaf); if (timed) lyrTick();
+}
+// 点一句跳过去；「评论」对这一句写意见（全屏里点评论会先退出全屏）
+function lyrBind(el, L) {
   el.querySelectorAll('.ln').forEach(d => d.onclick = e => {
     const x = L[+d.dataset.i]; if (x.t == null) return; const t = Math.max(0, x.t + lyrOff());
     if (e.target.closest('.lc')) {   // 对这一句写评论：时间点锁在这句开头，引用这句歌词
-      seek(t); locked = Math.floor(t); $('#stampT').textContent = fmt(locked); $('#stamp').classList.add('locked');
+      lyrFullClose(); seek(t); locked = Math.floor(t); $('#stampT').textContent = fmt(locked); $('#stamp').classList.add('locked');
       const q = '「' + x.x.slice(0, 30) + '」'; if (!txt.value.startsWith(q)) txt.value = q + ' ' + txt.value; txt.focus(); txt.setSelectionRange(txt.value.length, txt.value.length); grow(txt);
       txt.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     seek(t); if (a.paused && !$('#play').disabled) a.play();
   });
-  cancelAnimationFrame(lyrRaf); if (timed) lyrTick();
 }
 function lyrTick() {
   lyrRaf = requestAnimationFrame(lyrTick);
   const L = LYR && LYR.lines; if (!L) return;
   const t = curTime() - lyrOff() + 0.05; let i = -1;
   for (let k = 0; k < L.length; k++) { if (L[k].t != null && L[k].t <= t) i = k; else if (L[k].t != null && L[k].t > t) break; }
-  if (i === lyrIdx) return; lyrIdx = i;
-  const box = $('#lyr .lyrs'); if (!box) return;
-  box.querySelectorAll('.ln').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); });
-  const on = box.querySelector('.ln.on');
-  if (on && !box.matches(':hover')) box.scrollTo({ top: on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2, behavior: 'smooth' });   // 鼠标在歌词上就不抢滚动
+  const fs = $('#lyfs'); if (fs) { const d = dur() || 1; fs.querySelector('.fpb i').style.width = Math.min(100, curTime() / d * 100) + '%'; fs.querySelector('.fcur').textContent = fmt(curTime()); fs.classList.toggle('playing', !a.paused); }
+  if (i === lyrIdx) return; lyrIdx = i; lyrSync(i);
+}
+function lyrSync(i) {
+  document.querySelectorAll('.lyrs').forEach(box => {
+    box.querySelectorAll('.ln').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); });
+    const on = box.querySelector('.ln.on');
+    if (on && !box.matches(':hover')) box.scrollTo({ top: on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2, behavior: 'smooth' });   // 鼠标在歌词上就不抢滚动
+  });
+}
+// 全屏歌词（Spotify 那样）：封面糊成背景，大字歌词跟着走，底下播放 / 进度；Esc 或 ⌄ 退出
+function lyrFull() {
+  const L = LYR && LYR.lines; if (!L || $('#lyfs')) return;
+  const f = document.createElement('div'); f.className = 'lyfs'; f.id = 'lyfs';
+  const cv = S.cover ? API_BASE + S.cover : '';
+  f.innerHTML = `<div class="fbg"${cv ? ` style="background-image:url('${cv}')"` : ''}></div>
+    <div class="fhd"><button class="fx press" aria-label="退出全屏"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}${S.artist ? ' · ' : ''}${esc(vname(cur))}</span></div></div>
+    <div class="lyrs">${L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('')}</div>
+    <div class="fft"><div class="fpb"><i></i></div><div class="fctl"><span class="fcur">0:00</span><button class="fpl press" aria-label="播放 / 暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg><svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg></button><span>${fmt(dur())}</span></div></div>`;
+  document.body.appendChild(f); document.documentElement.classList.add('lyfs-on');
+  lyrBind(f, L);
+  f.querySelector('.fx').onclick = lyrFullClose;
+  f.querySelector('.fpl').onclick = toggle;
+  f.querySelector('.fpb').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); seek((e.clientX - r.left) / r.width * dur()); };
+  f._key = e => { if (e.key === 'Escape') lyrFullClose(); }; document.addEventListener('keydown', f._key);
+  requestAnimationFrame(() => { f.classList.add('in'); lyrIdx = -2; });
+}
+function lyrFullClose() {
+  const f = $('#lyfs'); if (!f) return; document.removeEventListener('keydown', f._key);
+  f.classList.remove('in'); document.documentElement.classList.remove('lyfs-on'); setTimeout(() => f.remove(), 320);
 }
 async function lyrSeal(obj) {
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(store.get(PW_KEY) || OPEN), 'PBKDF2', false, ['deriveKey']);
