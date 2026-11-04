@@ -1941,7 +1941,7 @@ function lyrDraw() {
   const L = LYR && LYR.lines && LYR.lines.length ? LYR.lines : null;
   el.hidden = !L; lyrIdx = -2; if (!L) { cancelAnimationFrame(lyrRaf); return; }
   const timed = L.some(x => x.t != null);
-  el.innerHTML = (timed ? '<button class="lyx press" aria-label="全屏歌词"><span>歌词</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>' : '') + '<div class="lyrs">' + L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('') + '</div>';
+  el.innerHTML = (timed ? '<button class="lyx press" aria-label="全屏歌词"><span>歌词</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>' : '') + '<div class="lyrs"><div class="lyin">' + L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('') + '</div></div>';
   el.classList.toggle('timed', timed);
   const fx = el.querySelector('.lyx'); if (fx) fx.onclick = lyrFull;
   lyrBind(el, L);
@@ -1971,25 +1971,26 @@ function lyrStep(force) {
 // 自动滚动：当前这句滚到框中间，自己写缓动（各家浏览器 smooth 手感不一）。手指 / 滚轮在歌词上动过就先不抢，停 2.5 秒后再回到正在唱的那句
 function lyrHold(box) {
   if (box._held) return; box._held = true;
-  const hold = () => { box._hold = performance.now() + 2500; cancelAnimationFrame(box._sa); clearTimeout(box._ht); box._ht = setTimeout(() => lyrSync(lyrIdx), 2600); };
+  const hold = () => { box._hold = performance.now() + 2500; const inn = box.querySelector('.lyin'); if (inn && inn.style.transform && inn.style.transform !== 'translate3d(0px, 0px, 0px)') { const m = new DOMMatrixReadOnly(getComputedStyle(inn).transform).m42 || 0; inn.style.transition = 'none'; inn.style.transform = ''; box.scrollTop -= m; } clearTimeout(box._ht); box._ht = setTimeout(() => lyrSync(lyrIdx), 2600); };
   ['wheel', 'touchstart', 'touchmove', 'pointerdown'].forEach(ev => box.addEventListener(ev, hold, { passive: true }));
 }
-const TOUCH = matchMedia('(hover: none)').matches;
+// 滚动：位置瞬间跳到目标，同时把歌词整体往回挪同样距离（看着没动），再用 transform 过渡归零。只动一个合成层，手机上也是 60 帧；手指照常能划
 function lyrScroll(box, to) {
-  cancelAnimationFrame(box._sa);
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { box.scrollTop = to; return; }
-  if (TOUCH) { box.scrollTo({ top: to, behavior: 'smooth' }); return; }   // 手机：交给系统的平滑滚动（合成线程跑，不卡），不用脚本逐帧改 scrollTop
-  const from = box.scrollTop, d = Math.max(0, Math.min(box.scrollHeight - box.clientHeight, to)) - from; if (Math.abs(d) < 1) return;
-  const t0 = performance.now(), T = Math.min(700, 380 + Math.abs(d) * .6), ease = x => 1 - Math.pow(1 - x, 4);   // 远的滚久一点，结尾慢慢停
-  const step = now => { const x = Math.min(1, (now - t0) / T); box.scrollTop = from + d * ease(x); if (x < 1) box._sa = requestAnimationFrame(step); };
-  box._sa = requestAnimationFrame(step);
+  const inn = box.querySelector('.lyin'); if (!inn) return;
+  const tgt = Math.max(0, Math.min(box.scrollHeight - box.clientHeight, to)), d = tgt - box.scrollTop; if (Math.abs(d) < 1) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { box.scrollTop = tgt; return; }
+  const cur = new DOMMatrixReadOnly(getComputedStyle(inn).transform).m42 || 0;   // 上一段还没走完：接着走，不跳
+  inn.style.transition = 'none'; inn.style.transform = 'translate3d(0,' + (d + cur) + 'px,0)';
+  box.scrollTop = tgt; void inn.offsetHeight;
+  inn.style.transition = 'transform ' + Math.min(.8, .5 + Math.abs(d) / 2000) + 's cubic-bezier(.22,.9,.24,1)'; inn.style.transform = 'translate3d(0,0,0)';
 }
 function lyrSync(i) {
   document.querySelectorAll('.lyrs').forEach(box => {
     lyrHold(box);
     box.querySelectorAll('.ln').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); d.classList.toggle('near', k === i + 1); });
     const on = box.querySelector('.ln.on');
-    if (on && !(box._hold > performance.now())) lyrScroll(box, on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2);
+    const y = on ? on.offsetTop + (on.offsetParent !== box && on.offsetParent ? on.offsetParent.offsetTop : 0) : 0;   // 套了 .lyin（会变成 offsetParent），要加上它在框里的位置
+    if (on && !(box._hold > performance.now())) lyrScroll(box, y - box.clientHeight / 2 + on.offsetHeight / 2);
   });
 }
 // 全屏歌词（Spotify 那样）：封面糊成背景，大字歌词跟着走，底下播放 / 进度；Esc 或 ⌄ 退出
@@ -1999,7 +2000,7 @@ function lyrFull() {
   const cv = S.cover ? API_BASE + S.cover : '';
   f.innerHTML = `<div class="fbg"${cv ? ` style="background-image:url('${cv}')"` : ''}></div>
     <div class="fhd"><button class="fx press" aria-label="退出全屏"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}${S.artist ? ' · ' : ''}${esc(vname(cur))}</span></div></div>
-    <div class="lyrs">${L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('')}</div>
+    <div class="lyrs"><div class="lyin">${L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('')}</div></div>
     <div class="fft"><div class="fpb"><i></i></div><div class="fctl"><span class="fcur">0:00</span><button class="fpl press" aria-label="播放 / 暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg><svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg></button><span>${fmt(dur())}</span></div></div>`;
   document.body.appendChild(f); document.documentElement.classList.add('lyfs-on');
   lyrBind(f, L);

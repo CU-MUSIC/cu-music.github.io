@@ -771,3 +771,4 @@ html.lyfs-on,html.lyfs-on body{overflow:hidden}
   .lyr .ln.on span,.lyfs .ln.on span{transform:none}
   .lyr .ln span,.lyfs .ln span{transition:none}
 }
+.lyin{will-change:transform}
