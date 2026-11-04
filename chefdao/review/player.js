@@ -164,7 +164,7 @@ document.body.innerHTML = `
   })()}</section>
   <section class="vlist" id="vlist" hidden></section>
 
-  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -189,6 +189,7 @@ document.body.innerHTML = `
   <div class="fdue" id="fdue" hidden></div>
   <div class="okbar" id="okbar" hidden></div>
   <div class="pnotice" id="pnotice" hidden></div><button class="pnedit press" id="pnedit" hidden></button>
+  <section class="lyr" id="lyr" hidden></section>
   <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="composer">
     <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT">0:00</span></span>
@@ -314,7 +315,7 @@ async function tryUnlock(pw, typed) {
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
     if (WK && apAdopted && myName) { apAdopted = false; fetch(API_BASE + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, lid, name: myName }) }).catch(() => {}); }
-    if (QUICK) { enterApp(true); loadAudio(key); clientFb(); ownerTools(); loadReplies(); quickRestore(); return; }
+    if (QUICK) { enterApp(true); loadAudio(key); clientFb(); ownerTools(); loadReplies(); lyrInit(key); quickRestore(); return; }
     splash();
     if (S.artist) { const by = $('#by'); by.classList.add('hi'); by.textContent = '欢迎，' + S.artist; }
     const minWait = new Promise(r => setTimeout(r, typed ? 900 : 650));
@@ -324,6 +325,7 @@ async function tryUnlock(pw, typed) {
     clientFb();
     ownerTools();
     loadReplies();
+    lyrInit(key);
   } catch (e) {
     $('#lock').classList.remove('busy');
     store.del(PW_KEY);
@@ -1923,6 +1925,97 @@ addEventListener('pagehide', report);
 /* 记住过密码就直接进 */
 // 自动解锁：这首歌记住的密码 → 记住的项目密码 → 同项目上一首用过的密码，依次试
 const saved = store.get(PW_KEY);
+/* ───────── 歌词：像 Spotify 那样跟着唱的那句走，点一句跳过去，「评论」直接对这一句写意见 ─────────
+   存在 song_meta.lyrics：用审听密码加密的 { lines:[{t 秒, x 歌词}], off:{ 版本: 整体偏移秒 } }，输对密码才解得开
+   你的设备：「歌词」→ 粘贴歌词 → 「开始打点」边听边按空格（或点「下一句」）给每句打时间 */
+let LYR = null, lyrIdx = -2, lyrRaf = 0;
+const lyrOff = () => (LYR && LYR.off && +LYR.off[cur.ver]) || 0;
+const b64eL = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+async function lyrInit(key) {
+  if (!S.lyrics) return lyrDraw();
+  try { LYR = JSON.parse(new TextDecoder().decode(await open(key, ub64(S.lyrics)))); } catch (e) { LYR = null; }
+  lyrDraw();
+}
+function lyrDraw() {
+  const el = $('#lyr'); if (!el) return;
+  const L = LYR && LYR.lines && LYR.lines.length ? LYR.lines : null;
+  el.hidden = !L; lyrIdx = -2; if (!L) { cancelAnimationFrame(lyrRaf); return; }
+  const timed = L.some(x => x.t != null);
+  el.innerHTML = '<div class="lyrs">' + L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('') + '</div>';
+  el.classList.toggle('timed', timed);
+  el.querySelectorAll('.ln').forEach(d => d.onclick = e => {
+    const x = L[+d.dataset.i]; if (x.t == null) return; const t = Math.max(0, x.t + lyrOff());
+    if (e.target.closest('.lc')) {   // 对这一句写评论：时间点锁在这句开头，引用这句歌词
+      seek(t); locked = Math.floor(t); $('#stampT').textContent = fmt(locked); $('#stamp').classList.add('locked');
+      const q = '「' + x.x.slice(0, 30) + '」'; if (!txt.value.startsWith(q)) txt.value = q + ' ' + txt.value; txt.focus(); txt.setSelectionRange(txt.value.length, txt.value.length); grow(txt);
+      txt.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+    seek(t); if (a.paused && !$('#play').disabled) a.play();
+  });
+  cancelAnimationFrame(lyrRaf); if (timed) lyrTick();
+}
+function lyrTick() {
+  lyrRaf = requestAnimationFrame(lyrTick);
+  const L = LYR && LYR.lines; if (!L) return;
+  const t = curTime() - lyrOff() + 0.05; let i = -1;
+  for (let k = 0; k < L.length; k++) { if (L[k].t != null && L[k].t <= t) i = k; else if (L[k].t != null && L[k].t > t) break; }
+  if (i === lyrIdx) return; lyrIdx = i;
+  const box = $('#lyr .lyrs'); if (!box) return;
+  box.querySelectorAll('.ln').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); });
+  const on = box.querySelector('.ln.on');
+  if (on && !box.matches(':hover')) box.scrollTo({ top: on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2, behavior: 'smooth' });   // 鼠标在歌词上就不抢滚动
+}
+async function lyrSeal(obj) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(store.get(PW_KEY) || OPEN), 'PBKDF2', false, ['deriveKey']);
+  const k = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: ub64(S.salt), iterations: S.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, new TextEncoder().encode(JSON.stringify(obj))));
+  const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return b64eL(out);
+}
+// 你的设备：歌词编辑面板（停在页面底部，不挡播放器）
+function lyrEdit() {
+  if ($('#lyre')) return;
+  let lines = (LYR && LYR.lines || []).map(x => ({ ...x })), off = { ...((LYR && LYR.off) || {}) }, tap = false, ptr = 0;
+  const p = document.createElement('div'); p.className = 'lyre'; p.id = 'lyre';
+  p.innerHTML = `<div class="lyh"><b>歌词</b><span id="lyHint">粘贴歌词，一行一句</span><button class="press" id="lyX">关闭</button></div>
+    <textarea id="lyTx" placeholder="把歌词粘贴进来，一行一句（空行会去掉）"></textarea>
+    <div class="lyl" id="lyL"></div>
+    <div class="lyb"><button class="press go" id="lyTap">开始打点</button><button class="press" id="lyNext" hidden>下一句 · 空格</button><button class="press" id="lyUndo" hidden>撤销</button>
+      <label>这一版整体偏移<input id="lyOff" type="number" step="0.1" value="${off[cur.ver] || 0}">秒</label><span class="sp"></span><button class="press" id="lyClr">清空</button><button class="press go" id="lySave">保存</button></div>`;
+  document.body.appendChild(p);
+  const tx = $('#lyTx'), list = $('#lyL'), hint = t => { $('#lyHint').textContent = t; };
+  tx.value = lines.map(x => x.x).join('\n');
+  const parse = () => { const rows = tx.value.split('\n').map(s => s.trim()).filter(Boolean);
+    lines = rows.map((x, i) => ({ x, t: lines[i] && lines[i].x === x ? lines[i].t : (lines[i] ? lines[i].t : null) })); draw(); };
+  const draw = () => { list.innerHTML = lines.map((x, i) => `<div class="lr${tap && i === ptr ? ' cur' : ''}" data-i="${i}"><button class="lt press" title="设成现在的播放位置">${x.t == null ? '—' : fmt(x.t) + '.' + Math.floor((x.t % 1) * 10)}</button><button class="lm press" data-d="-0.1">−</button><button class="lm press" data-d="0.1">＋</button><span>${esc(x.x)}</span></div>`).join('');
+    list.querySelectorAll('.lr').forEach(r => { const i = +r.dataset.i;
+      r.querySelector('.lt').onclick = () => { lines[i].t = Math.round(curTime() * 10) / 10; draw(); };
+      r.querySelectorAll('.lm').forEach(b => b.onclick = () => { if (lines[i].t == null) return; lines[i].t = Math.max(0, Math.round((lines[i].t + +b.dataset.d) * 10) / 10); seek(lines[i].t); draw(); });
+      r.querySelector('span').onclick = () => { if (lines[i].t != null) seek(lines[i].t); }; });
+    const c = list.querySelector('.lr.cur'); if (c) c.scrollIntoView({ block: 'nearest' }); };
+  tx.oninput = parse;
+  const preview = () => { LYR = { lines, off }; lyrDraw(); };
+  const next = () => { if (!tap || ptr >= lines.length) return; lines[ptr].t = Math.max(0, Math.round((curTime() - 0.15) * 10) / 10); ptr++; draw(); preview();   // 按键比开口晚一点：往前补 0.15 秒
+    if (ptr >= lines.length) { setTap(false); hint('打完了，检查一下再保存'); } else hint('第 ' + (ptr + 1) + ' / ' + lines.length + ' 句：唱到就按空格'); };
+  const setTap = on => { tap = on; $('#lyTap').textContent = on ? '停止打点' : '开始打点'; $('#lyNext').hidden = $('#lyUndo').hidden = !on; tx.disabled = on; p.classList.toggle('tapping', on); draw(); };
+  const key = e => { if (!tap) return; if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); next(); } if (e.code === 'Backspace') { e.preventDefault(); e.stopImmediatePropagation(); $('#lyUndo').click(); } };
+  document.addEventListener('keydown', key, true);
+  $('#lyTap').onclick = () => { if (tap) return setTap(false); parse(); if (!lines.length) return hint('先把歌词粘贴进来');
+    ptr = Math.max(0, lines.findIndex(x => x.t == null)); if (ptr === 0 || lines.every(x => x.t != null)) { ptr = 0; lines.forEach(x => { x.t = null; }); seek(0); }
+    else seek(Math.max(0, lines[ptr - 1].t - 2));   // 接着上次没打完的地方：从上一句前 2 秒开始
+    setTap(true); hint('第 ' + (ptr + 1) + ' / ' + lines.length + ' 句：唱到就按空格'); if (a.paused) a.play(); };
+  $('#lyNext').onclick = next;
+  $('#lyUndo').onclick = () => { if (ptr > 0) { ptr--; lines[ptr].t = null; seek(Math.max(0, (ptr > 0 ? lines[ptr - 1].t : 0) || 0)); draw(); preview(); } };
+  $('#lyOff').oninput = e => { const v = Math.round((+e.target.value || 0) * 10) / 10; if (v) off[cur.ver] = v; else delete off[cur.ver]; preview(); };
+  $('#lyClr').onclick = () => { if (!confirm('清空这首歌的歌词？')) return; tx.value = ''; lines = []; draw(); };
+  const close = () => { document.removeEventListener('keydown', key, true); p.remove(); };
+  $('#lyX').onclick = () => { close(); lyrInit(KEY); };   // 没保存就关：回到存过的歌词
+  $('#lySave').onclick = async () => { parse(); setTap(false);
+    try { const ly = lines.length ? await lyrSeal({ lines, off }) : '';
+      const r = await fetch(API_BASE + '/radm/meta', { method: 'POST', headers: { Authorization: 'Bearer ' + store.get('insights:key'), 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, lyrics: ly }) });
+      if (!(await r.json()).ok) throw 0; S.lyrics = ly; LYR = lines.length ? { lines, off } : null; close(); lyrDraw(); hud(lines.length ? '歌词已保存，客户那边同步显示' : '歌词已清空'); }
+    catch (e) { hint('没保存上，检查网络再试'); } };
+  draw();
+}
+if (IS_OWNER) { const b = $('#ownLyr'); if (b) b.onclick = lyrEdit; }
 let tries = [...new Set([S.auto, saved, PJ_KEY && store.get(PJ_KEY), PJ_KEY && store.get(PJ_KEY + ':last')].filter(Boolean))];   // S.auto：申请制项目批准后服务端给的密码
 if (S.open || (S.project && S.project.open && S.project.wrap && !saved)) tryUnlock('', false);   // 不设密码：直接进
 else if (tries.length) tryUnlock(tries.shift(), false);
