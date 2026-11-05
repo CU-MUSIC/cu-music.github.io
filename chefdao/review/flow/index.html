@@ -63,6 +63,22 @@ h2 small{font-size:15px;font-weight:400;color:var(--dim);margin-left:8px}
 .sch b{display:block;font-weight:600;font-size:17px}
 .sch span{display:block;color:var(--dim);font-size:15.5px;line-height:1.6}
 .rules{margin:6px 0 0;padding-left:1.2em;color:var(--dim);font-size:16px}.rules li{margin:6px 0}
+.qa{margin-top:18px}
+.qa .th{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.qa .m{padding:10px 14px;border-radius:14px;background:var(--card);font-size:15.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.qa .m.o{background:var(--hi-bg);margin-left:24px}
+.qa .m small{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--dim-3);margin-bottom:2px;white-space:normal}
+.qa .m small button{all:unset;cursor:pointer;color:var(--dim-3)}
+.qa .ask-b{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;border:1px solid var(--line);color:var(--dim);font-size:14px}
+.qa .ask-b:active{transform:scale(.97)}
+.qa form{display:flex;flex-direction:column;gap:8px}
+.qa input,.qa textarea{width:100%;font:inherit;font-size:15.5px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;resize:vertical}
+.qa input:focus,.qa textarea:focus{border-color:rgba(236,234,230,.3)}
+.qa textarea{min-height:84px}
+.qa .ft{display:flex;justify-content:flex-end;gap:8px}
+.qa .ft button{all:unset;cursor:pointer;padding:7px 18px;border-radius:999px;font-size:14.5px;background:var(--card)}
+.qa .ft .go{background:var(--pearl);color:var(--ink);font-weight:500}
+@media print{.qa{display:none}}
 .loop{margin-top:22px;padding:16px;border:1px dashed var(--line);border-radius:16px;color:var(--dim);font-size:16px}
 .loop b{color:var(--text)}
 .dots{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
@@ -275,6 +291,46 @@ document.getElementById('tl').innerHTML = '<div class="tr hd"><span class="n">#<
   const long = !!tag, pr = price === 0 ? '待确认' : '¥' + (price || 2000).toLocaleString('en-US');
   return '<div class="tr' + (long ? ' long' : '') + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + t.replace(/[<>&]/g, '') + '</span><span class="d">' + d + '</span><span class="p">' + pr + '</span></div>';
 }).join('');
+
+// ── 提问：每个区块下面可以留言，刀大厨在同一页回复 ──
+(() => {
+  const API = 'https://stats.cumusic.work', DOC = 'bta6g7pp';
+  const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const KEY = ls.get('insights:key'), owner = !!KEY;
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const tm = ts => { const d = new Date(ts); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  let LIST = [];
+  const secs = [...document.querySelectorAll('main h2')].map(h => {
+    const key = h.textContent.replace(/^\d+/, '').trim();
+    let end = h.nextElementSibling; while (end && end.tagName !== 'H2' && end.tagName !== 'FOOTER') end = end.nextElementSibling;
+    const box = document.createElement('div'); box.className = 'qa'; box.dataset.sec = key;
+    h.parentNode.insertBefore(box, end); return box;
+  });
+  const draw = box => {
+    const sec = box.dataset.sec, th = LIST.filter(x => x.sec === sec);
+    box.innerHTML = (th.length ? '<div class="th">' + th.map(x => '<div class="m ' + x.who + '"><small><span>' + (x.who === 'o' ? '刀大厨' : esc(x.name || '客户')) + ' · ' + tm(x.ts) + '</span>' + (owner ? '<button data-del="' + x.id + '">删除</button>' : '') + '</small>' + esc(x.text) + '</div>').join('') + '</div>' : '')
+      + '<button class="ask-b" type="button">' + (owner ? '回复' : '有疑问') + '</button>';
+    box.querySelector('.ask-b').onclick = () => open(box);
+    box.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('删除这条？')) return;
+      await fetch(API + '/fq/del', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: +b.dataset.del }) }).catch(() => {}); load(); });
+  };
+  const open = box => {
+    const btn = box.querySelector('.ask-b'), name = ls.get('review:name') || '';
+    const f = document.createElement('form');
+    f.innerHTML = (owner || name ? '' : '<input name="n" placeholder="称呼" maxlength="20" required>') + '<textarea name="t" maxlength="600" placeholder="' + (owner ? '回复' : '请写下疑问') + '" required></textarea><div class="ft"><button type="button" class="cx">取消</button><button class="go">发送</button></div>';
+    btn.replaceWith(f); f.querySelector(owner || name ? 'textarea' : 'input').focus();
+    f.querySelector('.cx').onclick = () => draw(box);
+    f.onsubmit = async e => { e.preventDefault();
+      const n = f.n ? f.n.value.trim() : name, t = f.t.value.trim(); if (!t) return;
+      if (f.n) ls.set('review:name', n);
+      const go = f.querySelector('.go'); go.textContent = '发送中…'; go.disabled = true;
+      try { const r = await fetch(API + '/fq', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, owner ? { Authorization: 'Bearer ' + KEY } : {}), body: JSON.stringify({ doc: DOC, sec: box.dataset.sec, text: t, name: n }) });
+        const j = await r.json(); if (!j.ok) throw 0; await load(); }
+      catch (e) { go.textContent = '没发出去，再试一次'; go.disabled = false; } };
+  };
+  const load = async () => { try { const j = await (await fetch(API + '/fq?doc=' + DOC, { cache: 'no-store' })).json(); if (j.ok) LIST = j.list; } catch (e) {} secs.forEach(draw); };
+  secs.forEach(draw); load();
+})();
 </script>
 </body>
 </html>
