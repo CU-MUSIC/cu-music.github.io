@@ -944,7 +944,7 @@ $('#overall').addEventListener('change', () => drawOverall());
 /* ───────── 发送 ───────── */
 const hud = (msg, ms = 2600) => { const h = $('#hud'); h.textContent = msg; h.classList.add('show'); clearTimeout(hud.t); hud.t = setTimeout(() => h.classList.remove('show'), ms); };
 // 艺人确认当前版本没有问题、可以准备交付（按版本记，换了新版本要重新确认；你自己的设备不显示按钮，只显示谁确认了）
-const OKS = {}; let okLoaded = false, okAll = null, OKN = { need: 1, got: 0 };
+const OKS = {}; let okLoaded = false, okAll = null, okAt = 0, OKN = { need: 1, got: 0 };
 // 交付政策：每版交付后超过 72 小时仍无反馈（周末照常计时），视为无意见。只对待审听的最新版本、且这一版还没写过意见时计时
 const winH = () => (S.prog && (S.prog.r || 0) >= 3 ? 24 : 72);   // 前三轮宽松 72 小时，第 4 轮起压缩到 24 小时
 const autoInfo = ext => {
@@ -956,7 +956,7 @@ async function renderOk() {
   const bar = $('#okbar'); if (!bar || !WK) return;
   const owner = ME || !!store.get('insights:key');
   if (owner) {
-    if (okAll === null) { okAll = []; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug, { headers: { Authorization: 'Bearer ' + store.get('insights:key') }, cache: 'no-store' })).json(); okAll = j.all || []; } catch (e) {} }
+    if (okAll === null || Date.now() - okAt > 55000) { okAt = Date.now(); okAll = okAll || []; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug, { headers: { Authorization: 'Bearer ' + store.get('insights:key') }, cache: 'no-store' })).json(); if (j.all) okAll = j.all; } catch (e) {} }
     const mine = okAll.filter(x => x.ver === cur.ver); bar.hidden = !mine.length; bar.className = 'okbar done';
     if (S.prog && S.prog.s === 8 && !mine.length) { bar.hidden = false; bar.className = 'okbar auto done'; bar.textContent = '⏱ 无反馈已自动确认，交付结算中'; return; }
     const ai = !mine.length && !notes.length ? autoInfo(okAll.some(x => x.ver === 'ext:' + cur.ver)) : null;
