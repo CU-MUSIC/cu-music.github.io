@@ -92,8 +92,9 @@ async function cuUpload(o) {
   if (ext === 'mp3') { bytes = new Uint8Array(buf); mime = 'audio/mpeg'; }
   else if (['m4a', 'mp4', 'aac'].includes(ext)) { bytes = new Uint8Array(buf); mime = 'audio/mp4'; }
   else if (await aacOk(au)) {   // WAV / AIFF：转成 m4a（AAC 320k），用浏览器自带的编码器
-    step('转成 m4a…');
-    bytes = await toM4A(au, p => bar(.15 + p * .45));
+    const fit = Math.floor((24 * 1048576 - 64) * 8 / au.duration / 1000 * .96 / 32) * 32, k = Math.max(128, Math.min(320, fit));   // 320k 放得下就 320k，长歌直接按能放下的码率压，不压两遍
+    step(k < 320 ? '文件较长，转成 m4a（AAC ' + k + 'k）…' : '转成 m4a…');
+    bytes = await toM4A(au, p => bar(.15 + p * .45), k * 1000);
     mime = 'audio/mp4';
   }
   else {   // 浏览器不支持 AAC 编码时才退回 MP3 320k
@@ -108,6 +109,20 @@ async function cuUpload(o) {
     });
     mime = 'audio/mpeg';
   }
+  // 上传的 mp3 / m4a 超过单块 25MB：先压——按时长算刚好放得下的码率重压 AAC（256k 约 13 分钟、192k 约 17 分钟，最低 128k 约 26 分钟）；128k 都放不下才原样分块存
+  const LIM = 24 * 1048576 - 64;
+  if (bytes.length > LIM && ['mp3', 'm4a', 'mp4', 'aac'].includes(ext) && await aacOk(au)) {
+    const k = Math.min(320, Math.floor(LIM * 8 / au.duration / 1000 * .96 / 32) * 32);
+    if (k >= 128) {
+      let src = au;
+      if (big) {   // 画波形时用 16k 解的：按 48k 重新解一遍再压（不超过 26 分钟，内存够）
+        step('解码原文件…'); const ac2 = new AC({ sampleRate: 48000 });
+        src = await new Promise((ok, no) => { const p = ac2.decodeAudioData(buf.slice(0), ok, no); if (p && p.catch) p.catch(no); }); if (ac2.close) ac2.close();
+      }
+      step('文件超过 25MB，压成 AAC ' + k + 'k…');
+      bytes = await toM4A(src, p => bar(.15 + p * .45), k * 1000); mime = 'audio/mp4';
+    }
+  }
   if (ac.close) ac.close();
   step('加密…'); bar(.62);
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(prep.pass || 'cu-open'), 'PBKDF2', false, ['deriveKey']);   // 不设密码：用公开口令
@@ -115,7 +130,7 @@ async function cuUpload(o) {
   const seal = async u8 => { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, u8));
     const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return out; };
   const blob = await seal(bytes);
-  // 存储单块最多 25MB：超了就切成几块传（服务端按顺序接回一个文件），音质不动。最多 8 块（约 190MB，320k 约 80 分钟）
+  // 压到 128k 还超过 25MB（约 26 分钟以上）：切成几块传，服务端按顺序接回一个文件。最多 8 块（约 190MB）
   const PART = 24 * 1048576, nParts = Math.ceil(blob.length / PART);
   if (nParts > 8) throw new Error('文件太大（' + Math.round(blob.length / 1048576) + 'MB），超过 190MB 的上限');
   let ver = (String(o.ver || '').trim().toUpperCase().replace(/^(\d)/, 'V$1')) || prep.next;

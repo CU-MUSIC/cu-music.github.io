@@ -512,7 +512,7 @@ async function loadAudio(key) {
     if (a.src) return;
     if (QUICK) {   // 切歌：页面已经在了，音频在波形上显示进度，好了就能播
       const src = await fetchVersion(vi, p => { $('#loading').textContent = '正在加载音频… ' + Math.round(p * 100) + '%'; });
-      a.src = src; $('#play').disabled = false; $('#loading').style.opacity = 0;
+      a.src = src; try { a.load(); } catch (e) {} $('#play').disabled = false; $('#loading').style.opacity = 0;
       if (QUICK_PLAY) a.play().catch(() => {});
       return;
     }
@@ -528,7 +528,7 @@ async function loadAudio(key) {
     st.done = true; st.p = 1;
     if (L.classList.contains('dl-on')) $('#dlt').textContent = '下载完成';
     await anim;
-    a.src = src;
+    a.src = src; try { a.load(); } catch (e) {}   // iPhone 不自动预载：主动读出时长，进度条和歌词点了才跳得过去
     $('#play').disabled = false;
     $('#loading').style.opacity = 0;
   } catch (e) { $('#loading').textContent = '音频加载失败，请刷新重试'; }
@@ -677,7 +677,12 @@ function draw(now) {
   requestAnimationFrame(draw);
 }
 const frac = e => { const r = cv.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
-const seek = t => { a.currentTime = Math.min(dur(), Math.max(0, t)); lastT = a.currentTime; lastAt = performance.now(); };
+// iPhone Safari 不理会 preload：刚载入时还没读出时长（readyState 0），这时设 currentTime 会被丢掉、从头放。先记下来，读出时长后再跳
+let pendSeek = null;
+const seek = t => { t = Math.min(dur(), Math.max(0, t));
+  if (a.readyState < 1 && a.src) { pendSeek = t; if (a.networkState !== 2) try { a.load(); } catch (e) {} }
+  a.currentTime = t; lastT = a.currentTime; lastAt = performance.now(); };
+a.addEventListener('loadedmetadata', () => { if (pendSeek === null) return; const t = pendSeek; pendSeek = null; a.currentTime = Math.min(dur(), t); lastT = a.currentTime; lastAt = performance.now(); });
 const loopBtn = $('#loopBtn');
 function loopUi() {
   const on = LOOP.b !== null;
@@ -1289,7 +1294,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261104c'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261105a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
