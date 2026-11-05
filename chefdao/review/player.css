@@ -788,3 +788,19 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 .fbok{flex:1 1 100%;padding:12px 16px;border-radius:14px;background:rgba(143,199,162,.12);color:#9fd2b0;font-size:15px;font-weight:600}
 .okown{flex:1 1 100%;margin-top:6px;min-height:38px;border:1px dashed rgba(201,178,122,.4);border-radius:12px;background:transparent;color:#cdb98a;font:inherit;font-size:13.5px}
 .okown.on{border-style:solid;color:#9fd2b0;border-color:rgba(143,199,162,.5)}
+/* 循环按钮：列表循环不带「1」，单曲循环带 */
+.rpt:not(.one) .r1{display:none}
+/* 全屏歌词：上一首 / 下一首、右上角「下一首」 */
+.lyfs .fbt{display:flex;align-items:center;gap:22px}
+.lyfs .fsk{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#ecebe8;transition:opacity .2s,background-color .2s}
+.lyfs .fsk svg{width:22px;height:22px;fill:currentColor}
+.lyfs .fsk:hover{background:rgba(255,255,255,.1)}
+.lyfs .fsk:disabled{opacity:.25;pointer-events:none}
+.lyfs .fhd>div{flex:1;min-width:0}
+.lyfs .fup{display:flex;align-items:center;gap:8px;max-width:46%;padding:7px 12px 7px 14px;border-radius:999px;background:rgba(255,255,255,.1);color:#ecebe8;font-size:13px;text-align:left}
+.lyfs .fup[hidden]{display:none}
+.lyfs .fup i{font-style:normal;color:rgba(236,235,232,.6);flex:none}
+.lyfs .fup b{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.lyfs .fup svg{width:14px;height:14px;fill:currentColor;flex:none;opacity:.8}
+.lyfs .fup:hover{background:rgba(255,255,255,.16)}
+@media (max-width:560px){.lyfs .fup i{display:none}.lyfs .fbt{gap:12px}}

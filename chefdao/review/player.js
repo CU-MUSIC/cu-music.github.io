@@ -22,9 +22,9 @@ function quickRestore() {
   if (a.readyState >= 1) setTimeout(go, 200); else a.addEventListener('loadedmetadata', () => setTimeout(go, 150), { once: true });
 }
 // 从播放列表切过来的：不出解锁页和任何进场动画，直接进播放页（之前在播就接着播）
-let QUICK = false, QUICK_PLAY = false, QSTATE = null;   // QSTATE：软刷新前的版本 / 位置 / 滚动，刷新后接着回到那里
+let QUICK = false, QUICK_PLAY = false, QSTATE = null, FS_BACK = false;   // QSTATE：软刷新前的版本 / 位置 / 滚动，刷新后接着回到那里
 try { const q = JSON.parse(sessionStorage.getItem('review:quick') || 'null'); sessionStorage.removeItem('review:quick');
-  if (q && q.s === S.slug) { QUICK = true; QUICK_PLAY = !!q.play; QSTATE = q; document.documentElement.classList.add('quick'); } } catch (e) {}
+  if (q && q.s === S.slug) { QUICK = true; QUICK_PLAY = !!q.play; QSTATE = q; FS_BACK = !!q.fs; document.documentElement.classList.add('quick'); } } catch (e) {}
 if (QUICK) document.body.style.animation = 'qfade .3s ease both';   // 软刷新 / 切歌回来：淡入
 const noQuick = () => { QUICK = false; document.documentElement.classList.remove('quick'); };
 // 时间显示：近的用相对时间（刚刚 / N 分钟前 / N 小时前 / 昨天 14:32 / N 天前），早的写具体日期和时间；只有日期没有时间的旧版本只显示日期
@@ -175,7 +175,7 @@ document.body.innerHTML = `
       <svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg>
     </button>
     <button class="skip press" id="fwd" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 3.5v3.7h-3.7"/></svg><span>5</span></button>
-    <button class="rpt press" id="rpt" aria-label="单曲循环" aria-pressed="false" title="单曲循环"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/><path d="M11.2 10.2l1.3-.8v5.2"/></svg></button>
+    <button class="rpt press" id="rpt" aria-label="循环" aria-pressed="false" title="循环：关 → 列表循环 → 单曲循环"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/><path class="r1" d="M11.2 10.2l1.3-.8v5.2"/></svg></button>
   </div>
   <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
@@ -411,11 +411,33 @@ $('#fee').addEventListener('click', async e => {
   renderFee();
 });
 // 播放列表：同一个项目里的其他曲目（cypher 一首接一首），点了直接切过去（项目密码记着，不用再输）
+let PL = null;   // 项目曲目（项目顺序），全屏歌词的上一首 / 下一首用
+// 上一首 / 下一首：有连播队列按队列，否则按项目曲目顺序；fs：切过去后接着开全屏歌词
+function trackAt(d) {
+  let q = null; try { q = JSON.parse(sessionStorage.getItem('review:queue') || 'null'); } catch (e) {}
+  const list = q && Array.isArray(q.list) && q.list.some(x => x.s === S.slug) ? q.list.map(x => ({ slug: x.s, url: x.u, title: x.t })) : PL;
+  if (!list) return null; const i = list.findIndex(x => x.slug === S.slug); if (i < 0) return null;
+  const t = list[i + d]; if (!t) return null;
+  const full = PL && PL.find(x => x.slug === t.slug); return full || t;
+}
+function goTrack(d, fs) {
+  const t = trackAt(d); if (!t) return;
+  try { sessionStorage.setItem('review:quick', JSON.stringify({ s: t.slug, play: !a.paused || a.ended || !!fs, fs: !!fs })); } catch (e) { return; }
+  document.body.style.transition = 'opacity .14s'; document.body.style.opacity = '0';
+  const u = new URL(t.url, location.href); setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
+}
+function fsNav() {   // 全屏歌词里的切歌按钮和「下一首」提示
+  const f = $('#lyfs'); if (!f) return;
+  const pv = trackAt(-1), nx = trackAt(1);
+  f.querySelector('.fpv').disabled = !pv; f.querySelector('.fnx').disabled = !nx;
+  const up = f.querySelector('.fup'); up.hidden = !nx; if (nx) up.querySelector('b').textContent = nx.title || '';
+}
 async function loadPlaylist() {
   if (!S.project) return;
   try {
     const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug + '&tok=' + (store.get('review:tok') || ''), { cache: 'no-store', headers: store.get('insights:key') ? { Authorization: 'Bearer ' + store.get('insights:key') } : {} })).json();   // 你自己的设备带上管理密钥，申请制项目不用批准自己也能看到列表
     const T = j.ok ? j.project.tracks : []; if (T.length < 2) return;
+    PL = T; fsNav();
     askName(new Set(T.flatMap(t => String(t.artist || '').split(/[、,，\/&]/).map(x => x.trim()).filter(Boolean))).size > 1);
     const el = $('#plist');
     // 本曲歌手的歌排最前（当前这首置顶），其他歌手的放后面；没标歌手就按项目顺序
@@ -1899,17 +1921,29 @@ a.addEventListener('timeupdate', () => {
 });
 a.addEventListener('seeking', () => { lastPos = null; });
 // 单曲循环：放完从头接着放（记在本机，下次打开还是开着）；开着时不连播下一首
-let RPT = store.get('review:repeat') === '1';
-const rptUi = () => { const b = $('#rpt'); if (b) { b.setAttribute('aria-pressed', RPT); b.classList.toggle('on', RPT); } };
-$('#rpt').onclick = () => { RPT = !RPT; store.set('review:repeat', RPT ? '1' : '0'); rptUi(); hud(RPT ? '单曲循环已开' : '单曲循环已关'); };
+// 循环：关 → 列表循环（整个项目放完从第一首接着放）→ 单曲循环；记在本机
+let RPT = ({ '1': '1', all: 'all' })[store.get('review:repeat')] || '';
+const rptUi = () => { const b = $('#rpt'); if (b) { b.setAttribute('aria-pressed', !!RPT); b.classList.toggle('on', !!RPT); b.classList.toggle('one', RPT === '1'); b.setAttribute('aria-label', RPT === '1' ? '单曲循环' : RPT ? '列表循环' : '循环已关'); } };
+$('#rpt').onclick = () => { RPT = RPT === '' ? 'all' : RPT === 'all' ? '1' : ''; store.set('review:repeat', RPT || '0'); rptUi(); hud(RPT === '1' ? '单曲循环' : RPT ? '列表循环：放完整个项目从第一首接着放' : '循环已关'); };
 rptUi();
-a.addEventListener('ended', () => { st().ends++; if (RPT) { seek(0); a.play().catch(() => {}); return; } nextInQueue(); });
+a.addEventListener('ended', () => { st().ends++;
+  const again = () => { seek(0); a.play().catch(() => {}); };
+  if (RPT === '1') return again();
+  if (RPT === 'all') {   // 列表循环：有下一首就切，最后一首回到第一首；项目只有这一首就重放
+    const fs = !!$('#lyfs');
+    if (trackAt(1)) return goTrack(1, fs);
+    const first = PL && PL[0]; if (!first || first.slug === S.slug) return again();
+    try { sessionStorage.setItem('review:quick', JSON.stringify({ s: first.slug, play: true, fs })); } catch (e) { return again(); }
+    document.body.style.transition = 'opacity .14s'; document.body.style.opacity = '0';
+    const u = new URL(first.url, location.href); return setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
+  }
+  nextInQueue(); });
 // 项目页点了「播放」：按曲目顺序连播，这首放完自动切到下一首接着放（和播放列表切歌同一套快速进入）
 function nextInQueue() {
   let q = null; try { q = JSON.parse(sessionStorage.getItem('review:queue') || 'null'); } catch (e) {}
   const i = q && Array.isArray(q.list) ? q.list.findIndex(x => x.s === S.slug) : -1; if (i < 0) return;
   const nx = q.list[i + 1];
-  try { if (!nx) { sessionStorage.removeItem('review:queue'); return; } sessionStorage.setItem('review:quick', JSON.stringify({ s: nx.s, play: true })); } catch (e) { return; }
+  try { if (!nx) { sessionStorage.removeItem('review:queue'); return; } sessionStorage.setItem('review:quick', JSON.stringify({ s: nx.s, play: true, fs: !!$('#lyfs') })); } catch (e) { return; }
   document.body.style.transition = 'opacity .14s'; document.body.style.opacity = '0';
   const u = new URL(nx.u, location.href); setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
 }
@@ -1959,6 +1993,7 @@ async function lyrInit(key) {
   if (!S.lyrics) return lyrDraw();
   try { LYR = JSON.parse(new TextDecoder().decode(await open(key, ub64(S.lyrics)))); } catch (e) { LYR = null; }
   lyrDraw();
+  if (FS_BACK && LYR && LYR.lines && LYR.lines.length) { FS_BACK = false; lyrFull(); }   // 从全屏歌词里切过来的：接着全屏
 }
 function lyrDraw() {
   const el = $('#lyr'); if (!el) return;
@@ -2035,13 +2070,16 @@ function lyrFull() {
   const f = document.createElement('div'); f.className = 'lyfs'; f.id = 'lyfs';
   const cv = S.cover ? API_BASE + S.cover : '';
   f.innerHTML = `<div class="fbg"${cv ? ` style="background-image:url('${cv}')"` : ''}></div>
-    <div class="fhd"><button class="fx press" aria-label="退出全屏"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}${S.artist ? ' · ' : ''}${esc(vname(cur))}</span></div></div>
+    <div class="fhd"><button class="fx press" aria-label="退出全屏"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}${S.artist ? ' · ' : ''}${esc(vname(cur))}</span></div><button class="fup press" hidden aria-label="下一首"><i>下一首</i><b></b><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5.5v13c0 .8.9 1.3 1.5.8l8.7-6.3c.6-.4.6-1.4 0-1.8L5.5 4.8C4.9 4.3 4 4.8 4 5.5z"/></svg></button></div>
     <div class="lyrs"><div class="lyin">${L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('')}</div></div>
-    <div class="fft"><div class="fpb"><i></i></div><div class="fctl"><span class="fcur">0:00</span><button class="fpl press" aria-label="播放 / 暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg><svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg></button><span>${fmt(dur())}</span></div></div>`;
+    <div class="fft"><div class="fpb"><i></i></div><div class="fctl"><span class="fcur">0:00</span><div class="fbt"><button class="fsk fpv press" aria-label="上一首" disabled><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5.5v13c0 .8-.9 1.3-1.5.8L9.8 13c-.6-.4-.6-1.4 0-1.8l8.7-6.4c.6-.5 1.5 0 1.5.7z"/></svg></button><button class="fpl press" aria-label="播放 / 暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg><svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg></button><button class="fsk fnx press" aria-label="下一首" disabled><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5.5v13c0 .8.9 1.3 1.5.8l8.7-6.3c.6-.4.6-1.4 0-1.8L5.5 4.8C4.9 4.3 4 4.8 4 5.5z"/></svg></button></div><span>${fmt(dur())}</span></div></div>`;
   document.body.appendChild(f); document.documentElement.classList.add('lyfs-on');
   lyrBind(f, L);
   f.querySelector('.fx').onclick = lyrFullClose;
   f.querySelector('.fpl').onclick = toggle;
+  f.querySelector('.fpv').onclick = () => { if (curTime() > 3) seek(0); else goTrack(-1, true); };   // 放了 3 秒以上：回到这首开头
+  f.querySelector('.fnx').onclick = f.querySelector('.fup').onclick = () => goTrack(1, true);
+  fsNav();
   f.querySelector('.fpb').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); seek((e.clientX - r.left) / r.width * dur()); };
   f._key = e => { if (e.key === 'Escape') lyrFullClose(); }; document.addEventListener('keydown', f._key);
   requestAnimationFrame(() => { f.classList.add('in'); lyrIdx = -2; });
