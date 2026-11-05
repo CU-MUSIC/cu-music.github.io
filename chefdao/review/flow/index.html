@@ -127,7 +127,7 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
   </li>
   <li>
     <div class="ic pay"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-    <div><h3>定稿 · 付尾款</h3><p>开放下载，发给母带，开始下一首</p><span class="chip pay">尾款 50%</span></div>
+    <div><h3>定稿 · 付尾款</h3><p>开放下载，开始下一首</p><span class="chip pay">尾款 50%</span></div>
   </li>
 </ol>
 
@@ -139,10 +139,11 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
 <h2>费用</h2>
 <div class="price">
   <div class="pc main"><div class="k">每首基础价</div><div class="v">¥2,000</div><p>含节奏编辑、基础混音、人声制作</p></div>
-  <div class="pc"><div class="k">修音</div><div class="v">¥100<small>/ 首</small></div><p>13 首都需要修音</p></div>
-  <div class="pc"><div class="k">超长曲目</div><div class="v" style="font-size:22px;padding-top:6px">时长加价</div><p>见下方曲目，价格另报</p></div>
+  <div class="pc"><div class="k">修音</div><div class="v">¥100<small>/ 首</small></div><p>有唱旋律的部分需要修音</p></div>
+  <div class="pc"><div class="k">超长曲目音编</div><div class="v">+¥500<small>/ 首</small></div><p>10 分钟以上且需要音编的曲目</p></div>
 </div>
 <div class="tl" id="tl"></div>
+<p style="margin:10px 2px 0;color:var(--dim);font-size:15px">《走神》40 分钟：如果不需要音编、主要做延伸制作，加价不会多，开工前和你确认。</p>
 
 <h2>节奏风格：你听了再选</h2>
 <p style="margin:0 0 14px;color:var(--dim)">我先挑一首较短的歌修好两个版本，你听完选一个，后面整张专辑都按这个方向来。</p>
@@ -174,10 +175,6 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
       <li>超出的方案数另计，每次执行前先报价，不会先做后收</li>
     </ul>
   </div>
-</details>
-<details>
-  <summary>母带怎么衔接</summary>
-  <div>母带由另一位工程师负责，他和我分别是你的顾问，<b>费用和档期各自独立</b>。每首混音定稿后，我直接发给母带工程师，你不用转交。母带之后再回头改混音，按交付后微调计费，所以请尽量在定稿前提完意见。</div>
 </details>
 <details>
   <summary>工期、延期、改方向</summary>
@@ -213,13 +210,12 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
 </main>
 
 <script>
-// ── 在这里改：专辑名、曲目、哪些算超长曲目（分钟）──
+// ── 在这里改：专辑名、曲目；第三项是曲目右边的标签（超长加价等），不写就没有 ──
 const ALBUM = '序述：虞山兴福寺', ARTIST = '支岑年';
-const LONG_MIN = 10;               // 达到这个时长（分钟）的曲目标「时长加价」
 const TRACKS = [
   ['虞山兴福寺', '4:22'], ['缘起 (Interlude)', '2:33'], ['地球OL不得不玩', '6:13'], ['黑路虎', '5:18'],
-  ['路两圈', '6:55'], ['蹲守洗衣店 (Skit)', '4:02'], ['可怜之人', '8:43'], ['乌云上身', '12:02'],
-  ['乡下', '5:07'], ['幼夜', '3:54'], ['小早', '6:31'], ['走神 (Interlude)', '40:38'], ['到达目的地 (Intro)', '10:29']
+  ['路两圈', '6:55'], ['蹲守洗衣店 (Skit)', '4:02'], ['可怜之人', '8:43'], ['乌云上身', '12:02', '音编 +¥500'],
+  ['乡下', '5:07'], ['幼夜', '3:54'], ['小早', '6:31'], ['走神 (Interlude)', '40:38', '另议'], ['到达目的地 (Intro)', '10:29', '音编 +¥500']
 ];
 const mins = d => { const [m, s] = d.split(':').map(Number); return m + s / 60; };
 if (document.referrer.includes('/review/ep/')) document.getElementById('back').onclick = e => { e.preventDefault(); history.back(); };
@@ -227,9 +223,9 @@ document.getElementById('album').textContent = '《' + ALBUM + '》合作流程'
 document.title = ALBUM + ' · 合作流程';
 document.getElementById('eb').textContent = ARTIST + ' × CU MUSIC';
 document.getElementById('dots').innerHTML = TRACKS.map((_, i) => '<i' + (i === 0 ? ' class="now"' : '') + '>' + (i + 1) + '</i>').join('');
-document.getElementById('tl').innerHTML = TRACKS.map(([t, d], i) => {
-  const long = mins(d) >= LONG_MIN;
-  return '<div class="tr' + (long ? ' long' : '') + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + t.replace(/[<>&]/g, '') + '</span>' + (long ? '<span class="e">时长加价</span>' : '') + '<span class="d">' + d + '</span></div>';
+document.getElementById('tl').innerHTML = TRACKS.map(([t, d, tag], i) => {
+  const long = !!tag;
+  return '<div class="tr' + (long ? ' long' : '') + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + t.replace(/[<>&]/g, '') + '</span>' + (long ? '<span class="e">' + tag + '</span>' : '') + '<span class="d">' + d + '</span></div>';
 }).join('');
 </script>
 </body>
