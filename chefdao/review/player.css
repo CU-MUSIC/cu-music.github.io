@@ -839,3 +839,9 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 @keyframes miniShine{0%{background-position:120% 0}28%,100%{background-position:-20% 0}}
 @keyframes miniGlow{0%,100%{box-shadow:0 14px 40px -12px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.1) inset,0 0 0 0 rgba(236,234,230,0)}14%{box-shadow:0 14px 40px -12px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.25) inset,0 0 0 4px rgba(236,234,230,.08)}}
 @media (prefers-reduced-motion:reduce){.mini.hint::after,.mini.hint{animation:none}}
+/* 悬浮条封面 */
+.mcv{flex:none;width:40px;height:40px;border-radius:8px;background:#2a2a2e center/cover;margin-left:2px}
+.mini:has(.mcv){padding-left:6px}
+/* 进度条阶段名：iPhone 上 filter:blur 配合裁切会在边缘画出一道彩色竖线，改成只用透明度 */
+.spbar span.k2,.spbar span.k3{filter:none}
+.spbar span.k2{opacity:.42}.spbar span.k3{opacity:.26}

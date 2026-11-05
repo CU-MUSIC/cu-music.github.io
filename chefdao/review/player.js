@@ -1059,6 +1059,7 @@ const miniHasLyr = () => !!(LYR && LYR.lines && LYR.lines.some(x => x.t != null)
 function miniUi() { $('#mini').classList.toggle('show', $('#app').classList.contains('in') && (waveOut || miniHasLyr())); $('#mini').classList.toggle('lyrm', miniHasLyr()); $('#mini').classList.toggle('hint', miniHasLyr() && !store.get('review:lyfsSeen')); updateCta(); }   // hint：没点开过全屏歌词前，悬浮条隔一会儿扫一道光
 new IntersectionObserver(([en]) => { waveOut = !en.isIntersecting && en.boundingClientRect.top < 0; miniUi(); }, { threshold: 0, rootMargin: '-40px 0px 0px 0px' }).observe($('#wave'));
 $('#mini').addEventListener('click', e => { if (e.target.closest('#mpp, #mbar') || !miniHasLyr()) return; lyrFull(); });
+if (S.cover) { const c = document.createElement('span'); c.className = 'mcv'; c.style.backgroundImage = "url('" + API_BASE + S.cover + "')"; $('#mini').prepend(c); }   // 悬浮条左边放封面（和你设备上的底部播放条一致）
 
 /* ───────── 版本切换 ───────── */
 /* ───────── 展开版本：每个版本一条波形，按阶段分组（编辑 / 混音 / 母带），一屏看三个，上下滚动，点一下切换 ───────── */
