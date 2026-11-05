@@ -16,13 +16,20 @@ html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--text);font:17px/1.75 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;letter-spacing:-.005em;padding:0 16px calc(64px + env(safe-area-inset-bottom))}
 main{max-width:720px;margin:0 auto}
 b{color:var(--text);font-weight:600}
-header{padding:20px 0 4px}
+header{padding:20px 0 8px}
 .back{display:inline-flex;align-items:center;gap:6px;margin:0 0 28px;padding:6px 14px 6px 10px;border-radius:999px;background:var(--card);color:var(--dim);font-size:14px;text-decoration:none}
 .back:active{transform:scale(.97)}
-.eyebrow{font-size:14px;letter-spacing:.14em;color:var(--dim)}
-h1{font-size:32px;line-height:1.3;margin:8px 0 8px;font-weight:700}
-.lead{color:var(--dim);margin:0;font-size:18px}
-h2{font-size:22px;line-height:1.4;margin:52px 0 14px;font-weight:700}
+.eyebrow{margin-top:30px;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim-3)}
+h1{margin:14px 0 0;font-weight:600}
+h1 .a1{display:block;font-size:clamp(40px,11vw,56px);line-height:1.1;letter-spacing:.04em}
+h1 .a2{display:block;margin-top:8px;font-size:19px;font-weight:400;line-height:1.4;letter-spacing:.24em;color:var(--dim)}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);margin-top:36px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.meta div{padding:14px 0 12px;text-align:center}
+.meta div+div{border-left:1px solid var(--line)}
+.meta b{display:block;font-size:18px;font-weight:500;line-height:1.4}
+.meta span{font-size:13px;color:var(--dim-3);letter-spacing:.12em}
+h2{display:flex;align-items:baseline;gap:14px;font-size:21px;line-height:1.4;margin:64px 0 20px;padding-top:18px;border-top:1px solid var(--line);font-weight:600;letter-spacing:.02em}
+h2 i{font-style:normal;font-size:13px;font-weight:500;color:var(--dim-3);letter-spacing:.1em;font-variant-numeric:tabular-nums}
 h2 small{font-size:15px;font-weight:400;color:var(--dim);margin-left:8px}
 
 /* 流程图 */
@@ -31,13 +38,13 @@ h2 small{font-size:15px;font-weight:400;color:var(--dim);margin-left:8px}
 .flow li:last-child{padding-bottom:0}
 .flow li::before{content:'';position:absolute;left:27px;top:56px;bottom:2px;width:2px;background:var(--line)}
 .flow li:last-child::before{display:none}
-.ic{flex:none;width:56px;height:56px;border-radius:18px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--text)}
-.ic svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ic{flex:none;width:56px;height:56px;border-radius:50%;background:var(--bg);border:1px solid rgba(236,234,230,.16);display:grid;place-items:center;color:var(--text)}
+.ic svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
 .ic.pay{color:var(--ink);border-color:var(--pearl);background:var(--pearl)}
-.flow h3{margin:2px 0 0;font-size:19px;line-height:1.4}
+.flow h3{margin:2px 0 0;font-size:18px;line-height:1.4;font-weight:600}
 .flow p{margin:2px 0 0;color:var(--dim);font-size:16px;line-height:1.6}
 .chip{display:inline-block;font-size:13.5px;line-height:1.5;padding:0 10px;border-radius:999px;margin:6px 6px 0 0}
-.chip.pay{color:var(--ink);background:var(--pearl);font-weight:600}
+.chip.pay{color:var(--ink);background:var(--pearl);font-weight:500}
 .chip.you{color:var(--ok);background:var(--ok-bg)}
 @media(min-width:760px){
  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
@@ -57,12 +64,14 @@ h2 small{font-size:15px;font-weight:400;color:var(--dim);margin-left:8px}
 /* 费用 */
 .price{display:grid;gap:12px}
 @media(min-width:620px){.price{grid-template-columns:1.2fr 1fr 1fr}}
-.pc{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
-.pc.main{border-color:var(--pearl);background:var(--hi-bg)}
-.pc .k{font-size:14px;color:var(--dim)}
-.pc .v{font-size:30px;font-weight:700;line-height:1.3;color:var(--text)}
-.pc.main .v{color:var(--pearl)}
+.pc{padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--card)}
+.was{font-size:18px;color:var(--dim-3);margin-right:10px;text-decoration-thickness:1px;vertical-align:.5em}
+.pc.main{margin-bottom:12px;border-color:var(--pearl);background:var(--hi-bg)}
+.pc .k{font-size:12.5px;color:var(--dim-3);letter-spacing:.14em}
+.pc .v{font-size:30px;font-weight:300;letter-spacing:-.01em;line-height:1.3;color:var(--text)}
+.pc.main .v{color:var(--pearl);font-size:40px;line-height:1.2}
 .pc .v small{font-size:15px;font-weight:400;color:var(--dim);margin-left:4px}
+.lad{margin-top:6px}.lad div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:15.5px}.lad span{color:var(--dim)}.lad b{font-weight:400;font-variant-numeric:tabular-nums}
 .pc p{margin:4px 0 0;font-size:15.5px;color:var(--dim);line-height:1.6}
 .tl{margin-top:14px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
 .tr{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:16px}
@@ -70,19 +79,23 @@ h2 small{font-size:15px;font-weight:400;color:var(--dim);margin-left:8px}
 .tr .n{flex:none;width:24px;color:var(--dim);font-size:14px}
 .tr .t{flex:1;min-width:0}
 .tr .d{flex:none;color:var(--dim);font-size:15px;font-variant-numeric:tabular-nums}
-.tr .e{flex:none;font-size:13px;color:var(--ink);background:var(--pearl);font-weight:600;border-radius:999px;padding:0 10px}
+.tr .e{flex:none;font-size:13px;color:var(--ink);background:var(--pearl);font-weight:500;border-radius:999px;padding:0 10px}
 .tr.long .d{color:var(--text)}
+.tr .p{flex:none;width:68px;text-align:right;font-variant-numeric:tabular-nums}
+.tr.long .p{color:var(--pearl);font-weight:500}
+.tl .hd{padding:8px 14px}.tl .hd span{color:var(--dim-3);font-size:12.5px;letter-spacing:.12em;font-weight:400}
+.fn{margin:10px 2px 0;color:var(--dim);font-size:15px}
 
 /* 要你回复 */
 .ask{display:grid;gap:10px}
 @media(min-width:620px){.ask{grid-template-columns:1fr 1fr}}
 .ask div{padding:16px;border:1px solid var(--pearl);background:var(--hi-bg);border-radius:16px}
-.ask b{display:block;font-size:18px;margin-bottom:2px}
+.ask b{display:block;font-size:17px;font-weight:600;margin-bottom:2px}
 .ask span{color:var(--dim);font-size:16px}
 
 /* 折叠说明 */
 details{border-bottom:1px solid var(--line)}
-summary{cursor:pointer;padding:15px 0;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px;font-size:18px}
+summary{cursor:pointer;padding:15px 0;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:12px;font-size:17px}
 summary::-webkit-details-marker{display:none}
 summary::after{content:'+';color:var(--dim);font-weight:400;font-size:22px;line-height:1.2}
 details[open] summary::after{content:'–'}
@@ -102,12 +115,11 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
 
 <header>
   <a class="back" id="back" href="/chefdao/review/ep/#bta6g7pp">‹ 回到项目页</a><br>
-  <div class="eyebrow" id="eb">CU MUSIC · 专辑合作</div>
-  <h1 id="album">专辑合作流程</h1>
-  <p class="lead">共 13 首，逐首推进：单首定稿结算后，进入下一首。</p>
+  <div class="eyebrow">合作流程 · Workflow</div>
+  <h1 id="album"><span class="a1">序述</span><span class="a2">虞山兴福寺</span></h1>
 </header>
 
-<h2>单首制作流程</h2>
+<h2><i>01</i>单首制作流程</h2>
 <ol class="flow">
   <li>
     <div class="ic pay"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.7 2.5-1.7s2.5.7 2.5 1.7-1 1.5-2.5 1.8-2.5.8-2.5 1.8 1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></svg></div>
@@ -119,7 +131,7 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
   </li>
   <li>
     <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 3 12 3-9 2 3h5"/></svg></div>
-    <div><h3>音频编辑</h3><p>节奏编辑与修音，确认后进入混音</p><span class="chip you">选择节奏风格</span></div>
+    <div><h3>音频编辑</h3><p>节奏与音准编辑，确认后进入混音</p><span class="chip you">选择节奏风格</span></div>
   </li>
   <li>
     <div class="ic"><svg viewBox="0 0 24 24"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="14" r="2" fill="var(--card)"/><circle cx="12" cy="8" r="2" fill="var(--card)"/><circle cx="19" cy="15" r="2" fill="var(--card)"/></svg></div>
@@ -136,22 +148,19 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
   <div class="dots" id="dots"></div>
 </div>
 
-<h2>费用</h2>
-<div class="price">
-  <div class="pc main"><div class="k">每首基础价</div><div class="v">¥2,000</div><p>含节奏编辑、基础混音、人声制作</p></div>
-  <div class="pc"><div class="k">修音</div><div class="v">¥100<small>/ 首</small></div><p>适用于含旋律演唱的曲目</p></div>
-  <div class="pc"><div class="k">长曲目音频编辑</div><div class="v" style="font-size:24px;padding-top:4px">+¥250 / +¥500</div><p>8–10 分钟 / 10 分钟以上；无需音频编辑的曲目不收取</p></div>
-</div>
+<h2><i>02</i>费用</h2>
+<div class="pc main"><div class="k">每首基础价 · 专辑优惠</div><div class="v"><s class="was">¥2,200</s>¥2,000</div><p>含标准编辑（节奏 + 音准）、分轨混音、人声制作 · 创意向（3 个方案）</p></div>
 <div class="tl" id="tl"></div>
+<p class="fn">长曲目音频编辑附加：8–10 分钟 +¥300，10 分钟以上 +¥500；无需音频编辑的曲目不收取。</p>
 
-<h2>节奏风格确认</h2>
-<p style="margin:0 0 14px;color:var(--dim)">选取一首篇幅较短的曲目，制作两个编辑版本供试听比较。选定后，全专辑按同一风格执行。</p>
+<h2><i>03</i>节奏风格确认</h2>
+<p style="margin:0 0 14px;color:var(--dim)">第一首曲目的音频编辑提供两个版本供选择，确定后，后续曲目沿用同一风格。</p>
 <div class="ask">
   <div><b>A · 贴合正拍</b><span>人声对齐节拍网格，整齐利落。</span></div>
   <div><b>B · 保留原律动</b><span>保留演唱本身的律动，仅修正明显问题。</span></div>
 </div>
 
-<h2>详细说明</h2>
+<h2><i>04</i>详细说明</h2>
 
 <details>
   <summary>反馈与修改周期</summary>
@@ -169,8 +178,8 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
   <summary>人声制作范围</summary>
   <div>
     <ul>
-      <li><b>执行向 1 版</b>：按明确需求执行，需求请于开工前一次性提出</li>
-      <li><b>创意向 3 版</b>：提供 3 个方向供选择，选定后细节修正不限次数</li>
+      <li>每首含 <b>3 个方案</b>，供选择方向</li>
+      <li>选定方案后，细节修正不限次数</li>
       <li>超出方案数的部分另行计费，执行前报价确认</li>
     </ul>
   </div>
@@ -208,10 +217,6 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
     </ul>
   </div>
 </details>
-<details>
-  <summary>质量与传播效果</summary>
-  <div>按工作室标准交付至可发行水准。播放量与传播效果取决于作品本身、发行与运营，不在混音服务的承诺范围内。</div>
-</details>
 
 <footer>CU MUSIC · 如有疑问，请于开工前沟通确认。</footer>
 </main>
@@ -221,18 +226,17 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
 const ALBUM = '序述：虞山兴福寺', ARTIST = '支岑年';
 const TRACKS = [
   ['虞山兴福寺', '4:22'], ['缘起 (Interlude)', '2:33'], ['地球OL不得不玩', '6:13'], ['黑路虎', '5:18'],
-  ['路两圈', '6:55'], ['蹲守洗衣店 (Skit)', '4:02'], ['可怜之人', '8:43', '音编 +¥250'], ['乌云上身', '12:02', '音编 +¥500'],
-  ['乡下', '5:07'], ['幼夜', '3:54'], ['小早', '6:31'], ['走神 (Interlude)', '40:38', '待确认'], ['到达目的地 (Intro)', '10:29', '音编 +¥500']
+  ['路两圈', '6:55'], ['蹲守洗衣店 (Skit)', '4:02'], ['可怜之人', '8:43', '音编 +¥300', 2300], ['乌云上身', '12:02', '音编 +¥500', 2500],
+  ['乡下', '5:07'], ['幼夜', '3:54'], ['小早', '6:31'], ['走神 (Interlude)', '40:38', '待确认', 0], ['到达目的地 (Intro)', '10:29', '音编 +¥500', 2500]
 ];
 const mins = d => { const [m, s] = d.split(':').map(Number); return m + s / 60; };
 if (document.referrer.includes('/review/ep/')) document.getElementById('back').onclick = e => { e.preventDefault(); history.back(); };
-document.getElementById('album').textContent = '《' + ALBUM + '》合作流程';
+{ const [a1, a2] = ALBUM.split('：'); document.querySelector('#album .a1').textContent = a1; document.querySelector('#album .a2').textContent = a2 || ''; }
 document.title = ALBUM + ' · 合作流程';
-document.getElementById('eb').textContent = ARTIST + ' × CU MUSIC';
 document.getElementById('dots').innerHTML = TRACKS.map((_, i) => '<i' + (i === 0 ? ' class="now"' : '') + '>' + (i + 1) + '</i>').join('');
-document.getElementById('tl').innerHTML = TRACKS.map(([t, d, tag], i) => {
-  const long = !!tag;
-  return '<div class="tr' + (long ? ' long' : '') + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + t.replace(/[<>&]/g, '') + '</span>' + (long ? '<span class="e">' + tag + '</span>' : '') + '<span class="d">' + d + '</span></div>';
+document.getElementById('tl').innerHTML = '<div class="tr hd"><span class="n">#</span><span class="t">曲目</span><span class="d">时长</span><span class="p">费用</span></div>' + TRACKS.map(([t, d, tag, price], i) => {
+  const long = !!tag, pr = price === 0 ? '待确认' : '¥' + (price || 2000).toLocaleString('en-US');
+  return '<div class="tr' + (long ? ' long' : '') + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + t.replace(/[<>&]/g, '') + '</span><span class="d">' + d + '</span><span class="p">' + pr + '</span></div>';
 }).join('');
 </script>
 </body>
