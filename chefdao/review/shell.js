@@ -1,4 +1,5 @@
-// 审听外壳：只在你自己的设备（带看板钥匙）上用，客户看到的页面不变。
+// 审听外壳：所有审听页都用。客户那边只多一件事：同项目切歌时后台预载好的下一首直接换上、不刷新页面。
+// 你自己的设备（带看板钥匙）另外有侧边栏和底部播放条。
 // 播放器页放在 iframe 里，侧边栏在外壳里：切项目 / 曲目时，正在播的那首留在后台继续放。
 // 底部常驻播放条（参考 Samply）：封面、歌名、后退 / 播放 / 前进、波形拖动、时间；后台在播时多一个「回到这首」。
 // 在新页面里开始播放，后台那首自动让位。播放条的数据来自播放器页的 window.cuP（player.js）。
@@ -7,6 +8,7 @@
   const me = document.currentScript, ver = me && me.src.indexOf('?') > 0 ? me.src.slice(me.src.indexOf('?')) : '';
   const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } } };
   const W = 272;
+  const OWNER = !!ls.get('insights:key'); window.__cuShellBar = OWNER;   // 客户也用外壳（切歌不刷新），但没有底部播放条和侧边栏
   const fmt = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 
   // 外壳自己整页重写：去掉原页面的样式和「正在载入」
@@ -83,6 +85,7 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
     try { const a = audio(f); if (a) a.pause(); } catch (e) {}
     f.el.remove();
     if (f === bg) bg = null;
+    if (f === pre) pre = null;
   }
   function make(u) {
     const el = document.createElement('iframe'); el.src = u.href; el.setAttribute('allow', 'autoplay; fullscreen');
@@ -98,38 +101,58 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
   // 地址栏跟着当前看的这首走（刷新、分享都对得上）
   function sync() {
     const l = view && curUrl(view); if (!l) return;
-    const p = l.pathname + l.search + l.hash;
+    const p = l.pathname + l.search.replace(/[?&]pre=1\b/, '').replace(/^&/, '?') + l.hash;
     if (p !== location.pathname + location.search + location.hash) history.replaceState(null, '', p);
+    try { const t = view.el.contentDocument.title; if (t) document.title = t; } catch (e) {}
     tick(true);
   }
 
-  function nav(url, push = true) {
+  // 预载：后台先把下一首开好（?pre=1：不记访问、不出声），切过去时直接换上
+  let pre = null;
+  window.cuPreload = url => {
+    const u = new URL(url, location.href); if (u.origin !== location.origin) return;
+    const key = keyOf(u); if ((view && view.key === key) || (bg && bg.key === key) || (pre && pre.key === key)) return;
+    if (pre) destroy(pre);
+    u.search = (u.search ? u.search + '&' : '?') + 'pre=1';
+    pre = make(u); pre.key = key; pre.el.classList.add('bg');
+  };
+  // o.replace：切歌（上一首 / 下一首 / 播放列表）——旧的那首直接关掉，不留后台；o.play / o.fs：换上后接着放 / 接着全屏
+  function nav(url, push = true, o = {}) {
     const u = new URL(url, location.href);
     if (u.origin !== location.origin) { location.href = u.href; return; }
     const key = keyOf(u);
     if (view && view.key === key) return;
     const old = view;
-    if (bg && bg.key === key) { view = bg; bg = null; }
+    if (pre && pre.key === key) {
+      view = pre; pre = null;
+      try { sessionStorage.removeItem('review:quick'); } catch (e) {}
+      const w = view.el.contentWindow, act = { play: !!o.play, fs: !!o.fs };
+      try { const p = w.cuP; if (p && p.activate) p.activate(act); else w.__cuAct = act; } catch (e) {}
+      setTimeout(sync, 0);
+    }
+    else if (bg && bg.key === key) { view = bg; bg = null; }
     else view = make(u);
     view.el.classList.remove('bg');
-    // 离开时还在播的那首留在后台；没在播的直接丢掉
-    if (old) { if (playing(old)) { destroy(bg); bg = old; old.el.classList.add('bg'); } else destroy(old); }
+    // 离开时还在播的那首留在后台；没在播的直接丢掉；切歌时直接关掉
+    if (old) { if (!o.replace && playing(old)) { destroy(bg); bg = old; old.el.classList.add('bg'); } else destroy(old); }
     if (push) history.pushState(null, '', u.pathname + u.search + u.hash);
     try { view.el.contentWindow && view.el.contentWindow.focus(); } catch (e) {}
     tick(true);
   }
   window.cuNav = nav;
+  if (!OWNER) bar.hidden = true;
   addEventListener('popstate', () => nav(location.href, false));
 
   // 播放条跟着谁：后台有在播（或暂停着）的就跟后台那首，否则跟当前页面
-  const target = () => bg || view;
+  const target = () => bg || view;   // 预载的那首不算
   let pk = '', sig = '', drag = null, wsig = '';
   function tick(force) {
+    try { const t = view && view.el.contentDocument.title; if (t && t !== document.title) document.title = t; } catch (e) {}   // 标签页标题跟着当前这首
     if (bg && playing(view)) destroy(bg);   // 新页面里开始播了，后台那首让位
     const k = bg && playing(bg) ? bg.key : playing(view) ? view.key : '';
     if (k !== pk || force) { pk = k; window.cuPlayingKey = k; if (window.cuSideDraw) window.cuSideDraw(); }
     const f = target(), p = api(f);
-    document.documentElement.classList.toggle('cu-bar', !!p);
+    document.documentElement.classList.toggle('cu-bar', OWNER && !!p);
     if (!p) { sig = ''; return; }
     const S = p.song, on = playing(f), apiBase = (() => { try { return f.el.contentWindow.SONG_LIVE.api; } catch (e) { return ''; } })();
     const s = [S.slug, p.ver(), on, p.ready(), !!bg, S.cover].join('|');

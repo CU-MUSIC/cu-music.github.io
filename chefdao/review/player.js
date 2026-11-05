@@ -23,7 +23,11 @@ function quickRestore() {
 }
 // 从播放列表切过来的：不出解锁页和任何进场动画，直接进播放页（之前在播就接着播）
 let QUICK = false, QUICK_PLAY = false, QSTATE = null, FS_BACK = false;   // QSTATE：软刷新前的版本 / 位置 / 滚动，刷新后接着回到那里
-try { const q = JSON.parse(sessionStorage.getItem('review:quick') || 'null'); sessionStorage.removeItem('review:quick');
+// 预载：外壳（shell.js）在后台先把下一首开好（网址带 ?pre=1），切歌时直接换上，不刷新页面。换上之前不记访问、不出声
+let PRE = /[?&]pre=1\b/.test(location.search) && window.top !== window;
+const SHELL = (() => { try { return window.top !== window && window.parent.cuNav ? window.parent : null; } catch (e) { return null; } })();
+if (PRE) { QUICK = true; document.documentElement.classList.add('quick'); }
+else try { const q = JSON.parse(sessionStorage.getItem('review:quick') || 'null'); sessionStorage.removeItem('review:quick');
   if (q && q.s === S.slug) { QUICK = true; QUICK_PLAY = !!q.play; QSTATE = q; FS_BACK = !!q.fs; document.documentElement.classList.add('quick'); } } catch (e) {}
 if (QUICK) document.body.style.animation = 'qfade .3s ease both';   // 软刷新 / 切歌回来：淡入
 const noQuick = () => { QUICK = false; document.documentElement.classList.remove('quick'); };
@@ -420,11 +424,20 @@ function trackAt(d) {
   const t = list[i + d]; if (!t) return null;
   const full = PL && PL.find(x => x.slug === t.slug); return full || t;
 }
-function goTrack(d, fs) {
-  const t = trackAt(d); if (!t) return;
-  try { sessionStorage.setItem('review:quick', JSON.stringify({ s: t.slug, play: !a.paused || a.ended || !!fs, fs: !!fs })); } catch (e) { return; }
+function goTrack(d, fs) { const t = trackAt(d); if (t) openTrack(t, !a.paused || a.ended || !!fs, fs); }
+// 切到另一首：在外壳里交给外壳（预载好的直接换上，不刷新）；不在外壳里才整页跳转
+function openTrack(t, play, fs) {
+  try { sessionStorage.setItem('review:quick', JSON.stringify({ s: t.slug, play: !!play, fs: !!fs })); } catch (e) { return; }
+  const u = new URL(t.url, location.href);
+  if (SHELL) { try { a.pause(); SHELL.cuNav(u.href, true, { replace: true, play: !!play, fs: !!fs, slug: t.slug }); return; } catch (e) {} }
   document.body.style.transition = 'opacity .14s'; document.body.style.opacity = '0';
-  const u = new URL(t.url, location.href); setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
+  setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
+}
+// 提前把下一首交给外壳在后台开好（列表循环到最后一首时预载第一首）
+function preloadNext() {
+  if (PRE || !SHELL || !SHELL.cuPreload) return;
+  const t = trackAt(1) || (RPT === 'all' && PL && PL[0] && PL[0].slug !== S.slug ? PL[0] : null);
+  if (t) try { SHELL.cuPreload(new URL(t.url, location.href).href); } catch (e) {}
 }
 function fsNav() {   // 全屏歌词里的切歌按钮和「下一首」提示
   const f = $('#lyfs'); if (!f) return;
@@ -437,7 +450,7 @@ async function loadPlaylist() {
   try {
     const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug + '&tok=' + (store.get('review:tok') || ''), { cache: 'no-store', headers: store.get('insights:key') ? { Authorization: 'Bearer ' + store.get('insights:key') } : {} })).json();   // 你自己的设备带上管理密钥，申请制项目不用批准自己也能看到列表
     const T = j.ok ? j.project.tracks : []; if (T.length < 2) return;
-    PL = T; fsNav();
+    PL = T; fsNav(); setTimeout(preloadNext, 2500);
     askName(new Set(T.flatMap(t => String(t.artist || '').split(/[、,，\/&]/).map(x => x.trim()).filter(Boolean))).size > 1);
     const el = $('#plist');
     // 本曲歌手的歌排最前（当前这首置顶），其他歌手的放后面；没标歌手就按项目顺序
@@ -455,9 +468,7 @@ async function loadPlaylist() {
     el.hidden = false;
     el.onclick = e => {   // 同一个页面只换 # 不会刷新，手动刷新一下
       const l = e.target.closest('.pli'); if (!l) return; e.preventDefault(); if (l.classList.contains('on')) return;
-      try { sessionStorage.setItem('review:quick', JSON.stringify({ s: l.dataset.s, play: !a.paused })); } catch (err) {}
-      document.body.style.transition = 'opacity .14s'; document.body.style.opacity = '0';
-      const u = new URL(l.href); setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
+      openTrack({ slug: l.dataset.s, url: l.href }, !a.paused, !!$('#lyfs'));
     };
   } catch (e) {}
 }
@@ -536,6 +547,7 @@ async function loadAudio(key) {
       const src = await fetchVersion(vi, p => { $('#loading').textContent = '正在加载音频… ' + Math.round(p * 100) + '%'; });
       a.src = src; try { a.load(); } catch (e) {} $('#play').disabled = false; $('#loading').style.opacity = 0;
       if (QUICK_PLAY) a.play().catch(() => {});
+      setTimeout(preloadNext, 2500);
       return;
     }
     // 解锁：暗色轮廓上的亮环按官网节奏画出来，同时下载音频；下载慢时画线跟着减速，超过 0.8 秒才显示百分比
@@ -551,7 +563,7 @@ async function loadAudio(key) {
     if (L.classList.contains('dl-on')) $('#dlt').textContent = '下载完成';
     await anim;
     a.src = src; try { a.load(); } catch (e) {}   // iPhone 不自动预载：主动读出时长，进度条和歌词点了才跳得过去
-    $('#play').disabled = false;
+    $('#play').disabled = false; setTimeout(preloadNext, 2500);
     $('#loading').style.opacity = 0;
   } catch (e) { $('#loading').textContent = '音频加载失败，请刷新重试'; }
 }
@@ -753,8 +765,18 @@ $('#play').onclick = toggle;
 $('#back').onclick = () => seek(a.currentTime - 5);
 $('#fwd').onclick = () => seek(a.currentTime + 5);
 // 看板外壳（shell.js，只在你的设备上）的底部播放条：从这里读状态、发指令；在外壳里就不显示页内的迷你播放条
-window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled };
-if (window.top !== window) document.documentElement.classList.add('inshell');
+// activate：预载好的这首被换到前台——补记访问、接着放 / 接着全屏，再预载它的下一首
+function activate(o) {
+  o = o || {}; if (!PRE) return;
+  PRE = false; try { history.replaceState(null, '', location.pathname + location.search.replace(/[?&]pre=1\b/, '').replace(/^&/, '?') + location.hash); } catch (e) {}
+  PRE_PINGS.splice(0).forEach(accessPing);
+  if (o.fs) { if (LYR && LYR.lines && LYR.lines.length) lyrFull(); else FS_BACK = true; }
+  if (o.play) { if (!$('#play').disabled) a.play().catch(() => {}); else QUICK_PLAY = true; }
+  setTimeout(preloadNext, 2500);
+}
+window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled, activate, pre: () => PRE };
+if (SHELL && SHELL.__cuShellBar) document.documentElement.classList.add('inshell');
+if (PRE && window.__cuAct) setTimeout(() => activate(window.__cuAct), 0);   // 还没载完就被换到前台了
 document.addEventListener('keydown', e => {
   if (/TEXTAREA|INPUT/.test(e.target.tagName)) return;
   if (e.code === 'Space') { e.preventDefault(); toggle(); }
@@ -1891,7 +1913,9 @@ function beacon(title, html) {
 const STATS = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787/e' : 'https://stats.cumusic.work/e';
 const sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 // 访问记录：不管听没听，打开页面记一次（0 打开了），输对密码再记一次（1 查看了）。你自己的设备不记
+const PRE_PINGS = [];
 const accessPing = state => {
+  if (PRE) { PRE_PINGS.push(state); return; }
   if (ME || store.get('insights:key') || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
   fetch(API_BASE + '/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
     body: JSON.stringify({ sid, lid, kind: 'song', slug: S.slug, state, device, visit: visits }) }).catch(() => {});
@@ -1933,9 +1957,7 @@ a.addEventListener('ended', () => { st().ends++;
     const fs = !!$('#lyfs');
     if (trackAt(1)) return goTrack(1, fs);
     const first = PL && PL[0]; if (!first || first.slug === S.slug) return again();
-    try { sessionStorage.setItem('review:quick', JSON.stringify({ s: first.slug, play: true, fs })); } catch (e) { return again(); }
-    document.body.style.transition = 'opacity .14s'; document.body.style.opacity = '0';
-    const u = new URL(first.url, location.href); return setTimeout(() => { if (u.pathname === location.pathname) { location.hash = u.hash; location.reload(); } else location.href = u.pathname + u.hash; }, 150);
+    return openTrack(first, true, fs);
   }
   nextInQueue(); });
 // 项目页点了「播放」：按曲目顺序连播，这首放完自动切到下一首接着放（和播放列表切歌同一套快速进入）

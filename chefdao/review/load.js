@@ -3,9 +3,10 @@
 //   <script src="../load.js"></script>                    看板新建的歌，网址 review/s/#码
 (async () => {
   const me = document.currentScript;
-  // 你自己的设备：整页交给审听外壳（shell.js），播放器放进它的 iframe，切歌时正在播的那首留在后台
+  // 整页交给审听外壳（shell.js），播放器放进它的 iframe。你自己的设备：切歌时正在播的那首留在后台
   const embedded = window.top !== window;
-  try { if (!embedded && localStorage.getItem('insights:key') && !/[?&]noshell\b/.test(location.search)) { const sh = document.createElement('script'); sh.src = me.src.replace(/load\.js(\?.*)?$/, 'shell.js') + (me.dataset.v ? '?v=' + me.dataset.v : ''); document.head.appendChild(sh); return; } } catch (e) {}
+  // 客户也走外壳：同一个项目里切歌时预载好的下一首直接换上，不刷新页面（外壳里只有你的设备才有侧边栏和底部播放条）
+  try { if (!embedded && !/[?&]noshell\b/.test(location.search)) { const sh = document.createElement('script'); sh.src = me.src.replace(/load\.js(\?.*)?$/, 'shell.js') + (me.dataset.v ? '?v=' + me.dataset.v : ''); document.head.appendChild(sh); return; } } catch (e) {}
   // 在独立应用窗口里打开审听页：左上角给一个返回看板的小标签（只有你自己的设备才有）
   try { if (matchMedia('(display-mode: standalone)').matches && localStorage.getItem('insights:key')) { const bk = document.createElement('a'); bk.href = '/chefdao/review/insights/'; bk.textContent = '‹ Insights';
     bk.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:12px;z-index:98;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.1);color:#d8d6d2;font:500 13px -apple-system,"PingFang SC",sans-serif;text-decoration:none;backdrop-filter:blur(8px)'; document.body.appendChild(bk); } } catch (e) {}
