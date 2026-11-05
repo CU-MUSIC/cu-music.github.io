@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1c20">
+<meta name="description" content="韩国唱作人 × 音乐治疗师 Chonsita（음총명）。大家好，我正在学中文。">
+<link rel="canonical" href="https://cumusic.work/chonsita/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="大家好，我是 Chonsita">
+<meta property="og:description" content="韩国唱作人 × 音乐治疗师 · 음총명">
+<meta property="og:image" content="https://cumusic.work/chonsita/img/p03.jpg">
+<meta property="og:url" content="https://cumusic.work/chonsita/">
+<title>Chonsita 음총명</title>
+<style>
+/* 布局：开场照片飞入成网格 → 进入；之后是一页长滚动的中文履历，每节一张大图 + 短文案 */
+:root{
+  --bg:#1a1c20; --bg2:#212328; --line:#34363b;
+  --fg:#d6d3cd; --muted:#9b978f;
+  --gold:#c9a46a;   /* 低饱和琥珀 */
+  --rose:#c29a92;   /* 汉服粉的灰调 */
+  --serif:"Noto Serif SC","Songti SC",serif;
+  --latin:"Cormorant Garamond",Georgia,serif;
+  --sans:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --cols:6;
+  color-scheme:dark;
+}
+@media (max-width:800px){:root{--cols:4}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:17px;line-height:1.8;overflow-x:hidden}
+body.locked{overflow:hidden}
+img{max-width:100%;display:block}
+
+/* ---------- 开场 ---------- */
+#intro{position:fixed;inset:0;z-index:50;background:#111214;overflow:hidden}
+#grid{display:grid;width:100vw;grid-template-columns:repeat(var(--cols),1fr);grid-auto-rows:calc(100vw / var(--cols));transition:filter 1.6s ease}
+#grid.dim{filter:brightness(.22) saturate(.8)}
+.cell{overflow:hidden;background:#1c1d21}
+.cell img{width:100%;height:100%;object-fit:cover;opacity:0}
+.fly{position:fixed;left:0;top:0;z-index:51;object-fit:cover;opacity:0;pointer-events:none;will-change:transform,opacity}
+#hello{position:absolute;inset:0;z-index:52;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;
+  padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));opacity:0;pointer-events:none;transition:opacity 1.2s var(--ease)}
+#hello.show{opacity:1;pointer-events:auto}
+#hello .hi{font-family:var(--latin);font-style:italic;font-size:clamp(1.1rem,2.6vw,1.5rem);color:var(--gold);letter-spacing:.06em}
+#hello h1{font-family:var(--serif);font-weight:900;font-size:clamp(2.6rem,8vw,5.2rem);line-height:1.1;margin:0;color:#e9e4da}
+#hello .kr{font-family:var(--serif);font-size:clamp(1rem,2.4vw,1.3rem);color:var(--muted);letter-spacing:.3em}
+#enter{margin-top:14px;font:600 15px/1 var(--sans);letter-spacing:.4em;padding:17px 40px 17px 46px;border-radius:100px;border:1px solid rgba(233,228,218,.5);
+  background:rgba(233,228,218,.08);color:#e9e4da;cursor:pointer;backdrop-filter:blur(8px);transition:background .3s,transform .2s}
+#enter:hover{background:rgba(233,228,218,.18)}
+#enter:active{transform:scale(.95)}
+#enter:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+#intro.out{opacity:0;transition:opacity 1s ease;pointer-events:none}
+
+/* ---------- 正文 ---------- */
+.wrap{max-width:1080px;margin:0 auto;padding-inline:max(20px,env(safe-area-inset-left,0px)) max(20px,env(safe-area-inset-right,0px))}
+section{padding-block:clamp(64px,10vw,120px);border-top:1px solid var(--line)}
+section:first-of-type{border-top:none}
+.label{font-family:var(--latin);font-style:italic;color:var(--gold);font-size:1.15rem;letter-spacing:.05em;margin-bottom:8px}
+h2{font-family:var(--serif);font-weight:900;font-size:clamp(1.8rem,4.4vw,2.8rem);line-height:1.3;margin:0 0 22px;text-wrap:balance;color:#e9e4da}
+p{margin:0 0 14px;max-width:34em}
+.hl{color:var(--gold)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:center}
+.split.rev>:first-child{order:2}
+@media (max-width:760px){.split,.split.rev{grid-template-columns:1fr}.split.rev>:first-child{order:0}}
+.photo{border-radius:4px;overflow:hidden;background:var(--bg2)}
+.photo img{width:100%;height:100%;object-fit:cover}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:end}
+@media (max-width:760px){.hero{grid-template-columns:1fr}}
+.hero .photo{aspect-ratio:3/4}
+.hero h2{font-size:clamp(2.4rem,6vw,4rem);margin-bottom:6px}
+.hero .kr{font-family:var(--serif);color:var(--muted);letter-spacing:.25em;margin-bottom:26px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px;padding:0;list-style:none}
+.tags li{border:1px solid var(--line);border-radius:100px;padding:4px 14px;font-size:.92rem;color:var(--fg)}
+.quote{font-family:var(--serif);font-size:clamp(1.25rem,2.6vw,1.6rem);line-height:1.6;color:#e9e4da;border-left:2px solid var(--rose);padding-left:18px;margin:0}
+
+/* 中文学习中 */
+.learning{text-align:center}
+.learning h2{margin-inline:auto}
+.learning p{margin-inline:auto}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:28px 0 0;padding:0;list-style:none}
+.chips li{font-family:var(--serif);font-size:1.25rem;background:var(--bg2);border-radius:8px;padding:12px 20px;min-width:0}
+.chips small{display:block;font-family:var(--sans);font-size:.8rem;color:var(--muted)}
+
+/* 时间线 */
+.tl{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.tl li{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:20px;padding:20px 0;border-top:1px solid var(--line)}
+.tl li:first-child{border-top:none}
+.tl .when{font-family:var(--serif);color:var(--gold);font-weight:600}
+.tl b{color:#e9e4da;font-weight:600}
+@media (max-width:520px){.tl li{grid-template-columns:1fr;gap:2px}}
+
+/* 作品 */
+.covers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:30px}
+@media (max-width:760px){.covers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cover .photo{aspect-ratio:1}
+.cover h3{font-family:var(--serif);font-size:1.05rem;margin:12px 0 2px;color:#e9e4da}
+.cover span{font-size:.9rem;color:var(--muted)}
+
+/* 中国 */
+.mosaic{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:clamp(120px,18vw,220px);gap:10px;margin-top:30px}
+.mosaic .photo:nth-child(1){grid-row:span 2}
+.mosaic .photo:nth-child(4){grid-row:span 2}
+@media (max-width:760px){.mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 结尾 */
+.end{text-align:center}
+.end h2{font-size:clamp(2rem,5vw,3.2rem)}
+.end p{margin-inline:auto;color:var(--muted)}
+.handles{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 28px;margin-top:26px;font-size:.95rem}
+.handles span{color:var(--muted)}
+.handles b{color:var(--fg);font-weight:500}
+
+/* 进入后的浮现 */
+.rv{transition:opacity 1s var(--ease),transform 1s var(--ease)}
+.js .rv.pre{opacity:0;transform:translateY(28px)}
+@media (prefers-reduced-motion:reduce){.rv{transition:none}.js .rv.pre{opacity:1;transform:none}#grid{transition:none}}
+</style>
+</head>
+<body>
+
+<div id="intro" aria-label="开场动画">
+  <div id="grid"></div>
+  <div id="hello">
+    <div class="hi">Soy Chonsita</div>
+    <h1>大家好，我是 Chonsita</h1>
+    <div class="kr">음총명</div>
+    <button id="enter" type="button">进入</button>
+  </div>
+</div>
+
+<main>
+<section><div class="wrap hero">
+  <div class="photo rv"><img src="img/p03.jpg" alt="Chonsita 写真"></div>
+  <div class="rv">
+    <div class="label">Singer-songwriter × Music therapist</div>
+    <h2>Chonsita</h2>
+    <div class="kr">음총명</div>
+    <ul class="tags"><li>唱作人</li><li>音乐治疗师</li><li>世宗大学音乐系 兼任教授</li><li>住在首尔付岩洞</li></ul>
+    <p class="quote">我的每一首歌，<br>都来自一段真实走过的路。</p>
+  </div>
+</div></section>
+
+<section class="learning"><div class="wrap rv">
+  <div class="label">Learning Chinese</div>
+  <h2>我正在学中文</h2>
+  <p>在世宗大学，我身边有很多中国学生。下课以后我们常常一起去吃中国菜。我的中文还说不好，可是我很想用中文和大家聊天。</p>
+  <ul class="chips">
+    <li>你好<small>nǐ hǎo</small></li>
+    <li>谢谢<small>xiè xie</small></li>
+    <li>好吃！<small>hǎo chī</small></li>
+    <li>我喜欢中国<small>wǒ xǐ huan zhōng guó</small></li>
+  </ul>
+</div></section>
+
+<section><div class="wrap split">
+  <div class="photo rv" style="aspect-ratio:16/10"><img src="img/p11.jpg" alt="乐队演出，Chonsita 弹键盘"></div>
+  <div class="rv">
+    <div class="label">From keys to voice</div>
+    <h2>从键盘手，到主唱</h2>
+    <p>我四岁开始学古典钢琴。在乐队里，我一直坐在后面弹琴。</p>
+    <p>有一次去一所男子高中演出，队友们说"台下全是男生，换个女声吧"，就把我推到了麦克风前。那天我第一次感觉到，<span class="hl">观众在跟着我的呼吸一起听歌</span>。从那以后，我就一直唱下去了。</p>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="label rv">Story</div>
+  <h2 class="rv">我走过的路</h2>
+  <ol class="tl rv">
+    <li><span class="when">4 岁</span><span>开始学古典钢琴</span></li>
+    <li><span class="when">大学</span><span>主修<b>心理学</b>。我觉得写歌之前，要先懂人</span></li>
+    <li><span class="when">研究生</span><span>主修<b>音乐治疗</b>；在江陵 MBC 电台《星光灿烂的夜晚》做了一年半现场演唱嘉宾，晚上在 Live bar 弹唱</span></li>
+    <li><span class="when">20 多岁</span><span>为原创音乐剧写歌，在电影里做音乐现场指导，还在选秀片段里客串过</span></li>
+    <li><span class="when">非洲</span><span>25 岁去了非洲，那里的孩子后来变成了我的歌《TUTAONANA》</span></li>
+    <li><span class="when">济州岛</span><span>给民宿写邮件："让我住下，我就为客人唱歌"。环岛一圈回来，写出了第一首发行作品</span></li>
+    <li><span class="when">30 多岁</span><span>在精神科医院做<b>音乐治疗师</b>，为每一位患者写适合他的歌</span></li>
+    <li><span class="when">南美</span><span>通过韩国外交部 KOICA 项目，用西班牙语教了一年半音乐。"Chonsita" 就是那里的朋友给我起的名字</span></li>
+    <li><span class="when">现在</span><span>世宗大学音乐系兼任教授，和很多中国学生一起上课</span></li>
+  </ol>
+</div></section>
+
+<section><div class="wrap split rev">
+  <div class="photo rv" style="aspect-ratio:4/5"><img src="img/p01.jpg" alt="Chonsita 近照"></div>
+  <div class="rv">
+    <div class="label">Healing voice</div>
+    <h2>唱歌，是做减法</h2>
+    <p>我的声音不适合炫技。练歌的时候，我花更多时间去<span class="hl">去掉多余的转音，让结尾干干净净</span>。</p>
+    <p>原声流行（Acoustic Pop）是我最自在的音乐。作为音乐治疗师，我相信一首安静的歌，也可以陪一个人慢慢变好。</p>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="label rv">Works</div>
+  <h2 class="rv">我的作品</h2>
+  <p class="rv">已经可以在 QQ 音乐找到我。</p>
+  <div class="covers">
+    <div class="cover rv"><div class="photo"><img src="img/p14.jpg" alt="《你也去济州岛吗》封面"></div><h3>당신도 제주에 가나요</h3><span>你也去济州岛吗 · 第一首作品</span></div>
+    <div class="cover rv"><div class="photo"><img src="img/p15.jpg" alt="《TUTAONANA》封面"></div><h3>TUTAONANA</h3><span>写给非洲的孩子们</span></div>
+    <div class="cover rv"><div class="photo"><img src="img/p13.jpg" alt="《二十 三十》封面"></div><h3>스물 서른</h3><span>二十 三十</span></div>
+    <div class="cover rv"><div class="photo"><img src="img/p12.jpg" alt="QQ 音乐歌手主页截图" style="object-position:top"></div><h3>꽃 (Flower)</h3><span>与 FauloCity 合作</span></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="label rv">Me &amp; China</div>
+  <h2 class="rv">我在中国的日子</h2>
+  <p class="rv">在苏州和无锡，我穿上汉服，走过古镇的夜晚。天气很暖，人很亲切，食物也太好吃了。我的学生说，下次一定要去新疆。</p>
+  <div class="mosaic">
+    <div class="photo rv"><img src="img/p08.jpg" alt="汉服照，红灯笼"></div>
+    <div class="photo rv"><img src="img/p05.jpg" alt="古镇夜景"></div>
+    <div class="photo rv"><img src="img/p06.jpg" alt="园林圆门"></div>
+    <div class="photo rv"><img src="img/p10.jpg" alt="黄墙前"></div>
+    <div class="photo rv"><img src="img/p07.jpg" alt="汉服照，石雕前"></div>
+    <div class="photo rv"><img src="img/p09.jpg" alt="汉服照，回廊"></div>
+  </div>
+</div></section>
+
+<section class="end"><div class="wrap rv">
+  <div class="label">See you soon</div>
+  <h2>希望用音乐，和你们相遇</h2>
+  <p>小红书账号准备中。下一首歌，我想用中文唱给你们听。</p>
+  <div class="handles">
+    <span>Instagram <b>@soychonsita</b></span>
+    <span>YouTube <b>@soychonsita</b></span>
+    <span>QQ 音乐 <b>음총명</b></span>
+  </div>
+</div></section>
+</main>
+
+<script>
+(function(){
+  document.documentElement.classList.add('js');
+  const intro=document.getElementById('intro'), grid=document.getElementById('grid'), hello=document.getElementById('hello');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pics=['p03','p08','p01','p05','p11','p06','p15','p04','p10','p13','p02','p07','p14','p09','p16','p12'].map(n=>'img/s/'+n+'.jpg'); // 开场用小图，手机上更快
+  const rvs=[...document.querySelectorAll('.rv')];
+  let entered=false;
+
+  function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+  function showHello(){grid.classList.add('dim');hello.classList.add('show')}
+
+  function enter(){
+    if(entered)return; entered=true;
+    intro.classList.add('out'); document.body.classList.remove('locked');
+    setTimeout(()=>intro.remove(),1000);
+    rvs.forEach(el=>el.classList.add('pre'));
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.remove('pre');io.unobserve(e.target)}}),{threshold:.12});
+    requestAnimationFrame(()=>rvs.forEach(el=>io.observe(el)));
+  }
+  document.getElementById('enter').addEventListener('click',enter);
+
+  // 开场：照片从四面八方飞进来拼成网格
+  const cols=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols'));
+  const cw=innerWidth/cols, rows=Math.ceil(innerHeight/cw)+1, total=cols*rows;
+  const pool=[]; let bag=[];
+  for(let i=0;i<total;i++){ if(!bag.length)bag=shuffle(pics); pool.push(bag.pop()); }
+  grid.innerHTML=pool.map(src=>`<div class="cell"><img src="${src}" alt=""></div>`).join('');
+  document.body.classList.add('locked');
+  setTimeout(showHello,7000); // 保底
+
+  if(reduce){grid.querySelectorAll('img').forEach(i=>i.style.opacity=1);showHello();return}
+
+  Promise.all(pics.map(s=>new Promise(r=>{const im=new Image();im.onload=im.onerror=r;im.src=s}))).then(()=>{
+    const cells=[...grid.children]; let done=0;
+    cells.forEach((cell,i)=>{
+      const target=cell.firstChild, rc=cell.getBoundingClientRect();
+      const fly=document.createElement('img'); fly.src=pool[i]; fly.className='fly'; fly.alt='';
+      fly.style.width=rc.width+'px'; fly.style.height=rc.height+'px';
+      const a=Math.random()*Math.PI*2, d=Math.max(innerWidth,innerHeight)*1.2;
+      fly.style.transform=`translate(${innerWidth/2+Math.cos(a)*d}px,${innerHeight/2+Math.sin(a)*d}px) scale(.5)`;
+      intro.appendChild(fly);
+      const ms=1500+Math.random()*1000, delay=i*35;
+      setTimeout(()=>requestAnimationFrame(()=>{
+        fly.style.transition=`transform ${ms}ms var(--ease),opacity .5s ease`;
+        fly.style.opacity='1'; fly.style.transform=`translate(${rc.left}px,${rc.top}px) scale(1)`;
+      }),delay);
+      // 先让格子里的图瞬间显示，等它画出来后再移除飞行图，避免中间闪一下
+      setTimeout(()=>{target.style.opacity=1;requestAnimationFrame(()=>requestAnimationFrame(()=>{fly.remove();if(++done===cells.length)showHello()}))},delay+ms+80);
+    });
+  });
+})();
+</script>
+</body></html>
