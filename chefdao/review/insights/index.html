@@ -76,6 +76,15 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .who b{font-weight:600}
 .who time{color:var(--text-3);font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dev{font-size:14px;color:var(--text-3)}
+.pjb{margin-top:8px;background:var(--fill);border-radius:12px;padding:10px 12px}
+.pjb>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:14px}
+.pjb>summary::-webkit-details-marker{display:none}
+.pjb>summary span{font-size:11px;color:var(--text-3);border:.5px solid var(--hair);border-radius:6px;padding:0 6px}
+.pjb>summary b{font-weight:600;flex:1;min-width:0}
+.pjb>summary em{font-style:normal;flex-basis:100%;font-size:12.5px;color:var(--text-3)}
+.pjb>summary em::after{content:' · 点开看每首';color:var(--text-3)}
+.pjb[open]>summary em::after{content:' · 收起'}
+.pjb .ver{background:var(--bg,transparent);border:.5px solid var(--hair)}
 .ver{margin-top:8px;background:var(--fill);border-radius:12px;padding:10px 12px}
 .ver .t{display:flex;justify-content:space-between;gap:8px;font-size:15px}
 .ver .t span{color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -307,7 +316,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261104c"></script>
 <script>
 (() => {
-const BUILD = '261104.2230';
+const BUILD = '261105.1030';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -490,6 +499,26 @@ function verSummary(rows) {
     ${hasBins ? '<div class="heat">' + reach.map(v => `<i style="height:${Math.max(8, v / n * 100)}%;opacity:${v > 0 ? .25 + .75 * v / n : .08}"></i>`).join('') + '</div><div class="facts" style="font-size:12px;color:var(--text-3)">条越高，听到这一段的人越多</div>' : ''}
     <div class="facts">${facts.join(' · ')}${mid}</div></div>`;
 }
+// 同一次打开里，属于同一个项目的曲目合成一块；不在项目里的曲目照旧单列
+function feedBlocks(g) {
+  const slugPj = new Map(); ((LIB && LIB.projects) || []).forEach(p => (p.tracks || []).forEach(t => slugPj.set(t.slug, p)));
+  const out = [], seen = new Map();
+  g.forEach(x => {
+    const p = slugPj.get(x.slug);
+    if (!p || song) { out.push({ rows: [x] }); return; }
+    if (!seen.has(p.slug)) { const o = { p, rows: [] }; seen.set(p.slug, o); out.push(o); }
+    seen.get(p.slug).rows.push(x);
+  });
+  return out.map(o => {
+    if (!o.p) return verBlock(o.rows[0]);
+    const r = o.rows, n = new Set(r.map(x => x.slug)).size, sec = r.reduce((t, x) => t + (x.sec || 0), 0), ends = r.reduce((t, x) => t + (x.ends || 0), 0);
+    const comm = r.reduce((t, x) => t + ((x.fb && x.fb.comments) ? x.fb.comments.filter(c => !c.del).length : 0), 0);
+    const facts = ['听了 <b>' + n + '</b> 首', '共 <b>' + mins(sec) + '</b>'];
+    if (ends) facts.push('完整听完 <b>' + ends + '</b> 次');
+    if (comm) facts.push('评论 <b>' + comm + '</b> 条');
+    return `<details class="pjb"><summary><span>项目</span><b>《${esc(o.p.title)}》</b><em>${facts.join(' · ')}</em></summary>${r.map(verBlock).join('')}</details>`;
+  }).join('');
+}
 function verBlock(x) {
   const len = x.dur / 60, b = x.bins || [];
   const cover = b.length ? Math.round(b.filter(v => v >= len * .5).length / 60 * 100) : 0;
@@ -670,7 +699,7 @@ function renderListen() {
     return `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
       <div class="who">${who(x.lid, '听众')}<time>${when(last, now)}</time></div>
       <div class="dev">${esc(x.device || '设备')}${x.visit > 1 ? ' · 第 ' + x.visit + ' 次打开' : ''}${place(x.sid, x.country) ? ' · ' + esc(place(x.sid, x.country)) : ''}</div>
-      ${g.map(verBlock).join('')}</div></div>`;
+      ${feedBlocks(g)}</div></div>`;
   }).join('') : '<div class="empty">这段时间还没人听</div>'}</div>`;
 }
 
