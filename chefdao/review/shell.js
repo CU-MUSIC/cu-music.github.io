@@ -32,7 +32,13 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
 #cuBar .cv svg{width:22px;height:22px}
 #cuBar .tx{flex:0 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
 #cuBar .tx small{font-size:11px;color:#8a8886;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#cuBar .tx small.ly{font-size:12px;color:#d8d6d2}
+#cuBar .tx b.ly{font-size:15px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
+#cuBar .tx b.swap{animation:cuSwap .42s cubic-bezier(.2,.8,.2,1)}
+@keyframes cuSwap{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#cuBar{overflow:hidden}
+#cuBar.hint::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.12) 45%,rgba(255,255,255,.22) 50%,rgba(255,255,255,.12) 55%,transparent 70%);background-size:250% 100%;background-position:120% 0;animation:cuShine 5s ease-in-out 1.2s infinite}
+@keyframes cuShine{0%{background-position:120% 0}28%,100%{background-position:-20% 0}}
+@media (prefers-reduced-motion:reduce){#cuBar.hint::after{animation:none}}
 #cuBar .tx b{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #cuBar .tr{display:flex;align-items:center;gap:6px}
 #cuBar .sk{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#c9c7c3}
@@ -166,8 +172,13 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
       $bk.hidden = $x.hidden = !bg;
     }
     // 小字那行：正在唱的歌词（有歌词时），否则项目名 · 版本
-    const ln = (p.line && p.line()) || '', base = [S.project && S.project.title !== S.title ? S.project.title : (S.artist || ''), p.ver()].filter(Boolean).join(' · ');
-    const want = ln || base; if ($sm.textContent !== want) { $sm.textContent = want; $sm.classList.toggle('ly', !!ln); }
+    // 有歌词：小字歌名 · 版本，大字正在唱的那句（前奏 / 间奏显示 ♪）；没歌词照旧
+    const hasL = !!(p.full && p.hasLyr && p.hasLyr()), ln = (p.line && p.line()) || '';
+    const small = hasL ? [S.title, p.ver()].filter(Boolean).join(' · ') : [S.project && S.project.title !== S.title ? S.project.title : (S.artist || ''), p.ver()].filter(Boolean).join(' · ');
+    const big = hasL ? (ln || '♪') : (S.title || '');
+    if ($sm.textContent !== small) $sm.textContent = small;
+    if ($tt.textContent !== big) { $tt.textContent = big; $tt.classList.toggle('ly', hasL); if (hasL) { $tt.classList.remove('swap'); void $tt.offsetWidth; $tt.classList.add('swap'); } }
+    bar.classList.toggle('hint', hasL && !ls.get('review:lyfsSeen'));
   }
   setInterval(tick, 400);
 

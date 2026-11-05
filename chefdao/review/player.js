@@ -217,7 +217,7 @@ document.body.innerHTML = `
       <svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg>
       <svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg>
     </button>
-    <div class="mbody"><div class="mrow"><span class="mt" id="mt">${esc(S.title)} · ${esc(cur.ver)}</span><span class="mtime" id="mtime">0:00</span></div><div class="mbar" id="mbar"><i id="mfill"></i></div></div>
+    <div class="mbody"><div class="mrow"><span class="mt" id="mt">${esc(S.title)} · ${esc(cur.ver)}</span><span class="mtime" id="mtime">0:00</span></div><div class="mly" id="mly"></div><div class="mbar" id="mbar"><i id="mfill"></i></div></div>
   </div>
   <button class="cta" id="cta"><svg viewBox="0 0 24 24"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5 21 3z"/></svg><span id="ctaT">发送给刀大厨</span><span class="badge" id="badge">0</span></button></div>
 <div class="hud" id="hud"></div>
@@ -775,7 +775,7 @@ function activate(o) {
   if (o.play) { if (!$('#play').disabled) a.play().catch(() => {}); else QUICK_PLAY = true; }
   setTimeout(preloadNext, 2500);
 }
-window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled, activate, pre: () => PRE, line: () => { try { return curLine(); } catch (e) { return ''; } }, full: () => { try { if (miniHasLyr()) { lyrFull(); return true; } } catch (e) {} return false; } };
+window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled, activate, pre: () => PRE, line: () => { try { return curLine(); } catch (e) { return ''; } }, hasLyr: () => { try { return miniHasLyr(); } catch (e) { return false; } }, full: () => { try { if (miniHasLyr()) { lyrFull(); return true; } } catch (e) {} return false; } };
 if (SHELL && SHELL.__cuShellBar) document.documentElement.classList.add('inshell');
 if (PRE && window.__cuAct) setTimeout(() => activate(window.__cuAct), 0);   // 还没载完就被换到前台了
 document.addEventListener('keydown', e => {
@@ -1056,7 +1056,7 @@ mbar.addEventListener('pointerup', () => mdrag = false);
 // 底部悬浮条：有歌词时一直在，显示正在唱的那句，点一下进全屏歌词；没歌词时照旧（波形滚出屏幕才出现）
 let waveOut = false;
 const miniHasLyr = () => !!(LYR && LYR.lines && LYR.lines.some(x => x.t != null));
-function miniUi() { $('#mini').classList.toggle('show', $('#app').classList.contains('in') && (waveOut || miniHasLyr())); $('#mini').classList.toggle('lyrm', miniHasLyr()); updateCta(); }
+function miniUi() { $('#mini').classList.toggle('show', $('#app').classList.contains('in') && (waveOut || miniHasLyr())); $('#mini').classList.toggle('lyrm', miniHasLyr()); $('#mini').classList.toggle('hint', miniHasLyr() && !store.get('review:lyfsSeen')); updateCta(); }   // hint：没点开过全屏歌词前，悬浮条隔一会儿扫一道光
 new IntersectionObserver(([en]) => { waveOut = !en.isIntersecting && en.boundingClientRect.top < 0; miniUi(); }, { threshold: 0, rootMargin: '-40px 0px 0px 0px' }).observe($('#wave'));
 $('#mini').addEventListener('click', e => { if (e.target.closest('#mpp, #mbar') || !miniHasLyr()) return; lyrFull(); });
 
@@ -2083,7 +2083,10 @@ function miniLine(force) {
   const L = LYR && LYR.lines, x = L && lyrIdx >= 0 && L[lyrIdx] ? String(L[lyrIdx].x || '').trim() : '';
   const t = x && !/^[-–—·.。…\s]+$/.test(x) ? x : S.title + ' · ' + cur.ver;
   if (t === miniTxt && !force) return; miniTxt = t;
-  const el = $('#mt'); el.textContent = t; el.classList.toggle('ly', t !== S.title + ' · ' + cur.ver);
+  // 有歌词：上面小字歌名 · 版本，下面大字正在唱的那句；没唱的时候（前奏 / 间奏）大字行显示「♪」
+  const has = miniHasLyr(), ly = t !== S.title + ' · ' + cur.ver;
+  $('#mt').textContent = S.title + ' · ' + cur.ver;
+  const el = $('#mly'); el.textContent = has ? (ly ? t : '♪') : ''; el.classList.toggle('rest', !ly);
   el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
 }
 const curLine = () => { const L = LYR && LYR.lines, x = L && lyrIdx >= 0 && L[lyrIdx] ? String(L[lyrIdx].x || '').trim() : ''; return x && !/^[-–—·.。…\s]+$/.test(x) ? x : ''; };
@@ -2148,6 +2151,7 @@ function lyrSync(i) {
 // 全屏歌词（Spotify 那样）：封面糊成背景，大字歌词跟着走，底下播放 / 进度；Esc 或 ⌄ 退出
 function lyrFull() {
   const L = LYR && LYR.lines; if (!L || $('#lyfs')) return;
+  store.set('review:lyfsSeen', '1'); $('#mini').classList.remove('hint');
   const f = document.createElement('div'); f.className = 'lyfs'; f.id = 'lyfs';
   const cv = S.cover ? API_BASE + S.cover : '';
   f.innerHTML = `<div class="fbg"${cv ? ` style="background-image:url('${cv}')"` : ''}></div>

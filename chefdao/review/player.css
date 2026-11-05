@@ -823,3 +823,19 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 /* 长句歌词在悬浮条里最多两行，不被省略号截掉 */
 .mini.lyrm{height:auto;min-height:52px;padding-top:6px;padding-bottom:6px}
 .mini.lyrm .mt.ly{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:12.5px;line-height:1.3}
+/* 悬浮条有歌词时：小字歌名在上，大字歌词在下 */
+.mly{display:none}
+.mini.lyrm .mt{font-size:11px;font-weight:500;color:var(--text-3)}
+.mini.lyrm .mtime{font-size:11px}
+.mini.lyrm .mly{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:1px 0 5px;font-size:15.5px;font-weight:650;line-height:1.3;color:var(--text)}
+.mini.lyrm .mly.rest{color:var(--text-3)}
+.mly.swap{animation:mtSwap .42s cubic-bezier(.2,.8,.2,1)}
+/* 闪光提示：客户还没点开过全屏歌词，悬浮条每隔几秒扫过一道光 */
+.mini.show.lyrm{position:relative;overflow:hidden}
+.mini.hint::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.16) 45%,rgba(255,255,255,.28) 50%,rgba(255,255,255,.16) 55%,transparent 70%);
+  background-size:250% 100%;background-position:120% 0;animation:miniShine 5s ease-in-out 1.2s infinite}
+.mini.hint{box-shadow:0 14px 40px -12px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.1) inset,0 0 0 0 rgba(236,234,230,.0);animation:miniGlow 5s ease-in-out 1.2s infinite}
+@keyframes miniShine{0%{background-position:120% 0}28%,100%{background-position:-20% 0}}
+@keyframes miniGlow{0%,100%{box-shadow:0 14px 40px -12px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.1) inset,0 0 0 0 rgba(236,234,230,0)}14%{box-shadow:0 14px 40px -12px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.25) inset,0 0 0 4px rgba(236,234,230,.08)}}
+@media (prefers-reduced-motion:reduce){.mini.hint::after,.mini.hint{animation:none}}
