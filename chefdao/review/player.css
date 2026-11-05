@@ -845,3 +845,15 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 /* 进度条阶段名：iPhone 上 filter:blur 配合裁切会在边缘画出一道彩色竖线，改成只用透明度 */
 .spbar span.k2,.spbar span.k3{filter:none}
 .spbar span.k2{opacity:.42}.spbar span.k3{opacity:.26}
+/* 波形下面一行：正在唱的歌词，点进全屏 */
+.plyr{display:block;position:relative;overflow:hidden;width:100%;margin:2px 0 4px;padding:8px 12px;border-radius:12px;background:transparent;color:var(--text);text-align:center;font:inherit;cursor:pointer}
+.plyr[hidden]{display:none}
+.plyr span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:16px;font-weight:650;line-height:1.4;min-height:1.4em}
+.plyr span.rest{color:var(--text-3)}
+.plyr span.swap{animation:mtSwap .42s cubic-bezier(.2,.8,.2,1)}
+.plyr:hover{background:var(--fill)}
+.plyr.hint::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.10) 45%,rgba(255,255,255,.2) 50%,rgba(255,255,255,.10) 55%,transparent 70%);
+  background-size:250% 100%;background-position:120% 0;animation:miniShine 5s ease-in-out 1.2s infinite}
+.plyr.hint{background:var(--fill)}
+@media (prefers-reduced-motion:reduce){.plyr.hint::after{animation:none}}

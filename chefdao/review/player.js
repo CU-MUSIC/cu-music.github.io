@@ -172,6 +172,7 @@ document.body.innerHTML = `
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
+  <button class="plyr press" id="plyr" hidden aria-label="打开全屏歌词"><span id="plyrT"></span></button>
   <div class="transport">
     <button class="skip press" id="back" aria-label="后退 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 8A8 8 0 1 1 4 12.6"/><path d="M4.6 3.8v4.6h4.6"/><text x="12.4" y="15.7" text-anchor="middle" font-size="8.6" font-weight="700" fill="currentColor" stroke="none">5</text></svg></button>
     <button class="playbtn press" id="play" aria-label="播放" disabled>
@@ -1056,8 +1057,9 @@ mbar.addEventListener('pointerup', () => mdrag = false);
 // 底部悬浮条：有歌词时一直在，显示正在唱的那句，点一下进全屏歌词；没歌词时照旧（波形滚出屏幕才出现）
 let waveOut = false;
 const miniHasLyr = () => !!(LYR && LYR.lines && LYR.lines.some(x => x.t != null));
-function miniUi() { $('#mini').classList.toggle('show', $('#app').classList.contains('in') && (waveOut || miniHasLyr())); $('#mini').classList.toggle('lyrm', miniHasLyr()); $('#mini').classList.toggle('hint', miniHasLyr() && !store.get('review:lyfsSeen')); updateCta(); }   // hint：没点开过全屏歌词前，悬浮条隔一会儿扫一道光
+function miniUi() { const L = miniHasLyr(), hint = L && !store.get('review:lyfsSeen'); $('#mini').classList.toggle('show', $('#app').classList.contains('in') && waveOut); $('#mini').classList.toggle('lyrm', L); $('#mini').classList.toggle('hint', hint); $('#plyr').hidden = !L; $('#plyr').classList.toggle('hint', hint); updateCta(); }   // 悬浮条只在波形滚出屏幕后出现（不挡播放键）；波形下面那行歌词一直在   // hint：没点开过全屏歌词前，悬浮条隔一会儿扫一道光
 new IntersectionObserver(([en]) => { waveOut = !en.isIntersecting && en.boundingClientRect.top < 0; miniUi(); }, { threshold: 0, rootMargin: '-40px 0px 0px 0px' }).observe($('#wave'));
+$('#plyr').onclick = () => lyrFull();
 $('#mini').addEventListener('click', e => { if (e.target.closest('#mpp, #mbar') || !miniHasLyr()) return; lyrFull(); });
 if (S.cover) { const c = document.createElement('span'); c.className = 'mcv'; c.style.backgroundImage = "url('" + API_BASE + S.cover + "')"; $('#mini').prepend(c); }   // 悬浮条左边放封面（和你设备上的底部播放条一致）
 
@@ -2087,8 +2089,7 @@ function miniLine(force) {
   // 有歌词：上面小字歌名 · 版本，下面大字正在唱的那句；没唱的时候（前奏 / 间奏）大字行显示「♪」
   const has = miniHasLyr(), ly = t !== S.title + ' · ' + cur.ver;
   $('#mt').textContent = S.title + ' · ' + cur.ver;
-  const el = $('#mly'); el.textContent = has ? (ly ? t : '♪') : ''; el.classList.toggle('rest', !ly);
-  el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
+  [$('#mly'), $('#plyrT')].forEach(el => { el.textContent = has ? (ly ? t : '♪') : ''; el.classList.toggle('rest', !ly); el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); });
 }
 const curLine = () => { const L = LYR && LYR.lines, x = L && lyrIdx >= 0 && L[lyrIdx] ? String(L[lyrIdx].x || '').trim() : ''; return x && !/^[-–—·.。…\s]+$/.test(x) ? x : ''; };
 // 点一句跳过去；「评论」对这一句写意见（全屏里点评论会先退出全屏）
@@ -2152,7 +2153,7 @@ function lyrSync(i) {
 // 全屏歌词（Spotify 那样）：封面糊成背景，大字歌词跟着走，底下播放 / 进度；Esc 或 ⌄ 退出
 function lyrFull() {
   const L = LYR && LYR.lines; if (!L || $('#lyfs')) return;
-  store.set('review:lyfsSeen', '1'); $('#mini').classList.remove('hint');
+  store.set('review:lyfsSeen', '1'); $('#mini').classList.remove('hint'); $('#plyr').classList.remove('hint');
   const f = document.createElement('div'); f.className = 'lyfs'; f.id = 'lyfs';
   const cv = S.cover ? API_BASE + S.cover : '';
   f.innerHTML = `<div class="fbg"${cv ? ` style="background-image:url('${cv}')"` : ''}></div>
