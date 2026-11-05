@@ -55,6 +55,14 @@ h2 small{font-size:15px;font-weight:400;color:var(--dim);margin-left:8px}
 }
 
 /* 一首一首 */
+.sch{list-style:none;margin:0;padding:0;border-left:1px solid var(--line);margin-left:6px}
+.sch li{position:relative;padding:0 0 22px 22px}
+.sch li::before{content:'';position:absolute;left:-5px;top:9px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:1px solid var(--dim)}
+.sch li:last-child::before{background:var(--pearl);border-color:var(--pearl)}
+.sch time{display:block;font-size:13px;letter-spacing:.08em;color:var(--dim-3)}
+.sch b{display:block;font-weight:600;font-size:17px}
+.sch span{display:block;color:var(--dim);font-size:15.5px;line-height:1.6}
+.rules{margin:6px 0 0;padding-left:1.2em;color:var(--dim);font-size:16px}.rules li{margin:6px 0}
 .loop{margin-top:22px;padding:16px;border:1px dashed var(--line);border-radius:16px;color:var(--dim);font-size:16px}
 .loop b{color:var(--text)}
 .dots{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
@@ -100,6 +108,7 @@ summary::-webkit-details-marker{display:none}
 summary::after{content:'+';color:var(--dim);font-weight:400;font-size:22px;line-height:1.2}
 details[open] summary::after{content:'–'}
 details>div{padding:0 0 16px;color:var(--text);font-size:16.5px}
+.gl{margin:4px 0 0}.gl dt{font-weight:600;margin-top:14px}.gl dt:first-child{margin-top:0}.gl dd{margin:2px 0 0;color:var(--dim)}
 details ul{margin:6px 0;padding-left:1.2em}details li{margin:5px 0}
 footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(--line);padding-top:16px}
 @media print{
@@ -144,7 +153,7 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
 </ol>
 
 <div class="loop">
-  <b>13 首依次进行</b>，单首定稿结算后开始下一首。
+  <b>13 首逐首结算</b>。当前曲目等待反馈期间，下一首可先行音频编辑，以缩短整体周期。
   <div class="dots" id="dots"></div>
 </div>
 
@@ -160,7 +169,37 @@ footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(
   <div><b>B · 保留原律动</b><span>保留演唱本身的律动，仅修正明显问题。</span></div>
 </div>
 
-<h2><i>04</i>详细说明</h2>
+<h2><i>04</i>排期</h2>
+<ol class="sch">
+  <li><time>11 月中旬</time><div><b>第一首 · 节奏风格确认</b><span>选取篇幅较短的曲目，提供两个编辑版本；同时确认《走神》的制作范围</span></div></li>
+  <li><time>11 月中旬 – 1 月上旬</time><div><b>逐首推进</b><span>前后两首交叠进行，平均每 4–5 天完成一首</span></div></li>
+  <li><time>1 月 15 日前</time><div><b>13 首混音定稿</b><span>为后续母带与发行预留时间</span></div></li>
+</ol>
+<ul class="rules">
+  <li>每首的进度与预计交付日期，可在项目页随时查看</li>
+  <li>每版意见请由一位负责人统一确认后留言，避免多方意见反复</li>
+  <li>元旦、春节前后，反馈与交付时间相应顺延</li>
+</ul>
+
+<h2><i>05</i>详细说明</h2>
+<details>
+  <summary>名词解释</summary>
+  <div>
+    <dl class="gl">
+      <dt>分轨混音</dt><dd>伴奏按乐器分开提供（鼓、贝斯、和弦等），与人声一起逐轨处理。相比只用一条立体声伴奏，乐器与人声的关系可以调整得更细。</dd>
+      <dt>Demo 方向确认</dt><dd>正式制作前的粗混版本，只做大致的音量平衡，用于确认整体方向与参考曲一致，不代表最终音色。</dd>
+      <dt>标准编辑（节奏 + 音准）</dt><dd>对人声逐句进行节奏对齐与音准修正，是混音前的基础工作。确认后再进入混音，避免混音中途返工。</dd>
+      <dt>贴合正拍 / 保留原律动</dt><dd>节奏编辑的两种取向：前者把人声对齐到节拍网格，整齐利落；后者保留演唱本身的推拉感，只修正明显偏差。</dd>
+      <dt>基础混音</dt><dd>整首的音色、平衡、空间与层次处理，让人声与乐器各自清楚、整体成立。</dd>
+      <dt>人声制作</dt><dd>在基础混音之上，对人声做设计性的处理，例如 ad-lib 摆位与效果、和声与叠唱、词尾延迟、段落间的空间变化、特定词句的效果等。</dd>
+      <dt>3 个方案</dt><dd>人声制作阶段提供 3 个不同方向的处理方案供试听比较，例如更干净直接、更有空间氛围、更多效果设计。选定其一后，在此基础上细修，细节修正不限次数。</dd>
+      <dt>修正与新方案</dt><dd>修正：让成品更贴近已选定的方向（人声位置、亮度、空间、平衡等），不另收费。新方案：尝试与已选方向不同的新思路或新增创意效果，另行计费，执行前报价确认。</dd>
+      <dt>时间点留言</dt><dd>在审听页播放时，于具体时间点留下意见，每条对应一处问题，修改时可以准确定位。</dd>
+      <dt>长曲目音频编辑附加</dt><dd>音频编辑的工作量与曲目时长直接相关。8 分钟以上且需要编辑的曲目，按时长加收；无需编辑的曲目不收取。</dd>
+      <dt>定稿</dt><dd>该曲目确认无修改意见，存档并结清尾款后开放下载，随后进入下一首。</dd>
+    </dl>
+  </div>
+</details>
 
 <details>
   <summary>反馈与修改周期</summary>
