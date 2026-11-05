@@ -32,6 +32,7 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
 #cuBar .cv svg{width:22px;height:22px}
 #cuBar .tx{flex:0 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
 #cuBar .tx small{font-size:11px;color:#8a8886;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cuBar .tx small.ly{font-size:12px;color:#d8d6d2}
 #cuBar .tx b{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #cuBar .tr{display:flex;align-items:center;gap:6px}
 #cuBar .sk{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#c9c7c3}
@@ -63,9 +64,9 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
   const ICON = { play: '<svg viewBox="0 0 16 16"><path d="M4.5 2.6v10.8c0 .6.7 1 1.2.7l8.3-5.4c.5-.3.5-1.1 0-1.4L5.7 1.9c-.5-.3-1.2.1-1.2.7z"/></svg>', pause: '<svg viewBox="0 0 16 16"><rect x="3.5" y="2.5" width="3.2" height="11" rx="1"/><rect x="9.3" y="2.5" width="3.2" height="11" rx="1"/></svg>' };
   bar.innerHTML = `<button class="cv" aria-label="打开这首">${MARK}</button>
     <button class="tx" aria-label="打开这首"><small></small><b></b></button>
-    <div class="tr"><button class="sk" data-k="-5" aria-label="后退 5 秒"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v3.7h3.7"/></svg></button>
+    <div class="tr"><button class="sk" data-k="-5" aria-label="后退 5 秒"><svg viewBox="0 0 24 24"><path d="M5.2 8A8 8 0 1 1 4 12.6"/><path d="M4.6 3.8v4.6h4.6"/><text x="12.4" y="15.7" text-anchor="middle" font-size="8.6" font-weight="700" fill="currentColor" stroke="none">5</text></svg></button>
     <button class="pp" aria-label="播放">${ICON.play}</button>
-    <button class="sk" data-k="5" aria-label="前进 5 秒"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v3.7h-3.7"/></svg></button></div>
+    <button class="sk" data-k="5" aria-label="前进 5 秒"><svg viewBox="0 0 24 24"><path d="M18.8 8A8 8 0 1 0 20 12.6"/><path d="M19.4 3.8v4.6h-4.6"/><text x="11.6" y="15.7" text-anchor="middle" font-size="8.6" font-weight="700" fill="currentColor" stroke="none">5</text></svg></button></div>
     <span class="t" id="cuT0">0:00</span><div class="wv"><canvas></canvas></div><span class="t" id="cuT1">0:00</span>
     <button class="bk" hidden>回到这首</button><button class="x" hidden aria-label="停止后台播放">✕</button><div class="pg"><i></i></div>`;
   document.body.append(stage, bar);
@@ -164,6 +165,9 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
       $pp.innerHTML = on ? ICON.pause : ICON.play; $pp.setAttribute('aria-label', on ? '暂停' : '播放'); $pp.disabled = !p.ready();
       $bk.hidden = $x.hidden = !bg;
     }
+    // 小字那行：正在唱的歌词（有歌词时），否则项目名 · 版本
+    const ln = (p.line && p.line()) || '', base = [S.project && S.project.title !== S.title ? S.project.title : (S.artist || ''), p.ver()].filter(Boolean).join(' · ');
+    const want = ln || base; if ($sm.textContent !== want) { $sm.textContent = want; $sm.classList.toggle('ly', !!ln); }
   }
   setInterval(tick, 400);
 
@@ -200,7 +204,9 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
   $pp.onclick = toggle;
   bar.querySelectorAll('.sk').forEach(b => b.onclick = () => { const p = api(target()); if (p && p.ready()) p.seek(p.a.currentTime + +b.dataset.k); });
   const back = () => { if (bg) nav(bg.url); };
-  $bk.onclick = back; $cv.onclick = back; $('.tx').onclick = back;
+  // 点封面 / 歌名：后台有在播的就回到那首；否则打开这首的全屏歌词
+  const open = () => { if (bg) return back(); const p = api(view); if (p && p.full) p.full(); };
+  $bk.onclick = back; $cv.onclick = open; $('.tx').onclick = open;
   $x.onclick = () => { destroy(bg); tick(true); };
   // 焦点在外壳里（刚点过侧边栏）时，空格也能播放 / 暂停
   addEventListener('keydown', e => { if (e.code === 'Space' && !/INPUT|TEXTAREA|SELECT|BUTTON/.test((e.target && e.target.tagName) || '')) { e.preventDefault(); toggle(); } });

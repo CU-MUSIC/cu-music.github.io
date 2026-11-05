@@ -173,12 +173,12 @@ document.body.innerHTML = `
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
   <div class="transport">
-    <button class="skip press" id="back" aria-label="后退 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 3.5v3.7h3.7"/></svg><span>5</span></button>
+    <button class="skip press" id="back" aria-label="后退 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 8A8 8 0 1 1 4 12.6"/><path d="M4.6 3.8v4.6h4.6"/><text x="12.4" y="15.7" text-anchor="middle" font-size="8.6" font-weight="700" fill="currentColor" stroke="none">5</text></svg></button>
     <button class="playbtn press" id="play" aria-label="播放" disabled>
       <svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg>
       <svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg>
     </button>
-    <button class="skip press" id="fwd" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 3.5v3.7h-3.7"/></svg><span>5</span></button>
+    <button class="skip press" id="fwd" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18.8 8A8 8 0 1 0 20 12.6"/><path d="M19.4 3.8v4.6h-4.6"/><text x="11.6" y="15.7" text-anchor="middle" font-size="8.6" font-weight="700" fill="currentColor" stroke="none">5</text></svg></button>
     <button class="rpt press" id="rpt" aria-label="循环" aria-pressed="false" title="循环：关 → 列表循环 → 单曲循环"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/><path class="r1" d="M11.2 10.2l1.3-.8v5.2"/></svg></button>
   </div>
   <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
@@ -230,6 +230,7 @@ let REPLIES = new Map();
 let MSGS = [];   // 评论下的对话 [{ ver, t, m, who: 'c'|'o', text, ts }]
 let ONOTES = [];   // 刀大厨自己的评论（歌手端显示，来自 /cr）
 const IS_OWNER = !!store.get('insights:key');
+if (!IS_OWNER) document.documentElement.classList.add('cli');   // 客户页：不显示响度统一、数据、快捷评论这些
 const rk = (ver, t, m) => ver + '|' + (Math.round(t * 10) / 10) + '|' + m;
 const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 
@@ -774,7 +775,7 @@ function activate(o) {
   if (o.play) { if (!$('#play').disabled) a.play().catch(() => {}); else QUICK_PLAY = true; }
   setTimeout(preloadNext, 2500);
 }
-window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled, activate, pre: () => PRE };
+window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled, activate, pre: () => PRE, line: () => { try { return curLine(); } catch (e) { return ''; } }, full: () => { try { if (miniHasLyr()) { lyrFull(); return true; } } catch (e) {} return false; } };
 if (SHELL && SHELL.__cuShellBar) document.documentElement.classList.add('inshell');
 if (PRE && window.__cuAct) setTimeout(() => activate(window.__cuAct), 0);   // 还没载完就被换到前台了
 document.addEventListener('keydown', e => {
@@ -1052,10 +1053,12 @@ const mseek = e => { const r = mbar.getBoundingClientRect(); seek(Math.min(1, Ma
 mbar.addEventListener('pointerdown', e => { mdrag = true; mbar.setPointerCapture(e.pointerId); mseek(e); });
 mbar.addEventListener('pointermove', e => { if (mdrag) mseek(e); });
 mbar.addEventListener('pointerup', () => mdrag = false);
-new IntersectionObserver(([en]) => {
-  $('#mini').classList.toggle('show', !en.isIntersecting && $('#app').classList.contains('in') && en.boundingClientRect.top < 0);
-  updateCta();
-}, { threshold: 0, rootMargin: '-40px 0px 0px 0px' }).observe($('#wave'));
+// 底部悬浮条：有歌词时一直在，显示正在唱的那句，点一下进全屏歌词；没歌词时照旧（波形滚出屏幕才出现）
+let waveOut = false;
+const miniHasLyr = () => !!(LYR && LYR.lines && LYR.lines.some(x => x.t != null));
+function miniUi() { $('#mini').classList.toggle('show', $('#app').classList.contains('in') && (waveOut || miniHasLyr())); $('#mini').classList.toggle('lyrm', miniHasLyr()); updateCta(); }
+new IntersectionObserver(([en]) => { waveOut = !en.isIntersecting && en.boundingClientRect.top < 0; miniUi(); }, { threshold: 0, rootMargin: '-40px 0px 0px 0px' }).observe($('#wave'));
+$('#mini').addEventListener('click', e => { if (e.target.closest('#mpp, #mbar') || !miniHasLyr()) return; lyrFull(); });
 
 /* ───────── 版本切换 ───────── */
 /* ───────── 展开版本：每个版本一条波形，按阶段分组（编辑 / 混音 / 母带），一屏看三个，上下滚动，点一下切换 ───────── */
@@ -1116,7 +1119,7 @@ function showMeta() {
   const tag = fmtTag(vi);
   const latest = V.reduce((m, v) => (v.date && v.date > m ? v.date : m), '');
   $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + relTime(cur.ts, cur.date) + (latest && latest !== cur.date ? ' · 曲目更新 ' + cdate(latest) : '')) + (tag ? '<span class="ftag' + (tag === 'Lossless' ? ' ll' : '') + '">' + esc(tag) + '</span>' : '');
-  $('#mt').textContent = S.title + ' · ' + cur.ver;
+  try { miniLine(true); } catch (e) { $('#mt').textContent = S.title + ' · ' + cur.ver; }   // 歌词部分还没初始化时（页面刚载入）
 }
 let switching = 0;
 /* ───────── 刀大厨自己看：客户评论 + 从看板跳过来的时间点 ─────────
@@ -2027,7 +2030,18 @@ function lyrDraw() {
   const fx = el.querySelector('.lyx'); if (fx) fx.onclick = lyrFull;
   lyrBind(el, L);
   cancelAnimationFrame(lyrRaf); if (timed) lyrTick();
+  try { miniUi(); miniLine(true); } catch (e) {}
 }
+// 悬浮条那一行：正在唱的歌词；前奏 / 间奏 / 没歌词时显示歌名 · 版本
+let miniTxt = null;
+function miniLine(force) {
+  const L = LYR && LYR.lines, x = L && lyrIdx >= 0 && L[lyrIdx] ? String(L[lyrIdx].x || '').trim() : '';
+  const t = x && !/^[-–—·.。…\s]+$/.test(x) ? x : S.title + ' · ' + cur.ver;
+  if (t === miniTxt && !force) return; miniTxt = t;
+  const el = $('#mt'); el.textContent = t; el.classList.toggle('ly', t !== S.title + ' · ' + cur.ver);
+  el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
+}
+const curLine = () => { const L = LYR && LYR.lines, x = L && lyrIdx >= 0 && L[lyrIdx] ? String(L[lyrIdx].x || '').trim() : ''; return x && !/^[-–—·.。…\s]+$/.test(x) ? x : ''; };
 // 点一句跳过去；「评论」对这一句写意见（全屏里点评论会先退出全屏）
 function lyrBind(el, L) {
   el.querySelectorAll('.ln').forEach(d => d.onclick = e => {
@@ -2050,7 +2064,7 @@ function lyrStep(force) {
     const d = dur() || 1, ct = curTime(); fs.querySelector('.fpb i').style.transform = 'scaleX(' + Math.min(1, ct / d) + ')';
     const tx = fmt(ct); if (fs._t !== tx) { fs._t = tx; fs.querySelector('.fcur').textContent = tx; }
     const pl = !a.paused; if (fs._p !== pl) { fs._p = pl; fs.classList.toggle('playing', pl); } }
-  if (i === lyrIdx && !force) return; lyrIdx = i; lyrSync(i);
+  if (i === lyrIdx && !force) return; lyrIdx = i; lyrSync(i); miniLine();
 }
 // 自动跟唱：框本身不滚（overflow hidden），整层歌词 .lyin 用 transform 平移到「当前句在中间」——纯合成层动画，手机上也不会跳帧。
 // 只有真的拖动（手指移动超过 6px）或滚轮才算「自己在看」：拖动直接改位移（不切换系统滚动，不跳），松手 2 秒后再滑回正在唱的那句。轻点一句不算
@@ -2109,7 +2123,7 @@ function lyrFull() {
 }
 function lyrFullClose() {
   const f = $('#lyfs'); if (!f) return; document.removeEventListener('keydown', f._key);
-  f.classList.remove('in'); document.documentElement.classList.remove('lyfs-on', 'lyfs-done'); setTimeout(() => { f.remove(); lyrIdx = -2; lyrStep(true); }, 320);   // 回到页面：外面那份歌词对齐到当前句
+  f.classList.remove('in'); document.documentElement.classList.remove('lyfs-on', 'lyfs-done'); setTimeout(() => { f.remove(); lyrIdx = -2; lyrStep(true); }, 500);   // 回到页面：外面那份歌词对齐到当前句
 }
 async function lyrSeal(obj) {
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(store.get(PW_KEY) || OPEN), 'PBKDF2', false, ['deriveKey']);

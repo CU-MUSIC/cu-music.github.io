@@ -804,3 +804,19 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 .lyfs .fup svg{width:14px;height:14px;fill:currentColor;flex:none;opacity:.8}
 .lyfs .fup:hover{background:rgba(255,255,255,.16)}
 @media (max-width:560px){.lyfs .fup i{display:none}.lyfs .fbt{gap:12px}}
+/* 页内歌词块不要了：歌词改在底部悬浮条一句一句显示，点悬浮条进全屏歌词 */
+.lyr{display:none!important}
+.mini.lyrm{cursor:pointer}
+.mini.lyrm .mt.ly{font-weight:600;color:var(--text)}
+.mt.swap{animation:mtSwap .42s cubic-bezier(.2,.8,.2,1)}
+@keyframes mtSwap{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* 客户页精简：响度统一、数据、快捷评论只在你的设备上显示 */
+.cli #loud,.cli #mstBtn,.cli #mst,.cli #chips{display:none!important}
+/* ±5 秒：数字画在图标里 */
+.skip span{display:none}
+/* 全屏歌词：像底部弹出的整页，开合更顺 */
+.lyfs{transform:translateY(100%);opacity:1;transition:transform .5s cubic-bezier(.32,.72,0,1)}
+.lyfs.in{transform:none}
+.lyfs .lyrs,.lyfs .fft,.lyfs .fhd{transition:opacity .35s ease .12s}
+.lyfs:not(.in) .lyrs,.lyfs:not(.in) .fft,.lyfs:not(.in) .fhd{opacity:0;transition-delay:0s}
+@media (prefers-reduced-motion:reduce){.lyfs{transition:opacity .2s}.lyfs:not(.in){opacity:0;transform:none}}
