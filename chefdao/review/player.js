@@ -398,7 +398,7 @@ function renderFee() {
       <div class="fl">人声制作</div><div class="fg">${opt('vocal', i, p.v, p.dep)}</div>${desc(Q.menu.vocal[p.v])}
       <div class="fl">音频编辑</div><div class="fg">${opt('edit', i, p.e, p.dep)}</div>${desc(Q.menu.edit[p.e])}
       ${p.dep ? '' : `<button class="fok press" data-ok="${i}"${p.ok ? ' disabled' : ''}>${p.ok ? '已确定 ✓' : '确定'}</button>`}${feeOwnerP ? feeOwnerP(p, i) : ''}</div>`).join('')
-    + `<div class="ft"><div><span>基础混音</span><b>${yuan(Q.menu.base)} / 人</b></div><div><span>每人定金（开工）/ 尾款（交付）</span><b>${Q.half ? '各一半' : '金额越小定金越高'}</b></div><div><span>合计</span><b>${yuan(total)}</b></div>${got ? `<div><span>已收</span><b>${yuan(got)}</b></div>` : ''}</div>`
+    + `<div class="ft">${Q.people.every(hasFix) ? '' : `<div><span>基础混音</span><b>${yuan(Q.menu.base)} / 人</b></div><div><span>每人定金（开工）/ 尾款（交付）</span><b>${Q.half ? '各一半' : '金额越小定金越高'}</b></div>`}<div><span>合计</span><b>${yuan(total)}</b></div>${got ? `<div><span>已收</span><b>${yuan(got)}</b></div>` : ''}</div>`
     + (Q.note ? `<div class="fnote">${esc(Q.note)}</div>` : '') + `<a class="fx" href="https://cumusic.work/chefdao/price" target="_blank" rel="noopener">价格明细 ›</a>`
     + (feeOwner ? feeOwner(total) : '') + '</div>';
 }
@@ -1186,10 +1186,11 @@ function ownerTools() {
       ['创意向', 160, '包含执行向，由制作方判断要不要加特殊效果、加在哪，设计人声层次和空间']],
     edit: [['不需要', 0, ''], ['音准', 100, '只修音准（叠唱不超过 2 条）'], ['节奏', 100, '只对齐节奏（叠唱不超过 2 条）'], ['标准', 160, '音准 + 节奏都修，适合演唱比较稳的素材'], ['深度', 240, '跑调、破音、气声不稳较多时的大量精修']] };
   const saveQ = async q => { try { await post('/radm/meta', { slug: S.slug, quote: q }); Q = q; feeOpen = true; renderFee(); busy(q ? '费用单已更新' : '费用单已删除'); } catch (e) { busy('没保存上，检查网络再试'); } };
-  feeOwner = () => `<div class="fown"><button data-own="people">改歌手</button><button data-own="del" class="dz">删除费用单</button></div>`;
+  feeOwner = () => `<div class="fown"><button data-own="people">改歌手</button><button data-own="paste">粘贴报价单</button><button data-own="del" class="dz">删除费用单</button></div>`;
   feeOwnerP = (p, i) => `<div class="fown fownp"><button data-own="dep" data-i="${i}">${p.dep ? '撤销定金' : '定金已收'}</button><button data-own="fin" data-i="${i}">${p.fin ? '撤销尾款' : '尾款已收'}</button><button data-own="fix" data-i="${i}">单独报价</button></div>`;
   $('#fee').addEventListener('click', e => {
     const b = e.target.closest('[data-own]'); if (!b) return;
+    if (b.dataset.own === 'paste') return quotePaste();   // 用新报价单整张替换
     const k = b.dataset.own, q = JSON.parse(JSON.stringify(Q));
     if (k === 'dep' || k === 'fin') { const p = q.people[+b.dataset.i]; p[k] = !p[k]; if (k === 'dep' && p.dep) p.ok = true; }
     if (k === 'fix') {   // 服务名, 总价, 定金（不填定金就是一半）；清空就恢复按菜单选
@@ -1210,9 +1211,53 @@ function ownerTools() {
   const fb = document.createElement('button'); fb.className = 'press'; fb.textContent = '费用';
   fb.onclick = () => {
     if (Q) { feeOpen = true; renderFee(); $('#fee').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-    const v = prompt('开一张费用单（Cypher 报价，客户自己选）。歌手用逗号分开', names.join('、')); if (!v) return;
-    saveQ({ menu: CYPHER, people: v.split(/\s*[,，、\/]\s*/).filter(Boolean).map(n => ({ n, v: 0, e: 0, ok: false })), note: '' });
+    quotePaste();
   };
+  // 粘贴微信报价单（chefdao-quote 那种格式）自动识别：总价、定金、尾款、明细、预计交付；也可以改开 Cypher 菜单让客户自己选
+  const quoteParse = txt => {
+    const T = String(txt || '').replace(/\u3000/g, ' ').replace(/[－—–]/g, '-').replace(/−/g, '-'), num = x => +String(x).replace(/[,，]/g, '');
+    const lines = T.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const items = []; lines.forEach(l => { const m = /^([+-]?)\s*¥\s*([\d,]+)\s+(.+)$/.exec(l); if (m) items.push({ n: m[3].trim(), a: num(m[2]) * (m[1] === '-' ? -1 : 1) }); });
+    const pick = re => { const m = re.exec(T); return m ? num(m[1]) : undefined; };
+    let total = pick(/(?:预估报价|报价合计|合计|总计|总价|应付)\s*[:：]?\s*¥\s*([\d,]+)/);
+    if (total === undefined && items.length) total = items.reduce((x, i) => x + i.a, 0);
+    const dep = pick(/定金[^¥\n]*¥\s*([\d,]+)/), fin = pick(/尾款[^¥\n]*¥\s*([\d,]+)/);
+    const svc = lines.find(l => !/¥|报价单|结算单|━|^\d{4}[.\-\/]|微信|预计交付|定金|尾款/.test(l)) || '单独报价';
+    const due = (/预计交付\s*[:：]?\s*(.+)/.exec(T) || [])[1];
+    return { total, dep, fin, svc: svc.replace(/\s+/g, ' '), items, due: due && due.trim() };
+  };
+  function quotePaste() {
+    const old = document.getElementById('qPaste'); if (old) return old.remove();
+    const box = document.createElement('div'); box.id = 'qPaste';
+    box.style.cssText = 'margin:10px 0;padding:14px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:10px;font-size:14px';
+    box.innerHTML = '<b>开费用单</b><textarea rows="7" placeholder="把发给客户的报价单整段粘贴进来，自动识别总价、定金、尾款" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--hair);background:var(--bg);color:var(--text);font:inherit;font-size:13px;line-height:1.6;resize:vertical"></textarea>'
+      + '<div class="qpv" style="font-size:13px;line-height:1.7;color:var(--text-2)"></div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="press" data-q="ok" disabled>按这张单子开</button><button class="press" data-q="cy">改开 Cypher 菜单（客户自己选）</button><button class="press" data-q="x">取消</button></div>';
+    const ta = box.querySelector('textarea'), pv = box.querySelector('.qpv'), ok = box.querySelector('[data-q=ok]');
+    let R = null;
+    ta.oninput = () => {
+      R = quoteParse(ta.value); const good = R.total > 0;
+      ok.disabled = !good;
+      pv.innerHTML = !ta.value.trim() ? '' : !good ? '没认出总价：单子里要有「预估报价 ¥…」或带 ¥ 的明细行' :
+        '<div><b style="color:var(--text)">' + esc(R.svc) + '　' + yuan(R.total) + '</b></div>'
+        + R.items.map(i => '<div>' + (i.a < 0 ? '−' : '+') + yuan(Math.abs(i.a)) + '　' + esc(i.n) + '</div>').join('')
+        + '<div>定金 ' + yuan(R.dep ?? depOf(R.total)) + (R.dep === undefined ? '（单子里没写，按价格页比例）' : '') + ' ／ 尾款 ' + yuan(R.total - (R.dep ?? depOf(R.total))) + (R.fin !== undefined && R.fin !== R.total - (R.dep ?? depOf(R.total)) ? '　⚠ 单子上写的尾款是 ' + yuan(R.fin) : '') + '</div>'
+        + (R.due ? '<div>预计交付 ' + esc(R.due) + '</div>' : '');
+    };
+    box.onclick = e => {
+      const b = e.target.closest('[data-q]'); if (!b) return;
+      if (b.dataset.q === 'x') return box.remove();
+      if (b.dataset.q === 'cy') { const v = prompt('开一张费用单（Cypher 报价，客户自己选）。歌手用逗号分开', names.join('、')); if (!v) return; box.remove();
+        return saveQ({ menu: CYPHER, people: v.split(/\s*[,，、\/]\s*/).filter(Boolean).map(n => ({ n, v: 0, e: 0, ok: false })), note: '' }); }
+      if (!R || !(R.total > 0)) return;
+      const who = names[0] || S.artist || '费用';
+      const note = R.items.map((i, k) => i.n.replace(/\s*·\s*/g, '·') + ' ' + (i.a < 0 ? '−' : k ? '+' : '') + yuan(Math.abs(i.a))).join('，') + (R.due ? (R.items.length ? '。' : '') + '预计交付 ' + R.due : '');
+      const p = { n: who, v: 0, e: 0, ok: true, fix: R.total, fixn: R.svc.slice(0, 30) };
+      if (R.dep !== undefined) p.da = Math.min(R.total, R.dep);
+      box.remove(); saveQ({ menu: CYPHER, people: [p], note: note.slice(0, 200) });
+    };
+    $('#own').after(box); ta.focus();
+  }
   $('#ownPart').after(fb);
   // 段落：播放到某段开头点「＋ 段落」记下这里换谁唱；点上方的名字改名，清空就删掉这段
   const names = String(S.artist || '').split('、').filter(Boolean);
