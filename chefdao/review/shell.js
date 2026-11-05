@@ -140,7 +140,7 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
     tick(true);
   }
   window.cuNav = nav;
-  if (!OWNER) bar.hidden = true;
+  if (!OWNER) bar.style.display = 'none';
   addEventListener('popstate', () => nav(location.href, false));
 
   // 播放条跟着谁：后台有在播（或暂停着）的就跟后台那首，否则跟当前页面
