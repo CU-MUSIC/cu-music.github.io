@@ -10,56 +10,87 @@
 <link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
 <style>
-:root{--bg:#1a1c20;--card:#22252a;--line:#33363c;--text:#d6d3cd;--dim:#9a978f;--hi:#e8d9a8;--hi-bg:rgba(232,217,168,.1);--ok:#9fb8a3;--ok-bg:rgba(159,184,163,.1)}
+:root{--bg:#1a1c20;--card:#22252a;--line:#33363c;--text:#d6d3cd;--dim:#9a978f;--hi:#e8d9a8;--hi-bg:rgba(232,217,168,.1);--ok:#9fb8a3;--ok-bg:rgba(159,184,163,.12)}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);font:17px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;padding:0 16px calc(64px + env(safe-area-inset-bottom))}
-main{max-width:680px;margin:0 auto}
-header{padding:48px 0 8px}
-.eyebrow{font-size:14px;letter-spacing:.12em;color:var(--dim)}
-h1{font-size:30px;line-height:1.35;margin:8px 0 14px;font-weight:700}
-.lead{color:var(--dim);margin:0}
-h2{font-size:22px;line-height:1.4;margin:56px 0 6px;font-weight:700}
-h2 small{display:block;font-size:15px;font-weight:400;color:var(--dim);margin-top:2px}
-h3{font-size:18px;margin:0 0 4px}
-p{margin:10px 0}
-b,strong{color:#ece8df}
-.glance{display:grid;gap:8px;margin:22px 0 0;padding:0;list-style:none;counter-reset:g}
-.glance li{counter-increment:g;display:flex;gap:12px;align-items:baseline;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
-.glance li::before{content:counter(g);flex:none;width:26px;height:26px;border-radius:50%;background:var(--bg);border:1px solid var(--line);display:grid;place-items:center;font-size:14px;color:var(--dim)}
-.step{position:relative;margin:14px 0;padding:16px 16px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
-.step .no{font-size:13px;color:var(--dim);letter-spacing:.08em}
-.step p{margin:6px 0}
-.tag{display:inline-block;font-size:13.5px;line-height:1.5;padding:1px 10px;border-radius:999px;margin:2px 6px 2px 0;vertical-align:1px}
-.pay{color:var(--hi);background:var(--hi-bg)}
-.you{color:var(--ok);background:var(--ok-bg)}
-.note{margin:14px 0;padding:12px 14px;border-left:3px solid var(--hi);background:var(--hi-bg);border-radius:0 10px 10px 0}
-.note p{margin:4px 0}
-ul{margin:8px 0;padding-left:1.3em}
-li{margin:4px 0}
-.two{display:grid;gap:12px}
-@media(min-width:700px){.two{grid-template-columns:1fr 1fr}}
-.opt{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
-.opt h3{font-size:17px}
-.opt p{margin:4px 0;color:var(--dim);font-size:16px}
-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:16px}
-th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--dim);font-weight:500;font-size:14px}
-td:last-child{white-space:nowrap;color:var(--hi)}
-.todo{margin:16px 0;padding:0;list-style:none;counter-reset:t}
-.todo li{counter-increment:t;display:flex;gap:12px;padding:14px;border:1px solid var(--hi);border-radius:12px;background:var(--hi-bg);margin:10px 0}
-.todo li::before{content:counter(t);flex:none;width:26px;height:26px;border-radius:50%;background:var(--hi);color:#1a1c20;font-weight:700;display:grid;place-items:center;font-size:14px;margin-top:2px}
-details{border-bottom:1px solid var(--line);padding:4px 0}
-summary{cursor:pointer;padding:12px 0;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;padding:0 16px calc(64px + env(safe-area-inset-bottom))}
+main{max-width:720px;margin:0 auto}
+b{color:#ece8df}
+header{padding:52px 0 4px}
+.eyebrow{font-size:14px;letter-spacing:.14em;color:var(--dim)}
+h1{font-size:32px;line-height:1.3;margin:8px 0 8px;font-weight:700}
+.lead{color:var(--dim);margin:0;font-size:18px}
+h2{font-size:22px;line-height:1.4;margin:52px 0 14px;font-weight:700}
+h2 small{font-size:15px;font-weight:400;color:var(--dim);margin-left:8px}
+
+/* 流程图 */
+.flow{list-style:none;margin:0;padding:0;position:relative}
+.flow li{position:relative;display:flex;gap:16px;padding:0 0 26px}
+.flow li:last-child{padding-bottom:0}
+.flow li::before{content:'';position:absolute;left:27px;top:56px;bottom:2px;width:2px;background:var(--line)}
+.flow li:last-child::before{display:none}
+.ic{flex:none;width:56px;height:56px;border-radius:18px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--text)}
+.ic svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ic.pay{color:var(--hi);border-color:rgba(232,217,168,.4);background:var(--hi-bg)}
+.flow h3{margin:2px 0 0;font-size:19px;line-height:1.4}
+.flow p{margin:2px 0 0;color:var(--dim);font-size:16px;line-height:1.6}
+.chip{display:inline-block;font-size:13.5px;line-height:1.5;padding:0 10px;border-radius:999px;margin:6px 6px 0 0}
+.chip.pay{color:var(--hi);background:var(--hi-bg)}
+.chip.you{color:var(--ok);background:var(--ok-bg)}
+@media(min-width:760px){
+ .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+ .flow li{flex-direction:column;padding:0;gap:10px}
+ .flow li::before{left:60px;top:27px;bottom:auto;right:-10px;width:auto;height:2px}
+ .flow li:last-child::before{display:none}
+ .flow h3{font-size:17px}.flow p{font-size:15px}
+}
+
+/* 一首一首 */
+.loop{margin-top:22px;padding:16px;border:1px dashed var(--line);border-radius:16px;color:var(--dim);font-size:16px}
+.loop b{color:var(--text)}
+.dots{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.dots i{font-style:normal;font-size:13px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);color:var(--dim)}
+.dots i.now{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:700}
+
+/* 费用 */
+.price{display:grid;gap:12px}
+@media(min-width:620px){.price{grid-template-columns:1.2fr 1fr 1fr}}
+.pc{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.pc.main{border-color:rgba(232,217,168,.4);background:var(--hi-bg)}
+.pc .k{font-size:14px;color:var(--dim)}
+.pc .v{font-size:30px;font-weight:700;line-height:1.3;color:#ece8df}
+.pc.main .v{color:var(--hi)}
+.pc .v small{font-size:15px;font-weight:400;color:var(--dim);margin-left:4px}
+.pc p{margin:4px 0 0;font-size:15.5px;color:var(--dim);line-height:1.6}
+.tl{margin-top:14px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+.tr{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:16px}
+.tr:last-child{border-bottom:0}
+.tr .n{flex:none;width:24px;color:var(--dim);font-size:14px}
+.tr .t{flex:1;min-width:0}
+.tr .d{flex:none;color:var(--dim);font-size:15px;font-variant-numeric:tabular-nums}
+.tr .e{flex:none;font-size:13px;color:var(--hi);background:var(--hi-bg);border-radius:999px;padding:0 10px}
+.tr.long .d{color:var(--hi)}
+
+/* 要你回复 */
+.ask{display:grid;gap:10px}
+@media(min-width:620px){.ask{grid-template-columns:1fr 1fr}}
+.ask div{padding:16px;border:1px solid var(--ok);background:var(--ok-bg);border-radius:16px}
+.ask b{display:block;font-size:18px;margin-bottom:2px}
+.ask span{color:var(--dim);font-size:16px}
+
+/* 折叠说明 */
+details{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;padding:15px 0;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px;font-size:18px}
 summary::-webkit-details-marker{display:none}
-summary::after{content:'+';color:var(--dim);font-weight:400}
+summary::after{content:'+';color:var(--dim);font-weight:400;font-size:22px;line-height:1.2}
 details[open] summary::after{content:'–'}
-details>div{padding:0 0 12px;color:var(--text)}
-footer{margin-top:56px;color:var(--dim);font-size:15px;border-top:1px solid var(--line);padding-top:16px}
+details>div{padding:0 0 16px;color:var(--text);font-size:16.5px}
+details ul{margin:6px 0;padding-left:1.2em}details li{margin:5px 0}
+footer{margin-top:52px;color:var(--dim);font-size:15px;border-top:1px solid var(--line);padding-top:16px}
 @media print{
  :root{--bg:#fff;--card:#fff;--line:#ccc;--text:#222;--dim:#666;--hi:#7a5a00;--hi-bg:#fbf5e3;--ok:#2d5a3a;--ok-bg:#eef6f0}
- body{font-size:13px;padding:0}b,strong{color:#000}h2{margin-top:28px;break-after:avoid}.step,.opt,.note,.todo li{break-inside:avoid}
- details>div{display:block}details:not([open])>div{display:block}summary::after{content:''}
+ body{font-size:13px;padding:0}b{color:#000}h2{margin-top:26px;break-after:avoid}.pc,.tr,.ask div,.flow li{break-inside:avoid}
+ .pc .v{color:#000}details>div{display:block}summary::after{content:''}
 }
 </style>
 </head>
@@ -67,174 +98,132 @@ footer{margin-top:56px;color:var(--dim);font-size:15px;border-top:1px solid var(
 <main>
 
 <header>
-  <div class="eyebrow">CU MUSIC · 专辑合作</div>
-  <h1>这张专辑怎么做：<br>流程、付款节点与约定</h1>
-  <p class="lead">共 13 首，每首都是分轨混音。我们按「一首一首推进」的方式合作：一首定稿结清，再开下一首。下面把每一步谁做什么、什么时候付款、哪些情况另外计费，提前写清楚，避免中途产生误会。</p>
+  <div class="eyebrow" id="eb">CU MUSIC · 专辑合作</div>
+  <h1 id="album">专辑合作流程</h1>
+  <p class="lead">13 首，一首一首做，做完一首结清一首。</p>
 </header>
 
-<h2>一张图看懂<small>每一首歌都走同样的 7 步</small></h2>
-<ol class="glance">
-  <li><span><b>付定金</b>（每首 50%）→ 进入排期</span></li>
-  <li><span><b>检查素材</b>：干声、分轨、伴奏、参考曲有没有问题</span></li>
-  <li><span><b>Demo 方向确认</b>：先做一个大致音量平衡的试听片段</span></li>
-  <li><span><b>音频编辑</b>：节奏编辑 + 修音，你确认后才往下走</span></li>
-  <li><span><b>基础混音</b>：音色、平衡、空间</span></li>
-  <li><span><b>人声制作</b>：想要的人声效果，在审听页留言</span></li>
-  <li><span><b>定稿</b> → 存档 → 结清尾款 → 开放下载 → 进入下一首</span></li>
+<h2>每一首歌怎么做</h2>
+<ol class="flow">
+  <li>
+    <div class="ic pay"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.7 2.5-1.7s2.5.7 2.5 1.7-1 1.5-2.5 1.8-2.5.8-2.5 1.8 1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></svg></div>
+    <div><h3>付定金</h3><p>每首先付一半</p><span class="chip pay">定金 50%</span></div>
+  </li>
+  <li>
+    <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 14v-4M8 18V6M12 15V9M16 20V4M20 14v-4"/></svg></div>
+    <div><h3>Demo 试听</h3><p>先做大致音量平衡，确认方向</p><span class="chip you">你听一下</span></div>
+  </li>
+  <li>
+    <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 3 12 3-9 2 3h5"/></svg></div>
+    <div><h3>音频编辑</h3><p>节奏编辑 + 修音，确认后才混音</p><span class="chip you">你选节奏风格</span></div>
+  </li>
+  <li>
+    <div class="ic"><svg viewBox="0 0 24 24"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="14" r="2" fill="var(--card)"/><circle cx="12" cy="8" r="2" fill="var(--card)"/><circle cx="19" cy="15" r="2" fill="var(--card)"/></svg></div>
+    <div><h3>混音</h3><p>基础混音，再做人声制作</p><span class="chip you">审听页留言</span></div>
+  </li>
+  <li>
+    <div class="ic pay"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <div><h3>定稿 · 付尾款</h3><p>开放下载，发给母带，开始下一首</p><span class="chip pay">尾款 50%</span></div>
+  </li>
 </ol>
 
-<h2>开工之前（整张专辑做一次）</h2>
-<p>正式开始第一首之前，我会先把 13 首的素材整体过一遍，一次性告诉你哪些首有问题（缺轨、底噪严重、需要补录等）。这样问题集中在开头解决，不会做到一半才发现某首素材有缺口。</p>
-<p>同时确定整张专辑的<b>统一方向</b>：参考曲、音色走向、整体空间与动态。后面每一首都以这个基准为准。</p>
-
-<h2>每一首歌的具体步骤</h2>
-
-<div class="step">
-  <div class="no">STEP 1</div>
-  <h3>付定金，进入排期</h3>
-  <p>每首歌开工前支付该首混音费用的一半作为定金。定金确认后锁定这首歌的档期与当前报价。</p>
-  <span class="tag pay">付款点 · 定金 50%</span>
+<div class="loop">
+  <b>13 首依次进行</b>，这一首定稿结清，再开下一首。
+  <div class="dots" id="dots"></div>
 </div>
 
-<div class="step">
-  <div class="no">STEP 2</div>
-  <h3>检查素材</h3>
-  <p>我会检查这首歌的全部素材，有问题一次性列成清单发给你，不会零碎地来回问。</p>
-  <ul>
-    <li><b>干声</b>：未经任何效果处理的原始录音（不含混响、Auto-Tune），建议 WAV 48kHz / 24bit</li>
-    <li><b>伴奏 / 分轨</b>：成品 instrumental 或分轨，请注明 BPM 与调性（不确定可留空）</li>
-    <li><b>参考曲</b>：1–3 首，并说明喜欢的是人声、氛围还是律动。确认后作为本首的方向基准</li>
-    <li>多条 take 的挑选与拼合（comp）属额外服务，另行计费</li>
-  </ul>
-  <span class="tag you">你要做 · 补齐素材、发参考曲</span>
+<h2>费用</h2>
+<div class="price">
+  <div class="pc main"><div class="k">每首基础价</div><div class="v">¥2,000</div><p>含节奏编辑、基础混音、人声制作</p></div>
+  <div class="pc"><div class="k">修音</div><div class="v">¥100<small>/ 首</small></div><p>干声需要修音准的才收</p></div>
+  <div class="pc"><div class="k">超长曲目</div><div class="v" style="font-size:22px;padding-top:6px">时长加价</div><p>见下方曲目，价格另报</p></div>
+</div>
+<div class="tl" id="tl"></div>
+
+<h2>现在需要你回复 2 件事</h2>
+<div class="ask">
+  <div><b>① 节奏风格</b><span>统一「贴正拍」，还是「保留现有律动」？也可以逐首说。</span></div>
+  <div><b>② 修音</b><span>哪几首的干声已经修好音准、不需要我修？</span></div>
 </div>
 
-<div class="step">
-  <div class="no">STEP 3</div>
-  <h3>Demo：大致音量平衡</h3>
-  <p>素材没问题后，我先做一个只含大致音量平衡的试听片段（30–60 秒），用来确认整首歌的方向对不对。方向对了，再投入后面的编辑与混音。</p>
-  <span class="tag you">你要做 · 听完告诉我方向是否一致</span>
-</div>
+<h2>更多细节<small>需要时再点开</small></h2>
 
-<div class="step">
-  <div class="no">STEP 4</div>
-  <h3>音频编辑：节奏 + 修音</h3>
-  <p>方向确认后进入音频编辑。这里需要你<b>先选定节奏风格</b>：</p>
-  <div class="two" style="margin:10px 0">
-    <div class="opt"><h3>贴正拍</h3><p>把人声节奏编辑到网格上，整齐、利落。</p></div>
-    <div class="opt"><h3>保留现有律动</h3><p>尊重你演唱本身的 groove，只处理明显的问题。</p></div>
+<details>
+  <summary>怎么给反馈、多久改完</summary>
+  <div>
+    <ul>
+      <li>每一版交付后，<b>24 小时内</b>给意见；完整听完、攒成一条一起发，直接在审听页的时间轴上留言就行</li>
+      <li>我收到后 <b>24 小时内</b>交付修改版（周末顺延到周一）</li>
+      <li>超过 72 小时没反馈，视为没有意见，这一首进入定稿</li>
+      <li>修正（位置、亮度、空间、平衡）<b>不限次数</b>；新的方案、新的创意效果另计，执行前先报价</li>
+    </ul>
   </div>
-  <p><b>节奏编辑</b>已包含在混音费用里。<b>修音</b>（音准编辑）是单独的工作，每首歌 <b>¥100</b>，会在项目页里写清楚；如果你的干声已经修好音准，可以选「不需要」。</p>
-  <p>这一步我会把编辑后的版本给你确认，<b>确认之后才进入混音</b>。因为编辑是混音的地基，混音中途再改节奏等于重做。</p>
-  <span class="tag you">你要做 · 选节奏风格、确认是否修音</span><span class="tag pay">另计 · 修音 ¥100 / 首</span>
-</div>
-
-<div class="step">
-  <div class="no">STEP 5</div>
-  <h3>基础混音</h3>
-  <p>先把基础混音做好：音色、层次、空间、整体平衡。这一版交给你听，确定整体方向没问题。</p>
-</div>
-
-<div class="step">
-  <div class="no">STEP 6</div>
-  <h3>人声制作</h3>
-  <p>基础混音确认后做人声制作。你想要的任何人声效果，都可以直接在<b>审听页的时间轴上留言</b>（点到具体时间点写想法），我会逐条处理。</p>
-  <p>这一步包含的方案数：<b>执行向 1 版</b>（你明确指定要做什么，我照做，需求请在开工前一次性提出）、<b>创意向 3 版</b>（由我提出方案供你选择）。选定方案后的细节修正不限次数。超出的部分按方案另计，且执行前先报价确认，不会先做后收。</p>
-  <span class="tag you">你要做 · 完整听完后，把意见汇总留言</span>
-</div>
-
-<div class="step">
-  <div class="no">STEP 7</div>
-  <h3>定稿、存档、结清尾款，进入下一首</h3>
-  <p>这一首你确认没有问题后：存档定稿 → 结清尾款 → 开放成品下载 → 开始下一首。</p>
-  <span class="tag pay">付款点 · 尾款 50%</span>
-</div>
-
-<div class="note">
-  <p><b>为什么一首一首来、尾款当首结清？</b></p>
-  <p>专辑有 13 首，一首一首定稿结算，对双方都清楚：你随时知道进度和已花费用，我也不会同时压着十几首半成品。尾款结清后才会开放成品下载。</p>
-</div>
-
-<h2>反馈怎么给<small>每一版都是同一个节奏</small></h2>
-<ul>
-  <li><b>你</b>：每版交付后 24 小时内给意见。请完整听完整首，攒成一条一起发，不要边听边零碎发</li>
-  <li><b>我</b>：收到意见后 24 小时内交付修改版（周末休息，顺延到周一）</li>
-  <li>你超过 24 小时没反馈：交付日期按超出的天数顺延</li>
-  <li>超过 72 小时仍无反馈（周末不计）：视为没有意见，这一首进入定稿结算流程</li>
-</ul>
-<div class="two" style="margin-top:14px">
-  <div class="opt"><h3>修正：不限次数</h3><p>让成品更贴近既定方向：人声位置、亮度、空间、清晰度、平衡等，已含在费用内。</p></div>
-  <div class="opt"><h3>新方案：另计</h3><p>尝试新思路、追加创意效果、变更整体方向，属新增创作，¥150 / 次，执行前先报价；推翻方向重做按新工时另议。</p></div>
-</div>
-
-<h2>母带：由另一位工程师负责<small>和我是各自独立的合作关系</small></h2>
-<p>这张专辑的母带不由我做，交给另一位工程师。他与我分别是你的顾问，<b>费用、档期、交付各自独立结算</b>，互相不经手对方的款项。</p>
-<ul>
-  <li>我负责每首歌的混音，混音定稿后交付给你；你交给母带工程师，或告诉我直接发给他，都可以</li>
-  <li>多首统一的专辑母带，建议由母带工程师把 13 首作为整体来做，这也是母带阶段该有的统一性</li>
-  <li>母带之后如果发现需要回头改混音，属于交付后的修改（见下方「交付之后」），请尽量在母带前把意见提完</li>
-</ul>
-
-<h2>补充说明，避免误会</h2>
-<details open>
-  <summary>工期怎么算</summary>
-  <div>每一首的工期，自「素材齐全且 Demo 方向确认通过」当天起算，不是从付定金起算。因你方原因（素材不全、反馈超时、中途变更方向）导致的延后，日期相应顺延，不另收费；因我方原因的延后，我会提前告知并给出新日期。有硬性截止日（发行、比赛、影视）请开工前就说，我会单独确认。</div>
 </details>
 <details>
-  <summary>干声录得不够好怎么办</summary>
-  <div>底噪、齿音、呼吸、轻微跑调、房间声，基本都能处理，已含在音频编辑里。明显的房间混响、爆音、电流声需要专门修复，另加 ¥100 / 位主唱，会在 Demo 阶段听完素材后先告诉你，不会事后追加。严重破音、爆麦、完全跑飞的段落救不回来，我会建议补录，而不是硬修出廉价感。</div>
+  <summary>人声制作包含什么</summary>
+  <div>
+    <ul>
+      <li><b>执行向 1 版</b>：你明确要什么，我照做（请开工前一次性提）</li>
+      <li><b>创意向 3 版</b>：我提 3 个方向供你选，选定后的细节修正不限次数</li>
+      <li>超出的方案数另计，每次执行前先报价，不会先做后收</li>
+    </ul>
+  </div>
 </details>
 <details>
-  <summary>中途想改方向</summary>
-  <div>朝既定方向的修正不加价、不限次数。大幅变更编排、更换人声、推翻方向重做，工作量等同一首新歌，按新工时另议，执行前确认。中途更换参考曲同样视为方向变更。</div>
+  <summary>母带怎么衔接</summary>
+  <div>母带由另一位工程师负责，他和我分别是你的顾问，<b>费用和档期各自独立</b>。每首混音定稿后，我直接发给母带工程师，你不用转交。母带之后再回头改混音，按交付后微调计费，所以请尽量在定稿前提完意见。</div>
+</details>
+<details>
+  <summary>工期、延期、改方向</summary>
+  <div>
+    <ul>
+      <li>每首工期自「素材齐全且 Demo 方向确认」当天起算</li>
+      <li>因你方原因（素材不全、反馈超时）造成的延后，日期顺延</li>
+      <li>朝既定方向的修正不加价；推翻方向重做，按新工时另议，执行前确认</li>
+    </ul>
+  </div>
 </details>
 <details>
   <summary>交付之后</summary>
   <div>
     <ul>
-      <li>默认交付：成品混音一个版本，24-bit / 48kHz 无损，附制作信息</li>
-      <li>工程文件不含在默认交付内，仅用于售后维护，保留 30 天</li>
-      <li>额外导出（分轨 / Acapella / 干声 / 其他格式）：¥150 / 小时</li>
-      <li>交付后微调：7 天内 ¥100 / 次，7 天后 ¥200 / 次；结构性修改 ¥150 / 小时</li>
+      <li>默认交付成品混音一个版本，24-bit / 48kHz 无损，附制作信息</li>
+      <li>工程文件不含在默认交付内，保留 30 天；分轨 / Acapella 等额外导出 ¥150 / 小时</li>
+      <li>交付后微调：7 天内 ¥100 / 次，7 天后 ¥200 / 次</li>
       <li>成品请自行长期备份</li>
     </ul>
   </div>
 </details>
 <details>
-  <summary>不满意或中途终止，怎么结算</summary>
-  <div>按环节结算：做完并交给你的，收；没开始的，不收；我这边原因，退。Demo 方向不符，退还一半定金；音频编辑完成后不退编辑费，修好的干声你可以带走；方向确认后你决定终止，已付定金不退、尾款不收，成品不开放下载。我方原因做不下去（疾病、设备故障等超过 7 天），退还全部已付款，已完成的编辑干声免费交给你。</div>
-</details>
-<details>
-  <summary>专辑的费用结构</summary>
-  <div>专辑是「基础项目费用 + 额外调整费用」：基础费用用于方向建立、风格统一与项目管理，超出常规的深度调整按额外费用结算。专辑不是数量多就打折，因为整张的统一性（音色、空间、动态、曲目衔接）也是额外的投入。具体金额以报价单为准。</div>
+  <summary>中途终止怎么结算</summary>
+  <div>做完并交给你的，收；没开始的，不收；我这边原因，退。Demo 方向不符，退还一半定金；音频编辑完成后不退编辑费，修好的干声你可以带走；方向确认后你决定终止，已付定金不退、尾款不收。</div>
 </details>
 <details>
   <summary>关于质量与「上热门」</summary>
-  <div>质量我负责：按我的标准交付，修到作品立得住。但没有人能保证「上热门」，那取决于歌曲本身、发行、运营和运气。我能保证的，是作品在听感上站得住。</div>
+  <div>质量我负责，修到作品立得住。但没有人能保证「上热门」，那取决于歌曲本身、发行、运营和运气。</div>
 </details>
 
-<h2>费用速查<small>仅列流程里提到的单项，总价以报价单为准</small></h2>
-<table>
-  <tr><th>项目</th><th>费用</th></tr>
-  <tr><td>每首定金 / 尾款</td><td>各 50%</td></tr>
-  <tr><td>节奏编辑</td><td>已含</td></tr>
-  <tr><td>修音（每首）</td><td>¥100</td></tr>
-  <tr><td>人声制作：执行向 1 版 + 创意向 3 版</td><td>已含</td></tr>
-  <tr><td>新方案 / 超出方案数</td><td>¥150 / 次</td></tr>
-  <tr><td>开工后追加执行向需求</td><td>¥50 / 次</td></tr>
-  <tr><td>素材需专门修复（每位主唱）</td><td>¥100</td></tr>
-  <tr><td>额外导出（分轨等）</td><td>¥150 / 小时</td></tr>
-  <tr><td>交付后微调</td><td>¥100 / ¥200</td></tr>
-</table>
-
-<h2>现在需要你回复我 3 件事</h2>
-<ol class="todo">
-  <li><span><b>节奏风格</b>：整张专辑统一选「贴正拍」还是「保留现有律动」？也可以逐首说</span></li>
-  <li><span><b>修音</b>：这 13 首里，哪些干声已经修好音准、不需要我修？</span></li>
-  <li><span><b>母带对接</b>：混音定稿后，你自己交给母带工程师，还是由我直接发给他？</span></li>
-</ol>
-
-<footer>CU MUSIC · 刀大厨 · 有任何一条不清楚，开工前随时问我，比做到一半才发现好。</footer>
+<footer>CU MUSIC · 刀大厨 · 有哪一条不清楚，开工前随时问我。</footer>
 </main>
+
+<script>
+// ── 在这里改：专辑名、曲目、哪些算超长曲目（分钟）──
+const ALBUM = '序述：虞山兴福寺', ARTIST = '支岑年';
+const LONG_MIN = 10;               // 达到这个时长（分钟）的曲目标「时长加价」
+const TRACKS = [
+  ['虞山兴福寺', '4:22'], ['缘起 (Interlude)', '2:33'], ['地球OL不得不玩', '6:13'], ['黑路虎', '5:18'],
+  ['路两圈', '6:55'], ['蹲守洗衣店 (Skit)', '4:02'], ['可怜之人', '8:43'], ['乌云上身', '12:02'],
+  ['乡下', '5:07'], ['幼夜', '3:54'], ['小早', '6:31'], ['走神 (Interlude)', '40:38'], ['到达目的地 (Intro)', '10:29']
+];
+const mins = d => { const [m, s] = d.split(':').map(Number); return m + s / 60; };
+document.getElementById('album').textContent = '《' + ALBUM + '》合作流程';
+document.title = ALBUM + ' · 合作流程';
+document.getElementById('eb').textContent = ARTIST + ' × CU MUSIC';
+document.getElementById('dots').innerHTML = TRACKS.map((_, i) => '<i' + (i === 0 ? ' class="now"' : '') + '>' + (i + 1) + '</i>').join('');
+document.getElementById('tl').innerHTML = TRACKS.map(([t, d], i) => {
+  const long = mins(d) >= LONG_MIN;
+  return '<div class="tr' + (long ? ' long' : '') + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + t.replace(/[<>&]/g, '') + '</span>' + (long ? '<span class="e">时长加价</span>' : '') + '<span class="d">' + d + '</span></div>';
+}).join('');
+</script>
 </body>
 </html>
