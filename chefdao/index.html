@@ -774,7 +774,7 @@ body {
     </section>
 
     <section class="ab-sec about-block" aria-labelledby="ab-l-col">
-      <h3 class="ab-label" id="ab-l-col">Collaborators <span data-i18n="l_col">130+ 位音乐人</span></h3>
+      <h3 class="ab-label" id="ab-l-col">Collaborators <span data-i18n="l_col">位音乐人</span></h3>
       <div class="ab-rows" id="ab-rows"></div>
     </section>
 
@@ -1173,7 +1173,7 @@ const ABOUT_I18N = {
     r1:'CHMA 中文说唱音乐奖 · 最佳流行说唱专辑', r2:'CHMA 中文说唱音乐奖 · 最佳陷阱说唱专辑', r3:'CHMA 中文说唱音乐奖 · 年度单曲', nom:'提名',
     r4:'网易云音乐 · 年度热门专辑 TOP 10', r4e:'第 6 名',
     note:'以上作品中担任工程师（Engineer）。',
-    l_col:'130+ 位音乐人',
+    l_col:'{a} 位音乐人',
     end_h:'有作品需要混音？',
     toast:'微信号已复制 · Cookdao'
   },
@@ -1188,7 +1188,7 @@ const ABOUT_I18N = {
     r1:'CHMA Chinese Hip-Hop Music Awards · Best Pop Rap Album', r2:'CHMA Chinese Hip-Hop Music Awards · Best Trap Album', r3:'CHMA Chinese Hip-Hop Music Awards · Single of the Year', nom:'Nominated',
     r4:'NetEase Cloud Music · Top 10 Albums of the Year', r4e:'#6',
     note:'Credited as engineer on the works above.',
-    l_col:'130+ artists',
+    l_col:'{a} artists',
     end_h:'Have a record to mix?',
     toast:'WeChat ID copied · Cookdao'
   },
@@ -1203,7 +1203,7 @@ const ABOUT_I18N = {
     r1:'CHMA 중국어 힙합 음악상 · 최우수 팝 랩 앨범', r2:'CHMA 중국어 힙합 음악상 · 최우수 트랩 앨범', r3:'CHMA 중국어 힙합 음악상 · 올해의 싱글', nom:'노미네이트',
     r4:'넷이즈 클라우드 뮤직 · 연간 인기 앨범 TOP 10', r4e:'6위',
     note:'위 작품에 엔지니어로 참여했습니다.',
-    l_col:'130명 이상의 아티스트',
+    l_col:'아티스트 {a}명',
     end_h:'믹싱할 곡이 있나요?',
     toast:'위챗 ID 복사됨 · Cookdao'
   }
@@ -1223,7 +1223,7 @@ function applyLang(lang) {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const v = dict[el.dataset.i18n];
     if (v == null) return;
-    const text = v.replace('{n}', works.length);
+    const text = v.replace('{n}', works.length).replace('{a}', collabCount);   // {a} = 滚动条里实际的艺人数
     if (el.classList.contains('cert-num') && el.dataset.final) {
       el.dataset.final = text;   // 数字滚动读这个终值
       el.textContent = el.dataset.count === 'pending' ? text.replace(/^\d+/, '0') : text;
@@ -1244,8 +1244,10 @@ function collabNames() {
   // 「小羊」和「小羊Yuna」、「Uin」和「Uin尤因」这种只留长的
   return all.filter(n => !all.some(m => m !== n && m.length > n.length && m.toLowerCase().startsWith(n.toLowerCase())));
 }
+let collabCount = 0;
 function initMarquee() {
   const ROWS = 4, names = collabNames(), rows = Array.from({ length: ROWS }, () => []);
+  collabCount = names.length;
   names.forEach((n, i) => rows[i % ROWS].push(n));
   document.getElementById('ab-rows').innerHTML = rows.map((r, k) =>
     `<div class="ab-marquee${k % 2 ? ' rev' : ''}"><div class="ab-track">${r.map(n => `<span>${esc(n)}</span>`).join('')}</div></div>`).join('');
