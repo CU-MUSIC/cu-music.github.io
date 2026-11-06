@@ -984,7 +984,8 @@ html.qbo-lock, html.qbo-lock body { overflow: hidden; }
 var CONTACT = { wechat: "Cookdao" };
 var SITE_URL = "cumusic.work/chefdao/price";
 // ── 排期设置 ─────────────────────────────────────────────
-// 标准：stdMin–stdMax 工作日（周六、周日休息，跳过）；加急：rushMin–rushMax 自然日，日历上周末不可选
+// 标准：stdMin–stdMax 工作日（周六、周日不计，标准排期口径不变）；加急：rushMin–rushMax 自然日。
+// 2026-11-06 起周六上班：日历上周六可选（加急 / 指定日期），只有周日休息
 // 交付日期全自动现算，平时零维护；真排爆了才把 backlogDays 调大几天，标准区间自动整体顺延
 // memberMin/Max：刀门加速通道的工作日区间。2026-10-24 起双休：一周 = 5 个工作日，6 个工作日 = 一周零一天，对外说「约一周」。
 // ── 排期 ────────────────────────────────────────────────────
@@ -1277,12 +1278,12 @@ function qbCalHtml(q) {
 	start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
 	var end = new Date(winB); end.setDate(end.getDate() + 7);
 	var head = "";
-	for (var w = 0; w < 7; w++) head += '<div class="qb-cal-wd' + (w >= 5 ? " off" : "") + '">' + q.calWeek[w] + '</div>';
+	for (var w = 0; w < 7; w++) head += '<div class="qb-cal-wd' + (w >= 6 ? " off" : "") + '">' + q.calWeek[w] + '</div>';
 	var cells = "", cur = new Date(start), guard = 0;
 	while (cur <= end && guard++ < 120) {
 		var iso = qbFmtISO(cur), diff = Math.round((cur - today) / 86400000);
 		var cls = "qb-cal-d", tip = "", pick = false;
-		if (cur.getDay() === 0 || cur.getDay() === 6) { cls += " off"; tip = q.calOffTip; }
+		if (cur.getDay() === 0) { cls += " off"; tip = q.calOffTip; } // 只有周日休息，周六可选
 		else if (diff < 0) cls += " past";
 		else {
 			var rr = qbRushRate(diff - cut);
@@ -1497,7 +1498,7 @@ var I18N = {
 			laneStdSub: "{n} · {r}", laneRushSub: "3–5 天 · {r}",
 			weekNames: ["一周", "两周", "三周", "四周", "五周", "六周"], weekN: "{w} 周", weekOne: "一周",
 			calWeek: ["一", "二", "三", "四", "五", "六", "日"],
-			calOffTip: "休", calLgBand: "预计交付", calLgWin: "无加急费", calLgRush: "加急 · 越早越贵", calLgOff: "周末休息", calLgBlocked: "太近，需微信",
+			calOffTip: "休", calLgBand: "预计交付", calLgWin: "无加急费", calLgRush: "加急 · 越早越贵", calLgOff: "周日休息", calLgBlocked: "太近，需微信",
 			calStdHint: "绿框是预计交付的日子。想更早，直接点日历上的日期。",
 			dateConfirm: "确认 {d} · 继续 ↓",
 			djFree: "感觉太慢？加入刀门 · 这天就不用加急费了",
@@ -1505,7 +1506,7 @@ var I18N = {
 			djSub: "会员优先排期，本单立省 {s} · 点此加入 ›",
 			laneStdGhost: "{n} · 当前不可选",
 			laneFast: "刀门会员走加速通道，{m}交付，比标准快整整一周；",
-			laneNote: "标准 {n}（周末休息，一周按 5 个工作日算）。具体交付日看日历上的绿框。{fastline}同一单里有一位会员，整单都加速。<br><br>工期自「素材齐全且方向确认版通过」当日起算，非自付定金起算。<br><br>指定更早的交付日期即按紧急度计加急费，越近越高；3 天内请微信确认。",
+			laneNote: "标准 {n}（一周按 5 个工作日算）。具体交付日看日历上的绿框。{fastline}同一单里有一位会员，整单都加速。<br><br>工期自「素材齐全且方向确认版通过」当日起算，非自付定金起算。<br><br>指定更早的交付日期即按紧急度计加急费，越近越高；周六也可以交付，只有周日休息；3 天内请微信确认。",
 			rushName: "加急费", laneSpecSub: "选具体日期 · 现算",
 			laneDatePrompt: "选择期望交付日期，自动计算加急费。",
 			laneDaysLeft: "距今 {d} 天", laneNoRush: "落在标准区间 · 无需加急费",
@@ -1577,6 +1578,7 @@ var I18N = {
 			capBusy: "排期较满 · 交付顺延{w}",
 			capFull: "档期已满 · 交付顺延{w}，日期仍然明确",
 			newbieOff: 50, newbieLine: "新客首单立减",
+			roundTotal: 10, roundDeposit: 100, roundLine: "抹零", roundNote: "总价抹零到整十；定金取整到整百，尾款为整十，好算好付。",
 			newbieTitle: "新客首单优惠", newbieSub: "第一次合作，单人单立减 ¥50 · 定金改为 70%", copyFail: "复制失败 · 请手动选中下方文本", share: "复制配置链接 · 发群里各自改", shareDone: "链接已复制 ✓", aaCopyLabel: "复制报价时包含分摊明细", lastResume: "恢复", lastClear: "清除",
 			copyTerms: "合作要点", copyMore: "完整说明",
 			copyTermsList: [
@@ -1795,7 +1797,7 @@ var I18N = {
 				a: "每一版都走同一个节奏：<strong>你 24 小时内反馈，我 24 小时内改完</strong>。",
 				list: [
 					"<strong>你</strong>：每个版本交付后 24 小时内给意见，听完整首、攒成一条发我",
-					"<strong>我</strong>：收到意见后 24 小时内交付修改版（周末休息，顺延到周一）",
+					"<strong>我</strong>：收到意见后 24 小时内交付修改版（周日休息，顺延到周一）",
 					"<strong>你超过 24 小时未反馈</strong>：交付日期按超出的天数顺延；加急项目自动转为标准排期，加急费不退",
 					"<strong>超过 72 小时仍无反馈</strong>（周末不计）：视为无意见，进入母带交付流程，按成品结清尾款；之后的改动按「交付后微调」计费",
 					"<strong>加急单我超过 24 小时未交付修改版</strong>（非你方原因）：每超 1 天，尾款减 ¥50，上限为加急费"
@@ -1863,7 +1865,7 @@ var I18N = {
 				q: "怎么付款？定金和尾款怎么算？",
 				a: "定金开工，成品交付时结清尾款。定金确认后进入排期，尾款结清后开放成品下载。含录音的订单，定金由两部分组成：录音先付 2 小时费用，混音另按混音金额分档。",
 				list: [
-					"混音定金：混音金额 ¥500 以下 80%、¥500–1,000 70%、¥1,000 以上 50%，其余为尾款。金额越小，尾款越难追，比例越高；确认后锁定档期与当前报价",
+					"混音定金：混音金额 ¥500 以下 80%、¥500–1,000 70%、¥1,000 以上 50%，其余为尾款。金额越小，尾款越难追，比例越高；确认后锁定档期与当前报价。总价抹零到整十，定金取整到整百，尾款为整十",
 					"录音定金：先付 2 小时录音费；超出 2 小时的部分，录音结束后并入尾款结清",
 					"录音取消退款：72 小时以上退 100%，48–72 小时退 70%，24–48 小时退 30%，24 小时内或未到场不退；提前 48 小时以上可免费改期 1 次",
 					"录音与混音的定金合并一次支付。录音金额满 ¥600 时，混音立减 ¥100（与刀门 8 折取更优）",
@@ -2099,7 +2101,7 @@ var I18N = {
 			laneStdSub: "{n} · {r}", laneRushSub: "3–5 days · {r}",
 			weekNames: ["1 week", "2 weeks", "3 weeks", "4 weeks", "5 weeks", "6 weeks"], weekN: "{w} weeks", weekOne: "a week",
 			calWeek: ["M", "T", "W", "T", "F", "S", "S"],
-			calOffTip: "off", calLgBand: "Delivery window", calLgWin: "No rush fee", calLgRush: "Rush · earlier costs more", calLgOff: "Weekends off", calLgBlocked: "Too soon — message to confirm",
+			calOffTip: "off", calLgBand: "Delivery window", calLgWin: "No rush fee", calLgRush: "Rush · earlier costs more", calLgOff: "Sundays off", calLgBlocked: "Too soon — message to confirm",
 			calStdHint: "The outlined days mark the delivery window. Tap any date for an earlier delivery.",
 			dateConfirm: "Confirm {d} · continue ↓",
 			djFree: "Too slow? Join Daomen — no rush fee on this date",
@@ -2697,7 +2699,7 @@ var I18N = {
 			laneStdSub: "{n} · {r}", laneRushSub: "3–5일 · {r}",
 			weekNames: ["1주", "2주", "3주", "4주", "5주", "6주"], weekN: "{w}주", weekOne: "1주",
 			calWeek: ["월", "화", "수", "목", "금", "토", "일"],
-			calOffTip: "휴", calLgBand: "납품 예정", calLgWin: "긴급 요금 없음", calLgRush: "긴급 · 빠를수록 비쌈", calLgOff: "주말 휴무", calLgBlocked: "너무 촉박 · 문의",
+			calOffTip: "휴", calLgBand: "납품 예정", calLgWin: "긴급 요금 없음", calLgRush: "긴급 · 빠를수록 비쌈", calLgOff: "일요일 휴무", calLgBlocked: "너무 촉박 · 문의",
 			calStdHint: "테두리 표시가 납품 예정일입니다. 더 빠르게 원하시면 날짜를 눌러 주세요.",
 			dateConfirm: "{d} 확정 · 계속 ↓",
 			djFree: "너무 느리신가요? 刀门 가입 시 이 날짜는 긴급 요금이 없습니다",
@@ -3822,6 +3824,9 @@ function qbCompute(q) {
 	}
 	var total = workBase + rush - discount + joinFee - newbie + rec - recPerk;
 	if (total < 0) { newbie += total; total = 0; }
+	// 抹零：8 折、加急、¥99 入会费会算出零头，总价向下抹到整十（只少收不多收）
+	var rt = q.roundTotal || 1, roundOff = total - Math.floor(total / rt) * rt;
+	total -= roundOff;
 	// 定金比例按订单金额分档：金额越小，尾款越难追，定金比例越高
 	// <tier1 8:2，tier1–tier2 7:3，≥tier2 5:5；新客立减固定 7:3，与分档取较高者
 	// 有录音时：录音先付 2 小时作定金，混音部分单独按混音金额分档，两笔相加就是定金
@@ -3829,7 +3834,12 @@ function qbCompute(q) {
 	var depositRate = mixTotal < q.depositTier1 ? 0.8 : mixTotal < q.depositTier2 ? 0.7 : 0.5;
 	if (newbie > 0 && 0.7 > depositRate) depositRate = 0.7;
 	var recDeposit = recOpt ? Math.min(rec, Math.round(recOpt.rate * 2)) : 0;
-	var deposit = recDeposit + Math.ceil(mixTotal * depositRate);
+	// 定金取整到整百（向上取），尾款自然是整十；向上会吃掉全部尾款时改向下取，仍不低于 50%；都不行才退回整十
+	var rd = q.roundDeposit || 1, mixDep = Math.ceil(mixTotal * depositRate / rd) * rd;
+	if (mixDep >= mixTotal) mixDep = Math.floor(mixTotal * depositRate / rd) * rd;
+	if (mixDep < mixTotal * 0.5 || mixDep >= mixTotal) mixDep = Math.ceil(mixTotal * depositRate / rt) * rt;
+	if (mixDep > mixTotal) mixDep = mixTotal;
+	var deposit = recDeposit + mixDep;
 	var balance = total - deposit;
 	return { base: base, baseItem: baseItem, from: (stems && baseItem.from) || !!qbState.taste, tasteFee: qbState.taste ? Math.min(deposit, qbTasteFee()) : 0, harmony: harmony, count: count,
 		mixExtra: mixExtra, prodTotal: prodTotal, prodCounts: prodCounts, maxProd: maxProd,
@@ -3838,13 +3848,14 @@ function qbCompute(q) {
 		memCount: memCount, joinCount: joinCount, joinFee: joinFee,
 		fast: fast, rush: rush, rushRate: rushRate, producer: producer,
 		mixTotal: mixTotal, recDeposit: recDeposit, rec: rec, recOpt: recOpt, recH: recH, recPerk: recPerk, memBeatsPerk: memBeatsPerk,
-		total: total, deposit: deposit, balance: balance };
+		total: total, roundOff: roundOff, deposit: deposit, balance: balance };
 }
 // 定金比例分档对应的说明文案：新客立减优先，其次按金额分档
 function qbDepositNote(q, c) {
 	var base = c.newbie > 0 ? q.depositNoteNew
 		: c.mixTotal < q.depositTier1 ? q.depositNoteT1
 		: c.mixTotal < q.depositTier2 ? q.depositNoteT2 : q.depositNoteT3;
+	if (q.roundNote) base += " " + q.roundNote;
 	return c.rec > 0 ? q.depositNoteRec.replace("{r}", qbFmt(q, c.recDeposit)).replace("{m}", qbFmt(q, c.deposit - c.recDeposit)) + " " + base : base;
 }
 // AA 账单：共同部分（基础/分轨价 + 多主唱混音 + 和声）按人头平摊，
@@ -3857,7 +3868,7 @@ function qbShares(q, c) {
 	var chargeable = c.gross + c.producer + c.rush;
 	for (var i = 0; i < n; i++) {
 		var jf = qbMemState(i) === 2 ? q.memberFee : 0;
-		var own = (c.gross ? c.gShares[i] / c.gross * chargeable : 0) - c.memDisc[i] + jf + (c.rec - c.recPerk) / n;
+		var own = (c.gross ? c.gShares[i] / c.gross * chargeable : 0) - c.memDisc[i] + jf + (c.rec - c.recPerk - (c.roundOff || 0)) / n;
 		shares.push(Math.floor(own / step) * step);
 	}
 	return shares;
@@ -4394,6 +4405,9 @@ function renderQuoteBuilder() {
 		if (c.newbie > 0) {
 			lines += '<div class="qb-bd-line discount"><span>' + q.newbieLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.newbie) + '</span></div>';
 		}
+		if (c.roundOff > 0) {
+			lines += '<div class="qb-bd-line discount"><span>' + q.roundLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.roundOff) + '</span></div>';
+		}
 		if (c.producer > 0) {
 			lines += '<div class="qb-bd-line"><span>' + q.producerLine + ' +' + Math.round(PRODUCER_RATE * 100) + '%</span><span class="qb-bd-val">+' + qbFmt(q, c.producer) + '</span></div>';
 		}
@@ -4669,6 +4683,7 @@ function qbQuoteText() {
 	if (c.joinFee > 0) item("+" + qbFmt(q, c.joinFee), q.joinLine, per(q.memberFee, c.joinCount));
 	if (c.discount > 0) item("−" + qbFmt(q, c.discount), q.memberLine + (c.capped ? q.memberCapTag : ""), c.memCount > 1 ? c.memCount + q.countUnit : "");
 	if (c.newbie > 0) item("−" + qbFmt(q, c.newbie), q.newbieLine);
+	if (c.roundOff > 0) item("−" + qbFmt(q, c.roundOff), q.roundLine);
 	L.push(HH);
 	L.push("▍" + q.totalLabel + "　" + qbFmt(q, c.total) + sfx);
 	// 多人单的关键卖点：人均比单独做更便宜，但客户只看得到总价
