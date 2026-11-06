@@ -54,6 +54,14 @@ const ymdEnd = d => Date.parse(d + 'T20:00:00+08:00');
 function plusWd(ms, n) { const d = new Date(ms + BJ); d.setUTCHours(0, 0, 0, 0); while (n > 0) { d.setUTCDate(d.getUTCDate() + 1); const w = d.getUTCDay(); if (w && w < 6) n--; } return d.toISOString().slice(0, 10); }
 const wdate = d => cdate(d) + ' ' + WD[new Date(d + 'T12:00:00+08:00').getUTCDay()];
 const ETA_K = [['edit', '音频编辑'], ['vocal', '人声制作'], ['mix', '基础混音'], ['master', '母带']];
+function progHtml(g) {   // 进度：项目页里改的阶段，这里只显示
+    if (!g || !(g.s >= 0)) return '';
+    const BAR = [0, 1, 2, 3, 4, 5, 3, 4, 5], cur = BAR[g.s] ?? 0;   // 人声制作并入混音、修改中并入审听：来回修改进度条不后退
+    const ST = ['待付款', '准备中', '编辑中', g.s === 6 ? '人声制作中' : '混音中', g.s === 7 ? '修改中 · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? '待审听 · 第 ' + (g.r + 1) + ' 轮' : '待审听', g.s === 8 ? '交付结算' : '已交付'];
+    const W = [3.4, 1, .7, .55];   // 当前阶段占最宽，离得越远越窄（透视感）
+    return `<div class="sprog${g.s === 8 ? ' settle' : ''}"><div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
+      + etaBlock(g) + '</div>';
+}
 function etaBlock(g) {
   if (g.s === 5 || g.s === 0) return '';
   const eta = g.eta || {}, now = Date.now(), rank = { edit: 0, vocal: 1, mix: 2, master: 3 };
@@ -148,14 +156,7 @@ document.body.innerHTML = `
       <div class="meta" id="vmeta"></div>
     </div>
   </header>
-  ${(() => {   // 进度：项目页里改的阶段，这里只显示
-    const g = S.prog; if (!g || !(g.s >= 0)) return '';
-    const BAR = [0, 1, 2, 3, 4, 5, 3, 4, 5], cur = BAR[g.s] ?? 0;   // 人声制作并入混音、修改中并入审听：来回修改进度条不后退
-    const ST = ['待付款', '准备中', '编辑中', g.s === 6 ? '人声制作中' : '混音中', g.s === 7 ? '修改中 · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? '待审听 · 第 ' + (g.r + 1) + ' 轮' : '待审听', g.s === 8 ? '交付结算' : '已交付'];
-    const W = [3.4, 1, .7, .55];   // 当前阶段占最宽，离得越远越窄（透视感）
-    return `<div class="sprog${g.s === 8 ? ' settle' : ''}"><div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
-      + etaBlock(g) + '</div>';
-  })()}
+  ${progHtml(S.prog)}
   <section class="vpick" id="seg"${V.length > 1 ? '' : ' hidden'}>${(() => {
     // 版本选择：按阶段一组一排小按钮「编辑 V1 V2 · 混音 V3」，当前版本高亮
     const groups = [];
@@ -988,7 +989,10 @@ async function renderOk() {
       return (showOk ? hh : '') + btn + fb + (showOk && ai && !ai.ext && ai.left <= 432e5 ? '<button type="button" class="okext">还需要时间？延长 24 小时</button>' : ''); })();
   if (!bar.innerHTML) bar.hidden = true;
   const set = async flag => { if (flag) OKS[v] = Date.now(); else delete OKS[v]; renderOk();
-    try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: flag ? 1 : 0 }) }); } catch (e) {} };
+    try { const j = await (await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: flag ? 1 : 0 }) })).json();
+      if (j.s && S.prog && S.prog.s !== j.s) { S.prog = { ...S.prog, s: j.s, at: { ...(S.prog.at || {}), [j.s]: Date.now() } };   // 人齐了转交付结算 / 撤回退回待审听：当场换掉进度条、确认区、尾款
+        const sp = document.querySelector('.sprog'); if (sp) sp.outerHTML = progHtml(S.prog); renderOk(); renderFee(); }
+    } catch (e) {} };
   const b4 = bar.querySelector('.fbbtn'); if (b4) b4.onclick = async () => {   // 反馈写完了：服务端立刻转修改中、开始算下一版；页面上马上换成下一版预计
     OKS['fb:' + v] = Date.now();
     if (S.prog && S.prog.s === 4 && cur === V[V.length - 1]) { const g = S.prog; g.s = 7; g.r = (g.r || 0) + 1; g.at = { ...(g.at || {}), 7: Date.now() };
