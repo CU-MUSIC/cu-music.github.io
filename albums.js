@@ -2,7 +2,7 @@
  * CU MUSIC — 唯一作品数据库
  * 两个页面 + 作品墙脚本都读这一个文件，改这里就够了。
  *
- *   credits  谁参与：["cookdao"] 工程 / ["uin"] 制作 / 两个都有 = C/U 合作
+ *   credits  谁参与：["cookdao"] 工程 / ["uin"] 制作 / 两个都有 = CU MUSIC 合作
  *            → ChefDao 页显示 credits 含 "cookdao" 的
  *   cu       上 CU 主页精选的顺序（1 = 排最前）；不上主页就不写这个字段
  *            → CU 主页显示有 cu 的，按 cu 升序

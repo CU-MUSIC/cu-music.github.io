@@ -44,13 +44,13 @@
     "name": "\u5200\u5927\u53a8",
     "alternateName": ["ChefDao", "Cookdao"],
     "jobTitle": "\u97f3\u9891\u5de5\u7a0b\u5e08 & \u5236\u4f5c\u4eba",
-    "description": "\u73b0\u5c45\u97e9\u56fd\u9996\u5c14\u7684\u97f3\u9891\u5de5\u7a0b\u5e08\u4e0e\u5236\u4f5c\u4eba\uff0c\u4e0e\u5236\u4f5c\u4eba\u3001\u8bcd\u66f2\u4f5c\u8005 Uin \u5171\u540c\u521b\u7acb C/U Music Studio\u3002\u81ea 2022 \u5e74\u8d77\u6a2a\u8de8 Hip-Hop\u3001R&B\u3001\u6d41\u884c\u7b49\u591a\u79cd\u66f2\u98ce\uff0c\u5df2\u53c2\u4e0e\u5236\u4f5c\u903e\u767e\u9996\u4f5c\u54c1\u3002",
+    "description": "\u73b0\u5c45\u97e9\u56fd\u9996\u5c14\u7684\u97f3\u9891\u5de5\u7a0b\u5e08\u4e0e\u5236\u4f5c\u4eba\uff0c\u4e0e\u5236\u4f5c\u4eba\u3001\u8bcd\u66f2\u4f5c\u8005 Uin \u5171\u540c\u521b\u7acb CU MUSIC\u3002\u81ea 2022 \u5e74\u8d77\u6a2a\u8de8 Hip-Hop\u3001R&B\u3001\u6d41\u884c\u7b49\u591a\u79cd\u66f2\u98ce\uff0c\u5df2\u53c2\u4e0e\u5236\u4f5c\u903e\u767e\u9996\u4f5c\u54c1\u3002",
     "url": "https://cumusic.work/chefdao/",
     "image": "https://cumusic.work/chefdao/assets/og-chefdao-square.png",
     "worksFor": {
       "@type": "Organization",
       "name": "CU MUSIC",
-      "alternateName": "C/U Music Studio",
+      "alternateName": "CU MUSIC",
       "url": "https://cumusic.work/"
     },
     "homeLocation": {
@@ -432,7 +432,7 @@ body {
 
 /* ================= About Section ================= */
 /* 参考格莱美混音师个人站（Josh Gudwin 等）：作品清单 + 档案式荣誉列表 + 克制排版。
-   三语切换见 ABOUT_I18N；精选作品由 renderCredits() 从 albums.js 生成。 */
+   三语切换见 ABOUT_I18N；合作艺人滚动条由 initMarquee() 复制成无缝循环。 */
 #about-section {
   display:none; padding:120px 0 140px; opacity:0; transition:opacity 0.5s ease;
   font-family:var(--font-pro),"PingFang SC","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
@@ -511,22 +511,7 @@ body {
 }
 .ab-label span { letter-spacing:0.04em; text-transform:none; font-weight:500; color:#86868b; font-size:13px; }
 
-/* 精选作品：ARTIST / TITLE 清单 */
-.ab-credits { list-style:none; margin:0; padding:0; columns:3; column-gap:48px; }
-.ab-credits li {
-  break-inside:avoid; display:flex; gap:14px; align-items:baseline;
-  padding:9px 0; font-size:15px; line-height:1.45;
-}
-.ab-credits .yr { font-size:12px; color:#6e6e73; font-variant-numeric:tabular-nums; flex-shrink:0; }
-.ab-credits .w { text-transform:uppercase; letter-spacing:0.03em; color:#d2d2d7; }
-.ab-credits .w b { font-weight:600; color:#f5f5f7; }
-.ab-credits a.w { text-decoration:none; transition:color 0.2s; }
-.ab-credits a.w:hover, .ab-credits a.w:hover b { color:var(--gold); }
-.ab-more {
-  appearance:none; background:none; border:0; padding:0; cursor:pointer; font:inherit;
-  margin-top:26px; font-size:15px; font-weight:500; color:var(--gold);
-}
-.ab-more:hover { text-decoration:underline; text-underline-offset:4px; }
+
 
 /* 荣誉：年份 | 奖项 | 作品 */
 .ab-awards { list-style:none; margin:0; padding:0; }
@@ -542,11 +527,29 @@ body {
 .ab-note { font-size:13px; color:#6e6e73; margin:18px 0 0; }
 
 /* 合作艺人 */
-.ab-collab { font-size:17px; line-height:2.1; color:#d2d2d7; margin:0 0 14px; }
-.ab-collab .collab-name { display:inline-block; white-space:nowrap; color:#f5f5f7; font-weight:500; transition:color 0.2s; }
-.ab-collab .collab-name:hover { color:var(--gold); }
-.ab-collab .collab-name::after { content:'·'; color:#48484a; margin:0 0.55em; font-weight:400; }
-.ab-collab .sep { display:none; }
+/* 合作艺人：两行反向横向滚动（名字在 HTML 里写一份，JS 复制一份做无缝循环） */
+.ab-marquee {
+  overflow:hidden; padding:6px 0;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+}
+.ab-marquee + .ab-marquee { margin-top:10px; }
+.ab-track { display:flex; width:max-content; animation:ab-scroll var(--dur,70s) linear infinite; }
+.ab-marquee.rev .ab-track { animation-direction:reverse; }
+.ab-marquee:hover .ab-track { animation-play-state:paused; }
+.ab-track span {
+  flex-shrink:0; white-space:nowrap; font-size:clamp(22px,2.6vw,32px); font-weight:600;
+  letter-spacing:-0.01em; color:#d2d2d7; transition:color 0.2s;
+}
+.ab-marquee.rev .ab-track span { color:#86868b; font-weight:500; }
+.ab-track span:hover { color:var(--gold); }
+.ab-track span::after { content:'·'; color:#48484a; margin:0 0.7em; font-weight:400; }
+@keyframes ab-scroll { to { transform:translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .ab-marquee { -webkit-mask-image:none; mask-image:none; }
+  .ab-track { animation:none; flex-wrap:wrap; width:auto; row-gap:6px; }
+  .ab-track [aria-hidden] { display:none; }
+}
 .ab-c { font-size:15px; color:#86868b; margin:0; }
 
 /* 收尾：合作咨询 */
@@ -559,7 +562,6 @@ body {
 .about-block.is-visible { opacity:1; transform:translateY(0); }
 
 @media (max-width:900px) {
-  .ab-credits { columns:2; }
   .ab-awards li { grid-template-columns:60px 1fr; }
   .ab-awards .wk { grid-column:2; }
 }
@@ -576,11 +578,9 @@ body {
   .ab-stat .cert-num { grid-row:span 2; font-size:44px; margin:0; }
   .ab-sec { margin-top:88px; }
   .ab-label { flex-direction:column; gap:6px; }
-  .ab-credits { columns:1; }
   .ab-awards li { grid-template-columns:1fr; gap:4px; }
   .ab-awards .wk { grid-column:auto; }
   .ab-awards .aw { font-size:16px; }
-  .ab-collab { font-size:16px; }
   .ab-end { margin-top:96px; padding-top:56px; }
 }
 
@@ -746,7 +746,7 @@ body {
         <p class="ab-services">Mixing · Mastering · Production</p>
         <h2>ChefDao</h2>
         <p class="ab-role" data-i18n="role">音频工程师 &amp; 制作人 · 首尔</p>
-        <p class="ab-lead" data-i18n="lead">现居韩国首尔。与制作人、词曲作者 Uin 共同创立 C/U Music Studio。自 2022 年起横跨 Hip-Hop、R&amp;B、流行等曲风，已参与制作逾百首作品。</p>
+        <p class="ab-lead" data-i18n="lead">现居韩国首尔。与制作人、词曲作者 Uin 共同创立 CU MUSIC。自 2022 年起横跨 Hip-Hop、R&amp;B、流行等曲风，已参与制作逾百首作品。</p>
         <div class="ab-cta">
           <a class="ab-btn primary" href="/chefdao/price" data-i18n="book">预约混音</a>
           <button type="button" class="ab-btn ab-wechat"><span class="dot"></span><span data-i18n="wechat">微信 Cookdao</span></button>
@@ -774,15 +774,10 @@ body {
       <p class="ab-note" data-i18n="note">以上作品中担任工程师（Engineer）。</p>
     </section>
 
-    <section class="ab-sec about-block" aria-labelledby="ab-l-cred">
-      <h3 class="ab-label" id="ab-l-cred">Selected Credits <span data-i18n="l_cred">共 {n} 部作品</span></h3>
-      <ol class="ab-credits" id="ab-credits"></ol>
-      <button type="button" class="ab-more" data-i18n="more_works">查看全部作品 →</button>
-    </section>
-
     <section class="ab-sec about-block" aria-labelledby="ab-l-col">
       <h3 class="ab-label" id="ab-l-col">Collaborators <span data-i18n="l_col">130+ 位音乐人</span></h3>
-      <p class="ab-collab"><span class="collab-name">Rapeter</span><span class="collab-name">BOBBYNOPEACE</span><span class="collab-name">GALI</span><span class="collab-name">小酷Coola</span><span class="collab-name">杨和苏KeyNG</span><span class="collab-name">CheezeK</span><span class="collab-name">RioT婷</span><span class="collab-name">西凹木</span><span class="collab-name">SevenJ</span><span class="collab-name">Keyso寿君超</span><span class="collab-name">安伊涵</span><span class="collab-name">HanP</span><span class="collab-name">脑浆poppy</span><span class="collab-name">Ele Jazz</span><span class="collab-name">ChickenBB</span><span class="collab-name">一刀阿阿</span><span class="collab-name">未来特</span><span class="collab-name">邹元朗</span><span class="collab-name">Føxco</span><span class="collab-name">Uin尤因</span><span class="collab-name">盖盖Enjoythevacation</span><span class="collab-name">程思源</span><span data-i18n="more">等</span></p>
+      <div class="ab-marquee"><div class="ab-track"><span>Rapeter</span><span>BOBBYNOPEACE</span><span>GALI</span><span>杨和苏KeyNG</span><span>小酷Coola</span><span>CheezeK</span><span>RioT婷</span><span>YOUNGLEGO</span><span>SevenJ</span><span>Keyso寿君超</span><span>安伊涵</span><span>HanP</span><span>脑浆poppy</span><span>Ele Jazz</span><span>ChickenBB</span><span>一刀阿阿</span><span>未来特</span><span>邹元朗</span><span>Føxco</span><span>Uin尤因</span><span>盖盖Enjoythevacation</span><span>程思源</span><span>西凹木</span><span>Kuoco</span><span>小羊Yuna</span></div></div>
+      <div class="ab-marquee rev"><div class="ab-track"><span>掌柜不CHOKIN</span><span>SASIKS</span><span>FRED YU</span><span>JOHNNY NEO</span><span>赛西尔Cecile</span><span>juNk chaiN</span><span>Hawky Dove</span><span>丁苏宸Suiren</span><span>埃克斯术XSHOOT</span><span>D.A.S</span><span>浪氏云</span><span>Vexelv</span><span>Norah Yang</span><span>CATI2</span><span>五鸽Wuge</span><span>Tee田丰源</span><span>FLAG2000</span><span>歪吉</span><span>Jerome杰罗姆</span><span>Lil Pink</span><span>米拉Mila</span><span>CanvaSunny</span><span>YIF钱毅峰</span><span>FrankyFire</span><span>JungleZR</span><span>DaWaNOLonE</span><span>焦娇JoJo</span></div></div>
     </section>
 
     <div class="ab-end about-block">
@@ -1172,7 +1167,7 @@ function initNav() {
 const ABOUT_I18N = {
   zh: {
     role:'音频工程师 & 制作人',
-    lead:'现居韩国首尔。与制作人、词曲作者 Uin 共同创立 C/U Music Studio。自 2022 年起横跨 Hip-Hop、R&B、流行等曲风，已参与制作逾百首作品。',
+    lead:'现居韩国首尔。与制作人、词曲作者 Uin 共同创立 CU MUSIC。自 2022 年起横跨 Hip-Hop、R&B、流行等曲风，已参与制作逾百首作品。',
     book:'预约混音', wechat:'微信 Cookdao',
     s1_k:'钻石单曲', s1_c:'网易云 · 单曲播放 1000 万+',
     s2_k:'铂金单曲', s2_c:'网易云 · 单曲播放 500 万+',
@@ -1181,14 +1176,13 @@ const ABOUT_I18N = {
     r1:'CHMA 中文说唱音乐奖 · 最佳流行说唱专辑', r2:'CHMA 中文说唱音乐奖 · 最佳陷阱说唱专辑', r3:'CHMA 中文说唱音乐奖 · 年度单曲', nom:'提名',
     r4:'网易云音乐 · 年度热门专辑 TOP 10', r4e:'第 6 名',
     note:'以上作品中担任工程师（Engineer）。',
-    l_cred:'共 {n} 部作品', more_works:'查看全部作品 →',
-    l_col:'130+ 位音乐人', more:'等',
+    l_col:'130+ 位音乐人',
     end_h:'有作品需要混音？',
     toast:'微信号已复制 · Cookdao'
   },
   en: {
     role:'Audio Engineer & Producer',
-    lead:'Based in Seoul, South Korea. Co-founder of C/U Music Studio with producer and songwriter Uin. Since 2022, 100+ songs across Hip-Hop, R&B, Pop and beyond.',
+    lead:'Based in Seoul, South Korea. Co-founder of CU MUSIC with producer and songwriter Uin. Since 2022, 100+ songs across Hip-Hop, R&B, Pop and beyond.',
     book:'Book a mix', wechat:'WeChat Cookdao',
     s1_k:'Diamond singles', s1_c:'NetEase Cloud Music · 10M+ plays each',
     s2_k:'Platinum singles', s2_c:'NetEase Cloud Music · 5M+ plays each',
@@ -1197,14 +1191,13 @@ const ABOUT_I18N = {
     r1:'CHMA Chinese Hip-Hop Music Awards · Best Pop Rap Album', r2:'CHMA Chinese Hip-Hop Music Awards · Best Trap Album', r3:'CHMA Chinese Hip-Hop Music Awards · Single of the Year', nom:'Nominated',
     r4:'NetEase Cloud Music · Top 10 Albums of the Year', r4e:'#6',
     note:'Credited as engineer on the works above.',
-    l_cred:'{n} releases', more_works:'View all works →',
-    l_col:'130+ artists', more:'and more',
+    l_col:'130+ artists',
     end_h:'Have a record to mix?',
     toast:'WeChat ID copied · Cookdao'
   },
   ko: {
     role:'오디오 엔지니어 & 프로듀서',
-    lead:'서울을 기반으로 활동합니다. 프로듀서 겸 송라이터 Uin과 함께 C/U Music Studio를 공동 설립했고, 2022년부터 힙합, R&B, 팝 등 다양한 장르에서 100곡 이상의 작업에 참여했습니다.',
+    lead:'서울을 기반으로 활동합니다. 프로듀서 겸 송라이터 Uin과 함께 CU MUSIC을 공동 설립했고, 2022년부터 힙합, R&B, 팝 등 다양한 장르에서 100곡 이상의 작업에 참여했습니다.',
     book:'믹싱 문의', wechat:'WeChat Cookdao',
     s1_k:'다이아몬드 싱글', s1_c:'넷이즈 클라우드 뮤직 · 곡당 1,000만+ 재생',
     s2_k:'플래티넘 싱글', s2_c:'넷이즈 클라우드 뮤직 · 곡당 500만+ 재생',
@@ -1213,8 +1206,7 @@ const ABOUT_I18N = {
     r1:'CHMA 중국어 힙합 음악상 · 최우수 팝 랩 앨범', r2:'CHMA 중국어 힙합 음악상 · 최우수 트랩 앨범', r3:'CHMA 중국어 힙합 음악상 · 올해의 싱글', nom:'노미네이트',
     r4:'넷이즈 클라우드 뮤직 · 연간 인기 앨범 TOP 10', r4e:'6위',
     note:'위 작품에 엔지니어로 참여했습니다.',
-    l_cred:'총 {n}개 작품', more_works:'전체 작품 보기 →',
-    l_col:'130명 이상의 아티스트', more:'외 다수',
+    l_col:'130명 이상의 아티스트',
     end_h:'믹싱할 곡이 있나요?',
     toast:'위챗 ID 복사됨 · Cookdao'
   }
@@ -1243,31 +1235,22 @@ function applyLang(lang) {
   document.querySelectorAll('.ab-lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
 }
 
-/* 精选作品清单（格莱美混音师个人站那种 ARTIST / TITLE 列表）：精选在前，其余按日期，取 30 条 */
-function renderCredits() {
-  const day = a => a.date || (a.year + '-06-30');
-  const byDate = (a, b) => day(b).localeCompare(day(a));
-  const list = works.filter(a => a.highlighted).sort(byDate);   // 只放精选标记的代表作，全量在作品页
-  document.getElementById('ab-credits').innerHTML = list.map(a => {
-    const w = `<b>${esc(a.artist)}</b> / ${esc(a.title)}`;
-    return `<li><span class="yr">${esc(a.year)}</span>${a.link
-      ? `<a class="w" href="${esc(a.link)}" target="_blank" rel="noopener">${w}</a>`
-      : `<span class="w">${w}</span>`}</li>`;
-  }).join('');
+function initMarquee() {
+  document.querySelectorAll('.ab-track').forEach(t => {
+    const n = t.children.length;
+    [...t.children].forEach(c => { const d = c.cloneNode(true); d.setAttribute('aria-hidden', 'true'); t.appendChild(d); });
+    t.style.setProperty('--dur', (n * 3.2) + 's');   // 名字越多越久，速度一致
+  });
 }
 
 function initLang() {
-  renderCredits();
+  initMarquee();
   applyLang(pickLang());
   document.querySelectorAll('.ab-lang button').forEach(b => b.addEventListener('click', () => {
     applyLang(b.dataset.lang);
     try { localStorage.setItem('chefdao_lang', b.dataset.lang); } catch (e) {}
   }));
   document.querySelectorAll('.ab-wechat').forEach(b => b.addEventListener('click', () => document.getElementById('float-contact').click()));
-  document.querySelector('.ab-more').addEventListener('click', () => {
-    document.querySelector('.nav-link[data-tab="works"]').click();
-    window.scrollTo(0, 0);
-  });
 }
 
 /* ========= About: scroll reveal + stat count-up ========= */
