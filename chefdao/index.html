@@ -533,17 +533,17 @@ body {
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
           mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
 }
-.ab-marquee + .ab-marquee { margin-top:10px; }
+.ab-marquee { padding:2px 0; }
 .ab-track { display:flex; width:max-content; animation:ab-scroll var(--dur,70s) linear infinite; }
 .ab-marquee.rev .ab-track { animation-direction:reverse; }
 .ab-marquee:hover .ab-track { animation-play-state:paused; }
 .ab-track span {
-  flex-shrink:0; white-space:nowrap; font-size:clamp(22px,2.6vw,32px); font-weight:600;
+  flex-shrink:0; white-space:nowrap; font-size:clamp(17px,2vw,24px); font-weight:600; line-height:1.5;
   letter-spacing:-0.01em; color:#d2d2d7; transition:color 0.2s;
 }
 .ab-marquee.rev .ab-track span { color:#86868b; font-weight:500; }
 .ab-track span:hover { color:var(--gold); }
-.ab-track span::after { content:'·'; color:#48484a; margin:0 0.7em; font-weight:400; }
+.ab-track span::after { content:'·'; color:#48484a; margin:0 0.45em; font-weight:400; }
 @keyframes ab-scroll { to { transform:translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) {
   .ab-marquee { -webkit-mask-image:none; mask-image:none; }
@@ -571,7 +571,7 @@ body {
   .ab-lang { margin-bottom:44px; }
   .ab-lead { font-size:17px; }
   .ab-btn { flex:1 1 auto; }
-  .ab-wechat { display:none; }   /* 手机底部已有悬浮微信按钮，不再重复 */
+  body:has(#about-section.fadein) #float-contact { display:none; }   /* About 页按钮本身就是微信，不再叠一个悬浮按钮 */
   .ab-stats { grid-template-columns:1fr; margin-top:88px; }
   .ab-stat, .ab-stat + .ab-stat { padding:22px 0; border-left:0; display:grid; grid-template-columns:120px 1fr; align-items:center; gap:0 16px; }
   .ab-stat + .ab-stat { border-top:1px solid rgba(255,255,255,0.08); }
@@ -748,8 +748,7 @@ body {
         <p class="ab-role" data-i18n="role">音频工程师 &amp; 制作人 · 首尔</p>
         <p class="ab-lead" data-i18n="lead">现居韩国首尔。与制作人、词曲作者 Uin 共同创立 CU MUSIC。自 2022 年起横跨 Hip-Hop、R&amp;B、流行等曲风，已参与制作逾百首作品。</p>
         <div class="ab-cta">
-          <a class="ab-btn primary" href="/chefdao/price" data-i18n="book">预约混音</a>
-          <button type="button" class="ab-btn ab-wechat"><span class="dot"></span><span data-i18n="wechat">微信 Cookdao</span></button>
+          <button type="button" class="ab-btn primary ab-wechat"><span class="dot"></span><span data-i18n="book">预约混音 · 微信 Cookdao</span></button>
         </div>
       </div>
       <figure class="ab-photo">
@@ -776,15 +775,13 @@ body {
 
     <section class="ab-sec about-block" aria-labelledby="ab-l-col">
       <h3 class="ab-label" id="ab-l-col">Collaborators <span data-i18n="l_col">130+ 位音乐人</span></h3>
-      <div class="ab-marquee"><div class="ab-track"><span>Rapeter</span><span>BOBBYNOPEACE</span><span>GALI</span><span>杨和苏KeyNG</span><span>小酷Coola</span><span>CheezeK</span><span>RioT婷</span><span>YOUNGLEGO</span><span>SevenJ</span><span>Keyso寿君超</span><span>安伊涵</span><span>HanP</span><span>脑浆poppy</span><span>Ele Jazz</span><span>ChickenBB</span><span>一刀阿阿</span><span>未来特</span><span>邹元朗</span><span>Føxco</span><span>Uin尤因</span><span>盖盖Enjoythevacation</span><span>程思源</span><span>西凹木</span><span>Kuoco</span><span>小羊Yuna</span></div></div>
-      <div class="ab-marquee rev"><div class="ab-track"><span>掌柜不CHOKIN</span><span>SASIKS</span><span>FRED YU</span><span>JOHNNY NEO</span><span>赛西尔Cecile</span><span>juNk chaiN</span><span>Hawky Dove</span><span>丁苏宸Suiren</span><span>埃克斯术XSHOOT</span><span>D.A.S</span><span>浪氏云</span><span>Vexelv</span><span>Norah Yang</span><span>CATI2</span><span>五鸽Wuge</span><span>Tee田丰源</span><span>FLAG2000</span><span>歪吉</span><span>Jerome杰罗姆</span><span>Lil Pink</span><span>米拉Mila</span><span>CanvaSunny</span><span>YIF钱毅峰</span><span>FrankyFire</span><span>JungleZR</span><span>DaWaNOLonE</span><span>焦娇JoJo</span></div></div>
+      <div class="ab-rows" id="ab-rows"></div>
     </section>
 
     <div class="ab-end about-block">
       <h3 data-i18n="end_h">有作品需要混音？</h3>
       <div class="ab-cta">
-        <a class="ab-btn primary" href="/chefdao/price" data-i18n="book">预约混音</a>
-        <button type="button" class="ab-btn ab-wechat"><span class="dot"></span><span data-i18n="wechat">微信 Cookdao</span></button>
+        <button type="button" class="ab-btn primary ab-wechat"><span class="dot"></span><span data-i18n="book">预约混音 · 微信 Cookdao</span></button>
       </div>
     </div>
   </div>
@@ -1168,7 +1165,7 @@ const ABOUT_I18N = {
   zh: {
     role:'音频工程师 & 制作人',
     lead:'现居韩国首尔。与制作人、词曲作者 Uin 共同创立 CU MUSIC。自 2022 年起横跨 Hip-Hop、R&B、流行等曲风，已参与制作逾百首作品。',
-    book:'预约混音', wechat:'微信 Cookdao',
+    book:'预约混音 · 微信 Cookdao',
     s1_k:'钻石单曲', s1_c:'网易云 · 单曲播放 1000 万+',
     s2_k:'铂金单曲', s2_c:'网易云 · 单曲播放 500 万+',
     s3_k:'总播放量', s3_n:'1亿+', s3_c:'各大中文音乐平台累计',
@@ -1183,7 +1180,7 @@ const ABOUT_I18N = {
   en: {
     role:'Audio Engineer & Producer',
     lead:'Based in Seoul, South Korea. Co-founder of CU MUSIC with producer and songwriter Uin. Since 2022, 100+ songs across Hip-Hop, R&B, Pop and beyond.',
-    book:'Book a mix', wechat:'WeChat Cookdao',
+    book:'Book a mix · WeChat Cookdao',
     s1_k:'Diamond singles', s1_c:'NetEase Cloud Music · 10M+ plays each',
     s2_k:'Platinum singles', s2_c:'NetEase Cloud Music · 5M+ plays each',
     s3_k:'Total streams', s3_n:'100M+', s3_c:'Across major Chinese music platforms',
@@ -1198,7 +1195,7 @@ const ABOUT_I18N = {
   ko: {
     role:'오디오 엔지니어 & 프로듀서',
     lead:'서울을 기반으로 활동합니다. 프로듀서 겸 송라이터 Uin과 함께 CU MUSIC을 공동 설립했고, 2022년부터 힙합, R&B, 팝 등 다양한 장르에서 100곡 이상의 작업에 참여했습니다.',
-    book:'믹싱 문의', wechat:'WeChat Cookdao',
+    book:'믹싱 문의 · WeChat Cookdao',
     s1_k:'다이아몬드 싱글', s1_c:'넷이즈 클라우드 뮤직 · 곡당 1,000만+ 재생',
     s2_k:'플래티넘 싱글', s2_c:'넷이즈 클라우드 뮤직 · 곡당 500만+ 재생',
     s3_k:'누적 재생', s3_n:'1억+', s3_c:'중국 주요 음원 플랫폼 합산',
@@ -1235,11 +1232,27 @@ function applyLang(lang) {
   document.querySelectorAll('.ab-lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
 }
 
+/* 合作艺人：从 albums.js 里 ChefDao 参与的作品抓出全部艺人（拆开 & / , 等合作写法、去重），
+   再加上作品库里没有、但合作过的名字；轮流分到 4 行，单双行反向滚动 */
+const COLLAB_EXTRA = ['BOBBYNOPEACE','GALI','杨和苏KeyNG','小酷Coola','SevenJ','Keyso寿君超','脑浆poppy','ChickenBB','邹元朗','盖盖Enjoythevacation'];
+function collabNames() {
+  const seen = new Map();
+  const add = n => { n = n.trim(); const k = n.toLowerCase(); if (n && !seen.has(k)) seen.set(k, n); };
+  ['Rapeter', ...COLLAB_EXTRA].forEach(add);   // 知名的排前面，分行后每行开头都有
+  works.forEach(a => String(a.artist || '').split(/\s*(?:&|,|，|、|\/|\bx\b|\bX\b|feat\.?|ft\.?)\s*/).forEach(add));
+  const all = [...seen.values()];
+  // 「小羊」和「小羊Yuna」、「Uin」和「Uin尤因」这种只留长的
+  return all.filter(n => !all.some(m => m !== n && m.length > n.length && m.toLowerCase().startsWith(n.toLowerCase())));
+}
 function initMarquee() {
+  const ROWS = 4, names = collabNames(), rows = Array.from({ length: ROWS }, () => []);
+  names.forEach((n, i) => rows[i % ROWS].push(n));
+  document.getElementById('ab-rows').innerHTML = rows.map((r, k) =>
+    `<div class="ab-marquee${k % 2 ? ' rev' : ''}"><div class="ab-track">${r.map(n => `<span>${esc(n)}</span>`).join('')}</div></div>`).join('');
   document.querySelectorAll('.ab-track').forEach(t => {
     const n = t.children.length;
     [...t.children].forEach(c => { const d = c.cloneNode(true); d.setAttribute('aria-hidden', 'true'); t.appendChild(d); });
-    t.style.setProperty('--dur', (n * 3.2) + 's');   // 名字越多越久，速度一致
+    t.style.setProperty('--dur', (n * 2.6) + 's');   // 名字越多越久，速度一致
   });
 }
 
