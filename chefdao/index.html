@@ -569,6 +569,7 @@ body {
   .ab-lang { margin-bottom:44px; }
   .ab-lead { font-size:17px; }
   .ab-btn { flex:1 1 auto; }
+  .ab-wechat { display:none; }   /* 手机底部已有悬浮微信按钮，不再重复 */
   .ab-stats { grid-template-columns:1fr; margin-top:88px; }
   .ab-stat, .ab-stat + .ab-stat { padding:22px 0; border-left:0; display:grid; grid-template-columns:120px 1fr; align-items:center; gap:0 16px; }
   .ab-stat + .ab-stat { border-top:1px solid rgba(255,255,255,0.08); }
@@ -1246,7 +1247,7 @@ function applyLang(lang) {
 function renderCredits() {
   const day = a => a.date || (a.year + '-06-30');
   const byDate = (a, b) => day(b).localeCompare(day(a));
-  const list = [...works.filter(a => a.highlighted).sort(byDate), ...works.filter(a => !a.highlighted).sort(byDate)].slice(0, 30);
+  const list = works.filter(a => a.highlighted).sort(byDate);   // 只放精选标记的代表作，全量在作品页
   document.getElementById('ab-credits').innerHTML = list.map(a => {
     const w = `<b>${esc(a.artist)}</b> / ${esc(a.title)}`;
     return `<li><span class="yr">${esc(a.year)}</span>${a.link
