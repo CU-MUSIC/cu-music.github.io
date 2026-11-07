@@ -351,6 +351,13 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .vpick[hidden]{display:none}
 .vpick .vg{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .vpick .vgl{font-size:12px;letter-spacing:.08em;color:var(--text-3);margin-right:4px}
+.vpick .vgl.q{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.vtip{margin-top:16px;padding:16px 18px;border-radius:16px;background:var(--fill);border:1px solid rgba(236,234,230,.08);font-size:15px;line-height:1.75;color:var(--text-2)}
+.vtip[hidden]{display:none}
+.vtip b{display:block;color:var(--text);font-size:15px;font-weight:600;margin-bottom:4px}
+.vtip p{margin:0 0 6px}
+.vtip em{font-style:normal;color:var(--text)}
+.vtip button{margin-top:6px;padding:8px 14px;min-height:40px;border-radius:999px;background:var(--pearl);color:var(--ink);font-size:14px}
 .vpick .vrow{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto;min-width:56px;min-height:44px;padding:10px 18px;border-radius:999px;background:var(--fill);
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-size:16px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums;transition:background-color .2s,color .2s}
 .vpick .vrow::before{display:none}

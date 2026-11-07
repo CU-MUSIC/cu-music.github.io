@@ -168,6 +168,7 @@ document.body.innerHTML = `
       `<button class="vrow press" data-i="${i}"><span class="vn">${esc(vlab(V[i]))}</span><span class="hasdot"></span></button>`).join('')}</div>`; }).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
   })()}</section>
   <section class="vlist" id="vlist" hidden></section>
+  <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、挑好每句最好的一遍、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>，还有每句选的是不是你想要的那一遍。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
   <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
@@ -1868,6 +1869,11 @@ async function showStats() {
     <div class="mtab">${MPLAT.map(([n, t]) => `<div><span>${n} <i>${t}</i></span><b>${s.i > t ? '−' + fx(s.i - t) : '+' + fx(t - s.i)}<i>dB</i></b>${r ? `<b class="r">${r.i > t ? '−' + fx(r.i - t) : '+' + fx(t - r.i)}</b>` : ''}</div>`).join('')}</div>
     <div class="mft">按审听文件测${fmtTag(i) ? ' · ' + fmtTag(i) : ''}</div>`;
 }
+// 编辑版本说明：第一次看到编辑版本时默认展开，点「不再提示」后这台设备不再自动弹；点「编辑」标签可以再看
+const vtipUi = force => { const t = $('#vtip'); if (!t) return; t.hidden = !(stageOf(cur) === 'edit' && (force || !store.get('cu-tip-edit'))); };
+$('#vtipX').onclick = () => { store.set('cu-tip-edit', '1'); $('#vtip').hidden = true; };
+document.querySelectorAll('#seg .vgl').forEach(l => { if (l.textContent === STAGE.edit) { l.classList.add('q'); l.title = '什么是编辑版本'; l.onclick = () => { const t = $('#vtip'); if (!t.hidden) t.hidden = true; else { t.hidden = false; } }; } });
+addEventListener('cu-ver', () => vtipUi()); vtipUi();
 $('#mstBtn').onclick = () => { mstOpen = !mstOpen; $('#mst').hidden = !mstOpen; $('#mstBtn').classList.toggle('on', mstOpen); $('#mstBtn').setAttribute('aria-pressed', mstOpen); showStats(); };
 async function switchTo(i) {
   if (i === vi || !KEY) return;
