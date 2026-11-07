@@ -148,6 +148,9 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .rqi{min-width:0;display:flex;flex-direction:column;gap:2px}.rqi b{font-size:15px}.rqi span{font-size:12.5px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rqa{display:flex;align-items:center;gap:8px;flex-shrink:0}.rqa em{font-style:normal;font-size:12.5px;color:var(--text-3)}
 .rqa button{padding:6px 12px;border-radius:99px;background:var(--pearl);color:var(--ink);font-size:13px;font-weight:600}.rqa button.dz{background:none;color:var(--red);border:1px solid var(--line,rgba(255,255,255,.18))}
+.rqa button.rqob{background:none;color:var(--text-2);border:1px solid var(--line,rgba(255,255,255,.18));font-weight:500}.rqa button.rqob.on{color:#e8c98a;border-color:rgba(232,201,138,.5)}
+.rqop{margin:-2px 0 4px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06));display:flex;flex-direction:column;gap:8px;font-size:14px}.rqop .rqoh{font-size:12.5px;color:var(--text-3)}.rqop label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.rqof{display:flex;gap:8px;margin-top:4px}.rqof button{padding:6px 14px;border-radius:99px;font-size:13px;font-weight:600;background:var(--pearl);color:var(--ink)}.rqof .cl{background:none;color:var(--text-3)}
 .rqold summary{padding:8px 4px;font-size:13px;color:var(--text-3);cursor:pointer}
 .lsort{margin-left:auto;margin-right:8px}
 .lsort select{appearance:none;-webkit-appearance:none;height:32px;padding:0 28px 0 12px;border-radius:9px;border:0;background:var(--fill-2,rgba(255,255,255,.06)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center/14px;color:var(--text-2,inherit);font:inherit;font-size:13px;cursor:pointer}
@@ -316,7 +319,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261105a"></script>
 <script>
 (() => {
-const BUILD = '261107.1000';
+const BUILD = '261107.1500';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -632,6 +635,7 @@ function render() {
   const ln = document.getElementById('lNew'); if (ln) ln.onclick = newProject;
   const la = document.getElementById('lArch'); if (la) la.onclick = () => { showArch = !showArch; render(); };
   root.querySelectorAll('[data-rq]').forEach(b => b.onclick = () => reqAct(b.dataset.id, b.dataset.rq));
+  root.querySelectorAll('[data-rqo]').forEach(b => b.onclick = () => rqOnlyOpen(b));
   const rsm = document.getElementById('rsm'); if (rsm) rsm.ontoggle = () => { songsOpen = rsm.open; };
   root.querySelectorAll('[data-rs]').forEach(b => b.onclick = () => rsAction(b.closest('.rs').dataset.slug, b.dataset.rs, b));
   root.querySelectorAll('.cmr[data-go]').forEach(row => row.onclick = e => {
@@ -988,9 +992,25 @@ function renderReqs() {
   const pend = REQS.filter(r => r.status === 'pending'), rest = REQS.filter(r => r.status !== 'pending');
   const ST = { approved: '已批准', denied: '已拒绝', revoked: '已撤销' };
   const row = r => `<div class="rqr"><div class="rqi"><b>${esc(r.name)}</b><span>${esc(r.title || '项目')} · ${esc(r.device || '设备')}${r.city || r.country ? ' · ' + esc(r.city || r.country) : ''} · ${reqWhen(r.created)}</span></div>
-    <div class="rqa">${r.status === 'pending' ? `<button data-rq="approved" data-id="${r.id}">批准</button><button data-rq="denied" data-id="${r.id}" class="dz">拒绝</button>`
+    <div class="rqa">${r.status === 'pending' || r.status === 'approved' ? rqOnlyBtn(r) : ''}${r.status === 'pending' ? `<button data-rq="approved" data-id="${r.id}">批准</button><button data-rq="denied" data-id="${r.id}" class="dz">拒绝</button>`
       : `<em>${ST[r.status] || r.status}</em>${r.status === 'approved' ? `<button data-rq="revoked" data-id="${r.id}" class="dz">撤销</button>` : `<button data-rq="approved" data-id="${r.id}">改为批准</button>`}`}</div></div>`;
   return `<div class="sect">审听申请<span>${pend.length ? '待批准 ' + pend.length : '无待批准'}</span></div><div class="rqbox">${pend.map(row).join('')}${rest.length ? `<details class="rqold"><summary>已处理 ${rest.length}</summary>${rest.map(row).join('')}</details>` : ''}</div>`;
+}
+// 只开放项目里的某几首：其他曲目在对方的项目页上打码、点不开，单曲链接也打不开
+const rqTracks = r => { const p = ((LIB && LIB.projects) || []).find(x => x.slug === r.project); return p ? p.tracks || [] : []; };
+const rqOnlyBtn = r => { const on = r.only ? r.only.split(',').filter(Boolean) : [], T = rqTracks(r); if (T.length < 2) return '';
+  return `<button class="rqob${on.length ? ' on' : ''}" data-rqo="${r.id}">${on.length ? '只开放 ' + on.length + ' 首' : '全部曲目'} ▾</button>`; };
+function rqOnlyOpen(btn) {
+  const r = REQS.find(x => String(x.id) === btn.dataset.rqo); if (!r) return;
+  const row = btn.closest('.rqr'), old = row.nextElementSibling; if (old && old.classList.contains('rqop')) { old.remove(); return; }
+  const on = new Set(r.only ? r.only.split(',').filter(Boolean) : []), T = rqTracks(r);
+  const box = document.createElement('div'); box.className = 'rqop';
+  box.innerHTML = '<div class="rqoh">' + esc(r.name) + ' 能看哪几首（都不勾 = 全部）</div>' + T.map(t => `<label><input type="checkbox" value="${esc(t.slug)}"${on.has(t.slug) ? ' checked' : ''}> ${esc(t.title)}</label>`).join('')
+    + '<div class="rqof"><button type="button" class="sv">保存</button><button type="button" class="cl">取消</button></div>';
+  row.after(box);
+  box.querySelector('.cl').onclick = () => box.remove();
+  box.querySelector('.sv').onclick = async () => { const only = [...box.querySelectorAll('input:checked')].map(x => x.value);
+    try { await lib('/ap/only', { id: +r.id, only: only.length === T.length ? [] : only }); REQS = null; render(); } catch (e) { alert('没成功，检查网络再试'); } };
 }
 async function reqAct(id, status) { try { await lib('/ap/decide', { id: +id, status }); REQS = null; render(); } catch (e) { alert('没成功，检查网络再试'); } }
 const pAct = p => Math.max(p.updated || 0, ...p.tracks.map(t => t.updTs || 0));

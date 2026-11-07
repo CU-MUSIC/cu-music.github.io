@@ -452,7 +452,7 @@ async function loadPlaylist() {
   if (!S.project) return;
   try {
     const j = await (await fetch(API_BASE + '/pj?s=' + S.project.slug + '&tok=' + (store.get('review:tok') || ''), { cache: 'no-store', headers: store.get('insights:key') ? { Authorization: 'Bearer ' + store.get('insights:key') } : {} })).json();   // 你自己的设备带上管理密钥，申请制项目不用批准自己也能看到列表
-    const T = j.ok ? j.project.tracks : []; if (T.length < 2) return;
+    const T = j.ok ? j.project.tracks.filter(t => !t.locked) : []; if (T.length < 2) return;   // 没对你开放的曲目不进列表
     PL = T; fsNav(); setTimeout(preloadNext, 2500);
     askName(new Set(T.flatMap(t => String(t.artist || '').split(/[、,，\/&]/).map(x => x.trim()).filter(Boolean))).size > 1);
     const el = $('#plist');

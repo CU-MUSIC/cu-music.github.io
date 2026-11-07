@@ -63,6 +63,7 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 #list{width:100%}
 .list{width:100%;margin-top:30px;display:flex;flex-direction:column;border-top:.5px solid var(--hair)}
 .tr{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:15px 4px;border-bottom:.5px solid var(--hair);color:var(--text);text-decoration:none;text-align:left;
+.tr.lk{cursor:default;opacity:.55}.tr.lk .t b{display:inline-block;font-weight:600;letter-spacing:-1px;color:var(--text-3);filter:blur(5px);user-select:none;max-width:100%;overflow:hidden}.tr.lk .m{color:var(--text-3);display:flex;justify-content:flex-end}
   opacity:0;transform:translateY(8px);animation:in .5s cubic-bezier(.2,.8,.2,1) forwards}
 .tr:active{background:var(--fill)}
 .tr .n{color:var(--text-3);font-variant-numeric:tabular-nums;font-size:14px}
@@ -287,16 +288,18 @@ async function ok(pw) {   // 密码对就返回项目密钥；不设密码的项
   } catch (e) { return null; }
 }
 async function open(pw, key) {
-  ls.set('review:pj:' + slug, pw); accessPing(1);
+  if (!P.only) ls.set('review:pj:' + slug, pw); accessPing(1);
   // 点进每首歌不用再输密码：用项目密钥解出每首歌自己的密码记下来
   for (const t of P.tracks) {
+    if (t.locked) continue; if (t.spw !== undefined) { ls.set('review:pw:' + t.slug, t.spw); continue; }   // 只开放了几首：服务端直接给这几首的密码
     let spw = pw; if (t.wrap) try { spw = new TextDecoder().decode(await dec(key, t.wrap)); } catch (e) {}
     ls.set('review:pw:' + t.slug, spw);
   }
   document.getElementById('gate').remove();
-  const playable = P.tracks.filter(t => t.dur > 0);
+  const playable = P.tracks.filter(t => t.dur > 0 && !t.locked);
   document.getElementById('list').innerHTML = (playable.length ? '<button class="pa" id="pa" type="button"><svg viewBox="0 0 16 16"><path d="M4.5 2.6v10.8c0 .6.7 1 1.2.7l8.3-5.4c.5-.3.5-1.1 0-1.4L5.7 1.9c-.5-.3-1.2.1-1.2.7z"/></svg>播放</button>' : '')
     + (P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
+    t.locked ? '<div class="tr lk" style="animation-delay:' + (i * 60) + 'ms" aria-label="未开放"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t"><b>' + '■'.repeat(t.n || 6) + '</b></span><span class="m"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span></div>' :
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>')
     + (FLOW[slug] ? '<a class="flowl" href="' + FLOW[slug] + '"><div><b>合作流程</b><span>每首怎么推进、怎么给反馈最快</span></div><i>›</i></a>' : '');
@@ -559,6 +562,7 @@ pin.addEventListener('input', async () => {
   const d = document.getElementById('dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
   setTimeout(() => { pin.value = ''; dots.forEach(x => x.classList.remove('on')); focus(); }, 420);
 });
+if (P.only) return open('', null);   // 只开放了几首：不用项目密码，直接进
 const saved = P.auto || (P.open ? '' : ls.get('review:pj:' + slug)), sk = saved !== null && await ok(saved);   // 申请制：批准后服务端给的密码直接解锁
 if (sk) open(saved, sk); else setTimeout(focus, 300);
 })();

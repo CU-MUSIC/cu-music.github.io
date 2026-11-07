@@ -22,7 +22,8 @@
     empty: ['暂无可播放的版本', '该曲目尚未上传可试听的版本。'],
     net: ['网络连接异常', '请检查网络后刷新页面。'],
     archived: ['此项目已归档', '该项目已完成交付并归档，如需回看请联系发送方。'],
-    approval: ['需要申请后查看', '该曲目属于需批准才能查看的项目。']
+    approval: ['需要申请后查看', '该曲目属于需批准才能查看的项目。'],
+    locked: ['暂未开放', '这首歌还没有对你开放。']
   };
   const fail = (k, link) => {
     const b = document.getElementById('boot'); if (!b) return;
@@ -39,7 +40,7 @@
     const r = await fetch(API + '/rs?s=' + slug + (tok ? '&tok=' + tok : ''), { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} });
     const j = await r.json();
     if (!j.ok && j.e === 'archived') return fail('archived');
-    if (!j.ok && j.e === 'approval') return fail('approval', j.project && j.project.url);
+    if (!j.ok && j.e === 'approval') return fail(j.state === 'locked' ? 'locked' : 'approval', j.project && j.project.url);
     if (!j.ok) return fail('missing');
     j.song.versions.forEach(v => { if (v.audio.startsWith('/')) v.audio = API + v.audio; });
     if (!j.song.versions.length) return fail('empty');
