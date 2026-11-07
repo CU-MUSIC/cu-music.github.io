@@ -501,6 +501,7 @@ function dropAdd() {
   addEventListener('drop', async e => {
     e.preventDefault(); depth = 0; if (busy) return;
     const files = [...e.dataTransfer.files].filter(f => /^audio\//.test(f.type) || /\.(m4a|mp3|wav|aiff?)$/i.test(f.name));
+    const no = f => { const m = /^\s*(\d{1,3})(?=[\s._\-、．)）])/.exec(f.name); return m ? +m[1] : 1e9; }; files.sort((a, b) => no(a) - no(b));   // 一次拖进多首：按文件名开头的序号上传，项目里的顺序就对了
     if (!files.length) { ov.classList.remove('on'); return; }
     busy = true; ov.classList.add('busy'); const msg = t => { document.getElementById('dropMsg').textContent = t; }, bar = p => { document.getElementById('dropBar').style.width = Math.round(p * 100) + '%'; };
     try {

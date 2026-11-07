@@ -182,6 +182,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .pjlink button,.pjlink a{font-size:13px;padding:5px 12px;border-radius:999px;background:var(--fill-2);color:var(--text);text-decoration:none}
 .pjlink button{background:var(--pearl);color:var(--ink);font-weight:600}
 .pjtr{display:flex;flex-direction:column}
+.pjsort{margin-left:10px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--text);background:var(--fill-2,rgba(255,255,255,.08));box-shadow:inset 0 0 0 .5px rgba(255,255,255,.14)}
 .pjtr .solo{display:block;margin-top:5px;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:500;color:var(--text-3);border:1px solid var(--line,rgba(255,255,255,.16));background:none}.pjtr .solo.on{color:#e8c98a;border-color:rgba(232,201,138,.5)}
 .pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;padding:10px 6px;margin:-10px -6px}
@@ -321,7 +322,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261105a"></script>
 <script>
 (() => {
-const BUILD = '261107.1900';
+const BUILD = '261107.2000';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1072,6 +1073,7 @@ function artistSuggest(inp) {
     const ps = parts(); ps[ps.length - 1] = b.dataset.n; inp.value = ps.map(x => x.trim()).filter(Boolean).join(', ') + ', ';
     inp.dispatchEvent(new Event('input', { bubbles: true })); inp.focus(); });
 }
+const trackNo = t => { for (const x of [t.title, t.fn]) { const m = /^\s*(?:track\s*)?(\d{1,3})(?=[\s._\-、．)）]|$)/i.exec(x || ''); if (m) return +m[1]; } return null; };
 function openProject(slug) {
   const old = document.getElementById('pj'); if (old) old.remove();
   const p = LIB.projects.find(x => x.slug === slug); if (!p) return;
@@ -1086,7 +1088,7 @@ function openProject(slug) {
     <button type="button" class="ghost" id="pjEm">用苹果 emoji 做封面</button>
     <input type="file" id="pjFile" accept="image/*" hidden>
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
-    <div class="sect">曲目<span>${p.tracks.length} 首</span></div>
+    <div class="sect">曲目<span>${p.tracks.length} 首${p.tracks.filter(t => trackNo(t) !== null).length >= 2 ? '<button type="button" class="pjsort" id="pjSort">按序号排</button>' : ''}</span></div>
     <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i>${p.mode === 'approve' ? `<button type="button" class="solo${t.solo ? ' on' : ''}" data-solo="${i}">${t.solo ? '✓ 单曲凭密码可进' : '单曲凭密码可进'}</button>` : ''}</span>
       <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-sh="${i}">分享</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
@@ -1099,6 +1101,11 @@ function openProject(slug) {
   $p('pjX').onclick = close; el.onclick = e => { if (e.target === el) close(); };
   const setTracks = async list => { try { await lib('/lib/tracks', { project: slug, songs: list }); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } };
   const order = p.tracks.map(t => t.slug);
+  if ($p('pjSort')) $p('pjSort').onclick = () => {   // 歌名或文件名开头的序号（01 Intro、2. xxx、03_xxx）从小到大；没序号的按原顺序排在后面
+    const k = p.tracks.map((t, i) => ({ s: t.slug, n: trackNo(t), i })).sort((a, b) => (a.n === null) - (b.n === null) || (a.n ?? 0) - (b.n ?? 0) || a.i - b.i).map(x => x.s);
+    if (k.join() === order.join()) { msg('已经是按序号排的'); return; }
+    setTracks(k);
+  };
   el.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const i = +b.dataset.mv, j = i + +b.dataset.d; [order[i], order[j]] = [order[j], order[i]]; setTracks(order); });
   // 拖着序号直接排序：按住「01」这类序号上下拖，松手一次保存（不用一格一格点箭头）
   const prow = [...el.querySelectorAll('.pjtr > div')];
