@@ -148,6 +148,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .rqi{min-width:0;display:flex;flex-direction:column;gap:2px}.rqi b{font-size:15px}.rqi span{font-size:12.5px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rqa{display:flex;align-items:center;gap:8px;flex-shrink:0}.rqa em{font-style:normal;font-size:12.5px;color:var(--text-3)}
 .rqa button{padding:6px 12px;border-radius:99px;background:var(--pearl);color:var(--ink);font-size:13px;font-weight:600}.rqa button.dz{background:none;color:var(--red);border:1px solid var(--line,rgba(255,255,255,.18))}
+.asug{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 10px}.asug button{padding:6px 12px;border-radius:99px;font-size:13.5px;font-weight:500;color:var(--text);background:var(--fill-2,rgba(255,255,255,.07));box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)}.asug button:active{background:rgba(255,255,255,.16)}
 .rqa button.rqob{background:none;color:var(--text-2);border:1px solid var(--line,rgba(255,255,255,.18));font-weight:500}.rqa button.rqob.on{color:#e8c98a;border-color:rgba(232,201,138,.5)}
 .rqop{margin:-2px 0 4px;padding:12px 14px;border-radius:12px;background:var(--fill-2,rgba(255,255,255,.06));display:flex;flex-direction:column;gap:8px;font-size:14px}.rqop .rqoh{font-size:12.5px;color:var(--text-3)}.rqop label{display:flex;align-items:center;gap:8px;cursor:pointer}
 .rqof{display:flex;gap:8px;margin-top:4px}.rqof button{padding:6px 14px;border-radius:99px;font-size:13px;font-weight:600;background:var(--pearl);color:var(--ink)}.rqof .cl{background:none;color:var(--text-3)}
@@ -319,7 +320,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261105a"></script>
 <script>
 (() => {
-const BUILD = '261107.1500';
+const BUILD = '261107.1830';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1049,6 +1050,27 @@ async function shrink(file) {
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return new Promise(ok => c.toBlob(ok, 'image/jpeg', .9));
 }
+// 歌手输入框：聚焦就在下面列出填过的歌手（按出现次数排），输入时按当前这一位筛，点一下填进去；多位用逗号分开
+function artistSuggest(inp) {
+  if (!inp || !LIB) return;
+  const cnt = new Map(), add = v => String(v || '').split(/[、,，\/&]/).map(x => x.trim()).filter(Boolean).forEach(n => { const k = n.toLowerCase(), o = cnt.get(k); cnt.set(k, { n: o ? o.n : n, c: (o ? o.c : 0) + 1 }); });
+  (LIB.projects || []).forEach(p => { add(p.artist); (p.tracks || []).forEach(t => add(t.artist)); }); (LIB.loose || []).forEach(t => add(t.artist));
+  const all = [...cnt.values()].sort((a, b) => b.c - a.c || a.n.localeCompare(b.n, 'zh'));
+  if (!all.length) return;
+  const box = document.createElement('div'); box.className = 'asug'; box.hidden = true; inp.closest('label').after(box);
+  const parts = () => inp.value.split(/[,，、]/);
+  const draw = () => {
+    const ps = parts(), cur = ps[ps.length - 1].trim().toLowerCase(), used = new Set(ps.slice(0, -1).map(x => x.trim().toLowerCase()).filter(Boolean));
+    const list = all.filter(x => !used.has(x.n.toLowerCase()) && x.n.toLowerCase() !== cur && (!cur || x.n.toLowerCase().includes(cur))).slice(0, 10);
+    box.innerHTML = list.map(x => `<button type="button" data-n="${esc(x.n)}">${esc(x.n)}</button>`).join(''); box.hidden = !list.length;
+  };
+  inp.addEventListener('focus', draw); inp.addEventListener('input', draw);
+  inp.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== inp) box.hidden = true; }, 150));
+  box.addEventListener('pointerdown', e => e.preventDefault());   // 点候选时输入框不失焦、键盘不收起
+  box.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+    const ps = parts(); ps[ps.length - 1] = b.dataset.n; inp.value = ps.map(x => x.trim()).filter(Boolean).join(', ') + ', ';
+    inp.dispatchEvent(new Event('input', { bubbles: true })); inp.focus(); });
+}
 function openProject(slug) {
   const old = document.getElementById('pj'); if (old) old.remove();
   const p = LIB.projects.find(x => x.slug === slug); if (!p) return;
@@ -1072,6 +1094,7 @@ function openProject(slug) {
   document.body.appendChild(el);
   const $p = id => document.getElementById(id), msg = (t, e) => { $p('pjMsg').textContent = t; $p('pjMsg').className = 'msg2' + (e ? ' err' : ''); };
   const close = () => el.remove();
+  artistSuggest(document.getElementById('pjA'));
   $p('pjX').onclick = close; el.onclick = e => { if (e.target === el) close(); };
   const setTracks = async list => { try { await lib('/lib/tracks', { project: slug, songs: list }); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } };
   const order = p.tracks.map(t => t.slug);
@@ -1120,7 +1143,7 @@ function openProject(slug) {
   $p('pjSave').onclick = async () => {
     if (!/^(\d{4})?$/.test($p('pjP').value)) return msg('密码要 4 位数字，或者留空不设密码', true);
     try { const pw = $p('pjP').value, sec = pw !== p.pass ? await sealPass(pw) : {};
-      await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.trim(), kind: $p('pjK').value, mode: $p('pjM').value, ...sec }); msg('已保存'); await libReload(slug); }
+      await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.replace(/[\s,，、]+$/, '').trim(), kind: $p('pjK').value, mode: $p('pjM').value, ...sec }); msg('已保存'); await libReload(slug); }
     catch (e) { msg('没保存上，检查网络再试', true); }
   };
   $p('pjArch').onclick = async () => {
