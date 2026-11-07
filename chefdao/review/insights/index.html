@@ -316,7 +316,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261105a"></script>
 <script>
 (() => {
-const BUILD = '261105.1900';
+const BUILD = '261107.1000';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1470,8 +1470,12 @@ async function openUpload(opt) {
 }
 
 load();
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && KEY) load(); });
-setInterval(() => { if (document.visibilityState === 'visible' && KEY && data) load(); }, 180000);
+// 自动刷新省 D1 读取额度：页面在前台、且最近 10 分钟有人动过才刷新；切回来距上次刷新满 1 分钟才重新拉
+{ let act = Date.now(), at = Date.now(); const touch = () => { act = Date.now(); };
+  ['pointerdown', 'keydown', 'wheel', 'touchstart', 'focus'].forEach(e => addEventListener(e, touch, { passive: true }));
+  const re = () => { at = Date.now(); load(); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && KEY) { touch(); if (Date.now() - at > 60000) re(); } });
+  setInterval(() => { if (document.visibilityState === 'visible' && KEY && data && Date.now() - act < 6e5) re(); }, 300000); }
 })();
 </script>
 </body>

@@ -122,6 +122,7 @@
       el.querySelectorAll('.chips button').forEach(b => b.onclick = () => { if (b.dataset.v) vsel = b.dataset.v; else if (b.dataset.sc) { scope = b.dataset.sc; pick = ''; pickL = ''; } else if (b.dataset.l !== undefined) pickL = b.dataset.l; else pick = b.dataset.s; draw(); });
     }
     await load();
-    setInterval(() => { if (document.visibilityState === 'visible') load(); }, 180000);
+    let act = Date.now(); ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(e => addEventListener(e, () => { act = Date.now(); }, { passive: true }));
+    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - act < 6e5) load(); }, 300000);   // 最近 10 分钟没人动就不刷，省 D1 读取额度
   };
 })();
