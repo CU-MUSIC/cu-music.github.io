@@ -182,6 +182,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .pjlink button,.pjlink a{font-size:13px;padding:5px 12px;border-radius:999px;background:var(--fill-2);color:var(--text);text-decoration:none}
 .pjlink button{background:var(--pearl);color:var(--ink);font-weight:600}
 .pjtr{display:flex;flex-direction:column}
+.pjtr .solo{display:block;margin-top:5px;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:500;color:var(--text-3);border:1px solid var(--line,rgba(255,255,255,.16));background:none}.pjtr .solo.on{color:#e8c98a;border-color:rgba(232,201,138,.5)}
 .pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;padding:10px 6px;margin:-10px -6px}
 .pjtr>div.drag{position:relative;z-index:5;background:var(--bg-2,#26282d);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.45);cursor:grabbing}
@@ -320,7 +321,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261105a"></script>
 <script>
 (() => {
-const BUILD = '261107.1830';
+const BUILD = '261107.1900';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1086,7 +1087,7 @@ function openProject(slug) {
     <input type="file" id="pjFile" accept="image/*" hidden>
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
     <div class="sect">曲目<span>${p.tracks.length} 首</span></div>
-    <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i></span>
+    <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i>${p.mode === 'approve' ? `<button type="button" class="solo${t.solo ? ' on' : ''}" data-solo="${i}">${t.solo ? '✓ 单曲凭密码可进' : '单曲凭密码可进'}</button>` : ''}</span>
       <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-sh="${i}">分享</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
     <div class="msg2" id="pjMsg"></div>
@@ -1119,6 +1120,11 @@ function openProject(slug) {
     try { const x = (await songsP).songs.find(y => y.slug === t.slug); if (!x) throw 0;
       await navigator.clipboard.writeText(shareText(x.title, x.url, x.share ?? x.pass)); b.textContent = '已复制'; setTimeout(() => { b.textContent = '分享'; }, 1500); }
     catch (e) { msg('没复制成，检查网络再试', true); }
+  });
+  el.querySelectorAll('[data-solo]').forEach(b => b.onclick = async () => {   // 申请制项目里单独放行这首：拿单曲链接 + 这首的密码就能听
+    const t = p.tracks[+b.dataset.solo], on = !t.solo;
+    try { await lib('/lib/solo', { song: t.slug, on }); t.solo = on ? 1 : 0; b.classList.toggle('on', on); b.textContent = on ? '✓ 单曲凭密码可进' : '单曲凭密码可进';
+      msg(on ? '《' + t.title + '》：拿单曲链接和这首的密码就能听，不用申请' : '《' + t.title + '》：恢复成要先申请'); } catch (e) { msg('没改成，检查网络再试', true); }
   });
   el.querySelectorAll('[data-rn]').forEach(b => b.onclick = async () => {
     const t = p.tracks[+b.dataset.rn], v = prompt('歌名', t.title); if (!v || !v.trim() || v.trim() === t.title) return;
