@@ -63,8 +63,25 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 #list{width:100%}
 .list{width:100%;margin-top:30px;display:flex;flex-direction:column;border-top:.5px solid var(--hair)}
 .tr{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:15px 4px;border-bottom:.5px solid var(--hair);color:var(--text);text-decoration:none;text-align:left;
-.tr.lk{cursor:default;opacity:.55}.tr.lk .t b{display:inline-block;font-weight:600;letter-spacing:-1px;color:var(--text-3);filter:blur(5px);user-select:none;max-width:100%;overflow:hidden}.tr.lk .m{color:var(--text-3);display:flex;justify-content:flex-end}
   opacity:0;transform:translateY(8px);animation:in .5s cubic-bezier(.2,.8,.2,1) forwards}
+.tr.lk{position:relative;cursor:default;overflow:hidden;border-radius:12px;isolation:isolate}
+.tr.lk .n{opacity:.35}
+.tr.lk .t{display:flex;flex-direction:column;gap:7px}
+.tr.lk .t b{display:block;height:13px;max-width:100%;border-radius:7px;background:linear-gradient(90deg,hsla(38,40%,68%,.85) 0%,rgba(235,233,229,.55) 55%,hsla(212,35%,66%,.8) 100%);opacity:.75}
+.tr.lk .t b.b2{height:9px;opacity:.4}
+/* 毛玻璃：盖在假歌名上面，用 backdrop-filter 真的糊掉；一道慢慢扫过的高光 */
+.tr.lk::after{content:'';position:absolute;inset:4px 0;border-radius:12px;z-index:1;pointer-events:none;
+  -webkit-backdrop-filter:blur(9px) saturate(160%);backdrop-filter:blur(9px) saturate(160%);
+  background:linear-gradient(115deg,rgba(255,255,255,.09),rgba(255,255,255,.025) 45%,rgba(255,255,255,.07));
+  box-shadow:inset 0 .5px 0 rgba(255,255,255,.18),inset 0 0 0 .5px rgba(255,255,255,.07)}
+.tr.lk::before{content:'';position:absolute;top:4px;bottom:4px;left:-40%;width:35%;z-index:2;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.13),transparent);transform:skewX(-18deg);animation:lkSheen 5.5s cubic-bezier(.4,0,.2,1) infinite}
+.tr.lk:nth-child(2n)::before{animation-delay:1.4s}.tr.lk:nth-child(3n)::before{animation-delay:2.6s}
+@keyframes lkSheen{0%,55%{left:-40%}100%{left:120%}}
+.tr.lk .m{position:relative;z-index:3;display:flex;justify-content:flex-end}
+.tr.lk .m em{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-style:normal;font-size:12px;font-weight:600;letter-spacing:.02em;color:rgba(235,233,229,.78);
+  background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.16);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+@media (prefers-reduced-motion:reduce){.tr.lk::before{animation:none;display:none}}
 .tr:active{background:var(--fill)}
 .tr .n{color:var(--text-3);font-variant-numeric:tabular-nums;font-size:14px}
 .tr .t{font-size:16px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -299,7 +316,7 @@ async function open(pw, key) {
   const playable = P.tracks.filter(t => t.dur > 0 && !t.locked);
   document.getElementById('list').innerHTML = (playable.length ? '<button class="pa" id="pa" type="button"><svg viewBox="0 0 16 16"><path d="M4.5 2.6v10.8c0 .6.7 1 1.2.7l8.3-5.4c.5-.3.5-1.1 0-1.4L5.7 1.9c-.5-.3-1.2.1-1.2.7z"/></svg>播放</button>' : '')
     + (P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
-    t.locked ? '<div class="tr lk" style="animation-delay:' + (i * 60) + 'ms" aria-label="未开放"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t"><b>' + '■'.repeat(t.n || 6) + '</b></span><span class="m"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span></div>' :
+    t.locked ? '<div class="tr lk" style="animation-delay:' + (i * 60) + 'ms" aria-label="未开放"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t"><b style="width:' + Math.min(14, 3 + (t.n || 6) * .7).toFixed(1) + 'em"></b><b class="b2" style="width:' + (2.5 + (i * 37 % 4)) + 'em"></b></span><span class="m"><em><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>未开放</em></span></div>' :
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>')
     + (FLOW[slug] ? '<a class="flowl" href="' + FLOW[slug] + '"><div><b>合作流程</b><span>每首怎么推进、怎么给反馈最快</span></div><i>›</i></a>' : '');
