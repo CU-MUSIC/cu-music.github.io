@@ -2069,12 +2069,14 @@ async function lyrInit(key) {
   if (FS_BACK && LYR && LYR.lines && LYR.lines.length) { FS_BACK = false; lyrFull(); }   // 从全屏歌词里切过来的：接着全屏
 }
 // 段落（Verse / Hook / 歌手名）插在歌词里：每段标在它开始后的第一句前面，点段名 = 跳到这一段
+// 歌词里自己写了「削面」「Cam」这种歌手 / 段落名的一行：和上面的段名重复，藏起来
+const lyrSame = (n, x) => { const f = v => String(v || '').toLowerCase().replace(/[\s\[\]【】()（）:：]/g, ''); const a = f(n), b = f(x); return !!b && b.length <= 16 && (a.includes(b) || b.includes(a)); };
 function lyrRows(L) {
   const head = {}, off = lyrOff();
   (typeof PARTS !== 'undefined' ? PARTS : []).forEach((p, pi) => { const k = L.findIndex(x => x.t != null && x.t + off >= p.t - .4); if (k >= 0) head[k] = pi; });
   return L.map((x, i) => (head[i] != null ? (() => { const p = PARTS[head[i]], c = colorOf(p.n);
       return `<button class="lph press" data-p="${head[i]}"${c ? ` style="--pc:${c}"` : ''}>${esc(p.n)}</button>`; })() : '')
-    + `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('');
+    + `<div class="ln${x.t == null ? ' nt' : ''}${head[i] != null && lyrSame(PARTS[head[i]].n, x.x) ? ' dup' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('');
 }
 function lyrDraw() {
   const el = $('#lyr'); if (!el) return;

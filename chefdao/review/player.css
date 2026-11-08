@@ -871,3 +871,4 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 .lph:hover{color:var(--text)}
 .lyin>.lph:first-child{margin-top:0}
 .lyfs .lph{font-size:14px;margin:34px 0 2px;color:rgba(236,235,232,.45)}
+.lyr .ln.dup,.lyfs .ln.dup{display:none}
