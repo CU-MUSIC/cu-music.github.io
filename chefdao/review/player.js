@@ -1326,9 +1326,10 @@ function ownerTools() {
   };
   $('#ownPart').onclick = () => {
     const t = snapBar(Math.round(curTime() * 10) / 10), k = PARTS.filter(p => p.t < t).length;   // 有 BPM 就吸附到最近的小节线
-    const v = prompt(fmt(t) + (BPM ? '（第 ' + barNo(t) + ' 小节）' : '') + ' 开始这段是谁' + (names.length ? '（歌手：' + names.join('、') + '）' : '') + '\n也可以写歌曲分段：Intro / Verse / Hook / Bridge / Outro', names[k] || '');
-    if (!v || !v.trim()) return;
-    PARTS = PARTS.filter(p => Math.abs(p.t - t) > .3).concat({ t, n: v.trim() }).sort((x, y) => x.t - y.t); renderParts(); saveParts();
+    // 不再弹输入框：先按歌手顺序猜一个名字加上，下面直接展开编辑栏，点歌手 / 分段就改好
+    const np = { t, n: names.length ? names[k % names.length] : 'Verse' };
+    PARTS = PARTS.filter(p => Math.abs(p.t - t) > .3).concat(np).sort((x, y) => x.t - y.t); renderParts(); saveParts();
+    selPart = PARTS.indexOf(np); partBar(); const pb = document.getElementById('partbar'); if (pb) pb.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   };
   // 点段落：先跳过去播放（和歌手看到的一样）；同时在段落下面展开一条编辑栏——改名（歌手 / 歌曲分段）、起点前后挪一小节、用此刻当起点、删除。不再点一下就弹窗直接改
   let selPart = -1;
