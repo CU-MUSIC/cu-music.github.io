@@ -2201,7 +2201,7 @@ function lyrEdit() {
     <textarea id="lyTx" placeholder="把歌词粘贴进来，一行一句（空行会去掉）"></textarea>
     <div class="lyl" id="lyL"></div>
     <div class="lyb"><button class="press" id="lyAuto" hidden>自动对齐…</button><input type="file" id="lyFile" accept="audio/*,.wav,.aif,.aiff,.m4a,.mp3" hidden><button class="press go" id="lyTap">开始打点</button><button class="press" id="lyNext" hidden>下一句 · 空格</button><button class="press" id="lyUndo" hidden>撤销</button>
-      <label>这一版整体偏移<input id="lyOff" type="number" step="0.1" value="${off[cur.ver] || 0}">秒</label><span class="sp"></span><button class="press" id="lyClr">清空</button><button class="press go" id="lySave">保存</button></div>`;
+      <label>这一版整体偏移<input id="lyOff" type="number" step="0.1" value="${off[cur.ver] || 0}">秒</label><span class="sp"></span><button class="press" id="lyDl">下载 LRC</button><button class="press" id="lyClr">清空</button><button class="press go" id="lySave">保存</button></div>`;
   document.body.appendChild(p);
   const tx = $('#lyTx'), list = $('#lyL'), hint = t => { $('#lyHint').textContent = t; };
   tx.value = lines.map(x => x.x).join('\n');
@@ -2254,6 +2254,14 @@ function lyrEdit() {
   p.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); if ($('#lyAuto').hidden) return hint('本机对齐服务没开：双击 tools/lyrics-align/安装歌词对齐服务.command'); auto(e.dataTransfer.files[0]); });
   $('#lyUndo').onclick = () => { if (ptr > 0) { ptr--; lines[ptr].t = null; seek(Math.max(0, (ptr > 0 ? lines[ptr - 1].t : 0) || 0)); draw(); preview(); } };
   $('#lyOff').oninput = e => { const v = Math.round((+e.target.value || 0) * 10) / 10; if (v) off[cur.ver] = v; else delete off[cur.ver]; preview(); };
+  // 下载 LRC：按当前版本的整体偏移算时间；没打点的句子跳过
+  $('#lyDl').onclick = () => { parse(); const o = +off[cur.ver] || 0, T = lines.filter(x => x.t != null);
+    if (!T.length) return hint('还没有打点的句子，先打点或自动对齐');
+    const ts = t => { const cs = Math.round(Math.max(0, t + o) * 100), m = Math.floor(cs / 6000), c = cs % 6000; return '[' + String(m).padStart(2, '0') + ':' + String(Math.floor(c / 100)).padStart(2, '0') + '.' + String(c % 100).padStart(2, '0') + ']'; };
+    const txt = ['[ti:' + S.title + ']', S.artist ? '[ar:' + S.artist + ']' : '', ...T.map(x => ts(x.t) + x.x)].filter(Boolean).join('\n') + '\n';
+    const u = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=utf-8' })), el = document.createElement('a');
+    el.href = u; el.download = (S.title || 'lyrics').replace(/[\\/:*?"<>|]/g, '_') + '.lrc'; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000);
+    hint('已下载 ' + T.length + ' 句' + (T.length < lines.length ? '（' + (lines.length - T.length) + ' 句没打点，没写进去）' : '')); };
   $('#lyClr').onclick = () => { if (!confirm('清空这首歌的歌词？')) return; tx.value = ''; lines = []; draw(); };
   const close = () => { document.removeEventListener('keydown', key, true); p.remove(); };
   $('#lyX').onclick = () => { close(); lyrInit(KEY); };   // 没保存就关：回到存过的歌词
