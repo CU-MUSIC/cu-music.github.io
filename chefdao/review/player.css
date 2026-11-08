@@ -866,9 +866,9 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.plyr.hint::after{animation:none}}
 
 /* 歌词里的段名：小号、字距、歌手色的圆点；点了跳到这一段 */
-.lph{background:none;border:0;font-family:inherit;display:flex;align-items:center;gap:8px;margin:18px 0 4px;padding:2px 2px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);cursor:pointer;transition:color .2s}
+.lph{background:none;border:0;font-family:inherit;display:flex;align-items:center;gap:8px;margin:18px 0 4px;padding:2px 2px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--pc,var(--text-3));cursor:pointer;transition:color .2s}
 .lph::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--pc,var(--text-3))}
 .lph:hover{color:var(--text)}
 .lyin>.lph:first-child{margin-top:0}
-.lyfs .lph{font-size:14px;margin:34px 0 2px;color:rgba(236,235,232,.45)}
+.lyfs .lph{font-size:17px;margin:40px 0 4px;color:var(--pc,rgba(236,235,232,.55))}.lyfs .lph::before{width:8px;height:8px}
 .lyr .ln.dup,.lyfs .ln.dup{display:none}
