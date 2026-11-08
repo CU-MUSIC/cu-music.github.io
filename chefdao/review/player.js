@@ -259,14 +259,10 @@ async function songKey(pw) {
   return { key, pw: spw };
 }
 
-/* ───────── 歌名：第一次输密码时先是模糊的，每输一位清楚一点；密码对了、要进入播放页的那一刻，快速闪一下乱码解出歌名 ─────────
+/* ───────── 歌名：第一次输密码时先是模糊的，每输一位清楚一点；密码对了、模糊收到 0 直接清晰（不再闪乱码） ─────────
    记住过密码的设备再打开，歌名直接清晰显示，不做这些效果 */
 const scr = (() => {
-  const el = document.getElementById('lt'), T = [...S.title], first = !store.get(PW_KEY);
-  const HAN = '的一是不了人我在有他这中大来上国个到说们为子和你地出道也时年得就那要下以生会自着去之过家学对可她里后小么心多天而能好都然没日于起还发成事只作当想看文无开手十用主行方又如前所本见经头面公同三已老从动两长知民样现分将外但身些与高意进把法此实回二理美点月明社其声音乐曲光风夜梦雨星海',
-    LAT = 'ABCDEFGHJKLMNPQRSTUVWXYZ', NUM = '0123456789';
-  const pool = ch => /[㐀-鿿豈-﫿]/.test(ch) ? HAN : /[0-9]/.test(ch) ? NUM : /[A-Za-z]/.test(ch) ? LAT : '';
-  const rnd = ch => { const p = pool(ch); return p ? p[Math.floor(Math.random() * p.length)] : ch; };
+  const el = document.getElementById('lt'), first = !store.get(PW_KEY);
   el.textContent = S.title;
   const blur = px => el.style.setProperty('--b', px + 'px');
   if (first) { el.classList.add('bl'); blur(12); }
@@ -274,19 +270,10 @@ const scr = (() => {
   return {
     level(n) { if (first) { blur([12, 9, 6, 4, 3][n] ?? 3); nudge(); } },
     fail() { if (first) { blur(12); nudge(); } },
-    decode() {   // 约 0.3 秒：去掉模糊，每个字快闪几下定格
+    decode() {   // 纯模糊：密码对了，模糊在 0.4 秒内收到 0，歌名直接清晰，不再闪乱码
       if (!first) return Promise.resolve();
-      el.classList.remove('bl'); el.removeAttribute('aria-label'); el.textContent = '';
-      const spans = T.map(ch => { const s = document.createElement('span'); s.textContent = rnd(ch); el.appendChild(s); return s; });
-      return new Promise(done => {
-        let left = spans.length;
-        spans.forEach((s, i) => {
-          let n = 0;
-          const go = () => { if (n++ < 3) { s.textContent = rnd(T[i]); setTimeout(go, 40); } else { s.textContent = T[i]; s.classList.add('ok'); if (!--left) done(); } };
-          setTimeout(go, i * 45);
-        });
-        if (!left) done();
-      });
+      blur(0); el.removeAttribute('aria-label');
+      return new Promise(done => setTimeout(() => { el.classList.remove('bl'); done(); }, 420));
     },
   };
 })();
@@ -310,7 +297,7 @@ if (window.visualViewport) {
 pin.addEventListener('input', () => {
   pin.value = pin.value.replace(/\D/g, '').slice(0, 4);
   dots.forEach((d, i) => d.classList.toggle('on', i < pin.value.length));
-  scr.level(pin.value.length);   // 每输一位，乱码稳定一点
+  scr.level(pin.value.length);   // 每输一位，模糊少一点
   $('#ask').classList.remove('err'); $('#ask').textContent = '输入密码收听';
   if (pin.value.length === 4) tryUnlock(pin.value, true);
 });
