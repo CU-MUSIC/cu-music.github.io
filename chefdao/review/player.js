@@ -649,6 +649,7 @@ function renderParts() {
   el.innerHTML = PARTS.map((p, i) => { const s = Math.min(1, p.t / dur()), e = Math.min(1, (PARTS[i + 1] ? PARTS[i + 1].t : dur()) / dur());
     const c = colorOf(p.n);
     return `<button class="pt press" data-i="${i}" style="left:${(s * 100).toFixed(2)}%;width:${(Math.max(0, e - s) * 100).toFixed(2)}%${c ? ';--pc:' + c : ''}" title="${esc(fmt(p.t) + ' ' + p.n)}"><span>${esc(p.n)}</span></button>`; }).join('');
+  try { if (LYR) lyrDraw(); } catch (e) {}   // 段落改了：歌词里的段名跟着变（LYR 还没声明时跳过）
 }
 $('#parts').addEventListener('click', e => { const b = e.target.closest('.pt'); if (b) onPart(+b.dataset.i); });
 a.addEventListener('loadedmetadata', renderParts);
@@ -2067,12 +2068,20 @@ async function lyrInit(key) {
   lyrDraw();
   if (FS_BACK && LYR && LYR.lines && LYR.lines.length) { FS_BACK = false; lyrFull(); }   // 从全屏歌词里切过来的：接着全屏
 }
+// 段落（Verse / Hook / 歌手名）插在歌词里：每段标在它开始后的第一句前面，点段名 = 跳到这一段
+function lyrRows(L) {
+  const head = {}, off = lyrOff();
+  (typeof PARTS !== 'undefined' ? PARTS : []).forEach((p, pi) => { const k = L.findIndex(x => x.t != null && x.t + off >= p.t - .4); if (k >= 0) head[k] = pi; });
+  return L.map((x, i) => (head[i] != null ? (() => { const p = PARTS[head[i]], c = colorOf(p.n);
+      return `<button class="lph press" data-p="${head[i]}"${c ? ` style="--pc:${c}"` : ''}>${esc(p.n)}</button>`; })() : '')
+    + `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('');
+}
 function lyrDraw() {
   const el = $('#lyr'); if (!el) return;
   const L = LYR && LYR.lines && LYR.lines.length ? LYR.lines : null;
   el.hidden = !L; lyrIdx = -2; if (!L) { cancelAnimationFrame(lyrRaf); return; }
   const timed = L.some(x => x.t != null);
-  el.innerHTML = (timed ? '<button class="lyx press" aria-label="全屏歌词"><span>歌词</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>' : '') + '<div class="lyrs"><div class="lyin">' + L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('') + '</div></div>';
+  el.innerHTML = (timed ? '<button class="lyx press" aria-label="全屏歌词"><span>歌词</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>' : '') + '<div class="lyrs"><div class="lyin">' + lyrRows(L) + '</div></div>';
   el.classList.toggle('timed', timed);
   const fx = el.querySelector('.lyx'); if (fx) fx.onclick = lyrFull;
   lyrBind(el, L);
@@ -2093,6 +2102,7 @@ function miniLine(force) {
 const curLine = () => { const L = LYR && LYR.lines, x = L && lyrIdx >= 0 && L[lyrIdx] ? String(L[lyrIdx].x || '').trim() : ''; return x && !/^[-–—·.。…\s]+$/.test(x) ? x : ''; };
 // 点一句跳过去；「评论」对这一句写意见（全屏里点评论会先退出全屏）
 function lyrBind(el, L) {
+  el.querySelectorAll('.lph').forEach(d => d.onclick = () => { const p = PARTS[+d.dataset.p]; if (!p) return; seek(p.t); if (a.paused && !$('#play').disabled) a.play(); });
   el.querySelectorAll('.ln').forEach(d => d.onclick = e => {
     const x = L[+d.dataset.i]; if (x.t == null) return; const t = Math.max(0, x.t + lyrOff());
     if (e.target.closest('.lc')) {   // 对这一句写评论：时间点锁在这句开头，引用这句歌词
@@ -2157,7 +2167,7 @@ function lyrFull() {
   const cv = S.cover ? API_BASE + S.cover : '';
   f.innerHTML = `<div class="fbg"${cv ? ` style="background-image:url('${cv}')"` : ''}></div>
     <div class="fhd"><button class="fx press" aria-label="退出全屏"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}${S.artist ? ' · ' : ''}${esc(vname(cur))}</span></div><button class="fup press" hidden aria-label="下一首"><i>下一首</i><b></b><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5.5v13c0 .8.9 1.3 1.5.8l8.7-6.3c.6-.4.6-1.4 0-1.8L5.5 4.8C4.9 4.3 4 4.8 4 5.5z"/></svg></button></div>
-    <div class="lyrs"><div class="lyin">${L.map((x, i) => `<div class="ln${x.t == null ? ' nt' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('')}</div></div>
+    <div class="lyrs"><div class="lyin">${lyrRows(L)}</div></div>
     <div class="fft"><div class="fpb"><i></i></div><div class="fctl"><span class="fcur">0:00</span><div class="fbt"><button class="fsk fpv press" aria-label="上一首" disabled><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5.5v13c0 .8-.9 1.3-1.5.8L9.8 13c-.6-.4-.6-1.4 0-1.8l8.7-6.4c.6-.5 1.5 0 1.5.7z"/></svg></button><button class="fpl press" aria-label="播放 / 暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg><svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg></button><button class="fsk fnx press" aria-label="下一首" disabled><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5.5v13c0 .8.9 1.3 1.5.8l8.7-6.3c.6-.4.6-1.4 0-1.8L5.5 4.8C4.9 4.3 4 4.8 4 5.5z"/></svg></button></div><span>${fmt(dur())}</span></div></div>`;
   document.body.appendChild(f); document.documentElement.classList.add('lyfs-on');
   lyrBind(f, L);
