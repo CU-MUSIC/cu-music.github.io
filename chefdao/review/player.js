@@ -978,7 +978,8 @@ async function renderOk() {
   if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>'; return; }
   const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 4 ? '第 ' + rn + ' 轮 · 反馈时限 24 小时' : '';
   const latest = cur === V[V.length - 1], fbOn = !!OKS['fb:' + cur.ver], showOk = !!(S.prog && S.prog.okb) || !!OKS[cur.ver];   // 「没有问题了」要你手动打开才对客户显示
-  const canFb = latest && S.prog && (S.prog.s === 4 || fbOn) && (fbOn || notes.length || $('#overall').value.trim());
+  const canFb = latest && S.prog && ([4, 7].includes(S.prog.s) || fbOn) &&   // 每位歌手各点各的：别人点过转成修改中，你这边照样能点
+    (fbOn || notes.length || $('#overall').value.trim());
   const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
   bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');
   bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题' + (OKN.need > 1 ? '，等其他歌手也确认后进入交付结算' : '，可以准备交付') + '</span><button type="button" class="okundo">撤回</button>'
