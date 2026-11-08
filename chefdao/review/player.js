@@ -2070,7 +2070,7 @@ async function lyrInit(key) {
 }
 // 段落（Verse / Hook / 歌手名）插在歌词里：每段标在它开始后的第一句前面，点段名 = 跳到这一段
 // 歌词里自己写了「削面」「Cam」这种歌手 / 段落名的一行：和上面的段名重复，藏起来
-const lyrSame = (n, x) => { const f = v => String(v || '').toLowerCase().replace(/[\s\[\]【】()（）:：]/g, ''); const a = f(n), b = f(x); return !!b && b.length <= 16 && (a.includes(b) || b.includes(a)); };
+const lyrSame = (n, x) => { const f = v => String(v || '').toLowerCase().replace(/[\s\[\]【】()（）:：]/g, ''); const a = f(n), b = f(x); return !!b && a.includes(b); };
 function lyrRows(L) {
   const head = {}, off = lyrOff();
   (typeof PARTS !== 'undefined' ? PARTS : []).forEach((p, pi) => { const k = L.findIndex(x => x.t != null && x.t + off >= p.t - .4); if (k >= 0) head[k] = pi; });
