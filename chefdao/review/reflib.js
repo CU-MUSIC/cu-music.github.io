@@ -2,7 +2,7 @@
 //   加密：密钥从管理钥匙（localStorage['insights:key']）用 HKDF 派生——只有登录过 Insights 的设备解得开，服务器只存密文。
 //         和每首歌的审听密码无关；管理钥匙换了，旧的参考库就解不开了（要重新上传）。
 //   cuRefLib.list(api, key) → [{ id, title, artist, genre, duration, lufs, file }]
-//   cuRefLib.upload({ api, key, file, genre, step, bar }) → item     （WAV/AIFF 转 m4a，要先加载 upload.js）
+//   cuRefLib.upload({ api, key, file, genre, lib, step, bar }) → item     （WAV/AIFF 转 m4a，要先加载 upload.js；lib = 现有列表，重复的抛 e.dup）
 //   cuRefLib.open(api, key, item) → ArrayBuffer（明文音频，m4a / mp3）
 //   cuRefLib.save(api, key, { id, title?, artist?, genre? }) · drop(api, key, id) · genre(api, key, from, to)
 (() => {
@@ -39,6 +39,10 @@ async function upload(o) {
   const AC = window.AudioContext || window.webkitAudioContext, sr = E.wavRate(buf);
   let ac; try { ac = new AC({ sampleRate: sr === 44100 || sr === 48000 ? sr : 48000 }); } catch (e) { ac = new AC(); }
   const au = await new Promise((ok, no) => { const p = ac.decodeAudioData(buf.slice(0), ok, no); if (p && p.catch) p.catch(no); });
+  // 重复：歌名、歌手一样，时长差不到 1 秒 → 不转码不上传，直接跳过
+  const n0 = nameOf(file.name), norm = v => String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const dup = (o.lib || []).find(x => norm(x.title) === norm(n0.title) && norm(x.artist) === norm(n0.artist) && Math.abs((x.duration || 0) - au.duration) < 1);
+  if (dup) { if (ac.close) ac.close(); const e = new Error('已在库里'); e.dup = dup; throw e; }
   step('测响度…'); bar(.12);
   let lufs = null; try { await E.loadLib('lufs.js', 'cuLufs'); const L = await cuLufs(au); lufs = L && Number.isFinite(L.i) ? Math.round(L.i * 10) / 10 : (Number.isFinite(L) ? Math.round(L * 10) / 10 : null); } catch (e) {}
   const LIM = 24 * 1048576 - 64;

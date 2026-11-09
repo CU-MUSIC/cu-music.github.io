@@ -1812,7 +1812,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
    每首都走 setRef，REF 对应点按「歌名 + 时长」分开存，互不影响。「发给客户」= 用这首歌的审听密码重新加密上传成客户 REF */
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
-const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109c'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
+const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109e'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
 const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + x.title;
 const rlKey = () => store.get('insights:key');
@@ -1943,15 +1943,15 @@ function refOn() { if (REF) return setAB('ref'); if (RSL.length) return useSlot(
 async function rlpUpload(files) {
   files = [...files].filter(f => /\.(wav|aif|aiff|m4a|mp4|aac|mp3)$/i.test(f.name) || /^audio\//.test(f.type)); if (!files.length) return;
   files.forEach(f => RLQ.push({ f, name: f.name, st: '排队', p: 0, genre: rlUpG }));
-  const qd = () => { const el = $('#rlpQu'); if (el) el.innerHTML = RLQ.map(q => `<div><span>${esc(q.name)}</span><span class="${q.err ? 'bad' : q.done ? 'ok' : ''}">${esc(q.err || (q.done ? '已进库' : q.st + (q.p ? ' ' + Math.round(q.p * 100) + '%' : '')))}</span></div>`).join(''); };
+  const qd = () => { const el = $('#rlpQu'); if (el) el.innerHTML = RLQ.map(q => `<div><span>${esc(q.name)}</span><span class="${q.err ? 'bad' : q.done ? 'ok' : ''}">${esc(q.err || (q.skip ? '已在库里，跳过' : q.done ? '已进库' : q.st + (q.p ? ' ' + Math.round(q.p * 100) + '%' : '')))}</span></div>`).join(''); };
   qd(); if (rlBusy) return; rlBusy = true;
   try { await Promise.all([rlibLoad(), upLoad()]); } catch (e) { RLQ.forEach(q => { if (!q.done) { q.err = '加载失败，刷新再试'; q.f = null; } }); rlBusy = false; return qd(); }
   if (!RLIB) await rlpLoad();
   for (let q; (q = RLQ.find(x => !x.done && !x.err && x.f));) {
     try {
-      const item = await cuRefLib.upload({ api: API_BASE, key: rlKey(), file: q.f, genre: q.genre, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
+      const item = await cuRefLib.upload({ api: API_BASE, key: rlKey(), file: q.f, genre: q.genre, lib: RLIB, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
       q.done = true; q.f = null; RLIB = (RLIB || []).concat(item); rlpUG(); rlpChips(); rlpList(); qd();
-    } catch (e) { q.err = e.message || '失败'; q.f = null; qd(); }
+    } catch (e) { if (e.dup) { q.done = true; q.skip = true; } else q.err = e.message || '失败'; q.f = null; qd(); }
   }
   rlBusy = false; setTimeout(() => { RLQ = RLQ.filter(x => !x.done); qd(); }, 6000);
 }

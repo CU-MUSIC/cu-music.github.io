@@ -344,10 +344,10 @@ button.av{cursor:pointer;padding:0}
 <body>
 <div class="wrap" id="root"></div>
 <script src="../upload.js?v=20261109b"></script>
-<script src="../reflib.js?v=20261109c"></script>
+<script src="../reflib.js?v=20261109e"></script>
 <script>
 (() => {
-const BUILD = '261109.1200';
+const BUILD = '261109.1500';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1019,7 +1019,7 @@ async function loadRlib() {
 const rlGenres = () => { const m = new Map(); (RL || []).forEach(x => { if (x.genre) m.set(x.genre, (m.get(x.genre) || 0) + 1); }); return [...m].sort((a, b) => a[0].localeCompare(b[0], 'zh')); };
 const rlOpts = cur => `<option value=""${cur ? '' : ' selected'}>未分类</option>` + rlGenres().map(([g]) => `<option value="${esc(g)}"${g === cur ? ' selected' : ''}>${esc(g)}</option>`).join('') + '<option value="__new">＋ 新建风格…</option>';
 function rlQHtml() {
-  return RLQ.map(q => `<div><span>${esc(q.name)}</span><span class="${q.err ? 'bad' : q.done ? 'ok' : ''}">${esc(q.err || (q.done ? '已上传' : q.st + (q.p ? ' ' + Math.round(q.p * 100) + '%' : '')))}</span></div>`).join('');
+  return RLQ.map(q => `<div><span>${esc(q.name)}</span><span class="${q.err ? 'bad' : q.done ? 'ok' : ''}">${esc(q.err || (q.skip ? '已在库里，跳过' : q.done ? '已上传' : q.st + (q.p ? ' ' + Math.round(q.p * 100) + '%' : '')))}</span></div>`).join('');
 }
 function rlListHtml() {
   const q = rlQ.trim().toLowerCase();
@@ -1061,10 +1061,10 @@ async function rlUpload(files) {
   if (rlBusy) return; rlBusy = true;
   for (let q; (q = RLQ.find(x => !x.done && !x.err && x.f));) {
     try {
-      const item = await cuRefLib.upload({ api: API, key: KEY, file: q.f, genre: q.genre, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
+      const item = await cuRefLib.upload({ api: API, key: KEY, file: q.f, genre: q.genre, lib: RL, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
       q.done = true; q.f = null; RL = (RL || []).concat(item); qd();
       if (tab === 'rlib' && !typing()) { const l = document.getElementById('rlList'); if (l) { l.innerHTML = rlListHtml(); bindRlList(); } }
-    } catch (e) { q.err = e.message || '失败'; q.f = null; qd(); }
+    } catch (e) { if (e.dup) { q.done = true; q.skip = true; } else q.err = e.message || '失败'; q.f = null; qd(); }
   }
   rlBusy = false;
   if (tab === 'rlib' && !typing()) render();
