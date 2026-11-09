@@ -1921,20 +1921,76 @@ async function rlpLoad(force) {
     RSL.forEach(s => { const x = s.lib && RLIB.find(y => y.id === s.id); if (x) { s.lib = x; s.name = rlName(x); } });
     if (RSA >= RSL.length) RSA = -1; rslSave();
   }
-  await cuRefLib.prune(RLIB); RLHAVE = await cuRefLib.cached();
+  await cuRefLib.prune(RLIB); RLHAVE = await cuRefLib.cached(); localNew(); localRestore();
   rlpUG(); rlpChips(); rlpList(); rlpSlots(); rlpKeep();
 }
 // 本机缓存：挂过的 REF 自动存；「全部存到本机」把整个参考库下载存好，之后挂 REF 不用等下载、断网也能用
+
+/* ───────── 本机文件夹（方案 A）：电脑上直接读「参考曲目」文件夹里的 WAV，挂 REF 不走网络 ─────────
+   Chrome：选一次就记住（文件夹的授权存在本机 IndexedDB，浏览器重开后点一下「允许」）；Safari：不支持记住，每次打开页面重新选一次。
+   按 Spotify id、或「歌手 + 歌名」对上库里的歌；对不上的（还没进库的）可以一键上传进库 */
+let LDIR = null, LMAP = null, LNEW = [], LNEED = false;
+const lnorm = v => String(v || '').replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const lmk = (artist, title) => lnorm(artist) + '|' + lnorm(title);
+function idb(op) { return new Promise((ok, no) => { const r = indexedDB.open('cu-reflib', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv');
+  r.onsuccess = () => { const tx = r.result.transaction('kv', op ? 'readwrite' : 'readonly'), st = tx.objectStore('kv'), q = op ? st.put(op, 'dir') : st.get('dir'); q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); }; r.onerror = () => no(r.error); }); }
+async function localIndex(files) {   // files: [File]（带 .json 的配对好）
+  const pairs = await cuRefLib.pair(files), m = new Map();
+  for (const { file, meta } of pairs) {
+    const n = meta && meta.title ? { title: meta.title, artist: meta.artist || '' } : cuRefLib.nameOf(file.name);
+    const it = { file, meta }; m.set(lmk(n.artist, n.title), it); if (meta && meta.spotify_id) m.set('sp:' + meta.spotify_id, it);
+  }
+  LMAP = m; localNew(); rlpKeep(); rlpList();
+}
+function localFor(x) { if (!LMAP || !x) return null; const it = (x.spid && LMAP.get('sp:' + x.spid)) || LMAP.get(lmk(x.artist, x.title)); return it ? it.file : null; }
+function localNew() {   // 文件夹里有、库里还没有的
+  if (!LMAP || !RLIB) { LNEW = []; return; }
+  const seen = new Set(); LNEW = [];
+  for (const it of LMAP.values()) { if (seen.has(it)) continue; seen.add(it);
+    const n = it.meta && it.meta.title ? { title: it.meta.title, artist: it.meta.artist || '' } : cuRefLib.nameOf(it.file.name);
+    if (!RLIB.some(x => (it.meta && it.meta.spotify_id && x.spid === it.meta.spotify_id) || lmk(x.artist, x.title) === lmk(n.artist, n.title))) LNEW.push(it); }
+}
+async function localRead(dir) {
+  const files = [];
+  for await (const h of dir.values()) if (h.kind === 'file' && /\.(wav|aif|aiff|m4a|mp3|json)$/i.test(h.name)) files.push(await h.getFile());
+  await localIndex(files);
+}
+async function localPick() {
+  try {
+    await rlibLoad();
+    if (window.showDirectoryPicker) {
+      const d = await showDirectoryPicker({ id: 'cu-reflib', mode: 'read' }); LDIR = d; LNEED = false; idb(d).catch(() => {}); await localRead(d);
+    } else {   // Safari：用 <input webkitdirectory>，这次打开页面有效
+      const inp = document.createElement('input'); inp.type = 'file'; inp.webkitdirectory = true; inp.multiple = true;
+      inp.onchange = () => localIndex([...inp.files]); inp.click();
+    }
+  } catch (e) { if (e && e.name !== 'AbortError') hud('没读到文件夹：' + (e.message || e.name)); }
+}
+async function localAllow() {   // 浏览器重开后要点一下才能再读
+  if (!LDIR) return localPick();
+  try { if ((await LDIR.requestPermission({ mode: 'read' })) === 'granted') { LNEED = false; await localRead(LDIR); } } catch (e) { localPick(); }
+}
+async function localRestore() {   // 打开面板时：Chrome 记住了文件夹且还有权限就直接读
+  if (LMAP || !window.showDirectoryPicker || !window.indexedDB) return;
+  try { const d = await idb(); if (!d) return; LDIR = d;
+    if ((await d.queryPermission({ mode: 'read' })) === 'granted') await localRead(d); else { LNEED = true; rlpKeep(); } } catch (e) {}
+}
 function rlpKeep() {
   const K = $('#rlpK'); if (!K || !RLIB) return;
-  const n = RLIB.filter(x => RLHAVE.has(x.file)).length, all = RLIB.length;
+  const loc = RLIB.filter(x => localFor(x)).length, n = RLIB.filter(x => localFor(x) || RLHAVE.has(x.file)).length, all = RLIB.length;
+  const folder = LMAP ? `<span>本机文件夹对上 ${loc} 首</span>${LNEW.length ? `<button class="press" id="rlpNew" title="文件夹里有、库里还没有的，传进库（手机上也能用）">${LNEW.length} 首没进库 · 上传</button>` : ''}<button class="press" id="rlpDir">换文件夹</button>`
+    : LNEED ? `<button class="press on" id="rlpAllow">允许读取本机文件夹</button>`
+    : `<button class="press" id="rlpDir" title="选「参考曲目」文件夹：挂 REF 直接读硬盘上的 WAV，不用下载">连上本机文件夹</button>`;
   K.innerHTML = rlPre ? `<span>正在存到本机 ${rlPre.i} / ${rlPre.n}…</span>`
-    : `<span>本机已存 ${n} / ${all}</span>${n < all ? '<button class="press" id="rlpPre">全部存到本机</button>' : ''}`;
+    : `<div class="rlp-k1">${folder}</div><div class="rlp-k1"><span>可直接用 ${n} / ${all}</span>${n < all ? '<button class="press" id="rlpPre">其余下载存到本机</button>' : ''}</div>`;
   const b = $('#rlpPre'); if (b) b.onclick = rlpPrefetch;
+  const d = $('#rlpDir'); if (d) d.onclick = localPick;
+  const al = $('#rlpAllow'); if (al) al.onclick = localAllow;
+  const nw = $('#rlpNew'); if (nw) nw.onclick = () => { rlpUploadPairs(LNEW.map(it => ({ file: it.file, meta: it.meta }))); LNEW = []; rlpKeep(); };
 }
 async function rlpPrefetch() {
   if (rlPre || !RLIB) return; rlPre = { i: 0, n: 0 }; rlpKeep();
-  try { await cuRefLib.prefetch(API_BASE, rlKey(), RLIB, (i, n, x) => { rlPre = { i, n }; if (x) RLHAVE.add(x.file); rlpKeep(); }); hud('参考库已全部存到本机'); }
+  try { await cuRefLib.prefetch(API_BASE, rlKey(), RLIB.filter(x => !localFor(x)), (i, n, x) => { rlPre = { i, n }; if (x) RLHAVE.add(x.file); rlpKeep(); }); hud('参考库已全部存到本机'); }
   catch (e) { hud('没存完：' + (e.message || '检查网络'), 4000); }
   rlPre = null; RLHAVE = await cuRefLib.cached(); rlpKeep(); rlpList();
 }
@@ -1955,7 +2011,7 @@ function rlpList() {
   const G = new Map(); rows.forEach(x => { const g = x.genre || '未分类'; (G.get(g) || G.set(g, []).get(g)).push(x); });
   const keys = [...G.keys()].sort((a, b) => (a === '未分类') - (b === '未分类') || a.localeCompare(b, 'zh'));
   L.innerHTML = keys.map(g => `<div class="rlib-g">${esc(g)}<span>${G.get(g).length}</span></div>` + G.get(g).map(x => { const k = RSL.findIndex(s => s.id === x.id);
-    return `<div class="rlp-i${k >= 0 ? ' in' : ''}" data-id="${x.id}"><button class="rlp-go"><b>${esc(x.title)}${k >= 0 ? `<em>${k + 1}</em>` : ''}</b><span>${esc(x.artist ? x.artist + ' · ' : '')}${fmt(x.duration)}${Number.isFinite(x.lufs) ? ' · ' + x.lufs + ' LUFS' : ''}${RLHAVE.has(x.file) ? ' · 本机' : ''}</span></button>
+    return `<div class="rlp-i${k >= 0 ? ' in' : ''}" data-id="${x.id}"><button class="rlp-go"><b>${esc(x.title)}${k >= 0 ? `<em>${k + 1}</em>` : ''}</b><span>${esc(x.artist ? x.artist + ' · ' : '')}${fmt(x.duration)}${Number.isFinite(x.lufs) ? ' · ' + x.lufs + ' LUFS' : ''}${localFor(x) ? ' · 硬盘' : RLHAVE.has(x.file) ? ' · 本机' : ''}</span></button>
       ${window.SONG_LIVE ? '<button class="rlp-send press" title="用这首歌的审听密码加密，上传成客户能看到的 REF">发给客户</button>' : ''}</div>`; }).join('')).join('');
 }
 function rlpSlots() {
@@ -1973,9 +2029,12 @@ async function useSlot(i) {
   if (RSA === i && REF && !RX_SHARED) { setAB(AB === 'ref' ? 'mix' : 'ref'); return; }
   RSA = i; graph(); $('#refName').hidden = false; $('#refName').textContent = '读取 REF…'; rlpSlots();
   try {
-    if (!s.plain) { await rlibLoad(); s.plain = await cuRefLib.open(API_BASE, rlKey(), s.lib); if (!RLHAVE.has(s.lib.file)) { RLHAVE.add(s.lib.file); rlpKeep(); rlpList(); } }
+    const lf = !s.plain && localFor(s.lib);   // 本机文件夹里有这首：直接读硬盘上的 WAV，不下载（也不常驻内存）
+    let buf;
+    if (lf) buf = await lf.arrayBuffer();
+    else { if (!s.plain) { await rlibLoad(); s.plain = await cuRefLib.open(API_BASE, rlKey(), s.lib); if (!RLHAVE.has(s.lib.file)) { RLHAVE.add(s.lib.file); rlpKeep(); rlpList(); } } buf = s.plain.slice(0); }
     if (RSA !== i) return;
-    RX_SHARED = false; await setRef(s.plain.slice(0), s.name, s.lufs);
+    RX_SHARED = false; await setRef(buf, s.name, s.lufs);
     if (REF && RSA === i) { if (!Number.isFinite(s.lufs)) s.lufs = REF.lufs; setAB('ref'); }
   } catch (e) { $('#refName').textContent = 'REF 载入失败：' + (e.message || '检查网络'); }
   rlpSlots();
@@ -2009,7 +2068,10 @@ async function rlpUpload(files, entries) {
   try { await rlibLoad(); } catch (e) { return hud('参考库加载失败，刷新再试'); }
   // 拖进来的文件夹先展开；音频和同名 .json（录音工具写的歌名 / 歌手 / 风格）配对
   if (entries && entries.some(en => en && en.isDirectory)) files = await cuRefLib.walk(entries);
-  const items = await cuRefLib.pair(files); if (!items.length) return;
+  rlpUploadPairs(await cuRefLib.pair(files));
+}
+async function rlpUploadPairs(items) {
+  if (!items.length) return;
   items.forEach(({ file: f, meta }) => RLQ.push({ f, meta, name: meta && meta.title ? (meta.artist ? meta.artist + ' - ' : '') + meta.title + (meta.genre ? ' · ' + meta.genre : '') : f.name, st: '排队', p: 0, genre: rlUpG }));
   const qd = () => { const el = $('#rlpQu'); if (el) el.innerHTML = RLQ.map(q => `<div><span>${esc(q.name)}</span><span class="${q.err ? 'bad' : q.done ? 'ok' : ''}">${esc(q.err || (q.skip ? '已在库里，跳过' : q.done ? '已进库' : q.st + (q.p ? ' ' + Math.round(q.p * 100) + '%' : '')))}</span></div>`).join(''); };
   qd(); if (rlBusy) return; rlBusy = true;
@@ -2018,7 +2080,7 @@ async function rlpUpload(files, entries) {
   for (let q; (q = RLQ.find(x => !x.done && !x.err && x.f));) {
     try {
       const item = await cuRefLib.upload({ api: API_BASE, key: rlKey(), file: q.f, meta: q.meta, genre: q.genre, lib: RLIB, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
-      q.done = true; q.f = null; RLIB = (RLIB || []).concat(item); RLHAVE.add(item.file); rlpKeep(); rlpUG(); rlpChips(); rlpList(); qd();
+      q.done = true; q.f = null; RLIB = (RLIB || []).concat(item); RLHAVE.add(item.file); localNew(); rlpKeep(); rlpUG(); rlpChips(); rlpList(); qd();
     } catch (e) { if (e.dup) { q.done = true; q.skip = true; } else q.err = e.message || '失败'; q.f = null; qd(); }
   }
   rlBusy = false; setTimeout(() => { RLQ = RLQ.filter(x => !x.done); qd(); }, 6000);

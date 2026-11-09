@@ -941,7 +941,9 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 .rlp-qu div{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:.5px solid var(--hair)}
 .rlp-qu span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rlp-qu span:last-child{flex-shrink:0;font-variant-numeric:tabular-nums}
 .rlp-qu .ok{color:#a8c3a0}.rlp-qu .bad{color:var(--red)}
-.rlp-k{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.rlp-k{display:flex;flex-direction:column;gap:6px;margin-top:8px;font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.rlp-k1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rlp-k1>span{flex:1;min-width:0}
+.rlp-k button.on{background:var(--pearl);color:var(--ink);font-weight:600}
 .rlp-k:empty{display:none}
 .rlp-k button{height:28px;padding:0 10px;border-radius:8px;background:var(--fill-2);color:var(--text-2);font-size:12.5px}
 .rlp-u{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:.5px solid var(--hair)}
