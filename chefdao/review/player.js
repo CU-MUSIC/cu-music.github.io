@@ -776,7 +776,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'ArrowLeft') seek(a.currentTime - 5);
   if (e.code === 'ArrowRight') seek(a.currentTime + 5);
   if (e.code === 'KeyL' && !e.metaKey && !e.ctrlKey) loopStep();
-  if (/^Digit[1-9]$/.test(e.code) && V[+e.code.slice(5) - 1]) switchTo(+e.code.slice(5) - 1);
+  if (/^Digit[1-9]$/.test(e.code) && !e.shiftKey && V[+e.code.slice(5) - 1]) switchTo(+e.code.slice(5) - 1);
 });
 
 /* ───────── 评论 ───────── */
@@ -1662,7 +1662,7 @@ async function setRef(buf, name, lufs) {
 function setAB(x) {
   if (x === 'ref' && !REF) return;
   if (!graph()) return;
-  AB = x; applyGains();
+  AB = x; applyGains(); if (typeof rlpSlots === 'function') rlpSlots();
 }
 /* ───────── 对比版本：把另一个版本当作 B，和当前版本（A）无缝来回切 ─────────
    复用 REF 的同步播放：B 解码进内存，跟着 A 的位置播，切换只是两路音量交叉淡变，不中断。
@@ -1804,54 +1804,162 @@ $('#cmp').onclick = () => {
 // 当前版本切走后，B 如果正好变成当前版本，就换个邻近的版本当 B
 function cmpFix() { if (CMP < 0) return; if (CMP === vi) { const alt = vi > 0 ? vi - 1 : vi + 1; alt < V.length ? startCmp(alt, true) : stopCmp(); } else abLabels(); }
 $('#abMix').onclick = () => setAB('mix');
-$('#abRef').onclick = () => { if (REF) setAB('ref'); else if (REFV) loadShared(); };
-$('#refPick').onclick = () => { graph(); IS_OWNER ? rlibOpen() : $('#refFile').click(); };
-/* ───────── 参考库（只在你的设备上）：「＋ 加 REF」弹出你在 Insights 传的内录歌，按风格分组、可搜索 ─────────
-   点一首 = 在本地载入当 REF（走 setRef，和 REF 对应点兼容，对应点按歌名+时长存在本机）；「发给客户」= 用这首歌的审听密码重新加密，上传成客户能看到的 REF */
-let RLIB = null, rlibP = null;
+$('#abRef').onclick = () => refOn();
+$('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFile').click(); };
+/* ───────── 参考库面板（只在你的设备上）：右侧悬浮（手机是底部抽屉） ─────────
+   浏览 / 搜索 / 按风格挑参考库里的歌，也能直接把新歌拖进来上传进库（用管理钥匙派生的密钥加密，只有你的设备解得开）。
+   同时最多挂 3 首 REF（槽位按歌记在本机）：点槽位切换当前听哪首，再点一次 = 混音 / REF 来回切；Shift + 1 2 3 也能切（数字键本身是切版本）。
+   每首都走 setRef，REF 对应点按「歌名 + 时长」分开存，互不影响。「发给客户」= 用这首歌的审听密码重新加密上传成客户 REF */
+const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
+let RLIB = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109c'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuUpload ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
-async function rlibOpen() {
-  if ($('#rlib')) return;
-  const key = store.get('insights:key'), el = document.createElement('div'); el.id = 'rlib'; el.className = 'rlib';
-  el.innerHTML = `<div class="rlib-p" role="dialog" aria-label="从参考库选 REF"><div class="rlib-h"><b>选一首当 REF</b><button class="press" id="rlibX" aria-label="关闭">✕</button></div>
-    <input id="rlibQ" type="search" placeholder="搜歌名 / 歌手 / 风格" autocomplete="off"><div class="rlib-l" id="rlibL"><div class="rlib-e">正在读取参考库…</div></div>
-    <div class="rlib-f"><button class="press" id="rlibLocal">从本机选文件</button><a href="../insights/#rlib" target="_blank" rel="noopener">管理参考库 ↗</a></div></div>`;
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const rlName = x => (x.artist ? x.artist + ' - ' : '') + x.title;
+const rlKey = () => store.get('insights:key');
+function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
+function rlpBuild() {
+  let el = $('#rlp'); if (el) return el;
+  el = document.createElement('aside'); el.id = 'rlp'; el.className = 'rlp'; el.hidden = true; el.setAttribute('aria-label', '参考 REF');
+  el.innerHTML = `<div class="rlp-h"><b>参考 REF</b><div class="rlp-ab"><button class="press" data-ab="mix">混音</button><button class="press" data-ab="ref">REF</button></div><button class="press rlp-x" id="rlpX" aria-label="收起">✕</button></div>
+    <div class="rlp-s" id="rlpS"></div>
+    <div class="rlp-b"><input id="rlpQ" type="search" placeholder="搜歌名 / 歌手 / 风格" autocomplete="off"><div class="rlp-c" id="rlpC"></div>
+    <div class="rlp-l" id="rlpL"><div class="rlib-e">正在读取参考库…</div></div></div>
+    <div class="rlp-qu" id="rlpQu"></div>
+    <div class="rlp-u"><select id="rlpUG" aria-label="上传的风格"></select><button class="press" id="rlpUp" title="可以多选，也可以直接拖进这个面板">＋ 上传进库</button><button class="press" id="rlpLoc" title="不进库，只在这次临时用">本机文件</button>
+      <input type="file" id="rlpF" multiple accept="audio/*,.wav,.aif,.aiff,.m4a,.mp3" hidden></div>`;
   document.body.appendChild(el);
-  const close = () => { el.remove(); document.removeEventListener('keydown', esc1); };
-  const esc1 = e => { if (e.key === 'Escape') close(); };
-  document.addEventListener('keydown', esc1);
-  el.onclick = e => { if (e.target === el) close(); };
-  $('#rlibX').onclick = close;
-  $('#rlibLocal').onclick = () => { close(); $('#refFile').click(); };
-  const draw = () => {
-    const q = $('#rlibQ').value.trim().toLowerCase(), L = $('#rlibL'); if (!L) return;
-    if (!RLIB) return;
-    const rows = RLIB.filter(x => !q || (x.title + ' ' + x.artist + ' ' + x.genre).toLowerCase().includes(q));
-    if (!rows.length) { L.innerHTML = `<div class="rlib-e">${RLIB.length ? '没有符合的歌' : '参考库还是空的：去 Insights 的「参考库」拖几首进来'}</div>`; return; }
-    const G = new Map(); rows.forEach(x => { const g = x.genre || '未分类'; (G.get(g) || G.set(g, []).get(g)).push(x); });
-    const keys = [...G.keys()].sort((a, b) => (a === '未分类') - (b === '未分类') || a.localeCompare(b, 'zh'));
-    L.innerHTML = keys.map(g => `<div class="rlib-g">${esc(g)}<span>${G.get(g).length}</span></div>` + G.get(g).map(x => `<div class="rlib-i${REF && REF.lib === x.id ? ' on' : ''}" data-id="${x.id}">
-      <button class="rlib-go"><b>${esc(x.title)}</b><span>${esc(x.artist ? x.artist + ' · ' : '')}${fmt(x.duration)}${Number.isFinite(x.lufs) ? ' · ' + x.lufs + ' LUFS' : ''}</span></button>
-      ${window.SONG_LIVE ? '<button class="rlib-send press" title="用这首歌的审听密码加密，上传成客户能看到的 REF">发给客户</button>' : ''}</div>`).join('')).join('');
+  const bd = document.createElement('div'); bd.className = 'rlp-bd'; bd.onclick = () => rlpToggle(false); document.body.appendChild(bd);
+  const tb = document.createElement('button'); tb.id = 'rlpTab'; tb.className = 'rlp-tab press'; tb.textContent = 'REF'; tb.title = '打开参考 REF'; tb.onclick = () => rlpToggle(true); document.body.appendChild(tb);
+  $('#rlpX').onclick = () => rlpToggle(false);
+  el.querySelector('.rlp-ab').onclick = e => { const b = e.target.closest('[data-ab]'); if (!b) return; if (b.dataset.ab === 'mix') setAB('mix'); else refOn(); };
+  $('#rlpQ').oninput = rlpList;
+  $('#rlpC').onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; rlpG = b.dataset.g; rlpChips(); rlpList(); };
+  $('#rlpL').onclick = e => {
+    const row = e.target.closest('.rlp-i'); if (!row || !RLIB) return; const x = RLIB.find(y => y.id === row.dataset.id); if (!x) return;
+    if (e.target.closest('.rlp-send')) return rlibSend(x);
+    addSlot(x);
   };
-  $('#rlibQ').oninput = draw;
-  $('#rlibL').onclick = async e => {
-    const row = e.target.closest('.rlib-i'); if (!row) return; const x = RLIB.find(y => y.id === row.dataset.id); if (!x) return;
-    if (e.target.closest('.rlib-send')) return rlibSend(x, close);
-    close(); if (CMP >= 0) stopCmp();
-    $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
-    try { const plain = await cuRefLib.open(API_BASE, key, x); RX_SHARED = false; await setRef(plain, (x.artist ? x.artist + ' - ' : '') + x.title, x.lufs);
-      if (REF) { REF.lib = x.id; setAB('ref'); } } catch (e) { $('#refName').textContent = 'REF 载入失败：' + (e.message || '检查网络'); }
+  $('#rlpS').onclick = e => {
+    const it = e.target.closest('[data-s]'); if (!it) return; const i = +it.dataset.s;
+    if (e.target.closest('.rs-x')) return dropSlot(i);
+    if (i === -9) return useShared();
+    useSlot(i);
   };
-  try { await rlibLoad(); RLIB = await cuRefLib.list(API_BASE, key); draw(); setTimeout(() => { const q = $('#rlibQ'); if (q && matchMedia('(hover:hover)').matches) q.focus(); }, 50); }
-  catch (e) { const L = $('#rlibL'); if (L) L.innerHTML = '<div class="rlib-e">读不到参考库，检查网络再试</div>'; }
+  const ug = $('#rlpUG');
+  ug.onchange = () => { let g = ug.value; if (g === '__new') { g = (prompt('新风格的名字（例如：R&B、抒情、说唱）') || '').trim().slice(0, 30); if (!g) { ug.value = rlUpG; return; } } rlUpG = g; store.set('review:rlupg', g); rlpUG(); };
+  $('#rlpUp').onclick = () => $('#rlpF').click();
+  $('#rlpF').onchange = () => { rlpUpload($('#rlpF').files); $('#rlpF').value = ''; };
+  $('#rlpLoc').onclick = () => $('#refFile').click();
+  // 拖进面板 = 上传进参考库（不触发页面上「上传为新版本」）
+  const stop = e => { if ([...((e.dataTransfer && e.dataTransfer.types) || [])].includes('Files')) { e.preventDefault(); e.stopPropagation(); document.body.classList.remove('dropping'); return true; } };
+  el.addEventListener('dragenter', e => { if (stop(e)) el.classList.add('drop'); });
+  el.addEventListener('dragover', stop);
+  el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop'); });
+  el.addEventListener('drop', e => { if (stop(e)) { el.classList.remove('drop'); rlpUpload(e.dataTransfer.files); } });
+  rlpUG(); rlpSlots();
+  return el;
 }
-async function rlibSend(x, close) {
-  const live = window.SONG_LIVE, key = store.get('insights:key'); if (!live || !key) return;
-  const name = (x.artist ? x.artist + ' - ' : '') + x.title;
+function rlpToggle(on) {
+  const el = rlpBuild(); el.hidden = !on; document.body.classList.toggle('rlp-on', on);
+  if (!matchMedia('(max-width:899px)').matches) store.set('review:rlp', on ? '1' : '0');
+  if (on) { rlpLoad(); rlpSlots(); }
+}
+async function rlpLoad(force) {
+  if (RLIB && !force) return rlpList();
+  try { await rlibLoad(); RLIB = await cuRefLib.list(API_BASE, rlKey()); }
+  catch (e) { const L = $('#rlpL'); if (L) L.innerHTML = '<div class="rlib-e">读不到参考库，检查网络再试</div>'; return; }
+  // 这首歌上次挂的 REF：只恢复名字，点到才下载
+  if (!RSL.length) { let ids = []; try { ids = JSON.parse(store.get(rslKey) || '[]'); } catch (e) {}
+    RSL = ids.map(id => RLIB.find(x => x.id === id)).filter(Boolean).slice(0, RMAX).map(x => ({ id: x.id, lib: x, name: rlName(x), lufs: x.lufs, plain: null })); }
+  rlpUG(); rlpChips(); rlpList(); rlpSlots();
+}
+const rlGenres = () => { const m = new Map(); (RLIB || []).forEach(x => { if (x.genre) m.set(x.genre, (m.get(x.genre) || 0) + 1); }); return [...m].sort((a, b) => a[0].localeCompare(b[0], 'zh')); };
+function rlpUG() {
+  const ug = $('#rlpUG'); if (!ug) return; const G = rlGenres().map(g => g[0]); if (rlUpG && !G.includes(rlUpG)) G.push(rlUpG);
+  ug.innerHTML = `<option value="">上传到：未分类</option>` + G.map(g => `<option value="${esc(g)}"${g === rlUpG ? ' selected' : ''}>上传到：${esc(g)}</option>`).join('') + '<option value="__new">＋ 新建风格…</option>';
+}
+function rlpChips() {
+  const C = $('#rlpC'); if (!C || !RLIB) return; const G = rlGenres(); if (rlpG && !G.some(g => g[0] === rlpG)) rlpG = '';
+  C.innerHTML = G.length ? `<button class="press${rlpG ? '' : ' on'}" data-g="">全部</button>` + G.map(([g, n]) => `<button class="press${rlpG === g ? ' on' : ''}" data-g="${esc(g)}">${esc(g)} <i>${n}</i></button>`).join('') : '';
+}
+function rlpList() {
+  const L = $('#rlpL'); if (!L || !RLIB) return;
+  const q = $('#rlpQ').value.trim().toLowerCase();
+  const rows = RLIB.filter(x => (!rlpG || x.genre === rlpG) && (!q || (x.title + ' ' + x.artist + ' ' + x.genre).toLowerCase().includes(q)));
+  if (!rows.length) { L.innerHTML = `<div class="rlib-e">${RLIB.length ? '没有符合的歌' : '参考库还是空的：把内录的歌拖进这个面板'}</div>`; return; }
+  const G = new Map(); rows.forEach(x => { const g = x.genre || '未分类'; (G.get(g) || G.set(g, []).get(g)).push(x); });
+  const keys = [...G.keys()].sort((a, b) => (a === '未分类') - (b === '未分类') || a.localeCompare(b, 'zh'));
+  L.innerHTML = keys.map(g => `<div class="rlib-g">${esc(g)}<span>${G.get(g).length}</span></div>` + G.get(g).map(x => { const k = RSL.findIndex(s => s.id === x.id);
+    return `<div class="rlp-i${k >= 0 ? ' in' : ''}" data-id="${x.id}"><button class="rlp-go">${k >= 0 ? `<em>${k + 1}</em>` : ''}<b>${esc(x.title)}</b><span>${esc(x.artist ? x.artist + ' · ' : '')}${fmt(x.duration)}${Number.isFinite(x.lufs) ? ' · ' + x.lufs + ' LUFS' : ''}</span></button>
+      ${window.SONG_LIVE ? '<button class="rlp-send press" title="用这首歌的审听密码加密，上传成客户能看到的 REF">发给客户</button>' : ''}</div>`; }).join('')).join('');
+}
+function rlpSlots() {
+  const S0 = $('#rlpS'); if (!S0) return;
+  const act = i => REF && !RX_SHARED && CMP < 0 && RSA === i;
+  S0.innerHTML = RSL.map((s, i) => `<div class="rs-i${act(i) ? ' on' : ''}${act(i) && AB === 'ref' ? ' live' : ''}" data-s="${i}"><button class="rs-go press"><em>${i + 1}</em><b>${esc(s.name)}</b></button><button class="rs-x press" aria-label="移除">×</button></div>`).join('')
+    + (REFV ? `<div class="rs-i${REF && RX_SHARED ? ' on' : ''}${REF && RX_SHARED && AB === 'ref' ? ' live' : ''}" data-s="-9"><button class="rs-go press"><em>客</em><b>发给客户的 REF</b></button></div>` : '')
+    + (RSL.length < RMAX ? `<div class="rs-e">${RSL.length ? '还能再挂 ' + (RMAX - RSL.length) + ' 首' : '从下面点一首挂上来，最多 3 首'}</div>` : '');
+  const el = $('#rlp'); if (el) el.querySelectorAll('.rlp-ab [data-ab]').forEach(b => b.classList.toggle('on', b.dataset.ab === (REF && AB === 'ref' ? 'ref' : 'mix')));
+  const t = $('#rlpTab'); if (t) t.textContent = REF && AB === 'ref' ? 'REF ●' : 'REF';
+}
+async function useSlot(i) {
+  const s = RSL[i]; if (!s) return;
+  if (CMP >= 0) stopCmp();
+  if (RSA === i && REF && !RX_SHARED) { setAB(AB === 'ref' ? 'mix' : 'ref'); return; }
+  RSA = i; graph(); $('#refName').hidden = false; $('#refName').textContent = '读取 REF…'; rlpSlots();
+  try {
+    if (!s.plain) { await rlibLoad(); s.plain = await cuRefLib.open(API_BASE, rlKey(), s.lib); }
+    if (RSA !== i) return;
+    RX_SHARED = false; await setRef(s.plain.slice(0), s.name, s.lufs);
+    if (REF && RSA === i) { if (!Number.isFinite(s.lufs)) s.lufs = REF.lufs; setAB('ref'); }
+  } catch (e) { $('#refName').textContent = 'REF 载入失败：' + (e.message || '检查网络'); }
+  rlpSlots();
+}
+async function addSlot(x, plain) {
+  const k = RSL.findIndex(s => s.id === x.id); if (k >= 0) return useSlot(k);
+  const s = { id: x.id, lib: x.file ? x : null, name: x.file ? rlName(x) : x.name, lufs: x.lufs, plain: plain || null };
+  let i = RSL.length;
+  if (i >= RMAX) { i = RSA >= 0 && RSA < RMAX ? RSA : RMAX - 1; hud('最多挂 3 首：替换了「' + RSL[i].name + '」'); RSL[i] = s; RSA = -1; }
+  else RSL.push(s);
+  rslSave(); rlpList(); await useSlot(i);
+}
+function clearRef() {
+  refStop(); REF = null; refBuf = null; refStats = null; AB = 'mix'; refD = 0; if (refN && actx) refN.gain.value = 0;
+  $('#refName').hidden = true; refxUi(); if (!REFV) $('#ab').classList.remove('has'); $('#refPick').textContent = REFV ? '换 REF' : '＋ 加 REF'; abLabels(); applyGains(); if (mstOpen) showStats();
+}
+function dropSlot(i) {
+  const was = RSA === i && REF && !RX_SHARED; RSL.splice(i, 1);
+  if (RSA === i) RSA = -1; else if (RSA > i) RSA--;
+  if (was) clearRef();
+  rslSave(); rlpSlots(); rlpList();
+}
+function useShared() {
+  if (!REFV) return; if (CMP >= 0) stopCmp();
+  if (REF && RX_SHARED) { setAB(AB === 'ref' ? 'mix' : 'ref'); return; }
+  REF = null; refBuf = null; refStop(); RSA = -1; loadShared().then(rlpSlots);
+}
+// REF 按钮 / R 键：没载入时，优先打开上次用的槽位，其次第一个槽位，再其次你发给客户的 REF
+function refOn() { if (REF) return setAB('ref'); if (RSL.length) return useSlot(Math.max(0, Math.min(RSA, RSL.length - 1))); if (REFV) return useShared(); if (IS_OWNER) rlpToggle(true); }
+async function rlpUpload(files) {
+  files = [...files].filter(f => /\.(wav|aif|aiff|m4a|mp4|aac|mp3)$/i.test(f.name) || /^audio\//.test(f.type)); if (!files.length) return;
+  files.forEach(f => RLQ.push({ f, name: f.name, st: '排队', p: 0, genre: rlUpG }));
+  const qd = () => { const el = $('#rlpQu'); if (el) el.innerHTML = RLQ.map(q => `<div><span>${esc(q.name)}</span><span class="${q.err ? 'bad' : q.done ? 'ok' : ''}">${esc(q.err || (q.done ? '已进库' : q.st + (q.p ? ' ' + Math.round(q.p * 100) + '%' : '')))}</span></div>`).join(''); };
+  qd(); if (rlBusy) return; rlBusy = true;
+  try { await Promise.all([rlibLoad(), upLoad()]); } catch (e) { RLQ.forEach(q => { if (!q.done) { q.err = '加载失败，刷新再试'; q.f = null; } }); rlBusy = false; return qd(); }
+  if (!RLIB) await rlpLoad();
+  for (let q; (q = RLQ.find(x => !x.done && !x.err && x.f));) {
+    try {
+      const item = await cuRefLib.upload({ api: API_BASE, key: rlKey(), file: q.f, genre: q.genre, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
+      q.done = true; q.f = null; RLIB = (RLIB || []).concat(item); rlpUG(); rlpChips(); rlpList(); qd();
+    } catch (e) { q.err = e.message || '失败'; q.f = null; qd(); }
+  }
+  rlBusy = false; setTimeout(() => { RLQ = RLQ.filter(x => !x.done); qd(); }, 6000);
+}
+async function rlibSend(x) {
+  const live = window.SONG_LIVE, key = rlKey(); if (!live || !key) return;
+  const name = rlName(x);
   if (!confirm((REFV ? '替换现在发给客户的 REF，' : '') + '把「' + name + '」作为《' + S.title + '》的 REF 发给客户？\n会用这首歌的审听密码重新加密上传，客户能听到。')) return;
-  close(); hud('准备上传 REF…', 60000);
+  hud('准备上传 REF…', 60000);
   try {
     await Promise.all([rlibLoad(), upLoad()]);
     const plain = await cuRefLib.open(API_BASE, key, x);
@@ -1860,7 +1968,9 @@ async function rlibSend(x, close) {
     hud('REF 已发给客户'); setTimeout(() => softReload(), 400);
   } catch (e) { hud('没传成功：' + (e.message || '检查网络'), 5000); }
 }
-$('#refFile').onchange = async () => { const f = $('#refFile').files[0]; if (!f) return; $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
+$('#refFile').onchange = async () => { const f = $('#refFile').files[0]; if (!f) return; $('#refFile').value = '';
+  if (IS_OWNER) return addSlot({ id: 'f:' + f.name + ':' + f.size, name: f.name.replace(/\.[^.]+$/, ''), lufs: undefined }, await f.arrayBuffer());   // 本机文件：临时挂一个槽位，不记住
+  $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
   RX_SHARED = false; await setRef(await f.arrayBuffer(), f.name.replace(/\.[^.]+$/, '')); setAB('ref'); };
 async function loadShared() {   // 你发给客户的 REF：和版本一样加密存储
   if (!REFV || REF) return;
@@ -1869,7 +1979,12 @@ async function loadShared() {   // 你发给客户的 REF：和版本一样加�
     RX_SHARED = true; await setRef(plain, REFV.file || 'REF', REFV.lufs); setAB('ref'); } catch (e) { $('#refName').textContent = 'REF 载入失败，刷新再试'; }
 }
 if (REFV) { $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; }
-document.addEventListener('keydown', e => { if (e.code === 'KeyR' && !/TEXTAREA|INPUT/.test(e.target.tagName) && (REF || REFV)) { e.preventDefault(); AB === 'ref' ? setAB('mix') : (REF ? setAB('ref') : loadShared()); } });
+if (IS_OWNER) setTimeout(() => { if (store.get('review:rlp') === '1' && !matchMedia('(max-width:899px)').matches) rlpToggle(true); else { rlpBuild(); rlpLoad(); } }, 600);
+document.addEventListener('keydown', e => {
+  if (/TEXTAREA|INPUT|SELECT/.test(e.target.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;   // Shift+1/2/3 切 REF 槽位
+  if (e.code === 'KeyR' && (REF || REFV || RSL.length)) { e.preventDefault(); AB === 'ref' && REF ? setAB('mix') : refOn(); }
+  else if (IS_OWNER && e.shiftKey && /^Digit[123]$/.test(e.code) && RSL[+e.code.slice(5) - 1]) { e.preventDefault(); useSlot(+e.code.slice(5) - 1); }
+});
 /* ───────── REF 对应点：REF 和混音结构不一样（副歌在不同位置），就告诉它「混音这里 ↔ REF 那里」 ─────────
    点 REF 波形 = 从那里开始对比（跟着混音的位置一起走）；「记住这个对应」把这一对存下来（有段落就按段落开头存）。
    存了以后：混音播到哪一段，REF 自动跳到对应的地方，段内按同样的相对位置走；循环一段时 REF 也跟着循环那一段。
