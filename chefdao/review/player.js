@@ -895,12 +895,15 @@ function newsCheck() {
   store.set(sk, JSON.stringify(next));
   if (nr || nd) newsBar([nr && '回复了 ' + nr + ' 条', nd && '处理了 ' + nd + ' 条'].filter(Boolean).join(' · '), go);
 }
-function newsBar(txt, go) {
-  let b = $('#newsb'); if (!b) { b = document.createElement('button'); b.id = 'newsb'; b.className = 'newsb press'; document.body.appendChild(b); }
-  b.innerHTML = '<span class="nwd"></span>刀大厨' + esc(txt) + '<i>查看</i>';
-  requestAnimationFrame(() => b.classList.add('show'));
-  clearTimeout(newsBar.t); newsBar.t = setTimeout(() => b.classList.remove('show'), 9000);
-  b.onclick = async () => { b.classList.remove('show'); if (!go) return;
+function newsBar(txt, go) {   // 屏幕正中一张卡片，背后压暗；点「查看」跳到那条，点空白或「稍后」关掉
+  $('#newsb')?.remove();
+  const w = document.createElement('div'); w.id = 'newsb'; w.className = 'newsw';
+  w.innerHTML = '<div class="newsc" role="dialog" aria-modal="true"><span class="nwd big"></span><b>刀大厨' + esc(txt) + '</b><p>你的评论有新动态</p><button type="button" class="press ngo">查看</button><button type="button" class="press nlt">稍后</button></div>';
+  document.body.appendChild(w); requestAnimationFrame(() => w.classList.add('show'));
+  const close = () => { w.classList.remove('show'); setTimeout(() => w.remove(), 400); };
+  w.onclick = e => { if (e.target === w) close(); };
+  w.querySelector('.nlt').onclick = close;
+  w.querySelector('.ngo').onclick = async () => { close(); if (!go) return;
     if (go.i !== vi) await switchTo(go.i);
     const el = [...document.querySelectorAll('#list .row, #ovthr')].find(x => x.dataset.k === go.k);
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.animate([{ background: 'rgba(200,100,79,.18)' }, { background: 'transparent' }], { duration: 1600, delay: 300 }); } };
@@ -1005,7 +1008,7 @@ async function renderOk() {
     }
     return;
   }
-  if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid + '&v=' + encodeURIComponent(cur.ver), { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); OKN = { need: j.need || 1, got: j.got || 0 }; } catch (e) {} }
+  if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid + '&v=' + encodeURIComponent(cur.ver), { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); OKN = { need: j.need || 1, got: j.got || 0, fgot: j.fgot || 0 }; } catch (e) {} }
   if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>'; return; }
   const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 4 ? '第 ' + rn + ' 轮 · 反馈时限 24 小时' : '';
   const latest = cur === V[V.length - 1], fbOn = !!OKS['fb:' + cur.ver], showOk = !!(S.prog && S.prog.okb) || !!OKS[cur.ver];   // 「没有问题了」要你手动打开才对客户显示
@@ -1017,7 +1020,7 @@ async function renderOk() {
     : auto ? '<span>✓ 超过反馈时限无意见，已视为没有意见，进入母带交付流程。有想法随时写在下面，会作为交付后微调处理</span>'
     : (() => { const hh = hint && !on ? '<div class="okhint">' + hint + '</div>' : '', txt = leftTxt(ai ? ai.left : 0) + '后自动确认' + (ai && ai.ext ? ' · 已延长 24 小时' : ''),
         f = ai ? Math.max(0, Math.min(1, ai.left / (winH() * 36e5 + (ai.ext ? 864e5 : 0)))) : 0;
-      const fb = canFb ? (fbOn ? '<div class="fbok">✓ 已告诉刀大厨：这一版反馈已完毕</div>' : '<button type="button" class="fbbtn">这一版反馈已完毕</button>') : '';
+      const fb = canFb ? (fbOn ? '<div class="fbok">✓ 已告诉刀大厨：这一版反馈已完毕' + (OKN.need > 1 && (OKN.fgot || 0) < OKN.need && !(S.prog && S.prog.s === 7) ? '<br><small>还等其他歌手反馈完毕（' + Math.max(1, OKN.fgot || 0) + '/' + OKN.need + '），再开始修改</small>' : '') + '</div>' : '<button type="button" class="fbbtn">这一版反馈已完毕</button>') : '';
       const btn = !showOk ? '' : '<button type="button" class="okbtn' + (ai ? ' cd' + (ai.left <= 432e5 ? ' late' : '') : '') + '">✓ 这一版没有问题了' + (ai ? '<small>' + txt + '</small><i class="okbar2"><b style="width:' + (f * 100).toFixed(1) + '%"></b></i>' : '') + '</button>';
       return (showOk ? hh : '') + btn + fb + (showOk && ai && !ai.ext && ai.left <= 432e5 ? '<button type="button" class="okext">还需要时间？延长 24 小时</button>' : ''); })();
   if (!bar.innerHTML) bar.hidden = true;
@@ -1027,11 +1030,11 @@ async function renderOk() {
         const sp = document.querySelector('.sprog'); if (sp) sp.outerHTML = progHtml(S.prog); renderOk(); renderFee(); }
     } catch (e) {} };
   const b4 = bar.querySelector('.fbbtn'); if (b4) b4.onclick = async () => {   // 反馈写完了：服务端立刻转修改中、开始算下一版；页面上马上换成下一版预计
-    OKS['fb:' + v] = Date.now();
-    if (S.prog && S.prog.s === 4 && cur === V[V.length - 1]) { const g = S.prog; g.s = 7; g.r = (g.r || 0) + 1; g.at = { ...(g.at || {}), 7: Date.now() };
-      const box = document.querySelector('.sprog .eta'), html = etaBlock(g); if (box) box.outerHTML = html; else { const sp = document.querySelector('.sprog'); if (sp) sp.insertAdjacentHTML('beforeend', html); } }
-    renderOk();
-    try { await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: 'fb:' + v, lid, on: 1 }) }); } catch (e) {} };
+    OKS['fb:' + v] = Date.now(); renderOk();   // 费用单上的歌手都点了，服务端才转修改中；只有自己一位时直接换
+    const go = () => { if (S.prog && S.prog.s === 4 && cur === V[V.length - 1]) { const g = S.prog; g.s = 7; g.r = (g.r || 0) + 1; g.at = { ...(g.at || {}), 7: Date.now() };
+      const sp = document.querySelector('.sprog'); if (sp) sp.outerHTML = progHtml(g); } renderOk(); };
+    try { const j = await (await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: 'fb:' + v, lid, on: 1 }) })).json();
+      if (j.need) { OKN.need = j.need; OKN.fgot = j.got; } if (j.s === 7) go(); else renderOk(); } catch (e) {} };
   const b1 = bar.querySelector('.okbtn'); if (b1) b1.onclick = () => set(true);
   const b2 = bar.querySelector('.okundo'); if (b2) b2.onclick = () => set(false);
   const b3 = bar.querySelector('.okext'); if (b3) b3.onclick = async () => { OKS['ext:' + v] = Date.now(); renderOk();   // 最后 12 小时可延长一次 24 小时
