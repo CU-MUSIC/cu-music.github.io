@@ -125,11 +125,14 @@ async function cached() {   // 已经存在本机的文件名
   if (!cacheOk()) return new Set();
   try { return new Set((await (await caches.open(CN)).keys()).map(r => decodeURIComponent(r.url.split('/__reflib/')[1] || ''))); } catch (e) { return new Set(); }
 }
-async function prefetch(api, key, items, onp) {   // 把还没存的全部存到本机，一首一首来
-  const have = await cached(), todo = items.filter(x => !have.has(x.file));
-  for (let i = 0; i < todo.length; i++) { if (onp) onp(i, todo.length, todo[i]); await getEnc(api, key, todo[i].file); }
-  if (onp) onp(todo.length, todo.length, null);
-  return todo.length;
+async function prefetch(api, key, items, onp, par = 4) {   // 把还没存的全部存到本机；同时下 4 首（韩国到 Cloudflare 单线只有 0.5～0.8MB/s，并行能快一倍左右）
+  const have = await cached(), todo = items.filter(x => !have.has(x.file)), n = todo.length;
+  let next = 0, done = 0, fail = null;
+  if (onp) onp(0, n, null);
+  const worker = async () => { while (next < n && !fail) { const x = todo[next++]; try { await getEnc(api, key, x.file); done++; if (onp) onp(done, n, x); } catch (e) { fail = e; } } };
+  await Promise.all(Array.from({ length: Math.min(par, n) }, worker));
+  if (fail) throw fail;
+  return n;
 }
 async function prune(items) {   // 库里已经删掉的歌（在别的设备删的也算）：本机存的那份也清掉
   const keep = new Set(items.map(x => x.file)), have = await cached(); let n = 0;

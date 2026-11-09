@@ -1857,7 +1857,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
    每首都走 setRef，REF 对应点按「歌名 + 时长」分开存，互不影响。「发给客户」= 用这首歌的审听密码重新加密上传成客户 REF */
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
-const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109i'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
+const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109k'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
 const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
@@ -1928,13 +1928,13 @@ async function rlpLoad(force) {
 function rlpKeep() {
   const K = $('#rlpK'); if (!K || !RLIB) return;
   const n = RLIB.filter(x => RLHAVE.has(x.file)).length, all = RLIB.length;
-  K.innerHTML = rlPre ? `<span>正在存到本机 ${rlPre.i + 1} / ${rlPre.n}…</span>`
+  K.innerHTML = rlPre ? `<span>正在存到本机 ${rlPre.i} / ${rlPre.n}…</span>`
     : `<span>本机已存 ${n} / ${all}</span>${n < all ? '<button class="press" id="rlpPre">全部存到本机</button>' : ''}`;
   const b = $('#rlpPre'); if (b) b.onclick = rlpPrefetch;
 }
 async function rlpPrefetch() {
   if (rlPre || !RLIB) return; rlPre = { i: 0, n: 0 }; rlpKeep();
-  try { await cuRefLib.prefetch(API_BASE, rlKey(), RLIB, (i, n, x) => { rlPre = { i: Math.min(i, n - 1), n }; if (x) RLHAVE.add(x.file); rlpKeep(); }); hud('参考库已全部存到本机'); }
+  try { await cuRefLib.prefetch(API_BASE, rlKey(), RLIB, (i, n, x) => { rlPre = { i, n }; if (x) RLHAVE.add(x.file); rlpKeep(); }); hud('参考库已全部存到本机'); }
   catch (e) { hud('没存完：' + (e.message || '检查网络'), 4000); }
   rlPre = null; RLHAVE = await cuRefLib.cached(); rlpKeep(); rlpList();
 }
