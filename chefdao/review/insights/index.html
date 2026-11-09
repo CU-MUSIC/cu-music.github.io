@@ -344,10 +344,10 @@ button.av{cursor:pointer;padding:0}
 <body>
 <div class="wrap" id="root"></div>
 <script src="../upload.js?v=20261109b"></script>
-<script src="../reflib.js?v=20261109f"></script>
+<script src="../reflib.js?v=20261109g"></script>
 <script>
 (() => {
-const BUILD = '261109.1600';
+const BUILD = '261109.1700';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版

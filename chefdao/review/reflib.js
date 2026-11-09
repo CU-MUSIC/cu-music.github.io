@@ -33,7 +33,8 @@ function nameOf(fn) {
 async function upload(o) {
   const step = o.step || (() => {}), bar = o.bar || (() => {}), E = window.cuEnc;
   if (!E) throw new Error('upload.js 没加载');
-  const file = o.file, M = o.meta || null, norm = v => String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  // 比较歌名时去掉「(0.00-3.24)」时间后缀：库里早期条目的歌名带着它，也算同一首
+  const file = o.file, M = o.meta || null, norm = v => String(v || '').replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '').toLowerCase().replace(/\s+/g, ' ').trim();
   // 旁边有同名 .json（录音工具写的）：歌名 / 歌手 / 风格以它为准；有 Spotify id 就按 id 去重，有时长就不用解码先查重
   const n0 = M && M.title ? { title: String(M.title).trim(), artist: String(M.artist || '').trim() } : nameOf(file.name);
   const same = d => (o.lib || []).find(x => (M && M.spotify_id && x.spid === M.spotify_id) ||
