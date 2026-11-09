@@ -131,6 +131,11 @@ async function prefetch(api, key, items, onp) {   // 把还没存的全部存到
   if (onp) onp(todo.length, todo.length, null);
   return todo.length;
 }
+async function prune(items) {   // 库里已经删掉的歌（在别的设备删的也算）：本机存的那份也清掉
+  const keep = new Set(items.map(x => x.file)), have = await cached(); let n = 0;
+  for (const f of have) if (f && !keep.has(f)) { await uncache(f); n++; }
+  return n;
+}
 async function uncache(file) { if (cacheOk()) try { await (await caches.open(CN)).delete(ckey(file)); } catch (e) {} }
 async function open(api, key, item) {
   if (CACHE.has(item.file)) return CACHE.get(item.file).slice(0);
@@ -143,7 +148,7 @@ async function open(api, key, item) {
 }
 window.cuRefLib = {
   list: async (api, key) => (await call(api, key, '/rlib')).items,
-  upload, open, nameOf, pair, walk, entriesOf, cached, prefetch, uncache,
+  upload, open, nameOf, pair, walk, entriesOf, cached, prefetch, uncache, prune,
   save: async (api, key, o) => (await call(api, key, '/rlib/save', o)).item,
   drop: async (api, key, id, file) => { const j = await call(api, key, '/rlib/drop', { id }); if (file) uncache(file); return j; },
   genre: (api, key, from, to) => call(api, key, '/rlib/genre', { from, to }),

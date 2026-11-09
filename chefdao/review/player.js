@@ -1812,7 +1812,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
    每首都走 setRef，REF 对应点按「歌名 + 时长」分开存，互不影响。「发给客户」= 用这首歌的审听密码重新加密上传成客户 REF */
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
-const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109h'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
+const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109i'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
 const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + x.title;
 const rlKey = () => store.get('insights:key');
@@ -1871,7 +1871,7 @@ async function rlpLoad(force) {
   // 这首歌上次挂的 REF：只恢复名字，点到才下载
   if (!RSL.length) { let ids = []; try { ids = JSON.parse(store.get(rslKey) || '[]'); } catch (e) {}
     RSL = ids.map(id => RLIB.find(x => x.id === id)).filter(Boolean).slice(0, RMAX).map(x => ({ id: x.id, lib: x, name: rlName(x), lufs: x.lufs, plain: null })); }
-  RLHAVE = await cuRefLib.cached();
+  await cuRefLib.prune(RLIB); RLHAVE = await cuRefLib.cached();
   rlpUG(); rlpChips(); rlpList(); rlpSlots(); rlpKeep();
 }
 // 本机缓存：挂过的 REF 自动存；「全部存到本机」把整个参考库下载存好，之后挂 REF 不用等下载、断网也能用
