@@ -188,6 +188,7 @@ document.body.innerHTML = `
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
     <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="loopBtn" aria-pressed="false">循环</button><button class="loud press" id="snapBtn" aria-pressed="false" title="点波形、设循环都落在小节线上；点段落只循环这一段">吸附</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
+  <div class="refx" id="refx" hidden><div class="rxw"><canvas id="refWave"></canvas><i id="refHint">点 REF 波形：从那里开始对比</i></div><div class="rxb"><span id="refPos"></span><button class="press" id="raAdd">记住这个对应</button></div><div class="rxl" id="raList"></div></div>
   <div class="cmpat" id="cmpAt" hidden><span id="cmpAtT"></span><input id="cmpAtIn" inputmode="decimal" autocomplete="off" placeholder="0:40"><button class="press" id="cmpAtGo" type="button">对齐</button></div>
   <section class="mst" id="mst" hidden></section>
   <aside class="plist" id="plist" hidden></aside>
@@ -1656,7 +1657,7 @@ async function setRef(buf, name, lufs) {
   if (!Number.isFinite(lufs)) { try { await libLufs(); REF.lufs = await cuLufs(refBuf); } catch (e) {} }
   $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; refStats = null; showStats();
   $('#refName').hidden = false; $('#refName').textContent = 'REF · ' + name;
-  refStart(); applyGains();
+  refStart(); applyGains(); try { refxInit(); } catch (e) {}
 }
 function setAB(x) {
   if (x === 'ref' && !REF) return;
@@ -1792,12 +1793,12 @@ function stopCmp() {
   if (CMP < 0) return; CMP = -1; refStop(); refBuf = null; REF = null; refStats = null; AB = 'mix'; refD = 0; cmpLu = null; cmpPair = null; cmpNote = ''; $('#cmpAt').hidden = true;
   if (loudBefore !== null) { LOUD = loudBefore; loudBefore = null; }
   if (refN && actx) refN.gain.value = 0;
-  $('#refName').hidden = true; if (!REFV) $('#ab').classList.remove('has'); $('#refPick').textContent = REFV ? '换 REF' : '＋ 加 REF'; abLabels(); applyGains(); markList(); if (mstOpen) showStats();
+  $('#refName').hidden = true; refxUi(); if (!REFV) $('#ab').classList.remove('has'); $('#refPick').textContent = REFV ? '换 REF' : '＋ 加 REF'; abLabels(); applyGains(); markList(); if (mstOpen) showStats();
 }
 $('#cmp').onclick = () => {
   if (CMP >= 0) return stopCmp();
   const prev = vi > 0 ? vi - 1 : -1; if (prev < 0) { $('#refName').hidden = false; $('#refName').textContent = '这已经是最早的一版，没有更早的可以对比'; return; }
-  if (REF) { REF = null; refBuf = null; refStop(); }   // 你发的 REF 占着位置：对比期间先让出，退出后再点 REF 能重新载入
+  if (REF) { REF = null; refBuf = null; refStop(); refxUi(); }   // 你发的 REF 占着位置：对比期间先让出，退出后再点 REF 能重新载入
   startCmp(prev);
 };
 // 当前版本切走后，B 如果正好变成当前版本，就换个邻近的版本当 B
@@ -1806,15 +1807,97 @@ $('#abMix').onclick = () => setAB('mix');
 $('#abRef').onclick = () => { if (REF) setAB('ref'); else if (REFV) loadShared(); };
 $('#refPick').onclick = () => { graph(); $('#refFile').click(); };
 $('#refFile').onchange = async () => { const f = $('#refFile').files[0]; if (!f) return; $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
-  await setRef(await f.arrayBuffer(), f.name.replace(/\.[^.]+$/, '')); setAB('ref'); };
+  RX_SHARED = false; await setRef(await f.arrayBuffer(), f.name.replace(/\.[^.]+$/, '')); setAB('ref'); };
 async function loadShared() {   // 你发给客户的 REF：和版本一样加密存储
   if (!REFV || REF) return;
   graph(); $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
   try { const r = await fetch(REFV.audio); const plain = await open(KEY, new Uint8Array(await r.arrayBuffer()));
-    await setRef(plain, REFV.file || 'REF', REFV.lufs); setAB('ref'); } catch (e) { $('#refName').textContent = 'REF 载入失败，刷新再试'; }
+    RX_SHARED = true; await setRef(plain, REFV.file || 'REF', REFV.lufs); setAB('ref'); } catch (e) { $('#refName').textContent = 'REF 载入失败，刷新再试'; }
 }
 if (REFV) { $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; }
 document.addEventListener('keydown', e => { if (e.code === 'KeyR' && !/TEXTAREA|INPUT/.test(e.target.tagName) && (REF || REFV)) { e.preventDefault(); AB === 'ref' ? setAB('mix') : (REF ? setAB('ref') : loadShared()); } });
+/* ───────── REF 对应点：REF 和混音结构不一样（副歌在不同位置），就告诉它「混音这里 ↔ REF 那里」 ─────────
+   点 REF 波形 = 从那里开始对比（跟着混音的位置一起走）；「记住这个对应」把这一对存下来（有段落就按段落开头存）。
+   存了以后：混音播到哪一段，REF 自动跳到对应的地方，段内按同样的相对位置走；循环一段时 REF 也跟着循环那一段。
+   你发给客户的 REF：你在自己设备上存的对应点所有人都能用；客户自己存的只在他那台设备上。本地选的 REF 只存在本机 */
+let RX_SHARED = false, RA = [], raMan = null, raZone = -2, rxPk = null;
+const rxKey = () => 'review:ra:' + S.slug + ':' + (RX_SHARED ? 'shared' : (REF ? REF.name : '') + '|' + (refBuf ? Math.round(refBuf.duration) : 0));
+const rxOn = () => !!(REF && refBuf && CMP < 0);
+function raLoad() {
+  let mine = null; try { mine = JSON.parse(store.get(rxKey()) || 'null'); } catch (e) {}
+  const srv = RX_SHARED && Array.isArray(S.refcues) ? S.refcues : [];
+  RA = (Array.isArray(mine) ? mine : srv).filter(x => Number.isFinite(+x.p) && Number.isFinite(+x.t)).map(x => ({ p: +x.p, t: +x.t, n: String(x.n || '') })).sort((x, y) => x.p - y.p);
+}
+async function raSave() {
+  RA.sort((x, y) => x.p - y.p);
+  const key = store.get('insights:key'), live = window.SONG_LIVE;
+  if (RX_SHARED && IS_OWNER && key && live) {   // 你的设备：存到服务器，客户打开就是你对好的
+    try { const r = await fetch(live.api + '/radm/meta', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, refcues: RA }) });
+      if (!(await r.json()).ok) throw 0; S.refcues = RA.slice(); store.del(rxKey()); return; } catch (e) {}
+  }
+  store.set(rxKey(), JSON.stringify(RA));
+}
+const raAt = t => { let k = -1; RA.forEach((x, i) => { if (x.p <= t + .05) k = i; }); return k; };
+// 现在 REF 该比混音快 / 慢多少秒
+function rxD() {
+  const z = raAt(a.currentTime);
+  if (z !== raZone) { raZone = z; raMan = null; raList(); }   // 进了另一段：手动点的位置作废，按存好的对应走
+  if (raMan !== null) return raMan;
+  return z >= 0 ? RA[z].t - RA[z].p : 0;
+}
+setInterval(() => {
+  if (!rxOn()) return;
+  const d = rxD(); if (Math.abs(d - refD) > .02) { refD = d; if (!a.paused) refStart(); }
+}, 120);
+function refxUi() {
+  const on = rxOn(); $('#refx').hidden = !on;
+  if (on) { raList(); rxDraw(); }
+}
+function refxInit() {
+  if (!rxOn()) return refxUi();
+  raMan = null; raZone = -2; raLoad();
+  // REF 波形：单声道 300 格峰值
+  const ch = [...Array(refBuf.numberOfChannels)].map((_, i) => refBuf.getChannelData(i)), N = 300, L = refBuf.length; rxPk = [];
+  for (let i = 0; i < N; i++) { let m = 0; const s0 = Math.floor(i * L / N), s1 = Math.floor((i + 1) * L / N); for (const c of ch) for (let j = s0; j < s1; j += 16) { const v = Math.abs(c[j]); if (v > m) m = v; } rxPk.push(m); }
+  const mx = Math.max(...rxPk) || 1; rxPk = rxPk.map(v => v / mx);
+  refD = rxD(); refxUi(); if (!a.paused) refStart();
+}
+const rxPos = () => Math.max(0, Math.min(refBuf ? refBuf.duration : 0, a.currentTime + refD));
+function rxDraw() {
+  const cv = $('#refWave'); if (!cv || !rxOn() || !rxPk) return;
+  const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w) return;
+  if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+  const D = refBuf.duration, pos = rxPos(), px = pos / D * w, bw = w / rxPk.length;
+  rxPk.forEach((v, i) => { const x = i * bw, bh = Math.max(1.5, v * (h - 6)); c.fillStyle = x < px ? 'rgba(236,234,230,.75)' : 'rgba(236,234,230,.25)'; c.fillRect(x, (h - bh) / 2, Math.max(1, bw - 1), bh); });
+  RA.forEach((x, i) => { const xx = x.t / D * w; c.fillStyle = i === raZone ? '#e9c46a' : 'rgba(233,196,106,.55)'; c.fillRect(xx - .75, 0, 1.5, h); });
+  c.fillStyle = '#fff'; c.fillRect(px - 1, 0, 2, h);
+  const t = fmt(pos); if ($('#refPos')._t !== t) { $('#refPos')._t = t; $('#refPos').textContent = 'REF ' + t + (raMan !== null ? ' · 手动' : raZone >= 0 ? ' · 跟着「' + RA[raZone].n + '」' : ''); }
+}
+(function rxLoop() { if (!$('#refx').hidden) rxDraw(); requestAnimationFrame(rxLoop); })();
+function raList() {
+  const el = $('#raList'); if (!el) return;
+  el.innerHTML = RA.map((x, i) => `<span class="rac${i === raZone ? ' on' : ''}" data-i="${i}"><b>${esc(x.n)}</b> ${fmt(x.p)} ↔ REF ${fmt(x.t)}<button class="rax" aria-label="删除这个对应">×</button></span>`).join('');
+  $('#refHint').hidden = RA.length > 0;
+}
+// 点 REF 波形：REF 从那里开始，跟着混音一起走；没在播就开始播
+$('#refWave').addEventListener('click', e => {
+  if (!rxOn()) return; const r = e.currentTarget.getBoundingClientRect(), T = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * refBuf.duration;
+  raZone = raAt(a.currentTime); raMan = T - a.currentTime; refD = raMan; setAB('ref');
+  if (a.paused && !$('#play').disabled) a.play(); else refStart();
+});
+$('#raAdd').onclick = () => {
+  if (!rxOn()) return;
+  const k = PARTS.length ? partAt(a.currentTime) : -1, p = k >= 0 ? PARTS[k].t : Math.round(a.currentTime * 10) / 10;
+  const t = Math.max(0, Math.round((p + refD) * 100) / 100), n = k >= 0 ? PARTS[k].n : fmt(p);
+  RA = RA.filter(x => Math.abs(x.p - p) > .3).concat({ p, t, n }); raMan = null; raZone = -2; raSave(); rxD(); raList();
+  $('#raAdd').textContent = '已记住'; setTimeout(() => { $('#raAdd').textContent = '记住这个对应'; }, 1200);
+};
+$('#raList').addEventListener('click', e => {
+  const c = e.target.closest('.rac'); if (!c) return; const i = +c.dataset.i, x = RA[i]; if (!x) return;
+  if (e.target.closest('.rax')) { RA.splice(i, 1); raZone = -2; raMan = null; raSave(); raList(); return; }
+  seek(x.p); raMan = null; raZone = -2; setAB('ref'); if (a.paused && !$('#play').disabled) a.play();
+});
 $('#loud').onclick = () => { loudBefore = null; LOUD = LMODES[(LMODES.indexOf(LOUD) + 1) % LMODES.length]; store.set('review:loud', LOUD || '0'); if (LOUD) { graph(); measureAll(); } applyGains(); };
 // 记住了开着：第一次点播放时（有用户手势）接上
 $('#play').addEventListener('click', () => { if ((LOUD || REF) && graph()) { if (LOUD) measureAll(); applyGains(); } }, true);
