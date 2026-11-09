@@ -62,7 +62,7 @@ async function upload(o) {
     const k = Math.max(128, Math.min(320, Math.floor(LIM * 8 / au.duration / 1000 * .96 / 32) * 32));
     step('转成 m4a' + (k < 320 ? '（AAC ' + k + 'k）' : '') + '…');
     bytes = await E.toM4A(au, p => bar(.15 + p * .5), k * 1000); mime = 'audio/mp4';
-  } else throw new Error('这个浏览器不支持 m4a 编码，用 Chrome / Safari 再试');
+  } else throw new Error('Safari 转不了 m4a：这首用 Chrome 上传');   // Safari 没有 AAC 编码器；要 m4a 就在 Chrome 里传（WAV 太大不能原样传）
   if (ac.close) ac.close();
   if (bytes.length > LIM) throw new Error('文件太大（超过 24MB）');
   step('加密…'); bar(.68);
