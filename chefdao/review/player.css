@@ -889,3 +889,27 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 .rac.on{background:rgba(233,196,106,.18);color:var(--text)}
 .rac .rax{width:20px;height:20px;border-radius:50%;font-size:14px;line-height:1;color:var(--text-3)}
 .rac .rax:hover{color:var(--text)}
+
+/* 参考库选 REF（只在你的设备上） */
+.rlib{position:fixed;inset:0;z-index:300;background:rgba(10,10,11,.55);display:flex;align-items:center;justify-content:center;padding:16px;animation:rlibIn .18s ease-out}
+@keyframes rlibIn{from{opacity:0}}
+.rlib-p{width:100%;max-width:520px;max-height:min(80vh,720px);display:flex;flex-direction:column;background:#1c1c1e;border:.5px solid var(--hair);border-radius:18px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.5);color:var(--text);font-size:16px;line-height:1.6}
+.rlib-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.rlib-h b{font-size:18px}
+.rlib-h button{width:34px;height:34px;border-radius:50%;background:var(--fill-2);color:var(--text-2);font-size:15px}
+.rlib-p input{height:40px;padding:0 12px;border-radius:10px;border:0;background:var(--fill-2);color:var(--text);font:inherit;font-size:16px;margin-bottom:8px;outline:none}
+.rlib-p input::placeholder{color:var(--text-3)}
+.rlib-l{overflow-y:auto;flex:1;min-height:120px;margin:0 -6px;padding:0 6px;-webkit-overflow-scrolling:touch}
+.rlib-g{position:sticky;top:0;background:#1c1c1e;font-size:13px;font-weight:600;color:var(--text-2);padding:10px 2px 4px;display:flex;justify-content:space-between}
+.rlib-g span{color:var(--text-3);font-weight:400}
+.rlib-i{display:flex;align-items:center;gap:8px;border-radius:10px}
+.rlib-i:hover{background:var(--fill)}
+.rlib-i.on{background:var(--fill-2)}
+.rlib-go{flex:1;min-width:0;text-align:left;padding:8px 6px;background:none;border:0;color:inherit;font:inherit;cursor:pointer;display:flex;flex-direction:column}
+.rlib-go b{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rlib-go span{font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rlib-send{flex-shrink:0;height:30px;padding:0 10px;border-radius:8px;background:var(--fill-2);color:var(--text-2);font-size:13px;margin-right:4px}
+.rlib-e{color:var(--text-3);font-size:15px;padding:28px 6px;text-align:center}
+.rlib-f{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:.5px solid var(--hair);font-size:14px}
+.rlib-f button{height:34px;padding:0 12px;border-radius:9px;background:var(--fill-2);color:var(--text-2);font-size:14px}
+.rlib-f a{color:var(--text-2);text-decoration:underline;text-underline-offset:3px}

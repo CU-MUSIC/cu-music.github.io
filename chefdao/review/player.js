@@ -1385,7 +1385,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
@@ -1805,7 +1805,61 @@ $('#cmp').onclick = () => {
 function cmpFix() { if (CMP < 0) return; if (CMP === vi) { const alt = vi > 0 ? vi - 1 : vi + 1; alt < V.length ? startCmp(alt, true) : stopCmp(); } else abLabels(); }
 $('#abMix').onclick = () => setAB('mix');
 $('#abRef').onclick = () => { if (REF) setAB('ref'); else if (REFV) loadShared(); };
-$('#refPick').onclick = () => { graph(); $('#refFile').click(); };
+$('#refPick').onclick = () => { graph(); IS_OWNER ? rlibOpen() : $('#refFile').click(); };
+/* ───────── 参考库（只在你的设备上）：「＋ 加 REF」弹出你在 Insights 传的内录歌，按风格分组、可搜索 ─────────
+   点一首 = 在本地载入当 REF（走 setRef，和 REF 对应点兼容，对应点按歌名+时长存在本机）；「发给客户」= 用这首歌的审听密码重新加密，上传成客户能看到的 REF */
+let RLIB = null, rlibP = null;
+const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109c'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
+const upLoad = () => window.cuUpload ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+async function rlibOpen() {
+  if ($('#rlib')) return;
+  const key = store.get('insights:key'), el = document.createElement('div'); el.id = 'rlib'; el.className = 'rlib';
+  el.innerHTML = `<div class="rlib-p" role="dialog" aria-label="从参考库选 REF"><div class="rlib-h"><b>选一首当 REF</b><button class="press" id="rlibX" aria-label="关闭">✕</button></div>
+    <input id="rlibQ" type="search" placeholder="搜歌名 / 歌手 / 风格" autocomplete="off"><div class="rlib-l" id="rlibL"><div class="rlib-e">正在读取参考库…</div></div>
+    <div class="rlib-f"><button class="press" id="rlibLocal">从本机选文件</button><a href="../insights/#rlib" target="_blank" rel="noopener">管理参考库 ↗</a></div></div>`;
+  document.body.appendChild(el);
+  const close = () => { el.remove(); document.removeEventListener('keydown', esc1); };
+  const esc1 = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc1);
+  el.onclick = e => { if (e.target === el) close(); };
+  $('#rlibX').onclick = close;
+  $('#rlibLocal').onclick = () => { close(); $('#refFile').click(); };
+  const draw = () => {
+    const q = $('#rlibQ').value.trim().toLowerCase(), L = $('#rlibL'); if (!L) return;
+    if (!RLIB) return;
+    const rows = RLIB.filter(x => !q || (x.title + ' ' + x.artist + ' ' + x.genre).toLowerCase().includes(q));
+    if (!rows.length) { L.innerHTML = `<div class="rlib-e">${RLIB.length ? '没有符合的歌' : '参考库还是空的：去 Insights 的「参考库」拖几首进来'}</div>`; return; }
+    const G = new Map(); rows.forEach(x => { const g = x.genre || '未分类'; (G.get(g) || G.set(g, []).get(g)).push(x); });
+    const keys = [...G.keys()].sort((a, b) => (a === '未分类') - (b === '未分类') || a.localeCompare(b, 'zh'));
+    L.innerHTML = keys.map(g => `<div class="rlib-g">${esc(g)}<span>${G.get(g).length}</span></div>` + G.get(g).map(x => `<div class="rlib-i${REF && REF.lib === x.id ? ' on' : ''}" data-id="${x.id}">
+      <button class="rlib-go"><b>${esc(x.title)}</b><span>${esc(x.artist ? x.artist + ' · ' : '')}${fmt(x.duration)}${Number.isFinite(x.lufs) ? ' · ' + x.lufs + ' LUFS' : ''}</span></button>
+      ${window.SONG_LIVE ? '<button class="rlib-send press" title="用这首歌的审听密码加密，上传成客户能看到的 REF">发给客户</button>' : ''}</div>`).join('')).join('');
+  };
+  $('#rlibQ').oninput = draw;
+  $('#rlibL').onclick = async e => {
+    const row = e.target.closest('.rlib-i'); if (!row) return; const x = RLIB.find(y => y.id === row.dataset.id); if (!x) return;
+    if (e.target.closest('.rlib-send')) return rlibSend(x, close);
+    close(); if (CMP >= 0) stopCmp();
+    $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
+    try { const plain = await cuRefLib.open(API_BASE, key, x); RX_SHARED = false; await setRef(plain, (x.artist ? x.artist + ' - ' : '') + x.title, x.lufs);
+      if (REF) { REF.lib = x.id; setAB('ref'); } } catch (e) { $('#refName').textContent = 'REF 载入失败：' + (e.message || '检查网络'); }
+  };
+  try { await rlibLoad(); RLIB = await cuRefLib.list(API_BASE, key); draw(); setTimeout(() => { const q = $('#rlibQ'); if (q && matchMedia('(hover:hover)').matches) q.focus(); }, 50); }
+  catch (e) { const L = $('#rlibL'); if (L) L.innerHTML = '<div class="rlib-e">读不到参考库，检查网络再试</div>'; }
+}
+async function rlibSend(x, close) {
+  const live = window.SONG_LIVE, key = store.get('insights:key'); if (!live || !key) return;
+  const name = (x.artist ? x.artist + ' - ' : '') + x.title;
+  if (!confirm((REFV ? '替换现在发给客户的 REF，' : '') + '把「' + name + '」作为《' + S.title + '》的 REF 发给客户？\n会用这首歌的审听密码重新加密上传，客户能听到。')) return;
+  close(); hud('准备上传 REF…', 60000);
+  try {
+    await Promise.all([rlibLoad(), upLoad()]);
+    const plain = await cuRefLib.open(API_BASE, key, x);
+    const file = new File([plain], name.replace(/[\\/:*?"<>|]/g, ' ') + (x.mime === 'audio/mpeg' ? '.mp3' : '.m4a'), { type: x.mime || 'audio/mp4' });
+    await cuUpload({ api: live.api, key, file, slug: S.slug, ver: 'REF', step: t => hud(t, 60000), bar: () => {} });
+    hud('REF 已发给客户'); setTimeout(() => softReload(), 400);
+  } catch (e) { hud('没传成功：' + (e.message || '检查网络'), 5000); }
+}
 $('#refFile').onchange = async () => { const f = $('#refFile').files[0]; if (!f) return; $('#refName').hidden = false; $('#refName').textContent = '读取 REF…';
   RX_SHARED = false; await setRef(await f.arrayBuffer(), f.name.replace(/\.[^.]+$/, '')); setAB('ref'); };
 async function loadShared() {   // 你发给客户的 REF：和版本一样加密存储

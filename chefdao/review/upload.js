@@ -164,4 +164,5 @@ async function cuUpload(o) {
   return { slug: prep.slug, title: prep.title, pass: prep.pass, ver, url: res.url, next: prep.next };
 }
 window.cuUpload = cuUpload; window.cuNameInfo = cuNameInfo; window.cuStage = cuStage;
+window.cuEnc = { toM4A, aacOk, wavRate, loadLib };   // 参考库（reflib.js）复用同一套转码
 })();
