@@ -100,7 +100,7 @@ async function walk(entries) {
 const entriesOf = dt => [...((dt && dt.items) || [])].map(i => i.webkitGetAsEntry ? i.webkitGetAsEntry() : null);
 // 音频 + 同名 .json 配对 → [{ file, meta }]；只有 json 没有音频的忽略
 async function pair(files) {
-  files = [...files]; const base = f => f.name.replace(/\.[^.]+$/, '');
+  files = [...files].filter(f => !f.name.startsWith('.')); const base = f => f.name.replace(/\.[^.]+$/, '');   // 点开头的是隐藏 / 临时文件（录音脚本的 .rec_xxx.wav），不算
   const js = new Map(files.filter(f => /\.json$/i.test(f.name)).map(f => [base(f), f]));
   const au = files.filter(f => /\.(wav|aif|aiff|m4a|mp4|aac|mp3)$/i.test(f.name) || (/^audio\//.test(f.type) && !/\.json$/i.test(f.name)));
   return Promise.all(au.map(async f => { let meta = null; const j = js.get(base(f)); if (j) try { meta = JSON.parse(await j.text()); } catch (e) {} return { file: f, meta }; }));
