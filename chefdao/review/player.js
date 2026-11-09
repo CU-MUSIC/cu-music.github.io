@@ -1812,7 +1812,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
    每首都走 setRef，REF 对应点按「歌名 + 时长」分开存，互不影响。「发给客户」= 用这首歌的审听密码重新加密上传成客户 REF */
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
-const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109e'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
+const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109f'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
 const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + x.title;
 const rlKey = () => store.get('insights:key');
@@ -1826,7 +1826,7 @@ function rlpBuild() {
     <div class="rlp-l" id="rlpL"><div class="rlib-e">正在读取参考库…</div></div></div>
     <div class="rlp-qu" id="rlpQu"></div>
     <div class="rlp-u"><select id="rlpUG" aria-label="上传的风格"></select><button class="press" id="rlpUp" title="可以多选，也可以直接拖进这个面板">＋ 上传进库</button><button class="press" id="rlpLoc" title="不进库，只在这次临时用">本机文件</button>
-      <input type="file" id="rlpF" multiple accept="audio/*,.wav,.aif,.aiff,.m4a,.mp3" hidden></div>`;
+      <input type="file" id="rlpF" multiple accept="audio/*,.wav,.aif,.aiff,.m4a,.mp3,.json" hidden></div>`;
   document.body.appendChild(el);
   const bd = document.createElement('div'); bd.className = 'rlp-bd'; bd.onclick = () => rlpToggle(false); document.body.appendChild(bd);
   const tb = document.createElement('button'); tb.id = 'rlpTab'; tb.className = 'rlp-tab press'; tb.textContent = 'REF'; tb.title = '打开参考 REF'; tb.onclick = () => rlpToggle(true); document.body.appendChild(tb);
@@ -1855,7 +1855,7 @@ function rlpBuild() {
   el.addEventListener('dragenter', e => { if (stop(e)) el.classList.add('drop'); });
   el.addEventListener('dragover', stop);
   el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop'); });
-  el.addEventListener('drop', e => { if (stop(e)) { el.classList.remove('drop'); rlpUpload(e.dataTransfer.files); } });
+  el.addEventListener('drop', e => { if (stop(e)) { el.classList.remove('drop'); const en = window.cuRefLib ? cuRefLib.entriesOf(e.dataTransfer) : [...e.dataTransfer.items].map(i => i.webkitGetAsEntry ? i.webkitGetAsEntry() : null); rlpUpload(e.dataTransfer.files, en); } });
   rlpUG(); rlpSlots();
   return el;
 }
@@ -1940,16 +1940,19 @@ function useShared() {
 }
 // REF 按钮 / R 键：没载入时，优先打开上次用的槽位，其次第一个槽位，再其次你发给客户的 REF
 function refOn() { if (REF) return setAB('ref'); if (RSL.length) return useSlot(Math.max(0, Math.min(RSA, RSL.length - 1))); if (REFV) return useShared(); if (IS_OWNER) rlpToggle(true); }
-async function rlpUpload(files) {
-  files = [...files].filter(f => /\.(wav|aif|aiff|m4a|mp4|aac|mp3)$/i.test(f.name) || /^audio\//.test(f.type)); if (!files.length) return;
-  files.forEach(f => RLQ.push({ f, name: f.name, st: '排队', p: 0, genre: rlUpG }));
+async function rlpUpload(files, entries) {
+  try { await rlibLoad(); } catch (e) { return hud('参考库加载失败，刷新再试'); }
+  // 拖进来的文件夹先展开；音频和同名 .json（录音工具写的歌名 / 歌手 / 风格）配对
+  if (entries && entries.some(en => en && en.isDirectory)) files = await cuRefLib.walk(entries);
+  const items = await cuRefLib.pair(files); if (!items.length) return;
+  items.forEach(({ file: f, meta }) => RLQ.push({ f, meta, name: meta && meta.title ? (meta.artist ? meta.artist + ' - ' : '') + meta.title + (meta.genre ? ' · ' + meta.genre : '') : f.name, st: '排队', p: 0, genre: rlUpG }));
   const qd = () => { const el = $('#rlpQu'); if (el) el.innerHTML = RLQ.map(q => `<div><span>${esc(q.name)}</span><span class="${q.err ? 'bad' : q.done ? 'ok' : ''}">${esc(q.err || (q.skip ? '已在库里，跳过' : q.done ? '已进库' : q.st + (q.p ? ' ' + Math.round(q.p * 100) + '%' : '')))}</span></div>`).join(''); };
   qd(); if (rlBusy) return; rlBusy = true;
   try { await Promise.all([rlibLoad(), upLoad()]); } catch (e) { RLQ.forEach(q => { if (!q.done) { q.err = '加载失败，刷新再试'; q.f = null; } }); rlBusy = false; return qd(); }
   if (!RLIB) await rlpLoad();
   for (let q; (q = RLQ.find(x => !x.done && !x.err && x.f));) {
     try {
-      const item = await cuRefLib.upload({ api: API_BASE, key: rlKey(), file: q.f, genre: q.genre, lib: RLIB, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
+      const item = await cuRefLib.upload({ api: API_BASE, key: rlKey(), file: q.f, meta: q.meta, genre: q.genre, lib: RLIB, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
       q.done = true; q.f = null; RLIB = (RLIB || []).concat(item); rlpUG(); rlpChips(); rlpList(); qd();
     } catch (e) { if (e.dup) { q.done = true; q.skip = true; } else q.err = e.message || '失败'; q.f = null; qd(); }
   }

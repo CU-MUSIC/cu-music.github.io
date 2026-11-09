@@ -344,10 +344,10 @@ button.av{cursor:pointer;padding:0}
 <body>
 <div class="wrap" id="root"></div>
 <script src="../upload.js?v=20261109b"></script>
-<script src="../reflib.js?v=20261109e"></script>
+<script src="../reflib.js?v=20261109f"></script>
 <script>
 (() => {
-const BUILD = '261109.1500';
+const BUILD = '261109.1600';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1036,9 +1036,9 @@ function renderRlib() {
   if (!RL) { loadRlib(); return '<div class="msg">正在读取…</div>'; }
   const G = rlGenres(), none = RL.filter(x => !x.genre).length;
   if (rlG && rlG !== RL_NONE && !G.some(([g]) => g === rlG)) rlG = '';
-  return `<div class="rldrop" id="rlDrop"><b>把内录的歌拖进来</b><span>可以一次拖多首 · WAV / AIFF 自动转 m4a · 只有你的设备能解开</span>
+  return `<div class="rldrop" id="rlDrop"><b>把内录的歌拖进来</b><span>可以一次拖多首或整个文件夹 · 同名 .json 自动填歌名和风格 · 只有你的设备能解开</span>
     <div class="rlup"><span>这批的风格</span><select id="rlUpG">${rlOpts(rlUpG)}</select><button id="rlPick">选择文件</button></div>
-    <input type="file" id="rlFile" multiple accept="audio/*,.wav,.aif,.aiff,.m4a,.mp3" hidden></div>
+    <input type="file" id="rlFile" multiple accept="audio/*,.wav,.aif,.aiff,.m4a,.mp3,.json" hidden></div>
   <div class="rlq" id="rlQ">${rlQHtml()}</div>
   <div class="sect">参考库<span>${RL.length} 首 · ${G.length} 种风格</span></div>
   <div class="chips" id="rlChips"><button data-g="" class="${rlG === '' ? 'on' : ''}">全部 ${RL.length}</button>${G.map(([g, n]) => `<button data-g="${esc(g)}" class="${rlG === g ? 'on' : ''}">${esc(g)} ${n}</button>`).join('')}${none ? `<button data-g="${RL_NONE}" class="${rlG === RL_NONE ? 'on' : ''}">未分类 ${none}</button>` : ''}</div>
@@ -1051,17 +1051,19 @@ function rlNewGenre(sel, cur) {
   if (![...sel.options].some(o => o.value === g)) sel.insertAdjacentHTML('afterbegin', `<option value="${esc(g)}">${esc(g)}</option>`);
   sel.value = g; return g;
 }
-async function rlUpload(files) {
-  files = [...files].filter(f => /\.(wav|aif|aiff|m4a|mp4|aac|mp3)$/i.test(f.name) || /^audio\//.test(f.type));
-  if (!files.length) return;
+async function rlUpload(files, entries) {
+  // 拖进来的文件夹先展开；音频和同名 .json（录音工具写的歌名 / 歌手 / 风格）配对
+  if (entries && entries.some(en => en && en.isDirectory)) files = await cuRefLib.walk(entries);
+  const items = await cuRefLib.pair(files);
+  if (!items.length) return;
   const genre = rlUpG;
-  files.forEach(f => RLQ.push({ f, name: f.name, st: '排队', p: 0, genre }));
+  items.forEach(({ file: f, meta }) => RLQ.push({ f, meta, name: meta && meta.title ? (meta.artist ? meta.artist + ' - ' : '') + meta.title + (meta.genre ? ' · ' + meta.genre : '') : f.name, st: '排队', p: 0, genre }));
   const qd = () => { const el = document.getElementById('rlQ'); if (el) el.innerHTML = rlQHtml(); };
   qd();
   if (rlBusy) return; rlBusy = true;
   for (let q; (q = RLQ.find(x => !x.done && !x.err && x.f));) {
     try {
-      const item = await cuRefLib.upload({ api: API, key: KEY, file: q.f, genre: q.genre, lib: RL, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
+      const item = await cuRefLib.upload({ api: API, key: KEY, file: q.f, meta: q.meta, genre: q.genre, lib: RL, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
       q.done = true; q.f = null; RL = (RL || []).concat(item); qd();
       if (tab === 'rlib' && !typing()) { const l = document.getElementById('rlList'); if (l) { l.innerHTML = rlListHtml(); bindRlList(); } }
     } catch (e) { if (e.dup) { q.done = true; q.skip = true; } else q.err = e.message || '失败'; q.f = null; qd(); }
@@ -1128,7 +1130,7 @@ function bindRlib() {
   addEventListener('dragenter', e => { if (files(e)) { depth++; on(true); } });
   addEventListener('dragleave', e => { if (files(e) && --depth <= 0) { depth = 0; on(false); } });
   addEventListener('dragover', e => { if (files(e)) e.preventDefault(); });
-  addEventListener('drop', e => { if (!files(e)) return; e.preventDefault(); depth = 0; on(false); rlUpload(e.dataTransfer.files); });
+  addEventListener('drop', e => { if (!files(e)) return; e.preventDefault(); depth = 0; on(false); rlUpload(e.dataTransfer.files, cuRefLib.entriesOf(e.dataTransfer)); });
 })();
 
 // ── Library：项目卡片墙（单曲 / EP / 专辑），点开管理封面、名称、曲目、链接 ──
