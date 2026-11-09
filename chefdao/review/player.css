@@ -897,6 +897,9 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 @keyframes rlpIn{from{opacity:0;transform:translateX(16px)}}
 .rlp.drop{outline:2px dashed var(--text-2);outline-offset:-6px}
 @media (min-width:900px){body.rlp-on{padding-right:332px}}
+/* 面板开着时正文往左让了 166px：两侧的聆听情况 / 曲目列表跟着移；放不下三栏（<1640px）就回到正文里排 */
+@media (min-width:1180px){body.rlp-on .ols.side{position:static;width:auto;max-height:none;margin:18px 0;box-shadow:none}body.rlp-on .plist{position:static;width:auto;max-height:none;margin:22px 0 4px}}
+@media (min-width:1640px){body.rlp-on .ols.side{position:fixed;right:calc(50% + 516px);width:270px;max-height:calc(100vh - 160px);margin:0;box-shadow:0 12px 40px -16px rgba(0,0,0,.6)}body.rlp-on .plist{position:fixed;left:calc(50% + 184px);width:240px;max-height:calc(100vh - 160px);margin:0}}
 .rlp-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .rlp-h>b{font-size:17px;flex:1}
 .rlp-ab{display:flex;background:var(--fill);border-radius:9px;padding:2px}
@@ -926,10 +929,10 @@ html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 .rlib-g span{color:var(--text-3);font-weight:400}
 .rlp-i{display:flex;align-items:center;gap:6px;border-radius:10px}
 .rlp-i:hover{background:var(--fill)}
-.rlp-go{flex:1;min-width:0;text-align:left;padding:7px 6px;color:inherit;display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:center}
-.rlp-go b{grid-column:-2;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rlp-go span{grid-column:-2;font-size:12.5px;color:var(--text-3);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rlp-go em{grid-row:span 2}
+.rlp-go{flex:1;min-width:0;text-align:left;padding:7px 6px;color:inherit;display:flex;flex-direction:column}
+.rlp-go b{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rlp-go span{font-size:12.5px;color:var(--text-3);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rlp-go b em{display:inline-grid;width:18px;height:18px;font-size:11px;margin-left:6px;vertical-align:2px;background:var(--pearl);color:var(--ink)}
 .rlp-send{flex-shrink:0;height:28px;padding:0 9px;border-radius:8px;background:var(--fill-2);color:var(--text-2);font-size:12.5px;opacity:0;transition:opacity .15s}
 .rlp-i:hover .rlp-send,.rlp-send:focus-visible{opacity:1}
 @media (hover:none){.rlp-send{opacity:1}}
