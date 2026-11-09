@@ -319,10 +319,10 @@ button.av{cursor:pointer;padding:0}
 </head>
 <body>
 <div class="wrap" id="root"></div>
-<script src="../upload.js?v=20261105a"></script>
+<script src="../upload.js?v=20261109a"></script>
 <script>
 (() => {
-const BUILD = '261107.2000';
+const BUILD = '261109.1000';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版

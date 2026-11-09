@@ -27,6 +27,8 @@ function wavRate(buf) {
     for (let p = 12; p + 8 < d.byteLength;) { const id = d.getUint32(p), n = d.getUint32(p + 4, true); if (id === 0x666d7420) return d.getUint32(p + 12, true); p += 8 + n + (n & 1); }
   } catch (e) {} return 0;
 }
+// 让出主线程：用 MessageChannel 而不是 setTimeout(0)——切到别的标签页时 setTimeout 会被 Chrome 限到 1 秒一次（久了 1 分钟一次），转码会慢几十倍
+const tick = () => new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });
 const AAC = (au, br = 320000) => ({ codec: 'mp4a.40.2', sampleRate: au.sampleRate, numberOfChannels: Math.min(2, au.numberOfChannels), bitrate: br });
 async function aacOk(au) {
   try { return !!(window.AudioEncoder && (await AudioEncoder.isConfigSupported(AAC(au))).supported); } catch (e) { return false; }
@@ -53,8 +55,8 @@ async function toM4A(au, onp, br) {
     const n = Math.min(F, len - o), data = new Float32Array(n * nch);
     for (let c = 0; c < nch; c++) data.set(chans[c].subarray(o, o + n), c * n);
     enc.encode(new AudioData({ format: 'f32-planar', sampleRate: sr, numberOfFrames: n, numberOfChannels: nch, timestamp: Math.round(o / sr * 1e6), data }));
-    if (enc.encodeQueueSize > 64) await new Promise(r => setTimeout(r, 0));
-    if (o % (F * 32) === 0) { onp(o / len); await new Promise(r => setTimeout(r, 0)); }
+    if (enc.encodeQueueSize > 64) await tick();
+    if (o % (F * 32) === 0) { onp(o / len); await tick(); }
     if (err) throw err;
   }
   await enc.flush(); enc.close();
