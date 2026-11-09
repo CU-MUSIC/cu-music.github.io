@@ -1811,8 +1811,8 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
    同时最多挂 3 首 REF（槽位按歌记在本机）：点槽位切换当前听哪首，再点一次 = 混音 / REF 来回切；Shift + 1 2 3 也能切（数字键本身是切版本）。
    每首都走 setRef，REF 对应点按「歌名 + 时长」分开存，互不影响。「发给客户」= 用这首歌的审听密码重新加密上传成客户 REF */
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
-let RLIB = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
-const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109g'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
+let RLIB = null, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
+const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109h'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
 const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + x.title;
 const rlKey = () => store.get('insights:key');
@@ -1824,7 +1824,7 @@ function rlpBuild() {
     <div class="rlp-s" id="rlpS"></div>
     <div class="rlp-b"><input id="rlpQ" type="search" placeholder="搜歌名 / 歌手 / 风格" autocomplete="off"><div class="rlp-c" id="rlpC"></div>
     <div class="rlp-l" id="rlpL"><div class="rlib-e">正在读取参考库…</div></div></div>
-    <div class="rlp-qu" id="rlpQu"></div>
+    <div class="rlp-qu" id="rlpQu"></div><div class="rlp-k" id="rlpK"></div>
     <div class="rlp-u"><select id="rlpUG" aria-label="上传的风格"></select><button class="press" id="rlpUp" title="可以多选，也可以直接拖进这个面板">＋ 上传进库</button><button class="press" id="rlpLoc" title="不进库，只在这次临时用">本机文件</button>
       <input type="file" id="rlpF" multiple accept="audio/*,.wav,.aif,.aiff,.m4a,.mp3,.json" hidden></div>`;
   document.body.appendChild(el);
@@ -1871,7 +1871,22 @@ async function rlpLoad(force) {
   // 这首歌上次挂的 REF：只恢复名字，点到才下载
   if (!RSL.length) { let ids = []; try { ids = JSON.parse(store.get(rslKey) || '[]'); } catch (e) {}
     RSL = ids.map(id => RLIB.find(x => x.id === id)).filter(Boolean).slice(0, RMAX).map(x => ({ id: x.id, lib: x, name: rlName(x), lufs: x.lufs, plain: null })); }
-  rlpUG(); rlpChips(); rlpList(); rlpSlots();
+  RLHAVE = await cuRefLib.cached();
+  rlpUG(); rlpChips(); rlpList(); rlpSlots(); rlpKeep();
+}
+// 本机缓存：挂过的 REF 自动存；「全部存到本机」把整个参考库下载存好，之后挂 REF 不用等下载、断网也能用
+function rlpKeep() {
+  const K = $('#rlpK'); if (!K || !RLIB) return;
+  const n = RLIB.filter(x => RLHAVE.has(x.file)).length, all = RLIB.length;
+  K.innerHTML = rlPre ? `<span>正在存到本机 ${rlPre.i + 1} / ${rlPre.n}…</span>`
+    : `<span>本机已存 ${n} / ${all}</span>${n < all ? '<button class="press" id="rlpPre">全部存到本机</button>' : ''}`;
+  const b = $('#rlpPre'); if (b) b.onclick = rlpPrefetch;
+}
+async function rlpPrefetch() {
+  if (rlPre || !RLIB) return; rlPre = { i: 0, n: 0 }; rlpKeep();
+  try { await cuRefLib.prefetch(API_BASE, rlKey(), RLIB, (i, n, x) => { rlPre = { i: Math.min(i, n - 1), n }; if (x) RLHAVE.add(x.file); rlpKeep(); }); hud('参考库已全部存到本机'); }
+  catch (e) { hud('没存完：' + (e.message || '检查网络'), 4000); }
+  rlPre = null; RLHAVE = await cuRefLib.cached(); rlpKeep(); rlpList();
 }
 const rlGenres = () => { const m = new Map(); (RLIB || []).forEach(x => { if (x.genre) m.set(x.genre, (m.get(x.genre) || 0) + 1); }); return [...m].sort((a, b) => a[0].localeCompare(b[0], 'zh')); };
 function rlpUG() {
@@ -1890,7 +1905,7 @@ function rlpList() {
   const G = new Map(); rows.forEach(x => { const g = x.genre || '未分类'; (G.get(g) || G.set(g, []).get(g)).push(x); });
   const keys = [...G.keys()].sort((a, b) => (a === '未分类') - (b === '未分类') || a.localeCompare(b, 'zh'));
   L.innerHTML = keys.map(g => `<div class="rlib-g">${esc(g)}<span>${G.get(g).length}</span></div>` + G.get(g).map(x => { const k = RSL.findIndex(s => s.id === x.id);
-    return `<div class="rlp-i${k >= 0 ? ' in' : ''}" data-id="${x.id}"><button class="rlp-go">${k >= 0 ? `<em>${k + 1}</em>` : ''}<b>${esc(x.title)}</b><span>${esc(x.artist ? x.artist + ' · ' : '')}${fmt(x.duration)}${Number.isFinite(x.lufs) ? ' · ' + x.lufs + ' LUFS' : ''}</span></button>
+    return `<div class="rlp-i${k >= 0 ? ' in' : ''}" data-id="${x.id}"><button class="rlp-go">${k >= 0 ? `<em>${k + 1}</em>` : ''}<b>${esc(x.title)}</b><span>${esc(x.artist ? x.artist + ' · ' : '')}${fmt(x.duration)}${Number.isFinite(x.lufs) ? ' · ' + x.lufs + ' LUFS' : ''}${RLHAVE.has(x.file) ? ' · 本机' : ''}</span></button>
       ${window.SONG_LIVE ? '<button class="rlp-send press" title="用这首歌的审听密码加密，上传成客户能看到的 REF">发给客户</button>' : ''}</div>`; }).join('')).join('');
 }
 function rlpSlots() {
@@ -1908,7 +1923,7 @@ async function useSlot(i) {
   if (RSA === i && REF && !RX_SHARED) { setAB(AB === 'ref' ? 'mix' : 'ref'); return; }
   RSA = i; graph(); $('#refName').hidden = false; $('#refName').textContent = '读取 REF…'; rlpSlots();
   try {
-    if (!s.plain) { await rlibLoad(); s.plain = await cuRefLib.open(API_BASE, rlKey(), s.lib); }
+    if (!s.plain) { await rlibLoad(); s.plain = await cuRefLib.open(API_BASE, rlKey(), s.lib); if (!RLHAVE.has(s.lib.file)) { RLHAVE.add(s.lib.file); rlpKeep(); rlpList(); } }
     if (RSA !== i) return;
     RX_SHARED = false; await setRef(s.plain.slice(0), s.name, s.lufs);
     if (REF && RSA === i) { if (!Number.isFinite(s.lufs)) s.lufs = REF.lufs; setAB('ref'); }
@@ -1953,7 +1968,7 @@ async function rlpUpload(files, entries) {
   for (let q; (q = RLQ.find(x => !x.done && !x.err && x.f));) {
     try {
       const item = await cuRefLib.upload({ api: API_BASE, key: rlKey(), file: q.f, meta: q.meta, genre: q.genre, lib: RLIB, step: t => { q.st = t.replace(/…$/, ''); qd(); }, bar: p => { q.p = p; qd(); } });
-      q.done = true; q.f = null; RLIB = (RLIB || []).concat(item); rlpUG(); rlpChips(); rlpList(); qd();
+      q.done = true; q.f = null; RLIB = (RLIB || []).concat(item); RLHAVE.add(item.file); rlpKeep(); rlpUG(); rlpChips(); rlpList(); qd();
     } catch (e) { if (e.dup) { q.done = true; q.skip = true; } else q.err = e.message || '失败'; q.f = null; qd(); }
   }
   rlBusy = false; setTimeout(() => { RLQ = RLQ.filter(x => !x.done); qd(); }, 6000);

@@ -4,7 +4,8 @@
 //   cuRefLib.list(api, key) → [{ id, title, artist, genre, duration, lufs, file }]
 //   cuRefLib.pair(files) → [{ file, meta }]（音频 + 同名 .json）· walk(entriesOf(dataTransfer)) → 展开拖进来的文件夹
 //   cuRefLib.upload({ api, key, file, meta?, genre, lib, step, bar }) → item     （WAV/AIFF 转 m4a，要先加载 upload.js；lib = 现有列表，重复的抛 e.dup）
-//   cuRefLib.open(api, key, item) → ArrayBuffer（明文音频，m4a / mp3）
+//   cuRefLib.open(api, key, item) → ArrayBuffer（明文音频，m4a / mp3；密文缓存在本机 Cache Storage）
+//   cuRefLib.cached() → Set(文件名) · prefetch(api, key, items, onp) 全部存到本机 · uncache(file)
 //   cuRefLib.save(api, key, { id, title?, artist?, genre? }) · drop(api, key, id) · genre(api, key, from, to)
 (() => {
 const te = new TextEncoder();
@@ -80,7 +81,8 @@ async function upload(o) {
   const j = await call(o.api, o.key, '/rlib/save', { id, file: fname, title: n0.title || '未命名', artist: n0.artist, genre: (M && M.genre) || o.genre || '',
     album: (M && M.album) || '', spid: (M && M.spotify_id) || '',
     duration: Math.round(au.duration * 100) / 100, lufs, mime, size: blob.length });
-  if (j.dup) { const e = new Error('已在库里'); e.dup = j.item; throw e; }   // 服务器按 Spotify id 判出重复
+  if (j.dup) { const e = new Error('已在库里'); e.dup = j.item; throw e; }
+  if (cacheOk()) try { await (await caches.open(CN)).put(ckey(fname), new Response(blob)); } catch (e) {}   // 刚传的顺手存到本机   // 服务器按 Spotify id 判出重复
   bar(1);
   return j.item;
 }
@@ -104,22 +106,46 @@ async function pair(files) {
   return Promise.all(au.map(async f => { let meta = null; const j = js.get(base(f)); if (j) try { meta = JSON.parse(await j.text()); } catch (e) {} return { file: f, meta }; }));
 }
 const CACHE = new Map();
-async function open(api, key, item) {
-  if (CACHE.has(item.file)) return CACHE.get(item.file).slice(0);
-  const r = await fetch(api + '/rlib/a/' + item.file, { headers: { Authorization: 'Bearer ' + key } });
+// 本机缓存：把加密的音频存进浏览器的 Cache Storage（文件名不会变，存一次一直能用），下次挂 REF 不用再下载；存的是密文，解密在用的时候做
+const CN = 'cu-reflib-v1', ckey = f => location.origin + '/__reflib/' + f;
+const cacheOk = () => !!(window.caches && window.isSecureContext !== false);
+let persistAsked = false;
+async function getEnc(api, key, file) {
+  if (cacheOk()) try { const hit = await (await caches.open(CN)).match(ckey(file)); if (hit) return new Uint8Array(await hit.arrayBuffer()); } catch (e) {}
+  const r = await fetch(api + '/rlib/a/' + file, { headers: { Authorization: 'Bearer ' + key } });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const u8 = new Uint8Array(await r.arrayBuffer());
+  if (cacheOk()) try {
+    if (!persistAsked && navigator.storage && navigator.storage.persist) { persistAsked = true; navigator.storage.persist().catch(() => {}); }   // 请浏览器别在空间紧张时自动清掉
+    await (await caches.open(CN)).put(ckey(file), new Response(u8, { headers: { 'Content-Type': 'application/octet-stream' } }));
+  } catch (e) {}
+  return u8;
+}
+async function cached() {   // 已经存在本机的文件名
+  if (!cacheOk()) return new Set();
+  try { return new Set((await (await caches.open(CN)).keys()).map(r => decodeURIComponent(r.url.split('/__reflib/')[1] || ''))); } catch (e) { return new Set(); }
+}
+async function prefetch(api, key, items, onp) {   // 把还没存的全部存到本机，一首一首来
+  const have = await cached(), todo = items.filter(x => !have.has(x.file));
+  for (let i = 0; i < todo.length; i++) { if (onp) onp(i, todo.length, todo[i]); await getEnc(api, key, todo[i].file); }
+  if (onp) onp(todo.length, todo.length, null);
+  return todo.length;
+}
+async function uncache(file) { if (cacheOk()) try { await (await caches.open(CN)).delete(ckey(file)); } catch (e) {} }
+async function open(api, key, item) {
+  if (CACHE.has(item.file)) return CACHE.get(item.file).slice(0);
+  const u8 = await getEnc(api, key, item.file);
   let plain;
   try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.subarray(0, 12) }, await libKey(key), u8.subarray(12)); }
-  catch (e) { throw new Error('解不开：管理钥匙换过了？'); }
-  CACHE.clear(); CACHE.set(item.file, plain);   // 只留最近一首，省内存
+  catch (e) { uncache(item.file); throw new Error('解不开：管理钥匙换过了？'); }
+  CACHE.clear(); CACHE.set(item.file, plain);   // 内存里只留最近一首
   return plain.slice(0);
 }
 window.cuRefLib = {
   list: async (api, key) => (await call(api, key, '/rlib')).items,
-  upload, open, nameOf, pair, walk, entriesOf,
+  upload, open, nameOf, pair, walk, entriesOf, cached, prefetch, uncache,
   save: async (api, key, o) => (await call(api, key, '/rlib/save', o)).item,
-  drop: (api, key, id) => call(api, key, '/rlib/drop', { id }),
+  drop: async (api, key, id, file) => { const j = await call(api, key, '/rlib/drop', { id }); if (file) uncache(file); return j; },
   genre: (api, key, from, to) => call(api, key, '/rlib/genre', { from, to }),
 };
 })();
