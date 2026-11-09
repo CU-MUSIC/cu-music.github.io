@@ -862,8 +862,48 @@ async function loadReplies() {
     ONOTES = j.onotes || [];
     MSGS = j.msgs || [];
     NOTICE = (j.notice && j.notice.text) || ''; drawNotice();
+    newsCheck();
     render();
   } catch (e) {}
+}
+// 进页面提醒：刀大厨回复 / 处理了你的评论、或在评论下给你发了消息 → 顶部一条提示（点了跳到那条）+ 那条评论前小红点；看过的状态记在本机
+let NEWK = new Set();
+function myKeys() {
+  const ks = new Map();
+  V.forEach((v, i) => { try { const s = JSON.parse(store.get(dataKey(i)) || '{}');
+    (s.notes || []).forEach(o => ks.set(rk(v.ver, o.t, o.m), i));
+    const ov = (s.overall || '').trim(); if (ov) ks.set(rk(v.ver, 0, '整体：' + ov.slice(0, 120)), i); } catch (e) {} });
+  return ks;
+}
+function newsCheck() {
+  if (IS_OWNER) return;
+  const mine = myKeys(); if (!mine.size) return;
+  const sk = 'review:seen:' + S.slug; let seen = null;
+  try { seen = JSON.parse(store.get(sk) || 'null'); } catch (e) {}
+  const first = !seen, since = Date.now() - 7 * 864e5; seen = seen || {};   // 第一次（还没记录过）只提醒最近 7 天的
+  let nr = 0, nd = 0, go = null; const next = {};
+  mine.forEach((i, k) => {
+    const r = REPLIES.get(k) || {}, o = seen[k] || {}, fresh = !first || (r.updated || 0) > since;
+    const om = MSGS.filter(x => x.who === 'o' && rk(x.ver, x.t, x.m) === k).reduce((m, x) => Math.max(m, x.ts || 0), 0);
+    let hit = false;
+    if (r.reply && r.reply !== o.r && fresh) { nr++; hit = true; }
+    if (om > (o.m || 0) && (!first || om > since)) { nr++; hit = true; }
+    if (r.done && !o.d && fresh) { nd++; hit = true; }
+    if (hit) { NEWK.add(k); if (!go || i > go.i) go = { i, k }; }   // 跳到最新那一版里的那条
+    next[k] = { r: r.reply || '', d: r.done ? 1 : 0, m: om };
+  });
+  store.set(sk, JSON.stringify(next));
+  if (nr || nd) newsBar([nr && '回复了 ' + nr + ' 条', nd && '处理了 ' + nd + ' 条'].filter(Boolean).join(' · '), go);
+}
+function newsBar(txt, go) {
+  let b = $('#newsb'); if (!b) { b = document.createElement('button'); b.id = 'newsb'; b.className = 'newsb press'; document.body.appendChild(b); }
+  b.innerHTML = '<span class="nwd"></span>刀大厨' + esc(txt) + '<i>查看</i>';
+  requestAnimationFrame(() => b.classList.add('show'));
+  clearTimeout(newsBar.t); newsBar.t = setTimeout(() => b.classList.remove('show'), 9000);
+  b.onclick = async () => { b.classList.remove('show'); if (!go) return;
+    if (go.i !== vi) await switchTo(go.i);
+    const el = [...document.querySelectorAll('#list .row, #ovthr')].find(x => x.dataset.k === go.k);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.animate([{ background: 'rgba(200,100,79,.18)' }, { background: 'transparent' }], { duration: 1600, delay: 300 }); } };
 }
 // 评论下的对话：客户在这条评论下给你回复（有你的回复，或这是你写的评论时才出现输入框）；发送后你的微信会收到推送
 function thread(row, ver, tm, m, canReply) {
@@ -896,6 +936,7 @@ function render(newId) {
     row.querySelector('.m').textContent = o.m;
     if (o.id) { const ts = document.createElement('span'); ts.className = 'ts'; ts.textContent = tstr(o.id); row.querySelector('.m').appendChild(ts); }   // 评论发表时间
     decorate(row, REPLIES.get(rk(cur.ver, o.t, o.m)));
+    row.dataset.k = rk(cur.ver, o.t, o.m); if (NEWK.has(row.dataset.k)) row.querySelector('.m').insertAdjacentHTML('afterbegin', '<span class="nwd" title="刀大厨有新动态"></span>');
     { const rr = REPLIES.get(rk(cur.ver, o.t, o.m)); thread(row, cur.ver, o.t, o.m, !!(rr && rr.reply)); }
     row.querySelector('.x').onclick = () => {
       row.classList.add('out');
@@ -927,7 +968,8 @@ function drawOverall() {
   const m = '整体：' + v.slice(0, 120), r = REPLIES.get(rk(cur.ver, 0, m)), has = !!(r && (r.reply || r.read || r.done)) || MSGS.some(x => x.ver === cur.ver && x.t === 0 && x.m === m);
   if (!has) return;
   w = document.createElement('div'); w.id = 'ovthr'; w.className = 'row ovrow'; w.innerHTML = '<div class="m"></div>';
-  decorate(w, r); thread(w, cur.ver, 0, m, !!(r && r.reply)); ta.after(w);
+  decorate(w, r); w.dataset.k = rk(cur.ver, 0, m); if (NEWK.has(w.dataset.k)) w.querySelector('.m').insertAdjacentHTML('afterbegin', '<span class="nwd"></span>');
+  thread(w, cur.ver, 0, m, !!(r && r.reply)); ta.after(w);
 }
 $('#overall').addEventListener('input', () => { save(); updateCta(); grow($('#overall')); });
 $('#overall').addEventListener('change', () => drawOverall());
