@@ -2316,7 +2316,7 @@ if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.se
 /* ───────── 客户下载：你允许后才能下，下的是原文件；文件名带阶段和「ChefDao Mix」，下载了会通知你 ───────── */
 function dlUi() { const b = $('#dlBtn'); if (!b) return; if (IS_OWNER) { b.hidden = true; return; }
   const asked = store.get('review:dlreq:' + S.slug) === '1';
-  b.hidden = false; b.classList.toggle('lock', !DL.on); b.classList.toggle('asked', !DL.on && asked);
+  b.hidden = false; b.classList.toggle('hoff', !DL.on); b.classList.toggle('asked', !DL.on && asked);
   b.title = DL.on ? '下载这一版' : asked ? '已申请下载，等刀大厨同意' : '申请下载'; }
 const dlName = v => { const st = stageOf(v), tag = { edit: 'ChefDao Edit', master: 'ChefDao Master' }[st] || 'ChefDao Mix';
   return ((S.artist ? S.artist + ' - ' : '') + (S.title || 'Untitled') + ' (' + tag + ') ' + (STAGE[st] ? STAGE[st] + ' ' + vlab(v) : v.ver)).replace(/[\\/:*?"<>|]/g, '_'); };

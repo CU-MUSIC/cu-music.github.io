@@ -977,9 +977,9 @@ body.rlp-on .rlp-tab{display:none}
 .newsc .ngo{padding:13px;background:#d6d3cd;color:#1a1c20;font-weight:600}
 .newsc .nlt{margin-top:6px;padding:10px;background:none;color:var(--text-2)}
 /* 客户下载：标题右边一个图标；没允许时半透明，申请过带一个小点 */
-.hdl{margin-left:auto;align-self:center;flex:none;position:relative;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--fill-2);color:var(--text);border:0;cursor:pointer}
+.hdl{margin-left:auto;align-self:center;flex:none;position:relative;width:40px;height:40px;padding:0;box-sizing:border-box;border-radius:50%;display:grid;place-items:center;background:var(--fill-2);color:var(--text);border:0;cursor:pointer}
 .hdl svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.hdl.lock{opacity:.5}
+.hdl.hoff{opacity:.5}
 .hdl i{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#c8644f;display:none}
 .hdl.asked i{display:block}
 .hdl.busy svg{animation:hdlp 1s ease-in-out infinite}
