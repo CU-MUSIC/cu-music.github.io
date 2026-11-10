@@ -56,6 +56,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .acc b{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc em{font-style:normal;flex-basis:100%;font-size:12.5px;color:var(--text-3)}
 .acc.v em{color:var(--text)}
+.acc.act span{background:none;padding:0;font-size:15px}.acc.act em{font-weight:600}.acc.k-ok{background:rgba(110,170,130,.13)}.acc.k-fb{background:rgba(214,180,110,.12)}.acc.k-dl{background:rgba(200,100,79,.12)}
 .chips button.mem:not(.on){color:var(--text);box-shadow:0 0 0 1px var(--fill-3) inset}
 .chips button.dim:not(.on){opacity:.45}
 
@@ -365,7 +366,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261110.1600';
+const BUILD = '261110.1700';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -750,8 +751,11 @@ function renderListen() {
   // 没听、只是访问了项目页 / 曲目页的人：打开了（没输密码）、查看了（输了密码）。已经有收听记录的会话不重复列
   const acc = (data.access || []).filter(a => a.updated >= since && !groups.has(a.sid) && (!proj || a.slug === proj || pjSlugs.has(a.slug)) && (!song || (a.kind === 'song' && a.slug === song)) && (!lis || keyOf(a.lid) === lis))
     .map(a => ({ acc: a, at: a.updated }));
+  // 歌手的操作：确认没有问题、反馈完毕、延长 24 小时、申请下载、下载了
+  const evs = (data.acts || []).filter(a => a.ts >= since && (!proj || a.slug === proj || pjSlugs.has(a.slug)) && (!song || (a.slug === song && (!ver || String(a.ver).replace(/^\w+:/, '') === ver || !a.ver))) && (!lis || keyOf(a.lid) === lis))
+    .map(a => ({ ev: a, at: a.ts }));
   const feed = [...groups.values()].map(g => g.sort((p, q) => p.started - q.started)).map(g => ({ g, at: Math.max(...g.map(x => x.updated)) }))
-    .concat(acc).sort((p, q) => q.at - p.at).slice(0, 60);
+    .concat(acc, evs).sort((p, q) => q.at - p.at).slice(0, 60);
 
   return `
   ${songs.length > 1 ? `<div class="chips" id="chips"><button data-s="" class="${song || proj ? '' : 'on'}">全部</button>${songs.map(([k, t]) =>
@@ -769,6 +773,10 @@ function renderListen() {
   ${people.length > 1 ? `<div class="chips" id="lchips"><button data-l="" class="${lis ? '' : 'on'}">所有听众</button>${people.map(([k, n]) =>
     `<button data-l="${esc(k)}" class="${lis === k ? 'on' : ''}${arts.size ? (arts.has(k) ? ' mem' : ' dim') : ''}">${esc(n)}</button>`).join('')}</div>` : ''}
   <div class="feed">${feed.length ? feed.map(f => {
+    if (f.ev) { const a = f.ev, v = String(a.ver || ''), [ic, tx] = a.kind === 'dlreq' ? ['⬇', '申请下载'] : a.kind === 'dlget' ? ['⬇', '下载了 ' + v] : v.startsWith('fb:') ? ['📝', v.slice(3) + ' 反馈完毕'] : v.startsWith('ext:') ? ['⏳', v.slice(4) + ' 延长 24 小时'] : ['✅', '确认 ' + v + ' 没有问题'];
+      return `<div class="item"><button class="av" data-ln="${esc(a.lid)}" title="写备注">${esc(a.lid)}</button><div class="body">
+      <div class="who">${who(a.lid, '歌手')}<time>${when(a.ts, now)}</time></div>
+      <div class="acc v act k-${a.kind === 'ok' ? (v.startsWith('fb:') ? 'fb' : v.startsWith('ext:') ? 'ext' : 'ok') : 'dl'}"><span>${ic}</span><b>《${esc(a.title)}》</b><em>${esc(tx)}</em></div></div></div>`; }
     if (f.acc) { const a = f.acc;
       return `<div class="item"><button class="av" data-ln="${esc(a.lid)}" title="写备注">${esc(a.lid)}</button><div class="body">
       <div class="who">${who(a.lid, '访客')}<time>${when(a.updated, now)}</time></div>
