@@ -366,7 +366,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261110.2100';
+const BUILD = '261110.2110';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -522,7 +522,7 @@ async function load() {
     const auth = { headers: { Authorization: 'Bearer ' + KEY } };
     // 四个请求同时发（以前 /lib 要等前三个回来才发，等于时间相加）
     const [r, r2, r3, r4] = await Promise.all([fetch(API + '/q?days=90', auth), fetch(API + '/pq?days=90', auth).catch(() => null), fetch(API + '/radm/list', auth).catch(() => null), fetch(API + '/lib', auth).catch(() => null)]);
-    if (r.status === 401) { store.del('insights:key'); KEY = null; return login(true); }
+    if (r.status === 401) { store.del('insights:key'); KEY = null; data = null; IDB.set('raw', null); return login(true); }   // 钥匙失效连本机缓存一起清
     const js = x => x && x.ok ? x.json().catch(() => null) : null;
     const [j, j2, j3, jl] = await Promise.all([r.json(), js(r2), js(r3), js(r4)]); if (!j.ok) throw new Error();
     const raw = { q: j, pq: j2, list: j3, lib: jl, at: Date.now() };
