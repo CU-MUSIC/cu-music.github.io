@@ -142,7 +142,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .msi{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:9px 0;border-top:.5px solid var(--fill-3);color:var(--text);text-decoration:none}
 .msi .mst{font-size:15px;font-weight:500}.msi i{font-style:normal;font-size:12.5px;color:var(--text-3);grid-row:1}.msi .msb{grid-column:1/-1;font-size:13.5px;color:var(--text-2);line-height:1.6}.msm{padding:8px 0;font-size:13px;color:var(--text-3)}
 .nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.bv{font-size:11px;font-weight:400;letter-spacing:.04em;color:var(--text-3);margin-left:6px;vertical-align:middle}
-.rfb{margin-left:auto;margin-right:10px;width:34px;height:34px;border-radius:50%;background:var(--fill-2);color:var(--text-2);font-size:18px;line-height:1}.rfb.spin{animation:rfspin .7s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
+.rfb{margin-left:auto;margin-right:10px;width:34px;height:34px;padding:0;border-radius:50%;background:var(--fill-2);color:var(--text-2);display:grid;place-items:center;flex:none}.rfb svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.rfb.spin{animation:rfspin .7s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
 .ptr{position:fixed;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 14px;border-radius:99px;background:var(--fill-3,rgba(255,255,255,.16));color:var(--text);font-size:12.5px;z-index:99;pointer-events:none}
 .nbar .nset{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fill);display:flex;flex-direction:column;gap:6px;color:var(--text-2)}.nbar .nset label{display:flex;align-items:center;gap:8px;font-size:13px}.nbar .npj{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:4px 0;border-top:.5px solid var(--hair,rgba(255,255,255,.1))}.nbar .npj b{flex:1 1 100%;font-size:13px;color:var(--text)}
 .nbar .nt{margin-top:4px;font-size:11.5px;letter-spacing:.08em;color:var(--text-3)}.nbar .nh{font-size:11.5px;color:var(--text-3)}.nbar .ntm{display:flex;align-items:center;gap:6px;font-size:13px}.nbar input[type=time]{background:var(--fill-2);color:var(--text);border:0;border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;color-scheme:dark}
@@ -351,7 +351,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261110.1200';
+const BUILD = '261110.1300';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -623,7 +623,7 @@ function render() {
   // 每分钟自动刷新时，保留展开着的报价单
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
-  const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights <small class="bv" title="页面版本号">v${BUILD}</small></h1></div><button class="rfb" id="rfb" aria-label="刷新" title="刷新">⟳</button>
+  const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights <small class="bv" title="页面版本号">v${BUILD}</small></h1></div><button class="rfb" id="rfb" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></button>
     ${tab === 'orders' || tab === 'lib' || tab === 'rlib' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="nbar" id="nbar" hidden></div><div class="missed" id="missed" hidden></div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
