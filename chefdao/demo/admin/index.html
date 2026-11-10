@@ -71,6 +71,7 @@ h1{font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-.03em;overflow
 .sub button{font-size:12px;color:var(--text-2);background:var(--fill);border-radius:99px;padding:3px 11px;transition:background .2s,color .2s}
 .sub button:hover{background:var(--fill-2);color:var(--text)}
 .lnk{font-size:12px;color:var(--text-2);text-underline-offset:3px}
+.lyr{margin-top:10px}.lyr summary{cursor:pointer;color:var(--text-2);font-size:13px;padding:4px 0}.lyr .brief{margin-top:6px;line-height:1.9}
 .brief{margin-top:14px;color:var(--text-2);font-size:14px;white-space:pre-wrap;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
 .pl{margin-top:24px;padding:22px 22px 20px;background:var(--surface);border:1px solid var(--border);border-radius:18px}
 .clock{font:500 36px/1 var(--mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
@@ -339,6 +340,7 @@ async function open(d) {
   m.append(el('h1', '', d.title));
   const sub = el('div', 'sub'); sub.id = 'meta'; m.append(sub);
   m.append(el('div', 'brief', d.note || '')); if (!d.note) m.lastChild.hidden = true; m.lastChild.id = 'brief';
+  if (d.lyrics) { const lw = el('details', 'lyr'), ls = el('summary', '', '歌词 · ' + d.lyrics.length + ' 字'); lw.append(ls, el('div', 'brief', d.lyrics)); m.append(lw); }
   const pl = el('div', 'pl');
   pl.innerHTML = '<div class="clock"><span id="cur">0:00</span><small id="dur">/ 0:00</small></div><div class="wf" id="track"><canvas id="wfc"></canvas><div class="wl" id="wl"></div><div class="tip" id="tip"></div><div class="ldw" id="ldw">解析波形…</div><div class="axis" id="axis"></div></div><div class="ctl"><button class="play" id="play" type="button" aria-label="播放"><svg viewBox="0 0 24 24" id="ico"></svg></button><button class="sk" data-s="-5" type="button">−5 秒</button><button class="sk" data-s="5" type="button">+5 秒</button><label class="lbox"><button type="button" class="lsw" id="lb" role="switch" aria-checked="true" aria-label="响度平衡"></button><span>响度平衡</span><select id="lt" aria-label="目标响度"><option value="-16">−16</option><option value="-14">−14</option><option value="-12">−12</option><option value="-10">−10</option><option value="-8">−8</option></select><em>LUFS</em></label></div><div class="ld" id="ld">加载音频…</div>';
   m.append(pl);

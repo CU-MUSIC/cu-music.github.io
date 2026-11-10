@@ -91,6 +91,8 @@ body:not(.ready) .notice{visibility:hidden}   /* 开场动画还没走完时不�
 #wxRow{flex-direction:column;align-items:stretch;max-height:104px;overflow:hidden;transition:max-height .45s var(--ease),min-height .45s var(--ease),background .3s var(--ease)}
 #wxRow .fl{transition:opacity .3s var(--ease),transform .45s var(--ease)}
 #wxRow.off{max-height:0;min-height:0}
+#lyrRow textarea{width:100%;font:inherit;font-size:16px;line-height:1.7;color:var(--text);background:transparent;border:0;outline:0;resize:none;padding:14px 0;min-height:52px;max-height:160px;overflow-y:auto}
+#lyrRow textarea::placeholder{color:var(--text-3)}
 .wxhint{font-size:13px;line-height:1.6;color:var(--text-2);padding:2px 0 10px}
 .wxhint b{color:var(--green-soft);font-weight:600;user-select:all}
 #wxRow.off .fl{opacity:0;transform:translateY(-8px)}
@@ -223,6 +225,7 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
       <div class="row" style="--k:1"><label class="fl"><input id="t" maxlength="60" placeholder=" "><span>歌名</span></label></div>
       <div class="row" style="--k:2"><label class="fl"><input id="l" maxlength="200" inputmode="url" placeholder=" "><span>主页链接（选填）</span></label></div>
       <div class="row" style="--k:2"><label class="fl"><input id="nt" maxlength="100" placeholder=" "><span>想对刀大厨说的一句话（选填）</span></label></div>
+      <div class="row" id="lyrRow" style="--k:2"><textarea id="ly" maxlength="6000" rows="3" placeholder="歌词（选填，可直接粘贴）" spellcheck="false"></textarea></div>
       <div class="row" style="--k:3"><span class="lab" id="memLab">刀门会员</span><button type="button" class="switch" id="mem" role="switch" aria-checked="false" aria-labelledby="memLab"></button></div>
       <div class="row" style="--k:4"><span class="lab" id="frLab">已是刀大厨微信好友</span><button type="button" class="switch" id="fr" role="switch" aria-checked="false" aria-labelledby="frLab"></button></div>
       <div class="row" id="wxRow" style="--k:5"><label class="fl"><input id="wx" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder=" "><span>你的微信号</span></label><div class="wxhint">还不是好友？请先加刀大厨微信 <b>Cookdao</b>，备注艺名。</div></div>
@@ -382,6 +385,7 @@ $('#form').addEventListener('submit', e => {
     let j = {}; try { j = JSON.parse(x.responseText); } catch (er) {}
     if (!(j.ok && j.token)) return fail(ERR[j.e] || '投递没有成功，请稍后再试。');
     goal = 1;
+    const ly = $('#ly').value.trim(); if (ly) { try { fetch(API + '/demo/lyr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: j.id, t: j.token, lyrics: ly }), keepalive: true }); } catch (er) {} }
     setTimeout(() => { busy = false; $('#go').disabled = false; p2.style.transition = ''; $('#status').textContent = 'RECEIVED'; const m = $('#mark'); m.classList.add('pop'); setTimeout(() => m.classList.remove('pop'), 420); if (navigator.vibrate) navigator.vibrate([10, 40, 14]); done(j.token); }, 900);
   };
   x.onerror = () => fail('网络不稳，请稍后再试。');
@@ -396,7 +400,7 @@ function done(tok) {
   $('#cp').onclick = async () => { try { await navigator.clipboard.writeText(url); $('#cp').textContent = '已复制'; $('#cp').classList.add('ok'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('#lk')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
   const f = $('#form'); f.classList.add('fade-out');
   setTimeout(() => { f.hidden = true; f.classList.remove('fade-out'); const o = $('#ok'); o.hidden = false; requestAnimationFrame(() => o.classList.add('on')); }, 450);
-  file = null; $('#t').value = ''; $('#l').value = ''; $('#nt').value = ''; $('#fl').textContent = '选择音频'; $('#fl').classList.add('empty'); $('#fmeta').textContent = 'MP3 · WAV'; $('#file').value = '';
+  file = null; $('#t').value = ''; $('#l').value = ''; $('#nt').value = ''; $('#ly').value = ''; $('#fl').textContent = '选择音频'; $('#fl').classList.add('empty'); $('#fmeta').textContent = 'MP3 · WAV'; $('#file').value = '';
   load();
 }
 $('#again').onclick = () => {
