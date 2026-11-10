@@ -158,7 +158,7 @@ body:has(.epbar.in) .app,body:has(.epbar.in) main{padding-bottom:96px}
     const direct = () => go(s, o.credentials || 'same-origin', 10000).catch(e => e && e.name === 'AbortError' ? go(s, 'include', 0) : Promise.reject(e));
     const p = s.slice(H.length);
     if (p.startsWith('/ra/')) return go(CDN + p, 'omit', 8000).catch(direct);
-    if (!auth(o.headers) && !(u && typeof u !== 'string' && auth(u.headers))) return go(CDN + p + (p.includes('?') ? '&' : '?') + '_=' + Date.now(), 'omit', 8000).catch(direct);
+    // 接口不走 Bunny：Bunny 会忽略 ?s= 把不同歌的回复当成同一份缓存（2026-11-10 出过事），只有 /ra/ 音频走 Bunny
     return direct(); }; })();
 (async () => {
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';

@@ -10,7 +10,7 @@
     const direct = () => go(s, o.credentials || 'same-origin', 10000).catch(e => e && e.name === 'AbortError' ? go(s, 'include', 0) : Promise.reject(e));
     const p = s.slice(H.length);
     if (p.startsWith('/ra/')) return go(CDN + p, 'omit', 8000).catch(direct);
-    if (!auth(o.headers) && !(u && typeof u !== 'string' && auth(u.headers))) return go(CDN + p + (p.includes('?') ? '&' : '?') + '_=' + Date.now(), 'omit', 8000).catch(direct);
+    // 接口不走 Bunny：Bunny 会忽略 ?s= 把不同歌的回复当成同一份缓存（2026-11-10 出过事），只有 /ra/ 音频走 Bunny
     return direct(); }; })();
 // 审听页加载器：歌曲数据从 stats.cumusic.work 读（音频是加密的，要输密码才能听），然后交给共用播放器 player.js
 //   <script src="../load.js" data-slug="wubu"></script>   老歌，网址 review/wubu/ 不变
