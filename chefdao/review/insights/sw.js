@@ -2,7 +2,19 @@
 const API = 'https://stats.cumusic.work';
 const sha16 = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)))].slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('fetch', () => {});   // 空的 fetch 处理：电脑上的 Chrome / Edge 要有它才允许「安装为应用」
+// 页面本身（同站的 html / js / css）先上网取，5 秒没回或断网就用上次存的，断网也能打开看缓存数据
+self.addEventListener('fetch', e => {
+  const r = e.request, u = new URL(r.url);
+  if (r.method !== 'GET' || u.origin !== location.origin) return;
+  e.respondWith((async () => {
+    const c = await caches.open('ins-page-v1'), key = r.mode === 'navigate' ? u.origin + u.pathname : r;
+    try {
+      const res = await Promise.race([fetch(r), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 5000))]);
+      if (res.ok) c.put(key, res.clone());
+      return res;
+    } catch (err) { const hit = await c.match(key); if (hit) return hit; throw err; }
+  })());
+});
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', e => e.waitUntil((async () => {
   let n = { title: 'CU MUSIC', body: '有新动态', url: '/chefdao/review/insights/' };

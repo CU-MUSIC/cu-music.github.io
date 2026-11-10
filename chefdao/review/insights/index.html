@@ -366,7 +366,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261110.1710';
+const BUILD = '261110.2100';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -493,28 +493,42 @@ function drawMissed() {
   document.getElementById('mok').onclick = async () => { MISSED = []; drawMissed(); try { await api('/radm/missed', { method: 'POST' }); } catch (e) {} };
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && KEY) loadMissed(); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});   // 断网也能打开页面
+// 本机缓存（Safari IndexedDB）：打开先显示上次的数据，后台再取新的
+const IDB = (() => { let p; const db = () => p || (p = new Promise((ok, no) => { const r = indexedDB.open('insights', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }));
+  const tx = (m, f) => db().then(d => new Promise((ok, no) => { const t = d.transaction('kv', m), q = f(t.objectStore('kv')); t.oncomplete = () => ok(q && q.result); t.onerror = () => no(t.error); }));
+  return { get: k => tx('readonly', s => s.get(k)).catch(() => null), set: (k, v) => tx('readwrite', s => { s.put(v, k); }).catch(() => {}) }; })();
+function applyRaw(raw) {
+  const { q: j, pq: j2, list: j3, lib: jl } = raw;
+  if (jl && jl.ok) { LIB = jl; setTimeout(ensureWraps, 1500); }
+  if (j3 && j3.ok) RSONGS = j3.songs;
+  j.rows.forEach(x => { try { x.bins = typeof x.bins === 'string' ? JSON.parse(x.bins || 'null') : x.bins; } catch (e) { x.bins = null; } });
+  j.replyMap = new Map((j.replies || []).map(r => [rkey(r.slug, r.ver, r.t, r.m), r]));
+  const fb = new Map((j.feedback || []).map(f => { try { f.comments = typeof f.comments === 'string' ? JSON.parse(f.comments || '[]') : f.comments || []; } catch (e) { f.comments = []; } return [f.sid + '|' + f.ver, f]; }));
+  j.rows.forEach(x => { x.fb = fb.get(x.sid + '|' + x.ver) || null; });
+  if (j2 && j2.ok) pdata = j2;
+  GEO = new Map([...(j.geo || []), ...((pdata && pdata.geo) || [])].map(g => [g.sid, g]));
+  data = j; if (!typing()) render();
+}
 async function load() {
   if (!KEY) return login();
   loadMissed();
-  if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';
+  if (!data) {
+    const c = await IDB.get('raw');
+    if (c && c.q && c.q.ok && !data) { try { applyRaw(c); window.__cachedAt = c.at; } catch (e) { data = null; } }
+    if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';
+  }
   try {
     const auth = { headers: { Authorization: 'Bearer ' + KEY } };
     // 四个请求同时发（以前 /lib 要等前三个回来才发，等于时间相加）
     const [r, r2, r3, r4] = await Promise.all([fetch(API + '/q?days=90', auth), fetch(API + '/pq?days=90', auth).catch(() => null), fetch(API + '/radm/list', auth).catch(() => null), fetch(API + '/lib', auth).catch(() => null)]);
-    const j3 = r3 && r3.ok ? await r3.json().catch(() => null) : null;
-    try { const jl = r4 && r4.ok ? await r4.json() : null; if (jl && jl.ok) { LIB = jl; setTimeout(ensureWraps, 1500); } } catch (e) {}
-    if (UPTO && !window.__upDone) { window.__upDone = 1; const p = LIB.projects.find(x => x.slug === UPTO); if (p) { history.replaceState(null, '', location.pathname); setTimeout(() => openUpload({ project: p }), 300); } }
-    if (j3 && j3.ok) RSONGS = j3.songs;
     if (r.status === 401) { store.del('insights:key'); KEY = null; return login(true); }
-    const j = await r.json(); if (!j.ok) throw new Error();
-    j.rows.forEach(x => { try { x.bins = JSON.parse(x.bins || 'null'); } catch (e) { x.bins = null; } });
-    j.replyMap = new Map((j.replies || []).map(r => [rkey(r.slug, r.ver, r.t, r.m), r]));
-    const fb = new Map((j.feedback || []).map(f => { try { f.comments = JSON.parse(f.comments || '[]'); } catch (e) { f.comments = []; } return [f.sid + '|' + f.ver, f]; }));
-    j.rows.forEach(x => { x.fb = fb.get(x.sid + '|' + x.ver) || null; });
-    const j2 = r2 && r2.ok ? await r2.json().catch(() => null) : null;
-    if (j2 && j2.ok) pdata = j2;
-    GEO = new Map([...(j.geo || []), ...((pdata && pdata.geo) || [])].map(g => [g.sid, g]));
-    data = j; if (!typing()) render();
+    const js = x => x && x.ok ? x.json().catch(() => null) : null;
+    const [j, j2, j3, jl] = await Promise.all([r.json(), js(r2), js(r3), js(r4)]); if (!j.ok) throw new Error();
+    const raw = { q: j, pq: j2, list: j3, lib: jl, at: Date.now() };
+    IDB.set('raw', JSON.parse(JSON.stringify(raw)));   // 先存原样，applyRaw 会改对象
+    window.__cachedAt = 0; applyRaw(raw);
+    if (UPTO && !window.__upDone) { window.__upDone = 1; const p = LIB.projects.find(x => x.slug === UPTO); if (p) { history.replaceState(null, '', location.pathname); setTimeout(() => openUpload({ project: p }), 300); } }
     if (!window.__pushInit) { window.__pushInit = 1; setTimeout(setupPush, 300); }
     if (tab === 'beat') loadBeat();
   } catch (e) { if (!data) root.innerHTML = '<div class="msg">读不到数据，检查网络后下拉刷新</div>'; }
