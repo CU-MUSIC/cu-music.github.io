@@ -1,12 +1,17 @@
-// 网络兜底 + 音频走 CDN：① 音频（/ra/…）先从 Bunny CDN 下（首尔 / 东京 / 香港节点；Cloudflare 免费版把韩国、国内分到洛杉矶，每秒只有几十 KB），8 秒没响应或出错就退回 stats
-// ② 其余到 stats 的 GET：10 秒没回就换带 cookie 的那组连接重发一次（Chrome 睡眠 / 换网后偶尔卡死一条连接）
+// 网络兜底 + 走 Bunny CDN：Cloudflare 免费版把韩国、国内分到洛杉矶（音频几十 KB/s，国内接口平均 4 秒、常失败），Bunny 有首尔 / 东京 / 香港节点
+// ① 音频（/ra/…）先从 Bunny 下（可缓存）；② 不带管理钥匙的 GET 接口也经 Bunny 转发（加时间戳，不让 CDN 缓存）；8 秒没响应或出错就退回 stats
+// ③ 直连 stats 的 GET：10 秒没回就换带 cookie 的那组连接重发一次（Chrome 睡眠 / 换网后偶尔卡死一条连接）
 (() => { if (window.__cuNet) return; window.__cuNet = 1; const F = window.fetch.bind(window), H = 'https://stats.cumusic.work', CDN = 'https://cumusic-audio.b-cdn.net';
+  const auth = h => !!h && !!(typeof h.get === 'function' ? h.get('Authorization') : (h.Authorization || h.authorization));
   window.fetch = (u, o = {}) => { const s = typeof u === 'string' ? u : (u && u.url) || '';
     if (!s.startsWith(H) || o.signal || (o.method && o.method !== 'GET')) return F(u, o);
     const go = (url, cr, ms) => { const ac = new AbortController(), t = ms && setTimeout(() => ac.abort(), ms);
       return F(url, { ...o, credentials: cr, signal: ac.signal }).then(r => { clearTimeout(t); if (!r.ok && url !== s) throw new Error('cdn ' + r.status); return r; }, e => { clearTimeout(t); throw e; }); };
-    if (CDN && s.startsWith(H + '/ra/')) return go(CDN + s.slice(H.length), 'omit', 8000).catch(() => go(s, o.credentials || 'same-origin', 0));
-    return go(s, o.credentials || 'same-origin', 10000).catch(e => e && e.name === 'AbortError' ? go(s, 'include', 0) : Promise.reject(e)); }; })();
+    const direct = () => go(s, o.credentials || 'same-origin', 10000).catch(e => e && e.name === 'AbortError' ? go(s, 'include', 0) : Promise.reject(e));
+    const p = s.slice(H.length);
+    if (p.startsWith('/ra/')) return go(CDN + p, 'omit', 8000).catch(direct);
+    if (!auth(o.headers) && !(u && typeof u !== 'string' && auth(u.headers))) return go(CDN + p + (p.includes('?') ? '&' : '?') + '_=' + Date.now(), 'omit', 8000).catch(direct);
+    return direct(); }; })();
 // 审听页加载器：歌曲数据从 stats.cumusic.work 读（音频是加密的，要输密码才能听），然后交给共用播放器 player.js
 //   <script src="../load.js" data-slug="wubu"></script>   老歌，网址 review/wubu/ 不变
 //   <script src="../load.js"></script>                    看板新建的歌，网址 review/s/#码
