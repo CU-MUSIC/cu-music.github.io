@@ -778,8 +778,16 @@ document.addEventListener('keydown', e => {
   if (e.code === 'ArrowLeft') seek(a.currentTime - 5);
   if (e.code === 'ArrowRight') seek(a.currentTime + 5);
   if (e.code === 'KeyL' && !e.metaKey && !e.ctrlKey) loopStep();
+  if (e.code === 'KeyM' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); quickMark(); }   // M：在当前时间点打一个标记，不停播放
   if (/^Digit[1-9]$/.test(e.code) && !e.shiftKey && V[+e.code.slice(5) - 1]) switchTo(+e.code.slice(5) - 1);
 });
+// 快速标记：内容是「1」（本机 review:qmark 可改），跟手打「1」发出去的评论一样
+function quickMark() {
+  const m = store.get('review:qmark') || '1', o = { t: Math.floor(curTime()), m, id: Date.now(), q: 1 };
+  if (notes.some(x => x.t === o.t && x.m === m)) return;   // 同一秒连按只记一次
+  notes.push(o); notes.sort((x, y) => x.t - y.t);
+  render(o.id); save(); updateCta();
+}
 
 /* ───────── 评论 ───────── */
 const txt = $('#txt');
