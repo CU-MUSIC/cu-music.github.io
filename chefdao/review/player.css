@@ -976,3 +976,6 @@ body.rlp-on .rlp-tab{display:none}
 .newsc button{width:100%;border:0;border-radius:14px;font:inherit;font-size:16px;cursor:pointer}
 .newsc .ngo{padding:13px;background:#d6d3cd;color:#1a1c20;font-weight:600}
 .newsc .nlt{margin-top:6px;padding:10px;background:none;color:var(--text-2)}
+/* 客户下载 */
+.own button.hot{background:#c8644f;color:#fff}
+#dlBtn.dim{opacity:.55}

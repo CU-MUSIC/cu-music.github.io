@@ -170,7 +170,7 @@ document.body.innerHTML = `
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
-  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">客户下载：关</button><button class="press" id="ownWm">下载水印：开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -186,7 +186,7 @@ document.body.innerHTML = `
   </div>
   <div class="loudrow"><button class="loud press" id="loud" aria-pressed="false">响度统一<span id="loudv"></span></button>
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
-    <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="loopBtn" aria-pressed="false">循环</button><button class="loud press" id="snapBtn" aria-pressed="false" title="点波形、设循环都落在小节线上；点段落只循环这一段">吸附</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+    <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="loopBtn" aria-pressed="false">循环</button><button class="loud press" id="snapBtn" aria-pressed="false" title="点波形、设循环都落在小节线上；点段落只循环这一段">吸附</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><button class="loud press" id="dlBtn" hidden>下载</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
   <div class="refx" id="refx" hidden><div class="rxw"><canvas id="refWave"></canvas><i id="refHint">点 REF 波形：从那里开始对比</i></div><div class="rxb"><span id="refPos"></span><button class="press" id="raAdd">记住这个对应</button></div><div class="rxl" id="raList"></div></div>
   <div class="cmpat" id="cmpAt" hidden><span id="cmpAtT"></span><input id="cmpAtIn" inputmode="decimal" autocomplete="off" placeholder="0:40"><button class="press" id="cmpAtGo" type="button">对齐</button></div>
@@ -234,6 +234,7 @@ let REPLIES = new Map();
 let MSGS = [];   // 评论下的对话 [{ ver, t, m, who: 'c'|'o', text, ts }]
 let ONOTES = [];   // 刀大厨自己的评论（歌手端显示，来自 /cr）
 const IS_OWNER = !!store.get('insights:key');
+const DL = S.dl || { on: 0, wm: 1 };   // 客户下载：on 你允许了，wm 前 10 秒加水印
 if (!IS_OWNER) document.documentElement.classList.add('cli');   // 客户页：不显示响度统一、数据、快捷评论这些
 const rk = (ver, t, m) => ver + '|' + (Math.round(t * 10) / 10) + '|' + m;
 const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
@@ -1308,6 +1309,17 @@ function ownerTools() {
     try { await post('/radm/meta', { slug: S.slug, parts: PARTS }); busy('段落已保存，客户那边同步显示'); } catch (e) { busy('段落没保存上，检查网络再试'); }
   };
   // 歌手颜色面板：自动配色、手动换色、上传微信头像取主色（只存颜色，头像不上传）
+  // 客户下载开关 + 水印开关；有人申请时按钮上显示人数
+  const dlOwn = () => { const rq = DL.req || [];
+    $('#ownDl').textContent = '客户下载：' + (DL.on ? '已允许' : rq.length ? rq.length + ' 人申请 · 点击允许' : '关');
+    $('#ownDl').title = rq.length ? '申请：' + rq.map(x => x.who || '歌手').join('、') : '';
+    $('#ownDl').classList.toggle('hot', !DL.on && rq.length > 0);
+    $('#ownWm').textContent = '下载水印：' + (DL.wm ? '开' : '关'); };
+  dlOwn();
+  $('#ownDl').onclick = async () => { const on = DL.on ? 0 : 1;
+    try { await post('/radm/meta', { slug: S.slug, dl: { on } }); DL.on = on; if (on) DL.req = []; dlOwn(); busy(on ? '已允许客户下载' : '已关闭客户下载'); } catch (e) { busy('没改成，检查网络再试'); } };
+  $('#ownWm').onclick = async () => { const wm = DL.wm ? 0 : 1;
+    try { await post('/radm/meta', { slug: S.slug, dl: { wm } }); DL.wm = wm; dlOwn(); busy(wm ? '下载的文件前 10 秒会加一句水印' : '下载的文件不加水印'); } catch (e) { busy('没改成，检查网络再试'); } };
   $('#ownColors').hidden = !MULTI;
   $('#ownColors').onclick = () => {
     const names = Object.keys(SINGERS); if (!names.length) return busy('这首歌还没有歌手，先在项目里填歌手或加段落');
@@ -2299,6 +2311,49 @@ if (location.hash === '#notme') store.del('review:me');   // 自己测试时用
 const ME = store.get('review:me') === '1';
 let lid = store.get('review:lid');
 if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.set('review:lid', lid); }
+
+/* ───────── 客户下载：你允许后才能下；开了水印，前 10 秒里随机一处混进一句「混音母带，找刀大厨」，导出 WAV ───────── */
+function dlUi() { const b = $('#dlBtn'); if (!b) return; if (IS_OWNER) { b.hidden = true; return; }
+  const asked = store.get('review:dlreq:' + S.slug) === '1';
+  b.hidden = false; b.textContent = DL.on ? '下载' : asked ? '已申请下载' : '申请下载'; b.classList.toggle('dim', !DL.on && asked); }
+function wavBlob(ab) {
+  const ch = ab.numberOfChannels, n = ab.length, sr = ab.sampleRate, dv = new DataView(new ArrayBuffer(44 + n * ch * 2));
+  const w = (o, t) => { for (let i = 0; i < t.length; i++) dv.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, 'RIFF'); dv.setUint32(4, 36 + n * ch * 2, true); w(8, 'WAVE'); w(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, ch, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * ch * 2, true); dv.setUint16(32, ch * 2, true); dv.setUint16(34, 16, true); w(36, 'data'); dv.setUint32(40, n * ch * 2, true);
+  const cs = [...Array(ch)].map((_, c) => ab.getChannelData(c)); let o = 44;
+  for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const v = Math.max(-1, Math.min(1, cs[c][i])); dv.setInt16(o, v < 0 ? v * 32768 : v * 32767, true); o += 2; }
+  return new Blob([dv], { type: 'audio/wav' });
+}
+async function wmRender(buf) {
+  const mix = await decodeBuf(buf), tag = await decodeBuf(await (await fetch('../wm.m4a?v=20261110a')).arrayBuffer());
+  const C = window.OfflineAudioContext || window.webkitOfflineAudioContext, oc = new C(mix.numberOfChannels, mix.length, mix.sampleRate);
+  const at = 0.5 + Math.random() * Math.max(0, Math.min(10, mix.duration) - tag.duration - 0.6), end = at + tag.duration;   // 起点随机，整句落在前 10 秒内
+  const s1 = oc.createBufferSource(), g1 = oc.createGain(); s1.buffer = mix; s1.connect(g1).connect(oc.destination);
+  g1.gain.setValueAtTime(1, 0); g1.gain.setValueAtTime(1, Math.max(0, at - .12)); g1.gain.linearRampToValueAtTime(.35, at); g1.gain.setValueAtTime(.35, end); g1.gain.linearRampToValueAtTime(1, end + .2);   // 说话时音乐压低，听得清
+  const s2 = oc.createBufferSource(), g2 = oc.createGain(); g2.gain.value = .85; s2.buffer = tag; s2.connect(g2).connect(oc.destination);
+  s1.start(0); s2.start(at);
+  return wavBlob(await oc.startRendering());
+}
+$('#dlBtn').onclick = async () => {
+  const b = $('#dlBtn'); if (b.dataset.busy) return;
+  if (!DL.on) {
+    if (store.get('review:dlreq:' + S.slug) === '1') return hud('已申请，刀大厨同意后就能下载');
+    try { const j = await (await fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid }) })).json();
+      if (!j.ok) throw 0; if (j.on) { DL.on = 1; dlUi(); return b.click(); }
+      store.set('review:dlreq:' + S.slug, '1'); dlUi(); hud('已申请，刀大厨同意后就能下载'); } catch (e) { hud('没申请成功，检查网络再试'); }
+    return;
+  }
+  b.dataset.busy = '1'; b.textContent = '准备中…';
+  try {
+    const i = vi, raw = new Uint8Array(await plainOf(i)), name = ((S.title || 'mix') + ' ' + V[i].ver).replace(/[\\/:*?"<>|]/g, '_');
+    const blob = DL.wm ? await wmRender(raw.slice().buffer) : new Blob([raw], { type: 'audio/mp4' });
+    const u = URL.createObjectURL(blob), el = document.createElement('a'); el.href = u; el.download = name + (DL.wm ? '.wav' : '.m4a');
+    document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);
+  } catch (e) { hud('下载没成功，再试一次'); }
+  delete b.dataset.busy; dlUi();
+};
+dlUi();
 // 听众自己留名字：看板和微信通知里显示名字而不是随机编号（你自己的设备不显示这个按钮）
 let myName = store.get('review:name') || ''; let apAdopted = false;
 if (!myName) { const ap = store.get('review:ap:name'); if (ap) { myName = ap.slice(0, 30); store.set('review:name', myName); apAdopted = true; } }   // 申请时填过 ID：直接沿用，不再弹「你的艺名」
