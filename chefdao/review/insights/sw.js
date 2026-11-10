@@ -7,7 +7,7 @@ self.addEventListener('fetch', e => {
   const r = e.request, u = new URL(r.url);
   if (r.method !== 'GET' || u.origin !== location.origin) return;
   e.respondWith((async () => {
-    const c = await caches.open('ins-page-v1'), key = r.mode === 'navigate' ? u.origin + u.pathname : r;
+    const c = await caches.open('ins-page-v2'), key = u.origin + u.pathname;   // 不管 ?v= 后缀，每个文件只存一份
     try {
       const res = await Promise.race([fetch(r), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 5000))]);
       if (res.ok) c.put(key, res.clone());
@@ -15,7 +15,7 @@ self.addEventListener('fetch', e => {
     } catch (err) { const hit = await c.match(key); if (hit) return hit; throw err; }
   })());
 });
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('activate', e => e.waitUntil(caches.delete('ins-page-v1').then(() => self.clients.claim())));
 self.addEventListener('push', e => e.waitUntil((async () => {
   let n = { title: 'CU MUSIC', body: '有新动态', url: '/chefdao/review/insights/' };
   try {
