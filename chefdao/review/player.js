@@ -171,7 +171,7 @@ document.body.innerHTML = `
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
-  <div class="own" id="own" hidden><span id="ownT">拖音频文件到页面任意位置，上传为新版本</span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -1200,7 +1200,25 @@ function ownerTools() {
     try { await post('/radm/meta', { slug: S.slug, title: v.trim() }); S.title = v.trim(); h.textContent = S.title; document.title = S.title; busy('歌名已改成《' + S.title + '》'); }
     catch (e) { busy('没改成，检查网络再试'); }
   };
-  const busy = t => { $('#ownT').textContent = t; };
+  const busy = t => { const el = $('#ownT'); el.textContent = t; el.classList.toggle('on', !!t); clearTimeout(busy.t);   // 状态文字只在有事时出现，几秒后自己收起（上传中不收）
+    busy.t = setTimeout(() => { if (!own.classList.contains('busy')) { el.classList.remove('on'); } }, 4000); };
+  own.title = '拖音频文件到页面任意位置，上传为新版本';
+  // 管理条全部用图标：文字放进鼠标悬停提示；开关类（下载、水印）亮起 = 开
+  function iconize() {
+    const P = { part: 'M6 4v16M6 5h10l-2.5 4L16 13H6', fee: 'M7 4.5l5 6.5 5-6.5M12 11v8.5M8 13.5h8M8 16.8h8', color: 'M12 4a8 8 0 1 0 0 16c1.3 0 1.8-.9 1.8-1.8 0-1.2-1-1.5-1-2.6 0-1 .8-1.6 2-1.6H17a3 3 0 0 0 3-3C20 7.3 16.4 4 12 4z|M8 11h.01M10.5 7.8h.01M14.5 8h.01',
+      bpm: 'M9.5 4h5l3.5 16H6zM12 16.5l4.5-9M7.5 14h9', lyr: 'M5 7h14M5 12h14M5 17h9', shareP: 'M3.5 7.5h6l2 2h9v10h-17zM12 17v-5M9.8 14l2.2-2.2 2.2 2.2', share: 'M12 4v11M8 8l4-4 4 4M5 13v6.5h14V13',
+      dl: 'M12 4v11M7 10.5l5 5 5-5M5 19.5h14', wm: 'M12 4c3 4 6 7 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10z', pick: 'M12 16V5M7 9.5l5-5 5 5M5 19.5h14', del: 'M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7M10.5 11v5M13.5 11v5', tag: 'M4 12V4h8l8 8-8 8zM8.5 8.5h.01' };
+    const KIND = { ownPart: 'part', ownColors: 'color', ownBpm: 'bpm', ownLyr: 'lyr', ownShareP: 'shareP', ownShare: 'share', ownDl: 'dl', ownWm: 'wm', ownPick: 'pick' };
+    const NAME = { ownPart: '加段落', ownColors: '歌手颜色', ownBpm: '测 BPM', ownLyr: '歌词', ownShareP: '复制项目链接', ownShare: '复制这首链接', ownPick: '选择文件上传新版本' };
+    own.querySelectorAll(':scope > button').forEach(b => {
+      const t = b.textContent.trim(); if (!t && b.classList.contains('ic')) return;
+      const k = KIND[b.id] || (/^费用/.test(t) ? 'fee' : /REF/.test(t) && /删除/.test(t) ? 'del' : /REF/.test(t) ? 'ref' : /^删除/.test(t) ? 'del' : /类别/.test(t) ? 'tag' : '');
+      if (!k) return;
+      const lab = NAME[b.id] || (b.id === 'ownDl' ? '客户下载：' + t.replace(/^⬇\s*/, '') : b.id === 'ownWm' ? '播放水印：' + t.replace(/^水印\s*/, '') : t);
+      b.title = lab; b.setAttribute('aria-label', lab); b.classList.add('ic');
+      b.innerHTML = k === 'ref' ? '<b>REF</b>' : '<svg viewBox="0 0 24 24">' + P[k].split('|').map(d => '<path d="' + d + '"/>').join('') + '</svg>';
+    });
+  }
   const post = async (path, body) => {
     const r = await fetch(live.api + path, { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({ ok: false })); if (!j.ok) throw new Error(j.e || r.status); return j;
@@ -1219,11 +1237,11 @@ function ownerTools() {
   get('/radm/list').then(j => { const x = j.ok && j.songs.find(y => y.slug === S.slug); if (x) share.song = line({ ...x, title: S.title, pass: x.share ?? x.pass }); }).catch(() => {});
   get('/lib').then(j => {
     const p = j.ok && j.projects.find(x => x.tracks.length > 1 && x.tracks.some(t => t.slug === S.slug));
-    if (p) { share.project = line(p); $('#ownShareP').hidden = false; $('#ownShare').textContent = '分享这首'; }
+    if (p) { share.project = line(p); $('#ownShareP').hidden = false; }
   }).catch(() => {});
   const shareBtn = (id, k) => { const b = $(id), label = b.textContent; b.onclick = async () => {
     if (!share[k]) return busy('还在读取链接，稍等再点');
-    await copy(share[k]); const t = b.textContent; b.textContent = '已复制'; setTimeout(() => { b.textContent = t; }, 1500);
+    await copy(share[k]); busy((k === 'project' ? '项目' : '这首') + '链接已复制');
   }; };
   shareBtn('#ownShare', 'song'); shareBtn('#ownShareP', 'project');
   // 费用单：按 Cypher 报价开一张，歌手从歌曲信息里来；客户自己选、点确定；你在这里标定金 / 尾款已收
@@ -1315,7 +1333,8 @@ function ownerTools() {
     $('#ownDl').textContent = '⬇ ' + (DL.on ? '已允许' : rq.length ? rq.length + ' 人申请' : '关');
     $('#ownDl').title = rq.length ? '申请：' + rq.map(x => x.who || '歌手').join('、') : '';
     $('#ownDl').classList.toggle('hot', !DL.on && rq.length > 0);
-    $('#ownWm').textContent = '水印 ' + (DL.wm ? '开' : '关'); $('#ownWm').title = '客户播放时前 10 秒随机一处叠一句「混音母带，找刀大厨」'; };
+    $('#ownWm').textContent = '水印 ' + (DL.wm ? '开' : '关'); $('#ownWm').classList.toggle('on', !!DL.wm); $('#ownDl').classList.toggle('on', !!DL.on);
+    $('#ownDl').dataset.n = !DL.on && rq.length ? rq.length : ''; iconize(); };
   dlOwn();
   $('#ownDl').onclick = async () => { const on = DL.on ? 0 : 1;
     try { await post('/radm/meta', { slug: S.slug, dl: { on } }); DL.on = on; if (on) DL.req = []; dlOwn(); busy(on ? '已允许客户下载' : '已关闭客户下载'); } catch (e) { busy('没改成，检查网络再试'); } };
@@ -1485,6 +1504,7 @@ function ownerTools() {
       try { await post('/radm/del', { slug: S.slug, ver: 'REF' }); softReload(); } catch (e) { busy('没删掉，检查网络再试'); } };
     own.appendChild(xb);
   }
+  iconize(); new MutationObserver(() => iconize()).observe(own, { childList: true });   // 后加进来的按钮（费用、REF、删除）也换成图标
   $('#ownPick').onclick = () => $('#ownFile').click();
   $('#ownFile').onchange = () => up($('#ownFile').files[0]);
   let depth = 0;
