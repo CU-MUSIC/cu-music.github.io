@@ -2337,16 +2337,18 @@ if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.se
 function dlUi() { const b = $('#dlBtn'); if (!b) return; if (IS_OWNER) { b.hidden = true; return; }
   const asked = store.get('review:dlreq:' + S.slug) === '1';
   b.hidden = false; b.classList.toggle('hoff', !DL.on); b.classList.toggle('asked', !DL.on && asked);
-  b.title = DL.on ? '下载这一版' : asked ? '已申请下载，等刀大厨同意' : '申请下载'; }
+  b.title = DL.on ? '下载这一版' : asked ? dlTip() : '申请下载 · 收到全部费用后开放'; }
+const dlPaid = () => !!(typeof Q !== 'undefined' && Q && Array.isArray(Q.people) && Q.people.length && Q.people.every(p => p.fin));   // 费用单上每位都标了尾款已收 = 全款
+const dlTip = () => dlPaid() ? '已提交申请。费用已结清，刀大厨会马上开放下载' : '已提交申请。收到全部费用后，开放下载';
 const dlName = v => { const st = stageOf(v), tag = { edit: 'ChefDao Edit', master: 'ChefDao Master' }[st] || 'ChefDao Mix';
   return ((S.artist ? S.artist + ' - ' : '') + (S.title || 'Untitled') + ' (' + tag + ') ' + (STAGE[st] ? STAGE[st] + ' ' + vlab(v) : v.ver)).replace(/[\\/:*?"<>|]/g, '_'); };
 $('#dlBtn').onclick = async () => {
   const b = $('#dlBtn'); if (b.dataset.busy) return;
   if (!DL.on) {
-    if (store.get('review:dlreq:' + S.slug) === '1') return hud('已申请，刀大厨同意后就能下载');
+    if (store.get('review:dlreq:' + S.slug) === '1') return hud(dlTip(), 4000);
     try { const j = await (await fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid }) })).json();
       if (!j.ok) throw 0; if (j.on) { DL.on = 1; dlUi(); return b.click(); }
-      store.set('review:dlreq:' + S.slug, '1'); dlUi(); hud('已申请，刀大厨同意后就能下载'); } catch (e) { hud('没申请成功，检查网络再试'); }
+      store.set('review:dlreq:' + S.slug, '1'); dlUi(); hud(dlTip(), 4000); } catch (e) { hud('没申请成功，检查网络再试'); }
     return;
   }
   b.dataset.busy = '1'; b.classList.add('busy');
