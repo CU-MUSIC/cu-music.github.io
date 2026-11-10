@@ -340,6 +340,20 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 @keyframes cu-draw{from{stroke-dashoffset:1;opacity:0}8%{opacity:1}to{stroke-dashoffset:0;opacity:1}}
 @media (prefers-reduced-motion:reduce){.lmark.intro .r0{animation:none}}
 .lock.leaving .art.lmark{transition:transform .7s var(--ios),opacity .5s ease .2s;opacity:0}
+/* 欢迎页封面：C 标收起、封面从轻微模糊 + 略小淡入；只动 opacity / transform / filter，不改布局 */
+.lmark .cumark{transition:opacity .5s ease,transform .9s cubic-bezier(.22,.8,.25,1)}
+.lmark.cv .cumark{opacity:0;transform:scale(.84)}
+.lmark .lcv{position:absolute;inset:-8.93%;border-radius:19.7%;background:#0b0b0b center/cover no-repeat;opacity:0;transform:scale(.9);filter:blur(12px);
+  box-shadow:0 24px 56px -18px rgba(0,0,0,.65),0 0 0 .5px rgba(255,255,255,.08) inset;will-change:transform,opacity,filter;
+  transition:opacity .9s cubic-bezier(.22,.8,.25,1),transform 1.15s cubic-bezier(.22,.8,.25,1),filter .9s cubic-bezier(.22,.8,.25,1),border-radius .7s var(--ios)}
+.lmark.cv .lcv{opacity:1;transform:none;filter:blur(0)}
+.lock.leaving .art.lmark.cv{opacity:1;transition:transform .7s var(--ios)}
+.lock .lbg{position:absolute;inset:-12%;z-index:-1;background:center/cover no-repeat;filter:blur(64px) saturate(1.25);opacity:0;transform:scale(1.04);pointer-events:none;
+  transition:opacity 1.6s cubic-bezier(.22,.8,.25,1),transform 2.4s cubic-bezier(.22,.8,.25,1)}
+.lock.hascv .lbg{opacity:.24;transform:none}
+.lock.hascv::before{opacity:0}
+.lock.leaving .lbg{opacity:0;transition:opacity .45s ease}
+@media (prefers-reduced-motion:reduce){.lmark .lcv{filter:none;transform:none;transition:opacity .4s ease}.lock .lbg{transition:opacity .6s ease}}
 
 /* 版本列表按阶段分组：混音 / 编辑 */
 .vgrp{font-size:11.5px;letter-spacing:.08em;color:var(--text-3);padding:12px 10px 4px}

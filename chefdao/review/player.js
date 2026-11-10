@@ -285,6 +285,17 @@ const scr = (() => {
 const pin = $('#pin'), dots = [...document.querySelectorAll('#dots i')];
 const focusPin = () => pin.focus({ preventScroll: true });
 $('#dots').onclick = focusPin; $('#lock').onclick = focusPin;
+// 欢迎页封面：有封面就在 C 标上淡入（图片解码好才开始，不会半张半张地出），背后铺一层很淡的封面模糊光；没封面保持原样
+if (S.cover) (() => {
+  const L = $('#lock'), art = L.querySelector('.art'), cv = document.createElement('div'), bg = document.createElement('div');
+  cv.className = 'lcv'; bg.className = 'lbg'; art.appendChild(cv); L.prepend(bg);
+  const im = new Image(); im.decoding = 'async'; im.src = API_BASE + S.cover;
+  (im.decode ? im.decode() : new Promise((ok, no) => { im.onload = ok; im.onerror = no; })).then(() => {
+    if (!L.isConnected || L.classList.contains('leaving')) return;
+    const u = 'url("' + im.src + '")'; cv.style.backgroundImage = u; bg.style.backgroundImage = u;
+    requestAnimationFrame(() => requestAnimationFrame(() => { art.classList.add('cv'); L.classList.add('hascv'); }));
+  }).catch(() => {});
+})();
 // 手机键盘弹出时，iOS 不会缩小 fixed 的解锁页，密码点会被键盘挡住：跟着可见区域缩，内容整体上移
 if (window.visualViewport) {
   const vv = window.visualViewport;
@@ -480,13 +491,16 @@ function enterApp(quick) {
   [...$('#app').children].forEach((el, i) => el.style.setProperty('--i', i));
   const a1 = from.getBoundingClientRect(), a2 = to.getBoundingClientRect();
   const dx = a2.left + a2.width / 2 - (a1.left + a1.width / 2), dy = a2.top + a2.height / 2 - (a1.top + a1.height / 2);
-  const k = a2.width / a1.width * (from.classList.contains('lmark') ? .62 : 1);
+  const hasCv = from.classList.contains('cv'), lcv = from.querySelector('.lcv');
+  // 有封面：按封面真实大小（不含欢迎页那层 1.12 放大）算缩放，落到页头时和页头封面严丝合缝，再无缝换过去
+  const k = hasCv ? a2.width / (lcv.offsetWidth || from.offsetWidth) : a2.width / a1.width * (from.classList.contains('lmark') ? .62 : 1);
   to.style.opacity = 0;
   L.classList.add('leaving');
   from.style.transform = `translate(${dx}px,${dy}px) scale(${k})`;
-  from.style.borderRadius = (14 / k) + 'px';
+  if (hasCv) lcv.style.borderRadius = (parseFloat(getComputedStyle(to).borderRadius) || 14) / k + 'px';
+  else from.style.borderRadius = (14 / k) + 'px';
   $('#app').classList.add('in');
-  if (from.classList.contains('lmark')) { to.style.transition = 'opacity .45s ease'; setTimeout(() => { to.style.opacity = ''; }, 380); }
+  if (from.classList.contains('lmark') && !hasCv) { to.style.transition = 'opacity .45s ease'; setTimeout(() => { to.style.opacity = ''; }, 380); }
   setTimeout(() => { to.style.opacity = ''; L.remove(); }, 700);
   markSeg(); updateCta();
 }
