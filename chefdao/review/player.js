@@ -293,7 +293,7 @@ if (S.cover) (() => {
   (im.decode ? im.decode() : new Promise((ok, no) => { im.onload = ok; im.onerror = no; })).then(() => {
     if (!L.isConnected || L.classList.contains('leaving')) return;
     const u = 'url("' + im.src + '")'; cv.style.backgroundImage = u; bg.style.backgroundImage = u;
-    requestAnimationFrame(() => requestAnimationFrame(() => { art.classList.add('cv'); L.classList.add('hascv'); }));
+    requestAnimationFrame(() => requestAnimationFrame(() => { art.classList.add('cv'); L.classList.add('hascv'); setTimeout(() => cv.classList.add('set'), 1250); }));   // 淡入完就去掉模糊层，之后缩放只剩纯位移
   }).catch(() => {});
 })();
 // 手机键盘弹出时，iOS 不会缩小 fixed 的解锁页，密码点会被键盘挡住：跟着可见区域缩，内容整体上移
@@ -497,11 +497,13 @@ function enterApp(quick) {
   to.style.opacity = 0;
   L.classList.add('leaving');
   from.style.transform = `translate(${dx}px,${dy}px) scale(${k})`;
-  if (hasCv) lcv.style.borderRadius = (parseFloat(getComputedStyle(to).borderRadius) || 14) / k + 'px';
-  else from.style.borderRadius = (14 / k) + 'px';
+  if (!hasCv) from.style.borderRadius = (14 / k) + 'px';   // 封面：圆角按比例（19.7%）缩下来正好≈页头 14px，不动画圆角（圆角动画每帧重绘，会卡）
   $('#app').classList.add('in');
   if (from.classList.contains('lmark') && !hasCv) { to.style.transition = 'opacity .45s ease'; setTimeout(() => { to.style.opacity = ''; }, 380); }
-  setTimeout(() => { to.style.opacity = ''; L.remove(); }, 700);
+  // 等缩放真正走完那一帧再换成页头封面（定时器会早一两帧，看起来像顿一下）
+  let swapped = false; const swap = () => { if (swapped) return; swapped = true; to.style.transition = 'none'; to.style.opacity = ''; requestAnimationFrame(() => { L.remove(); to.style.transition = ''; }); };
+  if (hasCv) { from.addEventListener('transitionend', e => { if (e.target === from && e.propertyName === 'transform') swap(); }); setTimeout(swap, 900); }
+  else setTimeout(swap, 700);
   markSeg(); updateCta();
 }
 let KEY = null;

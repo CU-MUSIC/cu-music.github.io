@@ -345,12 +345,13 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .lmark.cv .cumark{opacity:0;transform:scale(.84)}
 .lmark .lcv{position:absolute;inset:-8.93%;border-radius:19.7%;background:#0b0b0b center/cover no-repeat;opacity:0;transform:scale(.9);filter:blur(12px);
   box-shadow:0 24px 56px -18px rgba(0,0,0,.65),0 0 0 .5px rgba(255,255,255,.08) inset;will-change:transform,opacity,filter;
-  transition:opacity .9s cubic-bezier(.22,.8,.25,1),transform 1.15s cubic-bezier(.22,.8,.25,1),filter .9s cubic-bezier(.22,.8,.25,1),border-radius .7s var(--ios)}
+  transition:opacity .9s cubic-bezier(.22,.8,.25,1),transform 1.15s cubic-bezier(.22,.8,.25,1),filter .9s cubic-bezier(.22,.8,.25,1)}
 .lmark.cv .lcv{opacity:1;transform:none;filter:blur(0)}
-.lock.leaving .art.lmark.cv{opacity:1;transition:transform .7s var(--ios)}
-.lock .lbg{position:absolute;inset:-12%;z-index:-1;background:center/cover no-repeat;filter:blur(64px) saturate(1.25);opacity:0;transform:scale(1.04);pointer-events:none;
-  transition:opacity 1.6s cubic-bezier(.22,.8,.25,1),transform 2.4s cubic-bezier(.22,.8,.25,1)}
-.lock.hascv .lbg{opacity:.24;transform:none}
+.lmark .lcv.set{filter:none;will-change:auto;transition:none}
+.lock.leaving .art.lmark.cv{opacity:1;transition:transform .7s var(--ios);will-change:transform}
+.lock .lbg{position:absolute;left:50%;top:42%;width:34vmax;height:34vmax;margin:-17vmax 0 0 -17vmax;z-index:-1;background:center/cover no-repeat;filter:blur(22px) saturate(1.25);will-change:opacity,transform;opacity:0;pointer-events:none;
+  transform:scale(3.3);transition:opacity 1.6s cubic-bezier(.22,.8,.25,1),transform 2.4s cubic-bezier(.22,.8,.25,1)}
+.lock.hascv .lbg{opacity:.24;transform:scale(3.2)}
 .lock.hascv::before{opacity:0}
 .lock.leaving .lbg{opacity:0;transition:opacity .45s ease}
 @media (prefers-reduced-motion:reduce){.lmark .lcv{filter:none;transform:none;transition:opacity .4s ease}.lock .lbg{transition:opacity .6s ease}}
