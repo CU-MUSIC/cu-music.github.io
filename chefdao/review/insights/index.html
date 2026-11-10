@@ -137,6 +137,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s}
 .lcard:hover .lc{transform:scale(1.02)}
+.missed{margin:0 0 16px;padding:14px 16px 8px;border-radius:16px;background:rgba(200,100,79,.1);box-shadow:0 0 0 .5px rgba(200,100,79,.35) inset}.missed[hidden]{display:none}
+.msh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.msh b{font-size:16px}.msh button{font-size:14px;padding:6px 14px;border-radius:999px;background:var(--fill-2);color:var(--text)}
+.msi{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:9px 0;border-top:.5px solid var(--fill-3);color:var(--text);text-decoration:none}
+.msi .mst{font-size:15px;font-weight:500}.msi i{font-style:normal;font-size:12.5px;color:var(--text-3);grid-row:1}.msi .msb{grid-column:1/-1;font-size:13.5px;color:var(--text-2);line-height:1.6}.msm{padding:8px 0;font-size:13px;color:var(--text-3)}
 .nbar{margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)}.nbar[hidden]{display:none}.bv{font-size:11px;font-weight:400;letter-spacing:.04em;color:var(--text-3);margin-left:6px;vertical-align:middle}
 .rfb{margin-left:auto;margin-right:10px;width:34px;height:34px;border-radius:50%;background:var(--fill-2);color:var(--text-2);font-size:18px;line-height:1}.rfb.spin{animation:rfspin .7s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
 .ptr{position:fixed;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 14px;border-radius:99px;background:var(--fill-3,rgba(255,255,255,.16));color:var(--text);font-size:12.5px;z-index:99;pointer-events:none}
@@ -347,7 +351,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261109.2030';
+const BUILD = '261110.1200';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -461,8 +465,22 @@ document.addEventListener('click', e => {
   const check = async () => { if (document.visibilityState !== 'visible' || base === null || document.getElementById('newver')) return; const s = await sig();
     if (s !== null && s !== base) { const b = document.createElement('button'); b.id = 'newver'; b.textContent = '有新版本，点这里刷新'; b.style.cssText = 'position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99;padding:10px 18px;border-radius:99px;background:#ebe9e5;color:#121213;font:600 14px -apple-system,"PingFang SC",sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)'; b.onclick = bust; document.body.appendChild(b); } };
   setInterval(check, 3 * 60 * 1000); document.addEventListener('visibilitychange', check); }
+// 错过的通知：免打扰 / 静音时没推到手机的，按时间列在最上面；点一条去对应页面，「知道了」全部清掉
+let MISSED = [];
+const mAgo = ts => { const d = (Date.now() - ts) / 6e4; if (d < 60) return Math.max(1, Math.round(d)) + ' 分钟前'; const t = new Date(ts), p = n => String(n).padStart(2, '0'); return (d < 1440 ? '' : (t.getMonth() + 1) + '/' + t.getDate() + ' ') + p(t.getHours()) + ':' + p(t.getMinutes()); };
+async function loadMissed() { try { const j = await api('/radm/missed'); MISSED = j.items || []; } catch (e) {} drawMissed(); }
+function drawMissed() {
+  const el = document.getElementById('missed'); if (!el) return;
+  el.hidden = !MISSED.length; if (!MISSED.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="msh"><b>免打扰期间错过 ${MISSED.length} 条</b><button class="press" id="mok">知道了</button></div>`
+    + MISSED.slice(0, 30).map(x => `<a class="msi" href="${esc(x.url || '#')}" target="_blank" rel="noopener"><span class="mst">${esc(x.title)}</span><span class="msb">${esc(String(x.body || '').replace(/\n/g, ' · '))}</span><i>${mAgo(x.ts)}</i></a>`).join('')
+    + (MISSED.length > 30 ? `<div class="msm">还有 ${MISSED.length - 30} 条</div>` : '');
+  document.getElementById('mok').onclick = async () => { MISSED = []; drawMissed(); try { await api('/radm/missed', { method: 'POST' }); } catch (e) {} };
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && KEY) loadMissed(); });
 async function load() {
   if (!KEY) return login();
+  loadMissed();
   if (!data) root.innerHTML = '<div class="msg">正在读取…</div>';
   try {
     const auth = { headers: { Authorization: 'Bearer ' + KEY } };
@@ -607,11 +625,12 @@ function render() {
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
   const head = `<div class="top"><div><div class="eyebrow">CU MUSIC</div><h1>Insights <small class="bv" title="页面版本号">v${BUILD}</small></h1></div><button class="rfb" id="rfb" aria-label="刷新" title="刷新">⟳</button>
     ${tab === 'orders' || tab === 'lib' || tab === 'rlib' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
-    <div class="nbar" id="nbar" hidden></div>
+    <div class="nbar" id="nbar" hidden></div><div class="missed" id="missed" hidden></div>
     <div class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</div>`;
   root.innerHTML = head + (tab === 'lib' ? renderLib() : tab === 'rlib' ? renderRlib() : tab === 'beat' ? renderBeat() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   if (window.__pushDraw) window.__pushDraw();
+  drawMissed();
   opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
   const pmb = root.querySelector('.pmbox'); if (pmb) pmb.ontoggle = () => { pmOpen = pmb.open; };
   document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
