@@ -209,6 +209,10 @@ svg{display:block}
 .row .x{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--text-3);opacity:.7}
 .row .x svg{width:12px;height:12px;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 .row .x:hover{background:var(--fill-2);color:var(--text);opacity:1}
+.row .ok{flex:none;width:22px;height:22px;margin:3px 2px 0;border-radius:50%;border:1.5px solid var(--text-3);display:grid;place-items:center;padding:0;opacity:.6;color:transparent}
+.row .ok svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.row .ok:hover{opacity:1;color:var(--text-3)}
+.row .ok.on{background:var(--text);border-color:var(--text);color:var(--bg,#1a1c20);opacity:.75}
 @media(hover:hover){.row .x{opacity:0}.row:hover .x{opacity:.8}}
 .row.new{animation:rowin .5s var(--ios)}
 @keyframes rowin{from{opacity:0;transform:translateY(-6px);background-color:var(--accent-tint)}to{opacity:1;transform:none}}

@@ -951,6 +951,15 @@ function render(newId) {
     decorate(row, REPLIES.get(rk(cur.ver, o.t, o.m)));
     row.dataset.k = rk(cur.ver, o.t, o.m); if (NEWK.has(row.dataset.k)) row.querySelector('.m').insertAdjacentHTML('afterbegin', '<span class="nwd" title="刀大厨有新动态"></span>');
     { const rr = REPLIES.get(rk(cur.ver, o.t, o.m)); thread(row, cur.ver, o.t, o.m, !!(rr && rr.reply)); }
+    if (IS_OWNER) {   // 你自己的评论：圆圈标完成（插件里同步）
+      const dk = rk(cur.ver, o.t, o.m), ok = document.createElement('button'); ok.className = 'ok' + (isDone(o) ? ' on' : ''); ok.setAttribute('aria-label', '标完成'); ok.title = isDone(o) ? '取消完成' : '标完成';
+      ok.innerHTML = '<svg viewBox="0 0 12 12"><path d="M2.5 6.3 5 8.6 9.6 3.6"/></svg>';
+      ok.onclick = async () => { const was = REPLIES.get(dk), done = !(was && was.done);
+        REPLIES.set(dk, { ...(was || { ver: cur.ver, t: o.t, m: o.m }), done: done ? 1 : 0 }); render();
+        try { const r = await fetch(API_BASE + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + store.get('insights:key'), 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: cur.ver, t: o.t, m: o.m, done }) });
+          if (!(await r.json()).ok) throw 0; } catch (e) { if (was) REPLIES.set(dk, was); else REPLIES.delete(dk); render(); alert('没存上，检查网络再试'); } };
+      row.querySelector('.x').before(ok);
+    }
     row.querySelector('.x').onclick = () => {
       row.classList.add('out');
       setTimeout(() => { notes = notes.filter(n => n !== o); render(); save(); updateCta(); }, 260);
