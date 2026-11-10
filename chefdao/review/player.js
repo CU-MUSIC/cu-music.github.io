@@ -2326,7 +2326,7 @@ function wavBlob(ab) {
   return new Blob([dv], { type: 'audio/wav' });
 }
 async function wmRender(buf) {
-  const mix = await decodeBuf(buf), tag = await decodeBuf(await (await fetch('../wm.m4a?v=20261110a')).arrayBuffer());
+  const mix = await decodeBuf(buf), tag = await decodeBuf(await (await fetch('../wm.m4a?v=20261110b')).arrayBuffer());
   const C = window.OfflineAudioContext || window.webkitOfflineAudioContext, oc = new C(mix.numberOfChannels, mix.length, mix.sampleRate);
   const at = 0.5 + Math.random() * Math.max(0, Math.min(10, mix.duration) - tag.duration - 0.6), end = at + tag.duration;   // 起点随机，整句落在前 10 秒内
   const s1 = oc.createBufferSource(), g1 = oc.createGain(); s1.buffer = mix; s1.connect(g1).connect(oc.destination);
