@@ -146,6 +146,15 @@ body:has(.epbar.in) .app,body:has(.epbar.in) main{padding-bottom:96px}
 <body>
 <main id="m"><div class="boot">正在载入…</div></main>
 <script>
+// 网络兜底 + 音频走 CDN：① 音频（/ra/…）先从 Bunny CDN 下（首尔 / 东京 / 香港节点；Cloudflare 免费版把韩国、国内分到洛杉矶，每秒只有几十 KB），8 秒没响应或出错就退回 stats
+// ② 其余到 stats 的 GET：10 秒没回就换带 cookie 的那组连接重发一次（Chrome 睡眠 / 换网后偶尔卡死一条连接）
+(() => { if (window.__cuNet) return; window.__cuNet = 1; const F = window.fetch.bind(window), H = 'https://stats.cumusic.work', CDN = 'https://cumusic-audio.b-cdn.net';
+  window.fetch = (u, o = {}) => { const s = typeof u === 'string' ? u : (u && u.url) || '';
+    if (!s.startsWith(H) || o.signal || (o.method && o.method !== 'GET')) return F(u, o);
+    const go = (url, cr, ms) => { const ac = new AbortController(), t = ms && setTimeout(() => ac.abort(), ms);
+      return F(url, { ...o, credentials: cr, signal: ac.signal }).then(r => { clearTimeout(t); if (!r.ok && url !== s) throw new Error('cdn ' + r.status); return r; }, e => { clearTimeout(t); throw e; }); };
+    if (CDN && s.startsWith(H + '/ra/')) return go(CDN + s.slice(H.length), 'omit', 8000).catch(() => go(s, o.credentials || 'same-origin', 0));
+    return go(s, o.credentials || 'same-origin', 10000).catch(e => e && e.name === 'AbortError' ? go(s, 'include', 0) : Promise.reject(e)); }; })();
 (async () => {
 const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 // 你自己的设备：整页交给审听外壳（见 load.js）

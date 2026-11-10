@@ -1,9 +1,12 @@
-// 网络兜底：Chrome 偶尔把到 stats.cumusic.work 的那条连接卡死（睡眠 / 换网后），请求一直挂着。10 秒没回就换另一条连接（带 cookie 的那一组）重发一次
-(() => { if (window.__cuNet) return; window.__cuNet = 1; const F = window.fetch.bind(window), H = 'https://stats.cumusic.work';
+// 网络兜底 + 音频走 CDN：① 音频（/ra/…）先从 Bunny CDN 下（首尔 / 东京 / 香港节点；Cloudflare 免费版把韩国、国内分到洛杉矶，每秒只有几十 KB），8 秒没响应或出错就退回 stats
+// ② 其余到 stats 的 GET：10 秒没回就换带 cookie 的那组连接重发一次（Chrome 睡眠 / 换网后偶尔卡死一条连接）
+(() => { if (window.__cuNet) return; window.__cuNet = 1; const F = window.fetch.bind(window), H = 'https://stats.cumusic.work', CDN = 'https://cumusic-audio.b-cdn.net';
   window.fetch = (u, o = {}) => { const s = typeof u === 'string' ? u : (u && u.url) || '';
     if (!s.startsWith(H) || o.signal || (o.method && o.method !== 'GET')) return F(u, o);
-    const go = (cr, ms) => { const ac = new AbortController(), t = ms && setTimeout(() => ac.abort(), ms); return F(u, { ...o, credentials: cr, signal: ac.signal }).finally(() => clearTimeout(t)); };
-    return go(o.credentials || 'same-origin', 10000).catch(e => e && e.name === 'AbortError' ? go('include', 0) : Promise.reject(e)); }; })();
+    const go = (url, cr, ms) => { const ac = new AbortController(), t = ms && setTimeout(() => ac.abort(), ms);
+      return F(url, { ...o, credentials: cr, signal: ac.signal }).then(r => { clearTimeout(t); if (!r.ok && url !== s) throw new Error('cdn ' + r.status); return r; }, e => { clearTimeout(t); throw e; }); };
+    if (CDN && s.startsWith(H + '/ra/')) return go(CDN + s.slice(H.length), 'omit', 8000).catch(() => go(s, o.credentials || 'same-origin', 0));
+    return go(s, o.credentials || 'same-origin', 10000).catch(e => e && e.name === 'AbortError' ? go(s, 'include', 0) : Promise.reject(e)); }; })();
 // 审听页加载器：歌曲数据从 stats.cumusic.work 读（音频是加密的，要输密码才能听），然后交给共用播放器 player.js
 //   <script src="../load.js" data-slug="wubu"></script>   老歌，网址 review/wubu/ 不变
 //   <script src="../load.js"></script>                    看板新建的歌，网址 review/s/#码
