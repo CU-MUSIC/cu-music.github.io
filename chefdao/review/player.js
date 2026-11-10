@@ -293,7 +293,7 @@ if (S.cover) (() => {
   (im.decode ? im.decode() : new Promise((ok, no) => { im.onload = ok; im.onerror = no; })).then(() => {
     if (!L.isConnected || L.classList.contains('leaving')) return;
     const u = 'url("' + im.src + '")'; cv.style.backgroundImage = u; bg.style.backgroundImage = u;
-    requestAnimationFrame(() => requestAnimationFrame(() => { art.classList.add('cv'); L.classList.add('hascv'); setTimeout(() => cv.classList.add('set'), 1250); }));   // 淡入完就去掉模糊层，之后缩放只剩纯位移
+    next(() => next(() => { art.classList.add('cv'); L.classList.add('hascv'); setTimeout(() => cv.classList.add('set'), 1250); }));   // 淡入完就去掉模糊层，之后缩放只剩纯位移
   }).catch(() => {});
 })();
 // 手机键盘弹出时，iOS 不会缩小 fixed 的解锁页，密码点会被键盘挡住：跟着可见区域缩，内容整体上移
@@ -489,7 +489,10 @@ function enterApp(quick) {
   const L = $('#lock'), from = L.querySelector('.art'), to = $('#app .head .art');
   $('#app').removeAttribute('aria-hidden');
   [...$('#app').children].forEach((el, i) => el.style.setProperty('--i', i));
-  const a1 = from.getBoundingClientRect(), a2 = to.getBoundingClientRect();
+  const a1 = from.getBoundingClientRect(), r2 = to.getBoundingClientRect();
+  // 页头自己也在做「上移 12px 淡入」：按它入场完的最终位置算终点，不然落地差 12px、换图时会跳一下
+  const hm = new DOMMatrix(getComputedStyle(to.closest('.head') || to).transform);
+  const a2 = { left: r2.left - hm.m41, top: r2.top - hm.m42, width: r2.width, height: r2.height };
   const dx = a2.left + a2.width / 2 - (a1.left + a1.width / 2), dy = a2.top + a2.height / 2 - (a1.top + a1.height / 2);
   const hasCv = from.classList.contains('cv'), lcv = from.querySelector('.lcv');
   // 有封面：按封面真实大小（不含欢迎页那层 1.12 放大）算缩放，落到页头时和页头封面严丝合缝，再无缝换过去
