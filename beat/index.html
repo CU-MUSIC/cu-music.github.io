@@ -250,6 +250,20 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .lic .ft .tot b{display:block;font-size:24px;color:var(--text);font-variant-numeric:tabular-nums;line-height:1.3}
 .lic .ft .btn{height:48px;padding:0 28px}
 .lic .note{font-size:12.5px;color:var(--text-3);margin-top:10px;text-align:right}
+/* 求一首 */
+.ask-end{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0 0;padding:18px 20px;border-radius:16px;border:1px dashed var(--border-hi)}
+.ask-end b{display:block;font-size:16px;font-weight:650}
+.ask-end span{display:block;font-size:13px;color:var(--text-3)}
+.rq{display:grid;gap:14px;margin-top:20px}
+.rq label{display:grid;gap:6px;font-size:13px;color:var(--text-2)}
+.rq textarea,.rq input{width:100%;border-radius:12px;border:1px solid var(--border-hi);background:var(--surface);padding:12px 14px;font-size:16px;outline:none;resize:none;transition:border-color .2s,box-shadow .3s}
+.rq textarea{min-height:92px;line-height:1.6}
+.rq textarea:focus,.rq input:focus{border-color:var(--red);box-shadow:0 0 0 4px var(--red-soft)}
+.rq .two{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px}
+.rq .err{color:#e7a9a6;font-size:13px;min-height:18px}
+.rq .btn{height:48px}
+.lic .box.sm{max-height:calc(100dvh - 32px)}
+@media (max-width:640px){.lic .box.sm{max-height:88dvh}.rq textarea{min-height:84px}}
 .toast{position:fixed;left:50%;bottom:calc(var(--bar) + 30px + env(safe-area-inset-bottom));transform:translate(-50%,20px);z-index:30;
   background:var(--text);color:var(--bg);font-size:14px;font-weight:600;padding:10px 18px;border-radius:20px;opacity:0;pointer-events:none;
   transition:opacity .25s,transform .35s var(--ios);max-width:calc(100vw - 32px);text-align:center}
@@ -400,6 +414,7 @@ const trk = (() => {
     flush() { if (s) s.last = null; flush(false); },
     buy(b, kind, license) { send('/bb', { beat: b.id, kind, license }, kind === 'copy'); },
     feat(b, kind) { send('/bf', { beat: b.id, kind }, false); },
+    get lid() { return lid; },
   };
 })();
 audio.preload = 'none';
@@ -580,7 +595,8 @@ function render(){
   $('count').textContent = BEATS.length ? (filtered ? `${view.length} / ${BEATS.length}` : `${view.length}`) : '';
 
   if (!BEATS.length) { $('list').innerHTML = '<li class="empty">暂无伴奏</li>'; return; }
-  if (!view.length) { $('list').innerHTML = '<li class="empty">没有符合条件的伴奏<br><button class="btn ghost press" data-clearall>清除筛选</button></li>';
+  const askEnd = '<li class="ask-end"><div><b>没找到想要的？</b><span>告诉我们你想要的风格</span></div><button class="btn ghost press" data-req>求一首</button></li>';
+  if (!view.length) { $('list').innerHTML = '<li class="empty">没有符合条件的伴奏<br><button class="btn ghost press" data-clearall>清除筛选</button> <button class="btn primary press" data-req>求一首</button></li>';
     $('list').querySelector('[data-clearall]').onclick = clearAll; return; }
 
   $('list').innerHTML = view.map((b,i) => {
@@ -591,12 +607,13 @@ function render(){
       <span class="c">${b.duration ? fmt(b.duration) : ''}</span>
       <span class="ib">${icons(b)}</span>
     </li>`;
-  }).join('');
+  }).join('') + askEnd;
   firstPaint = false;
   markPlaying();
 }
 
 $('list').addEventListener('click', e => {
+  if (e.target.closest('[data-req]')) { openReq(); return; }
   const li = e.target.closest('.trk'); if (!li) return;
   const b = BEATS.find(x => x.id === li.dataset.id);
   if (e.target.closest('[data-ask]')) { openLic(b); return; }
@@ -768,6 +785,40 @@ function fallback(text, done){
   const t = document.createElement('textarea'); t.value = text; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;opacity:0';
   document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch { toast(text); } t.remove();
 }
+// ── 求一首：访客写想要的风格和联系方式，在伴奏管理页里看 ──
+const rq = document.createElement('div');
+rq.className = 'lic'; rq.setAttribute('role', 'dialog'); rq.setAttribute('aria-modal', 'true'); rq.setAttribute('aria-labelledby', 'rqT');
+rq.innerHTML = `<div class="box sm" style="width:min(520px,100%)">
+  <div class="hd"><div class="tt"><h2 id="rqT">求一首</h2><p>想要什么风格的伴奏，我们来做</p></div><button class="x" id="rqX" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <form class="rq" id="rqF">
+    <label>想要的风格或参考艺人<textarea id="rqW" maxlength="300" placeholder="比如：Travis Scott 那种暗一点的 trap，带钢琴" required></textarea></label>
+    <div class="two"><label>BPM（选填）<input id="rqB" inputmode="numeric" maxlength="3" placeholder="140"></label>
+      <label>微信号<input id="rqC" maxlength="60" autocomplete="off" required></label></div>
+    <div class="err" id="rqE" role="alert"></div>
+    <button class="btn primary press" id="rqS" type="submit">提交</button>
+  </form></div>`;
+document.body.appendChild(rq);
+const closeReq = () => rq.classList.remove('show');
+function openReq(){
+  try { $('rqC').value = localStorage.getItem('beat:contact') || ''; } catch (e) {}
+  $('rqE').textContent = ''; rq.classList.add('show'); setTimeout(() => $('rqW').focus(), 80);
+}
+rq.addEventListener('click', e => { if (e.target === rq || e.target.closest('#rqX')) closeReq(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && rq.classList.contains('show')) closeReq(); });
+$('rqF').onsubmit = async e => {
+  e.preventDefault();
+  const want = $('rqW').value.trim(), contact = $('rqC').value.trim();
+  if (want.length < 2 || contact.length < 2) { $('rqE').textContent = '请填写风格和微信号'; return; }
+  $('rqS').disabled = true;
+  try {
+    const r = await fetch(API + '/br', { method: 'POST', body: JSON.stringify({ want, contact, bpm: +$('rqB').value || null, lid: trk.lid }) });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.e);
+    try { localStorage.setItem('beat:contact', contact); } catch (e) {}
+    $('rqW').value = ''; $('rqB').value = ''; closeReq(); toast('已提交');
+  } catch (err) { $('rqE').textContent = err.message === 'rate' ? '提交太频繁，稍后再试' : '没提交上，请再试一次'; }
+  $('rqS').disabled = false;
+};
 let tt;
 function toast(s){ const t = $('toast'); t.textContent = s; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2600); }
 

@@ -71,6 +71,14 @@ label.l{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--text-3);
 .hint button{color:var(--text);text-decoration:underline;text-underline-offset:3px;font-size:12.5px}
 .bpm{width:72px}.key{width:80px}.date{width:150px}
 .card.off{opacity:.55}.card.off .cv img{filter:grayscale(1)}
+.reqs{margin:0 0 18px;border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:14px 18px}
+.reqs h2{font-size:15px;font-weight:700;margin-bottom:6px}.reqs h2 small{font-weight:400;color:var(--text-3);margin-left:6px}
+.rqr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;padding:10px 0;border-top:1px solid var(--border)}
+.rqr.done{opacity:.45}
+.rqr .w{grid-column:1;word-break:break-word}
+.rqr .m{grid-column:1;font-size:13px;color:var(--text-3)}
+.rqr .m button{color:var(--text);text-decoration:underline;text-underline-offset:3px}
+.rqr .a{grid-column:2;grid-row:1/3;display:flex;gap:6px;align-items:center}
 .vis{margin-left:auto;font-size:13px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);color:var(--text-2)}
 .vis[aria-pressed="true"]{border-color:var(--hl);color:var(--hl)}
 .del{font-size:13px;color:var(--text-3);padding:4px 8px;border-radius:8px}
@@ -130,15 +138,40 @@ async function boot(){
     <div class="drop" id="drop" tabindex="0" role="button"><b>把 m4a 拖进来</b>
       <span>可以一次拖多首 · 上传后马上出现在伴奏页 · 曲名和风格从文件名猜，BPM 和调性自动测，下面再改</span>
       <input type="file" id="file" accept=".m4a,.mp3,audio/mp4,audio/x-m4a,audio/mpeg" multiple hidden></div>
-    <div class="queue" id="queue"></div><div class="count" id="count"></div><div id="list"></div>`;
+    <div class="queue" id="queue"></div><div class="reqs" id="reqs" hidden></div><div class="count" id="count"></div><div id="list"></div>`;
   $('drop').onclick = () => $('file').click();
   $('drop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } };
   $('file').onchange = () => { upload([...$('file').files]); $('file').value = ''; };
   $('list').addEventListener('input', onInput);
   $('list').addEventListener('keydown', onKey);
   $('list').addEventListener('click', onClick);
-  await refresh();
+  await refresh(); loadReqs();
 }
+
+// ── 访客求的 beat ──
+let REQS = [];
+async function loadReqs(){
+  try { REQS = (await api('/badm/reqs')).reqs || []; } catch (e) { return; }
+  const box = $('reqs'); if (!box) return;
+  const open = REQS.filter(r => !r.done).length;
+  box.hidden = !REQS.length;
+  box.innerHTML = `<h2>收到的求 beat<small>${open ? open + ' 条待处理' : '都已处理'}</small></h2>` + REQS.map(r => {
+    const d = new Date(r.at), t = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    return `<div class="rqr${r.done ? ' done' : ''}" data-rid="${r.id}"><div class="w">${esc(r.want)}</div>
+      <div class="m">${r.bpm ? r.bpm + ' BPM · ' : ''}微信 <button data-copy="${esc(r.contact)}">${esc(r.contact)}</button> · ${t}${r.country ? ' · ' + esc(r.country) : ''}</div>
+      <div class="a"><button class="mini" data-rdone="${r.done ? 0 : 1}">${r.done ? '恢复' : '已处理'}</button><button class="del" data-rdel>删除</button></div></div>`;
+  }).join('');
+}
+document.addEventListener('click', async e => {
+  const row = e.target.closest('.rqr'); if (!row) return;
+  const id = +row.dataset.rid, cp = e.target.closest('[data-copy]');
+  if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copy); cp.textContent = '已复制'; setTimeout(loadReqs, 900); } catch (err) {} return; }
+  const dn = e.target.closest('[data-rdone]'), dl = e.target.closest('[data-rdel]');
+  if (!dn && !dl) return;
+  if (dl && !dl.classList.contains('confirm')) { dl.classList.add('confirm'); dl.textContent = '再点一次删除'; setTimeout(() => { dl.classList.remove('confirm'); dl.textContent = '删除'; }, 3000); return; }
+  try { await api('/badm/reqdone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dl ? { id, del: 1 } : { id, done: +dn.dataset.rdone }) }); } catch (err) { return; }
+  loadReqs();
+});
 
 async function refresh(){
   BEATS = (await api('/badm/list', { cache: 'no-cache' })).beats || [];
