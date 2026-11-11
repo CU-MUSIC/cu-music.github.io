@@ -39,6 +39,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .seg{display:flex;background:var(--fill);border-radius:10px;padding:2px;flex-shrink:0}
 .seg button{font-size:14px;padding:5px 11px;border-radius:8px;color:var(--text-2)}
 .seg button.on{background:var(--fill-3);color:var(--text)}
+@media (max-width:520px){.top{flex-wrap:wrap;align-items:center}.top .seg{order:3;width:100%}.top .seg button{flex:1}}   /* 手机：标题和两个圆按钮一行，7/30/90 天单独一行铺满 */
 
 .chips{display:flex;gap:8px;overflow-x:auto;margin:0 -18px 18px;padding:0 18px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -366,7 +367,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261111.1000';
+const BUILD = '261111.1010';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
