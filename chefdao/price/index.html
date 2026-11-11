@@ -1529,7 +1529,7 @@ var I18N = {
 			pbYesSub: "8 折终身有效 · <span class=\"qb-hl\">交付快{fast}</span> · 点此加入 ›",
 			pbNoMain: "加入刀门 {fee}，<span class=\"qb-hl\">交付快{fast}</span>",
 			pbNoSub: "本单省 {save} · 权益终身有效 · 点此加入 ›",
-			recLabel: "需要录音吗？", recNone: "不需要，直接混音", recNeed: "需要录音", recPlace: "选场地与方式", recHrUnit: " 小时", recHrUnitShort: "时", recLine: "录音", recPerk: 100,
+			recLabel: "需要录音吗？", recNone: "不需要，直接混音", recNeed: "录音 + 混音", recOnly: "只录音", modeRec: "只录音", recOnlyWhen: "录音时间", recOnlyWhenV: "微信确认档期", recDepLabel: "定金（锁档期）", recBalLabel: "尾款（录完结清）", recPlace: "选场地与方式", recHrUnit: " 小时", recHrUnitShort: "时", recLine: "录音", recPerk: 100,
 			recOpts: [
 				{ name: "上海 · 棚内录制", rate: 300 },
 				{ name: "上海 · 监制（含录音）", rate: 450 },
@@ -2133,7 +2133,7 @@ var I18N = {
 			pbYesSub: "20% off for life · <span class=\"qb-hl\">{fast} faster</span> · tap to join ›",
 			pbNoMain: "Join Daomen for {fee}, <span class=\"qb-hl\">{fast} faster</span>",
 			pbNoSub: "Saves {save} here · membership is for life · tap to join ›",
-			recLabel: "Need a recording session?", recNone: "No — straight to mixing", recNeed: "Yes, record", recPlace: "Pick a location", recHrUnit: " hrs", recHrUnitShort: "hr", recLine: "Recording", recPerk: 15,
+			recLabel: "Need a recording session?", recNone: "No — straight to mixing", recNeed: "Record + mix", recOnly: "Recording only", modeRec: "Recording only", recOnlyWhen: "Session date", recOnlyWhenV: "Confirmed on WeChat", recDepLabel: "Deposit (books the slot)", recBalLabel: "Balance (after the session)", recPlace: "Pick a location", recHrUnit: " hrs", recHrUnitShort: "hr", recLine: "Recording", recPerk: 15,
 			recOpts: [
 				{ name: "Shanghai · Studio session", rate: 50 },
 				{ name: "Shanghai · Direction (recording incl.)", rate: 75 },
@@ -2732,7 +2732,7 @@ var I18N = {
 			pbYesSub: "평생 20% 할인 · <span class=\"qb-hl\">납품 {fast} 단축</span> · 탭하여 가입 ›",
 			pbNoMain: "{fee} 가입, <span class=\"qb-hl\">납품 {fast} 단축</span>",
 			pbNoSub: "이번에 {save} 절약 · 혜택은 평생 · 탭하여 가입 ›",
-			recLabel: "녹음이 필요하신가요?", recNone: "아니요, 바로 믹스", recNeed: "녹음 필요", recPlace: "장소 선택", recHrUnit: "시간", recHrUnitShort: "시간", recLine: "녹음", recPerk: 20000,
+			recLabel: "녹음이 필요하신가요?", recNone: "아니요, 바로 믹스", recNeed: "녹음 + 믹스", recOnly: "녹음만", modeRec: "녹음만", recOnlyWhen: "녹음 일정", recOnlyWhenV: "위챗으로 확정", recDepLabel: "계약금 (일정 확정)", recBalLabel: "잔금 (녹음 후 정산)", recPlace: "장소 선택", recHrUnit: "시간", recHrUnitShort: "시간", recLine: "녹음", recPerk: 20000,
 			recOpts: [
 				{ name: "상하이 · 스튜디오 녹음", rate: 60000 },
 				{ name: "상하이 · 디렉팅 (녹음 포함)", rate: 90000 },
@@ -3268,7 +3268,7 @@ function qbArchiveOrder(q, c) {
 		t: d.getTime(),
 		dateTxt: (d.getMonth() + 1) + "/" + d.getDate(),
 		totalTxt: qbFmt(q, c.total) + (c.from ? "+" : ""),
-		label: (stems ? q.modeStems : q.modeVocal) + " · " + c.count + q.countUnit + q.vocalistLabel,
+		label: c.recOnly ? q.modeRec + " · " + c.recH + q.recHrUnit : (stems ? q.modeStems : q.modeVocal) + " · " + c.count + q.countUnit + q.vocalistLabel,
 		s: JSON.parse(JSON.stringify(qbState))
 	});
 	qbLsSet(LS_ORDERS, JSON.stringify(list.slice(0, 5)));
@@ -3315,7 +3315,7 @@ function qbShareLink() {
 }
 function qbNormalizeState() {
 	var d = qbDefaultState();
-	if (qbState.mode !== "vocal" && qbState.mode !== "stems") qbState.mode = d.mode;
+	if (qbState.mode !== "vocal" && qbState.mode !== "stems" && !(qbState.mode === "rec" && qbState.rec)) qbState.mode = d.mode;
 	if (qbState.stems === null || qbState.stems === undefined) qbState.stems = d.stems;
 	if (qbState.lane === null || qbState.lane === undefined) qbState.lane = d.lane;
 	if (qbState.harmony === null || qbState.harmony === undefined) qbState.harmony = d.harmony;
@@ -3606,9 +3606,16 @@ function qbToggleAaCopy() { qbState.aaCopy = !(qbState.aaCopy !== false); render
 function qbSetRec(o) {
 	if (o < 0) qbState.rec = null;
 	else qbState.rec = { o: o, h: qbState.rec ? qbState.rec.h : 2 };
+	if (o < 0 && qbState.mode === "rec") qbState.mode = "vocal";
 	renderQuoteBuilder();
 	// 「不需要」= 这一步答完了，带客户滑到混音；选「需要」则留在原地选场地
 	if (o < 0) { if (qbFocusOn) qbFocusNext(); else requestAnimationFrame(function () { requestAnimationFrame(function () { qbScrollStep("mode"); }); }); }
+}
+// 只录音 / 录音 + 混音：on = true 进只录音（没选场地就先用默认场地），false 回到录音 + 混音
+function qbSetRecOnly(on) {
+	if (on) { qbState.mode = "rec"; if (!qbState.rec) qbState.rec = { o: 2, h: 2 }; }
+	else { if (qbState.mode === "rec") qbState.mode = "vocal"; if (!qbState.rec) qbState.rec = { o: 2, h: 2 }; }
+	renderQuoteBuilder();
 }
 function qbRecHours(d) {
 	if (!qbState.rec) return;
@@ -3692,7 +3699,7 @@ function qbReset() {
 // 分轨模式多一步「工程规模」。一个步骤作答完毕，下一步才渲染出来。
 // 人声制作与音编都按主唱逐位选，排在人数之后
 // 附加服务、优惠排在交付之前：会员会改变交付日期，先定身份再看日期，日期才不会选完又变
-function qbSteps() { return qbState.mode === "stems" ? ["rec", "mode", "stems", "preset", "count", "prod", "edit", "harmony", "extra", "perks", "lane"] : ["rec", "mode", "preset", "count", "prod", "edit", "harmony", "extra", "perks", "lane"]; }
+function qbSteps() { if (qbState.mode === "rec") return ["rec"]; return qbState.mode === "stems" ? ["rec", "mode", "stems", "preset", "count", "prod", "edit", "harmony", "extra", "perks", "lane"] : ["rec", "mode", "preset", "count", "prod", "edit", "harmony", "extra", "perks", "lane"]; }
 // 「按需微调」分组从这一步开始——它上面是套餐，下面全是可选调整
 var QB_TUNE_FROM = "count";
 // 当前的人声制作/音编/和声组合正好等于某个套餐 → 高亮那张卡；否则落到「自定义」
@@ -3756,6 +3763,7 @@ function qbVisible() { return qbSteps().length; }
 function qbComplete() { var s = qbSteps(); for (var i = 0; i < s.length; i++) if (!qbAnswered(s[i])) return false; return true; }
 function qbCompute(q) {
 	qbSyncPricing(); // 会员与否决定用哪套价
+	if (qbState.mode === "rec" && qbState.rec) return qbComputeRecOnly(q);
 	var stems = qbState.mode === "stems";
 	var baseItem = stems ? q.stems[qbState.stems] : null;
 	var base = stems ? baseItem.price : q.base;
@@ -3853,6 +3861,19 @@ function qbCompute(q) {
 		mixTotal: mixTotal, recDeposit: recDeposit, rec: rec, recOpt: recOpt, recH: recH, recPerk: recPerk, memBeatsPerk: memBeatsPerk,
 		total: total, roundOff: roundOff, deposit: deposit, balance: balance };
 }
+// 只录音：按小时原价，不参与会员折扣、加急、新客立减；2 小时作定金，超出部分录完结清
+function qbComputeRecOnly(q) {
+	var recOpt = q.recOpts[qbState.rec.o] || q.recOpts[0], recH = Math.max(2, qbState.rec.h || 2);
+	var rec = Math.round(recOpt.rate * recH);
+	var rt = q.roundTotal || 1, roundOff = rec - Math.floor(rec / rt) * rt, total = rec - roundOff;
+	var deposit = Math.min(total, Math.round(recOpt.rate * 2));
+	return { recOnly: true, base: 0, baseItem: null, from: false, tasteFee: 0, harmony: { price: 0, name: "" }, count: 1,
+		mixExtra: 0, prodTotal: 0, prodCounts: [], maxProd: 0, editTotal: 0, editCounts: [],
+		gross: 0, gShares: [0], workBase: 0, discount: 0, capped: false, memDisc: [0], newbie: 0,
+		memCount: 0, joinCount: 0, joinFee: 0, fast: false, rush: 0, rushRate: 0, producer: 0,
+		mixTotal: 0, recDeposit: deposit, rec: rec, recOpt: recOpt, recH: recH, recPerk: 0, memBeatsPerk: false,
+		total: total, roundOff: roundOff, deposit: deposit, balance: total - deposit };
+}
 // 定金比例分档对应的说明文案：新客立减优先，其次按金额分档
 function qbDepositNote(q, c) {
 	var base = c.newbie > 0 ? q.depositNoteNew
@@ -3888,6 +3909,7 @@ function qbGross(q) {
 // 理由：纯混音只动音色/动态/空间，人声本身零改善——多人单会摊薄到人均 ¥120，
 // 且成品体现不出人声工作的价值。分轨模式不强制（基础价已 ¥1,200 起，
 // 且客户常自带已编辑好的人声分轨）。
+function qbModeName(z, m) { return m === "rec" ? z.modeRec : m === "stems" ? z.modeStems : z.modeVocal; }
 function qbCoverRuleOn() { return qbState.mode === "vocal"; }
 function qbCovered(i) { return (qbState.prods[i] || 0) > 0 || (qbState.edits[i] || 0) > 0; }
 // 兜底：真出现「两边都没选」的组合，把该主唱的音编抬到最低档
@@ -3963,7 +3985,7 @@ function renderQuoteBuilder() {
 	var stems = qbState.mode === "stems";
 	var steps = qbSteps(), shown = qbVisible(), done = qbComplete();
 	var idx = {}; for (var si = 0; si < steps.length; si++) idx[steps[si]] = si + 1;
-	if (done) { qbEnforceCover(); qbEnforceFloor(q); }
+	if (done && qbState.mode !== "rec") { qbEnforceCover(); qbEnforceFloor(q); }
 	var c = done ? qbCompute(q) : null;
 	var html = "";
 
@@ -3973,7 +3995,8 @@ function renderQuoteBuilder() {
 		var rs = qbState.rec;
 		var recBody = '<div class="qb-chips">'
 			+ '<button class="qb-chip' + (!rs ? " active" : "") + '" onclick="qbSetRec(-1)">' + q.recNone + '</button>'
-			+ '<button class="qb-chip' + (rs ? " active" : "") + '" onclick="qbSetRec(' + (rs ? rs.o : 2) + ')">' + q.recNeed + '</button></div>';
+			+ '<button class="qb-chip' + (rs && qbState.mode !== "rec" ? " active" : "") + '" onclick="qbSetRecOnly(false)">' + q.recNeed + '</button>'
+			+ '<button class="qb-chip' + (qbState.mode === "rec" ? " active" : "") + '" onclick="qbSetRecOnly(true)">' + q.recOnly + '</button></div>';
 		var recNote = "", recChip = "", rc = null;
 		if (rs) {
 			var recChips = "";
@@ -3988,14 +4011,15 @@ function renderQuoteBuilder() {
 				+ '<button class="qb-step-btn" onclick="qbRecHours(0.5)" aria-label="+"' + (rs.h >= 8 ? ' disabled' : '') + '>+</button>'
 				+ '<span class="qb-perhead">' + qbFmt(q, rOpt.rate) + '/' + q.recHrUnitShort + ' × ' + rs.h + ' = ' + qbFmt(q, rTot) + '</span></div>';
 			rc = c; if (!rc) { try { rc = qbCompute(q); } catch (e) { rc = null; } }
-			recNote = !rOpt.perk ? q.recPerkNo
+			recNote = qbState.mode === "rec" ? "" : !rOpt.perk ? q.recPerkNo
 				: (rc && rc.memBeatsPerk) ? q.recPerkMember
 				: (rc && rc.recPerk > 0) ? q.recPerkOn.replace("{off}", qbFmt(q, q.recPerk))
 				: q.recPerkLess.replace("{min}", qbFmt(q, q.recPerkMin)).replace("{off}", qbFmt(q, q.recPerk));
 			recChip = (rc && rc.memBeatsPerk) ? q.recPerkMember : (rc && rc.recPerk > 0) ? q.recChip.replace("{off}", qbFmt(q, q.recPerk)) : "";
 			if (rOpt.lead) recNote += "<br>" + q.recLead;
 			if (rOpt.travel) recNote += "<br>" + q.recTravel;
-			recNote += "<br>" + q.recDepNote.replace("{d}", qbFmt(q, Math.round(rOpt.rate * 2))) + "<br>" + q.recPackNote;
+			if (recNote.indexOf("<br>") === 0) recNote = recNote.slice(4);
+			recNote += (recNote ? "<br>" : "") + q.recDepNote.replace("{d}", qbFmt(q, Math.round(rOpt.rate * 2))) + (qbState.mode === "rec" ? "" : "<br>" + q.recPackNote);
 		}
 		if (recChip) recBody += '<div class="qb-chipline' + (rc && rc.memBeatsPerk ? ' dim' : '') + '">' + (rc && rc.memBeatsPerk ? '' : '\u2713 ') + recChip + '</div>';
 		html += qbRow("rec", idx.rec, q.recLabel, recBody, recNote, q.hints.rec.replace("{off}", qbFmt(q, q.recPerk)));
@@ -4008,7 +4032,7 @@ function renderQuoteBuilder() {
 		+ '</div>';
 	// 贴唱的基础价是固定的，选完模式立刻把它亮出来；分轨的价格由下一步的规格决定
 	if (qbState.mode === "vocal") modeBody += '<div class="qb-base-line"><span>' + q.baseLabel + '</span><strong>' + qbFmt(q, q.base) + '</strong></div>';
-	html += qbRow("mode", idx.mode, q.modeLabel, modeBody, "", q.hints.mode);
+	if (idx.mode) html += qbRow("mode", idx.mode, q.modeLabel, modeBody, "", q.hints.mode);
 
 	// 02 · 工程规模（仅分轨）
 	if (stems && shown >= idx.stems) {
@@ -4371,8 +4395,26 @@ function renderQuoteBuilder() {
 		html += qbRow("lane", idx.lane, q.laneLabel, laneBody, "", q.hints.lane, q.laneNote.replace("{n}", qbStdWeekLabel(q)).replace("{fastline}", fastLine));
 	}
 
+	// 只录音：明细只有录音一行，交付日期换成「录音时间 · 微信确认档期」
+	if (done && c.recOnly) {
+		html += '<div class="qb-step" data-qstep="summary">'
+			+ '<div class="qb-summary">'
+			+ '<div class="qb-bd-line"><span>' + q.recLine + ' · ' + c.recOpt.name + ' · ' + c.recH + q.recHrUnit + '</span><span class="qb-bd-val">' + qbFmt(q, c.rec) + '</span></div>'
+			+ (c.roundOff > 0 ? '<div class="qb-bd-line discount"><span>' + q.roundLine + '</span><span class="qb-bd-val">−' + qbFmt(q, c.roundOff) + '</span></div>' : '')
+			+ '<div class="qb-total-row"><span class="qb-total-label">' + q.totalLabel + '</span><span class="qb-total">' + qbFmt(q, c.total) + '</span></div>'
+			+ '<div class="qb-bd-line deliver"><span>' + q.recOnlyWhen + '</span><span class="qb-bd-val">' + q.recOnlyWhenV + '</span></div>'
+			+ '<div class="qb-split">'
+			+ '<div class="qb-split-row deposit"><span>' + q.recDepLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.deposit) + '</span></div>'
+			+ (c.balance > 0 ? '<div class="qb-split-row"><span>' + q.recBalLabel + '</span><span class="qb-split-val">' + qbFmt(q, c.balance) + '</span></div>' : '')
+			+ qbWhy(q.depositWhy, q.recDepNote.replace("{d}", qbFmt(q, c.deposit)))
+			+ '</div></div>'
+			+ '<button class="qb-cta" onclick="qbOrderOpen()">' + qbOrderT().btn + '</button>'
+			+ '<button class="qb-reset qb-copy" onclick="qbCopy()">' + q.cta + '</button>'
+			+ '<button class="qb-reset" onclick="qbReset()">' + q.reset + '</button>'
+			+ '</div>';
+	}
 	// 全部作答完毕，报价单才登场
-	if (done) {
+	if (done && !c.recOnly) {
 		var baseName = stems ? c.baseItem.name : q.tierNames[0];
 		var lines = '<div class="qb-bd-line"><span>' + baseName + (c.count > 1 ? ' · ' + q.baseIncl : '') + '</span><span class="qb-bd-val">' + qbFmt(q, c.base) + (c.from ? "+" : "") + '</span></div>';
 		for (var p3 = 0; p3 < q.prods.length; p3++) {
@@ -4476,7 +4518,7 @@ function renderQuoteBuilder() {
 
 	// 常驻价格条：滚到哪里，当前配置与总价都跟着。价格离开视野是最大的犹豫来源。
 	var barName = (qbState.preset === null ? q.presetCustom : q.presets[qbState.preset].name);
-	var barTxt = (stems ? q.modeStems : q.modeVocal) + " · " + barName + " · " + qbState.count + q.countUnit;
+	var barTxt = qbState.mode === "rec" && qbState.rec ? q.modeRec + " · " + qbState.rec.h + q.recHrUnit : (stems ? q.modeStems : q.modeVocal) + " · " + barName + " · " + qbState.count + q.countUnit;
 	var barVal = done ? qbFmt(q, c.total) + (c.from ? "+" : "") : "—";
 	var progHtml = '<div class="qb-prog live' + (done ? " done" : "") + '">'
 		+ '<span class="qb-prog-txt">' + barTxt + '</span>'
@@ -4506,7 +4548,7 @@ function renderQuoteBuilder() {
 				+ '<span class="qb-last-a"><a class="qb-last-btn" href="/p/#' + encodeURIComponent(mine[0].c) + '">' + tt[1] + '</a></span></div>';
 		}
 	} catch (e) {}
-	mount.innerHTML = qbNoticeHtml(q) + trackHtml + lastHtml + progHtml + '<div class="quote-builder">' + schedHtml + capHtml + html + '</div>';
+	mount.innerHTML = qbNoticeHtml(q) + trackHtml + lastHtml + progHtml + '<div class="quote-builder">' + (qbState.mode === "rec" ? "" : schedHtml + capHtml) + html + '</div>';
 
 	// 首次出现的步骤淡入；已出现过的（含每次重渲染）立刻可见，避免整块重播动画
 	var nodes = mount.querySelectorAll("[data-qstep]"), present = {};
@@ -4645,6 +4687,24 @@ function qbShowFallback(txt) {
 function qbQuoteText() {
 	var q = I18N[currentLang].quote;
 	var c = qbCompute(q);
+	if (c.recOnly) {
+		var dd = new Date(), pd = function (n) { return (n < 10 ? "0" : "") + n; }, H = "━━━━━━━━━━━━", R = [];
+		R.push(q.brand + " ｜ " + q.copyTitle);
+		R.push(dd.getFullYear() + "." + pd(dd.getMonth() + 1) + "." + pd(dd.getDate()));
+		R.push(H);
+		R.push(q.modeRec);
+		R.push("");
+		R.push(qbFmt(q, c.rec) + "　" + q.recLine + " · " + c.recOpt.name);
+		R.push("　　　" + qbFmt(q, c.recOpt.rate) + "/" + q.recHrUnitShort + " × " + c.recH);
+		if (c.roundOff > 0) R.push("−" + qbFmt(q, c.roundOff) + "　" + q.roundLine);
+		R.push(H);
+		R.push("▍" + q.totalLabel + "　" + qbFmt(q, c.total));
+		R.push(q.recDepLabel + " " + qbFmt(q, c.deposit) + (c.balance > 0 ? " ／ " + q.recBalLabel + " " + qbFmt(q, c.balance) : ""));
+		R.push(q.recOnlyWhen + " " + q.recOnlyWhenV);
+		R.push(H);
+		R.push(q.copyWeChat + " · " + CONTACT.wechat);
+		return R.join("\n");
+	}
 	var stems = qbState.mode === "stems";
 	var baseName = stems ? c.baseItem.name : q.tierNames[0];
 	var sfx = c.from ? "+" : "";
@@ -4905,8 +4965,9 @@ function renderMixIntro(svc) {
 }
 // 从介绍区 / 开屏进入预约：先把第 01 步（录音）定好，再带到对应位置
 function bookGo(kind, instant) {
-	if (kind === "rec") { if (!qbState.rec) qbState.rec = { o: 2, h: 2 }; }
-	else qbState.rec = null;
+	// 「预约录音」默认只录音，要混音在录音这一步点「录音 + 混音」；「预约混音」回到混音流程
+	if (kind === "rec") { if (!qbState.rec) qbState.rec = { o: 2, h: 2 }; qbState.mode = "rec"; }
+	else { qbState.rec = null; if (qbState.mode === "rec") qbState.mode = "vocal"; }
 	if (qbFocusOn) { qbFocus = kind === "rec" ? "rec" : "mode"; qbFocusShown = null; qbFocusDir = 1; }
 	renderQuoteBuilder();
 	var key = kind === "rec" ? "rec" : "mode";
@@ -5229,6 +5290,7 @@ function qbStatPicks() {
 // 中文方案名，看板按它分组：贴唱混音 · 标准 · 1 位
 function qbStatPlan() {
 	var z = I18N.zh.quote, s = qbState;
+	if (s.mode === "rec" && s.rec) return z.modeRec + " · " + z.recOpts[s.rec.o].name + " · " + s.rec.h + z.recHrUnit;
 	var name = s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
 	return (s.mode === "stems" ? z.modeStems : z.modeVocal) + " · " + name + " · " + s.count + z.countUnit;
 }
@@ -5420,6 +5482,7 @@ function qbOrderOpen() {
 // 表单里给客户看的方案名跟随当前语言
 function qbStatPlanLocal() {
 	var z = I18N[currentLang].quote, s = qbState;
+	if (s.mode === "rec" && s.rec) return z.modeRec + " · " + z.recOpts[s.rec.o].name + " · " + s.rec.h + z.recHrUnit;
 	var name = s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
 	return (s.mode === "stems" ? z.modeStems : z.modeVocal) + " · " + name + " · " + s.count + z.countUnit;
 }
