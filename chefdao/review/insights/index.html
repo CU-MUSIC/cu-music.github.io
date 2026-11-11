@@ -260,7 +260,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .top>.rfb{flex:none;margin:0 0 0 8px!important;align-self:center}
 .nfb{position:relative;margin-left:auto;margin-right:8px}.nfb+.ofb{margin-left:0}.nfb.on{background:var(--fill-3);color:var(--text)}
 .nfb i{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--red);display:none}.nfb.warn i{display:block}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));z-index:60;max-width:calc(100% - 32px);transform:translate(-50%,12px);opacity:0;pointer-events:none;
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));z-index:60;width:max-content;max-width:calc(100% - 32px);transform:translate(-50%,12px);opacity:0;pointer-events:none;
   padding:10px 16px;border-radius:14px;background:rgba(235,233,229,.96);color:#121213;font-size:14px;font-weight:500;line-height:1.45;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.45);
   transition:opacity .25s ease,transform .35s cubic-bezier(.22,.8,.25,1)}.toast.on{opacity:1;transform:translate(-50%,0)}
 @media (max-width:760px){.toast{bottom:calc(84px + env(safe-area-inset-bottom))}}
@@ -395,7 +395,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261111.1200';
+const BUILD = '261111.1210';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
