@@ -395,7 +395,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261111.1210';
+const BUILD = '261111.1300';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -506,18 +506,43 @@ function toast(t, ms) {
   let el = document.getElementById('toast'); if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }
   el.textContent = t; el.classList.add('on'); clearTimeout(el._t); if (ms !== 0) el._t = setTimeout(() => el.classList.remove('on'), ms || 2600);
 }
-async function offlineSave(b) {
-  b.classList.add('spin'); toast('正在存到这台设备…', 0);
+// 离线保存：① 先拉一遍最新数据（评论、回复、收听记录都在里面）存本机 ② 项目封面 ③ 没归档的每首歌最新一版音频，存进审听页同一个音频缓存，点开歌直接播不用下载
+let SAVING = false;
+async function offlineSave() {
+  if (SAVING) return; SAVING = true;
+  const btn = () => document.getElementById('ofb'), spin = on => { const b = btn(); if (b) b.classList.toggle('spin', on); };
+  spin(true); toast('正在更新评论和数据…', 0);
   let ok = false; try { ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; } catch (e) {}
-  const urls = [...new Set(((LIB && LIB.projects) || []).map(p => p.cover).filter(Boolean).map(c => API + c))];
-  await Promise.all(urls.map(u => fetch(u, { mode: 'no-cors' }).catch(() => {})));
-  try { const raw = await IDB.get('raw'); if (!raw) await load(); } catch (e) {}
-  OFF = true; b.classList.remove('spin'); b.classList.add('on');
-  b.title = '已离线保存 · ' + urls.length + ' 张封面' + (ok ? '' : '（这台设备可能会自动清理，用主屏幕图标打开更稳）');
+  try { await load(); } catch (e) {}
+  spin(true);
+  const projs = ((LIB && LIB.projects) || []);
+  const covers = [...new Set(projs.map(p => p.cover).filter(Boolean).map(c => API + c))];
+  await Promise.all(covers.map(u => fetch(u, { mode: 'no-cors' }).catch(() => {})));
+  // 要存音频的歌：没归档项目里的歌 + 不在项目里、30 天内动过的歌
+  const inPj = new Set(), act = [];
+  projs.forEach(p => (p.tracks || []).forEach(t => { if (!t.slug) return; inPj.add(t.slug); if (!p.archived) act.push(t.slug); }));
+  (RSONGS || []).forEach(r => { if (!inPj.has(r.slug) && Date.now() - (r.updated || 0) < 30 * 864e5) act.push(r.slug); });
+  const slugs = [...new Set(act)];
+  let got = 0, had = 0, fail = 0, bytes = 0;
+  const ac = await caches.open('cu-audio-1').catch(() => null);
+  for (let i = 0; i < slugs.length && ac; i++) {
+    toast('正在存音频 ' + (i + 1) + ' / ' + slugs.length + '…', 0); spin(true);
+    try {
+      const j = await (await fetch(API + '/rs?s=' + slugs[i], { headers: { Authorization: 'Bearer ' + KEY } })).json();
+      const vs = (j.song && j.song.versions || []).filter(v => v.ver !== 'REF' && v.audio); const v = vs[vs.length - 1]; if (!v) continue;
+      const url = v.audio.startsWith('/') ? API + v.audio : v.audio;
+      if (await ac.match(url)) { had++; continue; }
+      const r = await fetch(url); if (!r.ok) throw 0;
+      const buf = await r.arrayBuffer(); bytes += buf.byteLength;
+      await ac.put(url, new Response(buf, { headers: { 'Content-Type': 'application/octet-stream' } })); got++;
+    } catch (e) { fail++; }
+  }
+  OFF = true; SAVING = false; spin(false); { const b = btn(); if (b) { b.classList.add('on'); b.title = '已离线保存在这台设备'; } }
   if (navigator.vibrate) navigator.vibrate(12);
-  toast(ok ? '✓ 已存到这台设备 · ' + urls.length + ' 张封面，断网也能打开' : '✓ 已存好 · ' + urls.length + ' 张封面。从主屏幕图标打开，系统才不会清掉', ok ? 2800 : 4200);
+  const n = got + had;
+  toast('✓ 已存到这台设备：' + n + ' 首最新版音频' + (got ? '（新存 ' + (bytes / 1048576).toFixed(0) + ' MB）' : '') + '、全部评论、' + covers.length + ' 张封面' + (fail ? '，' + fail + ' 首没存上，再点一次补' : '') + (ok ? '' : '。从主屏幕图标打开，系统才不会清掉'), 5200);
 }
-document.addEventListener('click', e => { const o = e.target.closest('#ofb'); if (o && !o.classList.contains('spin')) offlineSave(o); });
+document.addEventListener('click', e => { if (e.target.closest('#ofb')) offlineSave(); });
 document.addEventListener('click', e => { const b = e.target.closest('#rfb'); if (b) { b.classList.add('spin'); setTimeout(bust, 150); } });
 { let y0 = null, tip = null;
   addEventListener('touchstart', e => { y0 = scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; }, { passive: true });
