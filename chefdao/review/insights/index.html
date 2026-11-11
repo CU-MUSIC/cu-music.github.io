@@ -260,6 +260,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .top>.rfb{flex:none;margin:0 0 0 8px!important;align-self:center}
 .nfb{position:relative;margin-left:auto;margin-right:8px}.nfb+.ofb{margin-left:0}.nfb.on{background:var(--fill-3);color:var(--text)}
 .nfb i{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--red);display:none}.nfb.warn i{display:block}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));z-index:60;max-width:calc(100% - 32px);transform:translate(-50%,12px);opacity:0;pointer-events:none;
+  padding:10px 16px;border-radius:14px;background:rgba(235,233,229,.96);color:#121213;font-size:14px;font-weight:500;line-height:1.45;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.45);
+  transition:opacity .25s ease,transform .35s cubic-bezier(.22,.8,.25,1)}.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:760px){.toast{bottom:calc(84px + env(safe-area-inset-bottom))}}
 .nbar:not(.open){display:none!important}.nbar.open{padding:12px 14px;border-radius:14px;background:var(--fill);margin:0 0 16px}
 button,.tabs,.seg,.chips{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 @media (max-width:760px){
@@ -391,7 +395,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261111.1100';
+const BUILD = '261111.1200';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -497,14 +501,21 @@ async function setupPush() {
 // 离线保存：申请这台设备不自动清理（iOS 主屏幕图标打开才可靠），并把所有项目封面先存好
 let OFF = false;
 try { navigator.storage && navigator.storage.persisted && navigator.storage.persisted().then(p => { if (p && !OFF) { OFF = true; const b = document.getElementById('ofb'); if (b) { b.classList.add('on'); b.title = '已离线保存在这台设备'; } } }); } catch (e) {}
+// 轻提示：屏幕底部（标签栏上方）浮一条，几秒后自己消失
+function toast(t, ms) {
+  let el = document.getElementById('toast'); if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }
+  el.textContent = t; el.classList.add('on'); clearTimeout(el._t); if (ms !== 0) el._t = setTimeout(() => el.classList.remove('on'), ms || 2600);
+}
 async function offlineSave(b) {
-  b.classList.add('spin');
+  b.classList.add('spin'); toast('正在存到这台设备…', 0);
   let ok = false; try { ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; } catch (e) {}
   const urls = [...new Set(((LIB && LIB.projects) || []).map(p => p.cover).filter(Boolean).map(c => API + c))];
   await Promise.all(urls.map(u => fetch(u, { mode: 'no-cors' }).catch(() => {})));
   try { const raw = await IDB.get('raw'); if (!raw) await load(); } catch (e) {}
   OFF = true; b.classList.remove('spin'); b.classList.add('on');
   b.title = '已离线保存 · ' + urls.length + ' 张封面' + (ok ? '' : '（这台设备可能会自动清理，用主屏幕图标打开更稳）');
+  if (navigator.vibrate) navigator.vibrate(12);
+  toast(ok ? '✓ 已存到这台设备 · ' + urls.length + ' 张封面，断网也能打开' : '✓ 已存好 · ' + urls.length + ' 张封面。从主屏幕图标打开，系统才不会清掉', ok ? 2800 : 4200);
 }
 document.addEventListener('click', e => { const o = e.target.closest('#ofb'); if (o && !o.classList.contains('spin')) offlineSave(o); });
 document.addEventListener('click', e => { const b = e.target.closest('#rfb'); if (b) { b.classList.add('spin'); setTimeout(bust, 150); } });
