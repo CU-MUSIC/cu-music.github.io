@@ -2,20 +2,31 @@
 const API = 'https://stats.cumusic.work';
 const sha16 = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)))].slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
 self.addEventListener('install', () => self.skipWaiting());
-// 页面本身（同站的 html / js / css）先上网取，5 秒没回或断网就用上次存的，断网也能打开看缓存数据
+// 打开就用上次存的页面（不黑屏、不等网络），后台悄悄取新版存起来；带 ?r= 的「刷新」和 no-store 的版本检查才直接上网
+// 项目封面（stats.cumusic.work/cv/，文件名不会变）第一次看到就存，之后都从本机读
+const PAGE = 'ins-page-v3', CV = 'ins-cv-v1';
 self.addEventListener('fetch', e => {
   const r = e.request, u = new URL(r.url);
-  if (r.method !== 'GET' || u.origin !== location.origin) return;
+  if (r.method !== 'GET') return;
+  if (u.origin === API && u.pathname.startsWith('/cv/')) {
+    e.respondWith((async () => { const c = await caches.open(CV), hit = await c.match(r.url); if (hit) return hit;
+      const res = await fetch(r); if (res.ok || res.type === 'opaque') c.put(r.url, res.clone()); return res; })());
+    return;
+  }
+  if (u.origin !== location.origin) return;
+  const key = u.origin + u.pathname;   // 不管 ?v= 后缀，每个文件只存一份
+  const net = async c => { const res = await fetch(r); if (res.ok) await c.put(key, res.clone()); return res; };
+  if (r.cache === 'no-store' || u.searchParams.has('r')) {
+    e.respondWith((async () => { const c = await caches.open(PAGE); try { return await net(c); } catch (err) { const hit = await c.match(key); if (hit) return hit; throw err; } })());
+    return;
+  }
   e.respondWith((async () => {
-    const c = await caches.open('ins-page-v2'), key = u.origin + u.pathname;   // 不管 ?v= 后缀，每个文件只存一份
-    try {
-      const res = await Promise.race([fetch(r), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 5000))]);
-      if (res.ok) c.put(key, res.clone());
-      return res;
-    } catch (err) { const hit = await c.match(key); if (hit) return hit; throw err; }
+    const c = await caches.open(PAGE), hit = await c.match(key), up = net(c);
+    if (hit) { e.waitUntil(up.catch(() => {})); return hit; }
+    return up;
   })());
 });
-self.addEventListener('activate', e => e.waitUntil(caches.delete('ins-page-v1').then(() => self.clients.claim())));
+self.addEventListener('activate', e => e.waitUntil(Promise.all(['ins-page-v1', 'ins-page-v2'].map(k => caches.delete(k))).then(() => self.clients.claim())));
 self.addEventListener('push', e => e.waitUntil((async () => {
   let n = { title: 'CU MUSIC', body: '有新动态', url: '/chefdao/review/insights/' };
   try {
