@@ -891,7 +891,7 @@ async function loadReplies() {
     ONOTES = j.onotes || [];
     MSGS = j.msgs || [];
     NOTICE = (j.notice && j.notice.text) || ''; drawNotice();
-    newsCheck();
+    verCheck(); newsCheck();
     render();
   } catch (e) {}
 }
@@ -924,15 +924,28 @@ function newsCheck() {
   store.set(sk, JSON.stringify(next));
   if (nr || nd) newsBar([nr && '回复了 ' + nr + ' 条', nd && '处理了 ' + nd + ' 条'].filter(Boolean).join(' · '), go);
 }
-function newsBar(txt, go) {   // 屏幕正中一张卡片，背后压暗；点「查看」跳到那条，点空白或「稍后」关掉
-  $('#newsb')?.remove();
+// 新版本提醒：记住这台设备见过哪些版本；刀大厨上传了新的，进页面时正中弹一张卡片（和评论新动态同一种）。第一次来只记下，不弹
+function verCheck() {
+  if (IS_OWNER) return;
+  const sk = 'review:vseen:' + S.slug; let seen = null;
+  try { seen = JSON.parse(store.get(sk) || 'null'); } catch (e) {}
+  store.set(sk, JSON.stringify(V.map(v => v.ver)));
+  if (!Array.isArray(seen)) return;
+  const fresh = V.map((v, i) => [v, i]).filter(([v]) => !seen.includes(v.ver)); if (!fresh.length) return;
+  const [v, i] = fresh[fresh.length - 1];
+  newsBar('', null, { title: '刀大厨更新了新版本', sub: vname(v) + (v.date ? ' · ' + v.date.slice(5).replace('-', ' 月 ') + ' 日' : '') + (fresh.length > 1 ? ' 等 ' + fresh.length + ' 版' : ''), btn: '去听',
+    act: async () => { if (i !== vi) await switchTo(i); scrollTo({ top: 0, behavior: 'smooth' }); try { if (!$('#play').disabled) a.play(); } catch (e) {} } });
+}
+let NEWSQ = [];   // 同时有新版本和评论动态：一张看完再弹下一张
+function newsBar(txt, go, opt) {   // 屏幕正中一张卡片，背后压暗；点「查看」跳到那条，点空白或「稍后」关掉
+  if ($('#newsb')) { NEWSQ.push([txt, go, opt]); return; }
   const w = document.createElement('div'); w.id = 'newsb'; w.className = 'newsw';
-  w.innerHTML = '<div class="newsc" role="dialog" aria-modal="true"><span class="nwd big"></span><b>刀大厨' + esc(txt) + '</b><p>你的评论有新动态</p><button type="button" class="press ngo">查看</button><button type="button" class="press nlt">稍后</button></div>';
+  w.innerHTML = '<div class="newsc" role="dialog" aria-modal="true"><span class="nwd big"></span><b>' + esc(opt && opt.title || '刀大厨' + txt) + '</b><p>' + esc(opt && opt.sub || '你的评论有新动态') + '</p><button type="button" class="press ngo">' + esc(opt && opt.btn || '查看') + '</button><button type="button" class="press nlt">稍后</button></div>';
   document.body.appendChild(w); requestAnimationFrame(() => w.classList.add('show'));
-  const close = () => { w.classList.remove('show'); setTimeout(() => w.remove(), 400); };
+  const close = () => { w.classList.remove('show'); setTimeout(() => { w.remove(); const n = NEWSQ.shift(); if (n) newsBar(...n); }, 400); };
   w.onclick = e => { if (e.target === w) close(); };
   w.querySelector('.nlt').onclick = close;
-  w.querySelector('.ngo').onclick = async () => { close(); if (!go) return;
+  w.querySelector('.ngo').onclick = async () => { close(); if (opt && opt.act) return opt.act(); if (!go) return;
     if (go.i !== vi) await switchTo(go.i);
     const el = [...document.querySelectorAll('#list .row, #ovthr')].find(x => x.dataset.k === go.k);
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.animate([{ background: 'rgba(200,100,79,.18)' }, { background: 'transparent' }], { duration: 1600, delay: 300 }); } };
