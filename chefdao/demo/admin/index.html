@@ -113,6 +113,16 @@ h1{font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-.03em;overflow
 
 /* 分区 */
 .sec{margin-top:32px}
+.qx{padding:18px 0;border-top:1px solid var(--border)}
+.qx:first-of-type{border-top:0}
+.qx .qh{font-size:12px;color:var(--text-3);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qx .qh b{color:var(--text-2);font-weight:600}
+.qx .qh .st{padding:1px 8px;border-radius:99px;background:var(--fill-2)}
+.qx .qh .st.on{color:var(--green-soft,#5fbf8f)}
+.qx .qq{margin-top:8px;font-size:15px;line-height:1.7;white-space:pre-wrap}
+.qx textarea{display:block;width:100%;margin-top:12px;min-height:72px;font:inherit;font-size:14px;line-height:1.7;color:var(--text);background:var(--fill-2);border:0;border-radius:12px;padding:10px 12px;outline:0;resize:vertical}
+.qx .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
 .sec>h2{font:500 11px/1 var(--mono);letter-spacing:.2em;color:var(--text-3);text-transform:uppercase;margin-bottom:12px}
 textarea{width:100%;font:inherit;font-size:15px;line-height:1.6;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;outline:0;resize:vertical;min-height:76px;transition:border-color .25s var(--ease)}
 textarea:focus{border-color:var(--border-hover)}
@@ -220,7 +230,7 @@ body.has-bg #bgb{transform:none}body.has-bg .main{padding-bottom:120px}
 <div class="wrap" id="app" hidden>
   <aside class="side">
     <div class="tabs" id="tabs">
-      <button data-f="all" aria-pressed="true">全部</button><button data-f="mem" aria-pressed="false">刀门</button><button data-f="pub" aria-pressed="false">访客</button><button data-f="pick" aria-pressed="false">入选</button><button data-f="vis" aria-pressed="false">访问</button>
+      <button data-f="all" aria-pressed="true">全部</button><button data-f="mem" aria-pressed="false">刀门</button><button data-f="pub" aria-pressed="false">访客</button><button data-f="pick" aria-pressed="false">入选</button><button data-f="qs" aria-pressed="false">提问</button><button data-f="vis" aria-pressed="false">访问</button>
     </div>
     <div class="ctrls">
       <div class="seg2" id="hf"><button data-h="all" aria-pressed="true">全部</button><button data-h="new" aria-pressed="false">没听过</button><button data-h="heard" aria-pressed="false">听过</button><button data-h="nofb" aria-pressed="false">没反馈</button></div>
@@ -271,7 +281,7 @@ async function load(keep) {
   renderList();
   if (keep && cur) { const d = D.find(x => x.id === cur.id); if (d) { cur.d = d; renderNotes(); renderMeta(); renderScore(); } }
 }
-document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { filter = b.dataset.f; document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (filter === 'vis') return showVisits(); renderList(); });
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { filter = b.dataset.f; document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (filter === 'vis') return showVisits(); if (filter === 'qs') return showQs(); renderList(); });
 let heardF = 'all', sortM = 'time';
 const nrated = d => CRIT.filter(([k]) => (d.scores || {})[k] > 0).length;
 // 列表上显示的分：有逐项打分用综合分；没有逐项、只拖了「给歌手的分数」就用那个；10 月底以前的旧版四项（1–5 分）换算成 10 分制
@@ -283,7 +293,7 @@ $('#so').onchange = e => { sortM = e.target.value; renderList(); };
 function renderList() {
   const box = $('#list'); box.textContent = '';
   { const nn = D.filter(d => d.status === 'new').length; $('#cnt').textContent = nn ? nn + ' 首没听过' : ''; }
-  if (filter === 'vis') return;
+  if (filter === 'vis' || filter === 'qs') return;
   let rows = D.filter(d => (filter === 'all' || (filter === 'pick' ? d.pick > 0 : d.kind === filter)) && (heardF === 'all' || (heardF === 'nofb' ? !d.pub : heardF === 'new' ? d.status === 'new' : d.status !== 'new')));   // 没反馈 = 还没发布给对方
   if (sortM !== 'time') rows = rows.slice().sort((a, b) => { const x = shown(a)[0] || -1, y = shown(b)[0] || -1; if (x < 0 && y < 0) return b.ts - a.ts; if (x < 0) return 1; if (y < 0) return -1; return sortM === 'hi' ? y - x || b.ts - a.ts : x - y || b.ts - a.ts; });
   if (!rows.length) box.append(el('div', 'empty', '没有符合条件的投递'));
@@ -327,6 +337,32 @@ async function showVisits() {
     box.append(r);
   });
   m.append(box);
+}
+
+/* 提问：会员的问题（你能看到艺名）→ 展示（公开区不带艺名）/ 回答 / 不回答 / 删除 */
+async function showQs() {
+  stash(); $('#list').textContent = ''; cur = null;
+  const m = $('#main'); m.textContent = ''; m.append(el('h1', '', '提问'));
+  const j = await (await api('/demo/qs')).json();
+  const rows = j.qs || [];
+  m.append(el('div', 'sub', rows.length + ' 个问题 · ' + rows.filter(q => q.status === 'new').length + ' 个待处理 · ' + rows.filter(q => q.show).length + ' 个已展示'));
+  if (!rows.length) { m.append(el('div', 'empty', '还没有人提问')); return; }
+  const act = async (path, body) => { await api(path, body); showQs(); };
+  rows.forEach(q => {
+    const r = el('div', 'qx'), hd = el('div', 'qh');
+    hd.append(el('b', '', q.who || '（未填）'), el('span', '', ago(q.ts)),
+      el('span', 'st' + (q.status === 'answered' ? ' on' : ''), q.status === 'answered' ? '已回答' : q.status === 'skipped' ? '不回答' : '待处理'),
+      el('span', 'st' + (q.show ? ' on' : ''), q.show ? '已展示' : '仅你可见'));
+    r.append(hd, el('div', 'qq', q.text));
+    const ta = el('textarea'); ta.placeholder = '回答（提问的人能看到；展示后所有人能看到，不带艺名）'; ta.value = q.answer || ''; r.append(ta);
+    const bt = el('div', 'row');
+    const b1 = el('button', 'btn', q.status === 'answered' ? '更新回答' : '回答'); b1.type = 'button'; b1.onclick = () => { const t = ta.value.trim(); if (t) act('/demo/qans', { qid: q.qid, text: t }); else ta.focus(); };
+    const b2 = el('button', 'btn ghost', q.show ? '取消展示' : '展示'); b2.type = 'button'; b2.onclick = () => act('/demo/qshow', { qid: q.qid, on: !q.show });
+    const b3 = el('button', 'btn ghost', q.status === 'skipped' ? '恢复待处理' : '不回答'); b3.type = 'button'; b3.onclick = () => act('/demo/qskip', { qid: q.qid, on: q.status !== 'skipped' });
+    const b4 = el('button', 'btn ghost', '删除'); b4.type = 'button'; b4.onclick = () => { if (confirm('删除这个问题？删除后不能恢复')) act('/demo/qdel', { qid: q.qid }); };
+    if (q.status === 'answered') b3.hidden = true;
+    bt.append(b1, b2, b3, b4); r.append(bt); m.append(r);
+  });
 }
 /* 播放器：带钥匙取音频 → blob */
 let audio = null, url = null, raf = 0;

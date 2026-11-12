@@ -201,6 +201,14 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
 .tl button{display:grid;grid-template-columns:44px 1fr;gap:10px;width:100%;text-align:left;font-size:14px;line-height:1.6;padding:7px 0}
 .tl time{font:500 11px/2 var(--mono);color:var(--text-3)}
 .tl button.on time{color:var(--green-soft)}
+#qRow textarea{width:100%;font:inherit;font-size:16px;line-height:1.7;color:var(--text);background:transparent;border:0;outline:0;resize:none;padding:14px 0;min-height:88px;max-height:200px;overflow-y:auto}
+#qRow textarea::placeholder{color:var(--text-3)}
+.qa{margin-top:8px}
+.qi{padding:14px 16px;border-top:1px solid var(--border)}
+.qi:first-child{border-top:0}
+.qi .q{font-size:15px;line-height:1.7;white-space:pre-wrap}
+.qi .a{margin-top:8px;font-size:14px;line-height:1.7;color:var(--text-2);white-space:pre-wrap}
+.qi .m{margin-top:6px;font:500 11px var(--mono);color:var(--text-3)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.hero::before{opacity:1}.hero h1 .it,.hero h1 span:not(.it),#form .row,#form .go,#form .group{opacity:1;transform:none;filter:none}.cumark .d{stroke-dashoffset:0;opacity:1}}
 </style>
@@ -252,6 +260,20 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
   </div>
 
   <section class="mine" id="mine" hidden><h3>我的投递</h3><div class="group" id="list"></div></section>
+
+  <section class="qa" id="qa">
+    <button class="find" id="qBtn" type="button">刀门会员提问</button>
+    <div class="fbox" id="qbox" hidden>
+      <div class="group">
+        <div class="row"><label class="fl"><input id="qn" maxlength="20" placeholder=" "><span>艺名</span></label></div>
+        <div class="row" id="qRow"><textarea id="qt" maxlength="600" rows="3" placeholder="想问的问题" spellcheck="false"></textarea></div>
+      </div>
+      <button class="go" id="qgo" type="button" style="opacity:1">提交</button>
+      <div class="err" id="qerr" role="alert"></div>
+    </div>
+    <section class="mine" id="qmine" hidden><h3>我的提问</h3><div class="group" id="qml"></div></section>
+    <section class="mine" id="qpub" hidden><h3>问答</h3><div class="group" id="qpl"></div></section>
+  </section>
 </main>
 
 <div id="dropzone" aria-hidden="true"><p>松手即可放入</p></div>
@@ -515,6 +537,30 @@ load();
 fetch(API + '/demo/wall').then(r => r.json()).then(j => { if (!j || !j.ok) return; const n = j.n || 0, max = j.max || 5, s = $('#seats'), dots = el('span');
   for (let i = 0; i < max; i++) dots.append(el('i', i < n ? 'on' : ''));
   const t = el('em'); t.style.fontStyle = 'normal'; t.append('SEATS ', el('b', '', String(n)), ' / ' + max); s.append(dots, t); s.setAttribute('aria-label', '主厨之选已入选 ' + n + ' / ' + max + ' 席'); s.hidden = false; }).catch(() => {});
+
+/* 刀门提问：会员提问 → 刀大厨决定展示和回答。提问的人用本机 token 看自己的问题与回答；公开区只显示被展示的，不带艺名 */
+const qToks = () => { try { return JSON.parse(store.get('demo:qtokens') || '[]'); } catch (e) { return []; } };
+const qItem = (q, a, meta) => { const d = el('div', 'qi'); d.append(el('div', 'q', q)); if (a) d.append(el('div', 'a', a)); if (meta) d.append(el('div', 'm', meta)); return d; };
+const qDay = ts => new Date(ts).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+async function qLoad() {
+  const ts = qToks();
+  if (ts.length) { try { const j = await (await fetch(API + '/demo/qme?t=' + ts.join(','), { cache: 'no-store' })).json(); const box = $('#qml'); box.textContent = ''; (j.qs || []).forEach(x => box.append(qItem(x.q, x.a, x.a ? '已回复 · ' + qDay(x.ats) : '已收到 · ' + qDay(x.ts)))); $('#qmine').hidden = !(j.qs || []).length; } catch (e) {} }
+  try { const j = await (await fetch(API + '/demo/qa')).json(); const box = $('#qpl'); box.textContent = ''; (j.qa || []).forEach(x => box.append(qItem(x.q, x.a, qDay(x.ts)))); $('#qpub').hidden = !(j.qa || []).length; } catch (e) {}
+}
+$('#qBtn').onclick = () => { const b = $('#qbox'); b.hidden = !b.hidden; if (!b.hidden) { if (!$('#qn').value) $('#qn').value = ($('#n').value || store.get('demo:qn') || '').trim(); ($('#qn').value ? $('#qt') : $('#qn')).focus(); } };
+$('#qgo').onclick = async () => {
+  const n = $('#qn').value.trim(), text = $('#qt').value.trim(), er = $('#qerr'); er.textContent = '';
+  if (!n) { er.textContent = '填一下艺名'; return; }
+  if (text.length < 4) { er.textContent = '问题再写具体一点'; return; }
+  const btn = $('#qgo'); btn.disabled = true;
+  try {
+    const j = await (await fetch(API + '/demo/q', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n, text }) })).json();
+    if (!j.ok) { er.textContent = j.e === 'quota' ? '今天已经问了 3 个，明天再来' : j.e === 'rate' ? '太频繁了，稍后再试' : '没发出去，稍后再试'; btn.disabled = false; return; }
+    const ts = qToks(); ts.unshift(j.token); store.set('demo:qtokens', JSON.stringify(ts.slice(0, 20))); store.set('demo:qn', n);
+    $('#qt').value = ''; $('#qbox').hidden = true; btn.disabled = false; qLoad();
+  } catch (e) { er.textContent = '网络不通，稍后再试'; btn.disabled = false; }
+};
+qLoad();
 })();
 </script>
 </body>
