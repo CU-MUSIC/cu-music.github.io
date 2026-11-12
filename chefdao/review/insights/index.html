@@ -395,7 +395,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261111.1300';
+const BUILD = '261112.1500';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -657,7 +657,7 @@ function verSummary(rows) {
   const facts = ['<b>' + n + '</b> 位听众', '<b>' + rows.length + '</b> 次播放', '累计听了 <b>' + mins(sec) + '</b>'];
   if (ends) facts.push('完整听完 <b>' + ends + '</b> 次');
   const mid = hasBins && half >= 0 ? '<br>过半数的人听到 <b>' + fmt((half + 1) * len) + '</b>' : '';
-  return `<div class="ver"><div class="t"><b>${esc(rows[0].ver)} 汇总</b><span>${fmt(dur)}</span></div>
+  return `<div class="ver"><div class="t"><b>${esc(vnm(rows[0].slug, rows[0].ver))} 汇总</b><span>${fmt(dur)}</span></div>
     ${hasBins ? '<div class="heat">' + reach.map(v => `<i style="height:${Math.max(8, v / n * 100)}%;opacity:${v > 0 ? .25 + .75 * v / n : .08}"></i>`).join('') + '</div><div class="facts" style="font-size:12px;color:var(--text-3)">条越高，听到这一段的人越多</div>' : ''}
     <div class="facts">${facts.join(' · ')}${mid}</div></div>`;
 }
@@ -695,7 +695,7 @@ function verBlock(x) {
   if (b.length) facts.push('覆盖 <b>' + cover + '%</b>');
   if (x.ends) facts.push('完整听完 <b>' + x.ends + '</b> 次');
   let rep = reps >= 1.8 && (hi - lo + 1) * len >= 3 ? '<br>反复听最多：<b>' + fmt(lo * len) + '–' + fmt((hi + 1) * len) + '</b>（约 ' + Math.round(reps) + ' 遍）' : '';
-  return `<div class="ver"><div class="t"><b>《${esc(x.title || x.slug)}》${esc(x.ver)}</b><span>${fmt(x.dur)}</span></div>
+  return `<div class="ver"><div class="t"><b>《${esc(x.title || x.slug)}》${esc(vnm(x.slug, x.ver))}</b><span>${fmt(x.dur)}</span></div>
     ${b.length ? '<div class="heat">' + b.map(v => `<i style="height:${Math.max(8, v / mx * 100)}%;opacity:${v > 0 ? .25 + .75 * Math.min(1, v / mx) : .08}"></i>`).join('') + '</div>' : ''}
     ${x.fb && x.fb.comments.some(c => !c.del) && x.dur ? '<div class="pins">' + x.fb.comments.filter(c => !c.del).map(c => `<i style="left:${Math.min(100, c.t / x.dur * 100)}%"></i>`).join('') + '</div>' : ''}
     <div class="facts">${facts.join(' · ')}${rep}</div>${cmts(x)}</div>`;
@@ -832,7 +832,7 @@ function renderListen() {
   const pjTracks = proj ? [...new Map(data.rows.filter(x => pjSlugs.has(x.slug)).map(x => [x.slug, x.title || x.slug])).entries()] : [];
   if (song && proj && !pjSlugs.has(song)) song = '';
   // 选了一首歌后可以再选某个版本：只看这个版本的听众、播放和每段的覆盖
-  const vers = song ? [...new Set(all.filter(x => x.slug === song).map(x => x.ver))].sort((p, q) => String(p).localeCompare(String(q), 'zh', { numeric: true })) : [];
+  const vers = song ? [...new Set(all.filter(x => x.slug === song).map(x => x.ver))].sort((p, q) => { const o = ((RSONGS.find(x => x.slug === song) || {}).vn || []).map(x => x.ver), i = o.indexOf(p), j = o.indexOf(q); return (i < 0 ? 1e3 : i) - (j < 0 ? 1e3 : j) || String(p).localeCompare(String(q), 'zh', { numeric: true }); }) : [];
   if (ver && !vers.includes(ver)) ver = '';
   const rows = all.filter(x => (!proj || pjSlugs.has(x.slug)) && (!song || (x.slug === song && (!ver || x.ver === ver))));
   const s = series(rows, now);
@@ -864,7 +864,7 @@ function renderListen() {
   ${pjTracks.length > 1 ? `<div class="chips" id="tchips"><button data-s2="" class="${song ? '' : 'on'}">全部曲目</button>${pjTracks.map(([k, t]) =>
     `<button data-s2="${esc(k)}" class="${song === k ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>` : ''}
   ${vers.length > 1 ? `<div class="chips" id="vchips"><button data-v="" class="${ver ? '' : 'on'}">全部版本</button>${vers.map(v =>
-    `<button data-v="${esc(v)}" class="${ver === v ? 'on' : ''}">${esc(v)} · ${new Set(all.filter(x => x.slug === song && x.ver === v).map(x => x.lid)).size} 人</button>`).join('')}</div>` : ''}
+    `<button data-v="${esc(v)}" class="${ver === v ? 'on' : ''}">${esc(vnm(song, v))} · ${new Set(all.filter(x => x.slug === song && x.ver === v).map(x => x.lid)).size} 人</button>`).join('')}</div>` : ''}
   ${song && ver ? verSummary(rows) : ''}
   <div class="cards">
     <div class="card"><div class="lb">播放次数</div><div class="n">${rows.length}</div><div class="d">近 ${days} 天</div>${spark(s.plays)}</div>
@@ -874,7 +874,7 @@ function renderListen() {
   ${people.length > 1 ? `<div class="chips" id="lchips"><button data-l="" class="${lis ? '' : 'on'}">所有听众</button>${people.map(([k, n]) =>
     `<button data-l="${esc(k)}" class="${lis === k ? 'on' : ''}${arts.size ? (arts.has(k) ? ' mem' : ' dim') : ''}">${esc(n)}</button>`).join('')}</div>` : ''}
   <div class="feed">${feed.length ? feed.map(f => {
-    if (f.ev) { const a = f.ev, v = String(a.ver || ''), [ic, tx] = a.kind === 'dlreq' ? ['⬇', '申请下载'] : a.kind === 'dlget' ? ['⬇', '下载了 ' + v] : v.startsWith('fb:') ? ['📝', v.slice(3) + ' 反馈完毕'] : v.startsWith('ext:') ? ['⏳', v.slice(4) + ' 延长 24 小时'] : ['✅', '确认 ' + v + ' 没有问题'];
+    if (f.ev) { const a = f.ev, v = String(a.ver || ''), vn = x => vnm(a.slug, x), [ic, tx] = a.kind === 'dlreq' ? ['⬇', '申请下载'] : a.kind === 'dlget' ? ['⬇', '下载了 ' + vn(v)] : v.startsWith('fb:') ? ['📝', vn(v.slice(3)) + ' 反馈完毕'] : v.startsWith('ext:') ? ['⏳', vn(v.slice(4)) + ' 延长 24 小时'] : ['✅', '确认 ' + vn(v) + ' 没有问题'];
       return `<div class="item"><button class="av" data-ln="${esc(a.lid)}" title="写备注">${esc(a.lid)}</button><div class="body">
       <div class="who">${who(a.lid, '歌手')}<time>${when(a.ts, now)}</time></div>
       <div class="acc v act k-${a.kind === 'ok' ? (v.startsWith('fb:') ? 'fb' : v.startsWith('ext:') ? 'ext' : 'ok') : 'dl'}"><span>${ic}</span><b>《${esc(a.title)}》</b><em>${esc(tx)}</em></div></div></div>`; }
@@ -1561,13 +1561,15 @@ async function newProject() {
 }
 // ── 审听页管理：所有在线审听链接，改歌名 / 歌手，复制链接 + 密码，打开，删除 ──
 let RSONGS = [], songsOpen = false;
+// 版本显示名：内部 V 号 → 混音 2 / 编辑 1（和审听页同一套，worker 算好放在 vn 里）
+const vnm = (slug, ver) => { ver = String(ver || ''); const r = RSONGS.find(x => x.slug === slug), d = r && r.vn && r.vn.find(x => x.ver === ver); return d ? d.name : ver; };
 function renderSongs() {
   if (!RSONGS.length) return '';
   const now = data ? data.now : Date.now();
   return `<details class="rsm" id="rsm"${songsOpen ? ' open' : ''}><summary>审听页 <span>${RSONGS.length} 首</span></summary>${RSONGS.map(x => `
     <div class="rs" data-slug="${esc(x.slug)}">
       <div class="rs-h"><b>《${esc(x.title)}》</b>${x.artist ? `<span>${esc(x.artist)}</span>` : '<span class="dim">未填歌手</span>'}</div>
-      <div class="rs-m">${x.versions.map(v => esc(v.ver)).join(' ')} · ${x.people ? x.people + ' 位听众 · 最近 ' + when(x.heard, now) : '还没人听'}</div>
+      <div class="rs-m">${(x.vn || x.versions).map(v => esc(v.name || v.ver)).join(' ')} · ${x.people ? x.people + ' 位听众 · 最近 ' + when(x.heard, now) : '还没人听'}</div>
       <div class="rs-l">${esc(x.url.replace('https://', ''))} · ${(x.share ?? x.pass) ? `密码 <b>${esc(x.share ?? x.pass)}</b>` : '不设密码'}</div>
       <div class="rs-a"><button data-rs="copy">复制链接和密码</button><a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a><button data-rs="artist">${x.artist ? '改歌手' : '填歌手'}</button><button data-rs="title">改歌名</button><button data-rs="drop" class="danger">删除</button></div>
     </div>`).join('')}</details>`;
