@@ -1099,7 +1099,7 @@ function qbNoticeDismiss() {
 function qbNoticeHtml(q) {
 	// 用非会员那条线判断：会员延后是福利，公告本身照常提前挂
 	var live = new Date() >= new Date(PRICING.newFrom + "T00:00:00");
-	if (PRICING.off || live || qbNoticeHidden()) return "";
+	if (PRICING.off || live || new Date() < new Date(PRICING.noticeFrom + "T00:00:00") || qbNoticeHidden()) return "";
 	var rows = qbNoticeRows(q);
 	if (!rows.length) return "";
 	var from = qbFmtDateY(PRICING.newFrom, currentLang);
@@ -1137,12 +1137,13 @@ function qbNoticeHtml(q) {
 //   D = 入口钉死、天花板抬高（通缩期形状）           ← 当前
 // 推导与三方案对比见 _internal-pricing.md
 var PRICING = {
-	// 2026-10-20 取消这次调价（合作取消）：off = true 时页面一直报现价，调价预告也不挂。
-	// 以后要重新调价：改 newFrom / memberFrom，把 off 改回 false 即可，方案 D 的数字都还在。
-	off: true,
-	newFrom: "2026-11-01",
+	// 2026-11-12 方案 D 改到 2027-06-01 上线（原 11-01 调价已取消）。off = true 时页面一直报现价，调价预告也不挂。
+	off: false,
+	newFrom: "2027-06-01",
+	// 调价预告 5-01 起才挂（上线前 1 个月），之前页面完全看不出要涨价
+	noticeFrom: "2027-05-01",
 	// 刀门会员延后两个月：这是会员福利，不是两套价格
-	memberFrom: "2027-01-01",
+	memberFrom: "2027-08-01",
 	// ¥99 入会通道关闭日。已入会的终身 8 折照常兑现，只是不再新增。
 	// 决策依据：会员 100% 来自报价页的「本单加入」，¥5,000 门槛从未触发过一次；
 	// 于是「会员价」实际就是唯一被支付的价目表，8 折只是在给每一位客户永久降价 20%。
