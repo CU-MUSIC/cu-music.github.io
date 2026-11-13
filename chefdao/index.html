@@ -370,6 +370,12 @@ body {
   text-align:center; padding:0 0 80px; display:none;
 }
 #expand-wrap.visible { display:block; }
+/* 总作品数：放在「View All Works」上面，一眼看到体量 */
+#works-total {
+  font-family:var(--font-pro); font-size:11px; font-weight:500; letter-spacing:0.22em;
+  text-transform:uppercase; color:rgba(255,255,255,0.4); margin:0 0 20px;
+}
+#works-total b { font-size:15px; font-weight:600; letter-spacing:0.04em; color:rgba(255,255,255,0.85); margin-right:0.5em; }
 #expand-btn {
   background:transparent; border:1px solid rgba(255,255,255,0.2);
   color:rgba(255,255,255,0.6); padding:14px 36px; border-radius:100px;
@@ -773,6 +779,7 @@ body {
 <div id="works-section">
   <div id="albums-container"></div>
   <div id="expand-wrap">
+    <p id="works-total"></p>
     <button id="expand-btn"></button>
   </div>
   <div id="albums-all"></div>
@@ -993,20 +1000,25 @@ function generateContent() {
       byYear.get(y).push(a);
     });
     const years = [...byYear.keys()].sort((x, y) => (y + '').localeCompare(x + ''));
+    /* 年份数字算当年全部发行（含上面精选里的），不然 2026 会少算精选那几张 */
+    const all = [...featured, ...rest];
+    const yearTotal = y => all.filter(a => (a.year || '—') === y).length;
 
     document.getElementById('albums-all').innerHTML = years.map(y => `
       <div class="year-block" data-year="${y}">
         <div class="year-head">
           <span class="year-head-num">${y}</span>
-          <span class="year-head-count">${byYear.get(y).length} ${byYear.get(y).length > 1 ? 'releases' : 'release'}</span>
+          <span class="year-head-count">${yearTotal(y)} ${yearTotal(y) > 1 ? 'releases' : 'release'}</span>
           <span class="year-head-line"></span>
         </div>
         <div class="year-grid">${byYear.get(y).map(a => buildCompactCard(a)).join('')}</div>
       </div>`).join('');
 
     const btn = document.getElementById('expand-btn');
-    /* 三位数读起来像库存清单，99+ 反而更像「还有很多」 */
-    btn.textContent = `View All Works · ${rest.length > 99 ? '99+' : rest.length} more`;
+    const ys = all.map(a => +a.year).filter(Boolean);
+    document.getElementById('works-total').innerHTML =
+      `<b>${all.length}</b>Releases · ${Math.min(...ys)} – ${Math.max(...ys)}`;
+    btn.textContent = 'View All Works';
     document.getElementById('expand-wrap').classList.add('visible');
   }
 
