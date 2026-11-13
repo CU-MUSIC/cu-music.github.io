@@ -17,7 +17,7 @@
       --red:    #E8000A;
       --red2:   #B80008;
       --white:  #EDEBE6;
-      --mono:   'Space Mono', monospace;
+      --mono:   'Space Mono', 'Apple SD Gothic Neo', 'Noto Sans KR', 'PingFang SC', 'Noto Sans SC', monospace;
 
       /* section backgrounds — different shades of dark red */
       --bg-hero:     #060606;
@@ -37,6 +37,29 @@
       overflow-x: hidden;
       cursor: none;
     }
+
+    html[lang="zh-CN"] { --mono: 'Space Mono', 'PingFang SC', 'Noto Sans SC', 'Apple SD Gothic Neo', monospace; }
+    html[lang="ko"] body { word-break: keep-all; }
+
+    /* ── LANGUAGE SWITCH ── */
+    .lang-switch {
+      position: fixed; top: 22px; right: 28px; z-index: 50;
+      display: flex; gap: 4px;
+      background: rgba(6,0,0,0.55);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(237,235,230,0.10);
+      padding: 4px;
+    }
+    .lang-switch button {
+      font-family: 'Space Mono', 'Apple SD Gothic Neo', 'PingFang SC', monospace;
+      font-size: 12px; letter-spacing: 0.14em;
+      background: none; border: 0; cursor: none;
+      color: rgba(237,235,230,0.45);
+      padding: 6px 10px;
+      transition: color .2s, background .2s;
+    }
+    .lang-switch button:hover { color: var(--white); }
+    .lang-switch button.on { color: #000; background: var(--red); }
 
     ::selection { background: var(--red); color: #000; }
 
@@ -527,6 +550,48 @@
     }
     .footer-top:hover { color: var(--red); }
 
+    /* ── WORKS GRID ── */
+    .wgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 44px 28px; }
+    .w { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .w-cover {
+      position: relative; display: block; width: 100%; aspect-ratio: 1; padding: 0; border: 0;
+      background: #1a0002; cursor: none; overflow: hidden; margin-bottom: 10px;
+    }
+    .w-cover img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s, filter .3s; }
+    .w-cover:hover img { transform: scale(1.04); filter: brightness(.7); }
+    .w-type { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; padding: 22px; text-align: left;
+      background: radial-gradient(circle at 30% 30%, #5a0004, #0d0002 70%); }
+    .w-type span { font-family: var(--mono); font-size: 22px; letter-spacing: .06em; color: var(--white); line-height: 1.3; }
+    .w-type small { font-size: 11px; letter-spacing: .28em; text-transform: uppercase; color: var(--red); }
+    .w-play {
+      position: absolute; right: 12px; bottom: 12px; width: 44px; height: 44px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 14px;
+      background: var(--red); color: #000; opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s;
+    }
+    .w-cover:hover .w-play, .w.playing .w-play { opacity: 1; transform: none; }
+    .w-title { font-size: 17px; letter-spacing: .05em; color: var(--white); }
+    .w-artist { font-size: 12px; letter-spacing: .1em; color: rgba(237,235,230,0.42); }
+    .w-roles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .w-roles span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--red); border: 1px solid rgba(232,0,10,0.4); padding: 3px 8px; }
+    .w-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+    .w-ig { font-size: 11px; letter-spacing: .16em; color: rgba(237,235,230,0.3); text-decoration: none; margin-top: 4px; width: fit-content; }
+    .w-ig:hover { color: var(--red); }
+
+    .bar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+      display: grid; grid-template-columns: 44px minmax(0,1fr); gap: 4px 14px; align-items: center;
+      padding: 12px max(20px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+      background: rgba(10,0,0,0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(232,0,10,0.25);
+    }
+    .bar[hidden] { display: none; }
+    .bar-btn { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--red); color: #000; font-size: 12px; cursor: none; }
+    .bar-title { font-size: 14px; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-artist { font-size: 11px; letter-spacing: .1em; color: rgba(237,235,230,0.4); }
+    .bar-prog { grid-column: 1 / -1; height: 2px; background: rgba(237,235,230,0.1); cursor: none; }
+    .bar-prog i { display: block; height: 100%; width: 0; background: var(--red); }
+    .works-more { display: flex; flex-wrap: wrap; gap: 14px 40px; margin-top: 36px; }
+
     /* ── SCROLL REVEAL ── */
     .reveal {
       opacity: 0;
@@ -541,7 +606,9 @@
       .info-grid { grid-template-columns: 1fr; gap: 40px; }
       .dj-layout, .producer-layout { grid-template-columns: 1fr; }
       .producer-text { order: 0; }
-      .work-card { grid-template-columns: 1fr; gap: 12px; }
+      .wgrid { grid-template-columns: 1fr 1fr; gap: 32px 16px; }
+      .w-play { opacity: 1; transform: none; width: 36px; height: 36px; }
+      .w-title { font-size: 15px; }
       footer { padding: 24px 28px; flex-direction: column; align-items: flex-start; }
     }
   </style>
@@ -549,6 +616,7 @@
 <body>
 
   <div class="cursor" id="cursor"></div>
+
 
   <!-- ── HERO ── -->
   <section id="hero">
@@ -559,46 +627,135 @@
     </div>
     <div class="hero-overlay"></div>
     <div class="hero-content">
-      <div class="hero-eyebrow">Shanghai · Seoul</div>
+      <div class="hero-eyebrow" data-i18n="eyebrow">Shanghai · Seoul</div>
       <div class="hero-name">
         UIN<br>
-        <span class="cn">尤因</span>
+        <span class="cn" data-i18n="cnname">尤因</span>
       </div>
-      <div class="hero-sub">Producer · DJ · Songwriter</div>
+      <div class="hero-sub" data-i18n="herosub">Producer · DJ · Songwriter</div>
     </div>
     <div class="hero-bottom">
       <span>© 2026</span>
-      <span>Scroll ↓</span>
+      <span data-i18n="scroll">Scroll ↓</span>
     </div>
     <div class="scroll-line"></div>
   </section>
 
+  <!-- ── WORKS ── -->
+  <section id="works">
+    <div class="section">
+      <div class="section-label" data-i18n="l_works">Works</div>
+      <div class="wgrid">
+        <div class="w reveal" data-src="audio/twistedlove.mp3" data-title="Twisted Love" data-artist="WindMax">
+          <button type="button" class="w-cover" aria-label="Play Twisted Love"><img src="img/covers/twistedlove.jpg" alt="" loading="lazy" /><span class="w-play" aria-hidden="true">▶</span></button>
+          <div class="w-title">Twisted Love</div>
+          <div class="w-artist">WindMax</div>
+          <div class="w-roles" data-roles="prod,lyr,comp"></div>
+          <div class="w-links">
+            <a class="w-ig" href="https://open.spotify.com/track/0fs4wwmemOlDbwtHJMJkMg" target="_blank" rel="noopener">Spotify ↗</a>
+            <a class="w-ig" href="https://music.163.com/#/song?id=3406260469" target="_blank" rel="noopener">NetEase ↗</a>
+            <a class="w-ig" href="https://www.instagram.com/uin_works/p/DbAKrdtCaaw/" target="_blank" rel="noopener">Instagram ↗</a>
+          </div>
+        </div>
+        <div class="w reveal" data-src="audio/greenlight.mp3" data-title="Green Light" data-artist="Faye Gao">
+          <button type="button" class="w-cover" aria-label="Play Green Light"><img src="img/covers/greenlight.jpg" alt="" loading="lazy" /><span class="w-play" aria-hidden="true">▶</span></button>
+          <div class="w-title">Green Light</div>
+          <div class="w-artist">Faye Gao</div>
+          <div class="w-roles" data-roles="lyr,comp"></div>
+          <div class="w-links">
+            <a class="w-ig" href="https://music.163.com/#/song?id=3446658539" target="_blank" rel="noopener">NetEase ↗</a>
+            <a class="w-ig" href="https://www.instagram.com/is_uinnnn/p/DezA2sKn8uP/" target="_blank" rel="noopener">Instagram ↗</a>
+          </div>
+        </div>
+        <div class="w reveal" data-src="" data-title="What I’m Meant To Be" data-artist="Short Film Score">
+          <button type="button" class="w-cover" aria-label="Play What I’m Meant To Be"><div class="w-type"><span>What I’m Meant To Be</span><small>Short Film Score</small></div><span class="w-play w-ext" aria-hidden="true">↗</span></button>
+          <div class="w-title">What I’m Meant To Be</div>
+          <div class="w-artist">Short Film Score</div>
+          <div class="w-roles" data-roles="prod,lyr,comp"></div>
+          <div class="w-links">
+            <a class="w-ig" href="https://www.instagram.com/is_uinnnn/p/DZKzwB5GhTS/" target="_blank" rel="noopener">Instagram ↗</a>
+          </div>
+        </div>
+        <div class="w reveal" data-src="audio/chuhai.mp3" data-title="出海 (Chuhai)" data-artist="An Yihan">
+          <button type="button" class="w-cover" aria-label="Play 出海"><img src="img/covers/chuhai.jpg" alt="" loading="lazy" /><span class="w-play" aria-hidden="true">▶</span></button>
+          <div class="w-title">出海 (Chuhai)</div>
+          <div class="w-artist">An Yihan</div>
+          <div class="w-roles" data-roles="dir"></div>
+          <div class="w-links">
+            <a class="w-ig" href="https://music.163.com/#/song?id=3365592975" target="_blank" rel="noopener">NetEase ↗</a>
+            <a class="w-ig" href="https://www.instagram.com/uin_works/p/DWmJFk3ieEQ/" target="_blank" rel="noopener">Instagram ↗</a>
+          </div>
+        </div>
+        <div class="w reveal" data-src="audio/black.mp3" data-title="Black" data-artist="Ele Jazz">
+          <button type="button" class="w-cover" aria-label="Play Black"><img src="img/covers/ufo.jpg" alt="" loading="lazy" /><span class="w-play" aria-hidden="true">▶</span></button>
+          <div class="w-title">Black</div>
+          <div class="w-artist">Ele Jazz</div>
+          <div class="w-roles" data-roles="prod"></div>
+          <div class="w-links">
+            <a class="w-ig" href="https://open.spotify.com/track/0ngacLUFoG8oG8PSGV3bXB" target="_blank" rel="noopener">Spotify ↗</a>
+            <a class="w-ig" href="https://music.163.com/#/album?id=360128548" target="_blank" rel="noopener">NetEase ↗</a>
+            <a class="w-ig" href="https://www.instagram.com/uin_works/p/DUH2yWhiUfu/" target="_blank" rel="noopener">Instagram ↗</a>
+          </div>
+        </div>
+        <div class="w reveal" data-src="audio/garden.mp3" data-title="BAD DESIRE" data-artist="An Yihan · 7 tracks">
+          <button type="button" class="w-cover" aria-label="Play BAD DESIRE"><img src="img/covers/baddesire.jpg" alt="" loading="lazy" /><span class="w-play" aria-hidden="true">▶</span></button>
+          <div class="w-title">BAD DESIRE</div>
+          <div class="w-artist">An Yihan · 7 tracks</div>
+          <div class="w-roles" data-roles="prod,comp"></div>
+          <div class="w-links">
+            <a class="w-ig" href="https://music.163.com/#/album?id=349892857" target="_blank" rel="noopener">NetEase ↗</a>
+            <a class="w-ig" href="https://www.instagram.com/uin_works/p/DQmXp_qidbB/" target="_blank" rel="noopener">Instagram ↗</a>
+          </div>
+        </div>
+        <div class="w reveal" data-src="audio/seoul.mp3" data-title="首尔病 (Take Me Out)" data-artist="Uin">
+          <button type="button" class="w-cover" aria-label="Play 首尔病 (Take Me Out)"><img src="img/covers/seoul.jpg" alt="" loading="lazy" /><span class="w-play" aria-hidden="true">▶</span></button>
+          <div class="w-title">首尔病 (Take Me Out)</div>
+          <div class="w-artist">Uin</div>
+          <div class="w-roles" data-roles="prod,lyr,comp"></div>
+          <div class="w-links">
+            <a class="w-ig" href="https://music.163.com/#/song?id=2747567075" target="_blank" rel="noopener">NetEase ↗</a>
+            <a class="w-ig" href="https://www.instagram.com/uin_works/p/DOtOtkwiciH/" target="_blank" rel="noopener">Instagram ↗</a>
+          </div>
+        </div>
+      </div>
+      <div class="works-more">
+        <a href="https://www.instagram.com/uin_works/" target="_blank" rel="noopener" class="social-link">Instagram @uin_works</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="bar" id="bar" hidden>
+    <button type="button" class="bar-btn" id="barBtn" aria-label="Play / Pause">❚❚</button>
+    <div class="bar-info"><div class="bar-title" id="barTitle"></div><div class="bar-artist" id="barArtist"></div></div>
+    <div class="bar-prog" id="barProg"><i id="barFill"></i></div>
+  </div>
+
   <!-- ── INFORMATION ── -->
   <section id="info">
     <div class="section">
-      <div class="section-label">Information</div>
+      <div class="section-label" data-i18n="l_info">Information</div>
       <div class="info-grid">
 
-        <p class="info-bio reveal">
+        <p class="info-bio reveal" data-i18n="bio">
           Uin (尤因 / 유인) is an electronic hip-hop
           producer, DJ and songwriter active between
           Shanghai and Seoul. Grounded in club culture
           and driven by cross-genre curiosity, her sound
-          bridges electronic, hip-hop, R&B and K-POP —
+          bridges electronic, hip-hop and K-POP —
           forged across two cities, three languages,
           one relentless sonic identity.
         </p>
 
         <div class="reveal">
-          <div class="info-col-label">General Inquiries</div>
+          <div class="info-col-label" data-i18n="inq">General Inquiries</div>
           <div class="info-col-value">
             <a href="mailto:uin2002jh@gmail.com">uin2002jh@gmail.com</a>
           </div>
         </div>
 
         <div class="reveal">
-          <div class="info-col-label">Genres</div>
-          <div class="info-col-value">Electronic · Hip-Hop · R&B · K-POP</div>
+          <div class="info-col-label" data-i18n="genres">Genres</div>
+          <div class="info-col-value" data-i18n="genresv">Electronic · Hip-Hop · K-POP</div>
         </div>
 
       </div>
@@ -613,14 +770,14 @@
 
         <div class="dj-photo-wrap reveal">
           <img class="dj-photo" src="img/uin-003.jpg" alt="Uin DJing" />
-          <div class="dj-photo-caption">Yeahmao Club, Shanghai</div>
+          <div class="dj-photo-caption" data-i18n="djcap">Yeahmao Club, Shanghai</div>
         </div>
 
         <div class="dj-text">
           <div class="dj-stat reveal">60+</div>
-          <div class="dj-stat-label reveal">Performances</div>
+          <div class="dj-stat-label reveal" data-i18n="perf">Performances</div>
 
-          <div class="dj-bio-text reveal">
+          <div class="dj-bio-text reveal" data-i18n="djbio">
             Active in Shanghai for 3 years as resident
             DJ at Yeahmao Club and performance DJ
             across 60+ shows. Spanning electronic,
@@ -628,8 +785,8 @@
             exploration of her evolving artistry.
           </div>
 
-          <div class="dj-acts-label reveal">Notable Collaborations</div>
-          <div class="dj-acts reveal">
+          <div class="dj-acts-label reveal" data-i18n="collab_l">Notable Collaborations</div>
+          <div class="dj-acts reveal" data-i18n="acts">
             <span>·</span> Lexie Liu — Tencent Game Event<br>
             <span>·</span> Danny K · FFFELEVEN · Sino — 2727 Tour<br>
             <span>·</span> 1SHOT — 侬 Cypher 了伐<br>
@@ -644,44 +801,36 @@
   <!-- ── PRODUCER ── -->
   <section id="producer">
     <div class="section">
-      <div class="section-label">Producer</div>
+      <div class="section-label" data-i18n="l_prod">Producer</div>
       <div class="producer-layout">
 
         <div class="producer-text">
-          <div class="producer-bio-text reveal">
+          <div class="producer-bio-text reveal" data-i18n="prodbio">
             From DJ to producer, Uin moved to Seoul
             to study Performing Arts at Hongik University,
             pursuing professional music production.
-            Her work spans electronic, pop, hip-hop
-            and R&B — built in studios between
+            Her work spans electronic, pop and hip-hop,
+            built in studios between
             Shanghai and Seoul.
           </div>
 
           <div class="producer-stats reveal">
             <div>
               <div class="stat-num">200K+</div>
-              <div class="stat-desc">Streams</div>
+              <div class="stat-desc" data-i18n="s1">Streams</div>
             </div>
             <div>
               <div class="stat-num">1M+</div>
-              <div class="stat-desc">Short-form<br>video views</div>
+              <div class="stat-desc" data-i18n="s2">Short-form<br>video views</div>
             </div>
             <div>
               <div class="stat-num">500+</div>
-              <div class="stat-desc">TikTok<br>challenges</div>
+              <div class="stat-desc" data-i18n="s3">TikTok<br>challenges</div>
             </div>
             <div>
               <div class="stat-num">10+</div>
-              <div class="stat-desc">Released<br>projects</div>
+              <div class="stat-desc" data-i18n="s4">Released<br>projects</div>
             </div>
-          </div>
-
-          <div class="tracks-label reveal">Selected Works</div>
-          <div class="tracks-list reveal">
-            <span>—</span> Trick or Treat<br>
-            <span>—</span> 首尔病 (Take Me Out)<br>
-            <span>—</span> Bad Desire<br>
-            <span>—</span> 美丽新世界
           </div>
         </div>
 
@@ -693,67 +842,24 @@
     </div>
   </section>
 
-  <!-- ── SELECTED WORK ── -->
-  <section id="works">
-    <div class="section">
-      <div class="section-label">Selected Work</div>
-
-      <div class="work-card placeholder">
-        <div class="work-left">
-          <div class="work-tag">Coming Soon</div>
-          <div class="work-title">— 2026 —</div>
-        </div>
-        <div class="work-right">
-          <div class="work-meta">2026</div>
-          <div class="work-arrow">↗</div>
-        </div>
-      </div>
-
-      <a class="work-card" href="https://music.163.com/#/artist?id=36283900" target="_blank" rel="noopener">
-        <div class="work-left">
-          <div class="work-tag">Streaming</div>
-          <div class="work-title">NetEase Music Catalog</div>
-        </div>
-        <div class="work-right">
-          <div class="work-meta">网易云音乐<br>Catalog</div>
-          <div class="work-arrow">↗</div>
-        </div>
-      </a>
-
-      <a class="work-card" href="https://www.beatstars.com/produin" target="_blank" rel="noopener">
-        <div class="work-left">
-          <div class="work-tag">Beats</div>
-          <div class="work-title">BeatStars</div>
-        </div>
-        <div class="work-right">
-          <div class="work-meta">Prod_Uin<br>Beat Catalog</div>
-          <div class="work-arrow">↗</div>
-        </div>
-      </a>
-
-    </div>
-  </section>
-
   <!-- ── CONTACT ── -->
   <section id="contact">
     <div class="section">
-      <div class="section-label">Contact</div>
+      <div class="section-label" data-i18n="l_contact">Contact</div>
       <a href="mailto:uin2002jh@gmail.com" class="contact-email">uin2002jh@gmail.com</a>
       <div class="contact-socials">
         <a href="https://www.instagram.com/is_uinnnn" target="_blank" rel="noopener" class="social-link">Instagram</a>
         <a href="https://www.xiaohongshu.com/user/profile/5f2e0ff4000000000100a82c" target="_blank" rel="noopener" class="social-link">小红书</a>
         <a href="https://music.163.com/#/artist?id=36283900" target="_blank" rel="noopener" class="social-link">NetEase Music</a>
-        <a href="https://www.youtube.com/@prod_uin" target="_blank" rel="noopener" class="social-link">YouTube</a>
-        <a href="https://www.beatstars.com/produin" target="_blank" rel="noopener" class="social-link">BeatStars</a>
       </div>
     </div>
   </section>
 
   <!-- ── FOOTER ── -->
   <footer>
-    <span class="footer-copy">© 2026 Uin 尤因 · All Rights Reserved</span>
-    <a href="https://cumusic.work/" target="_blank" rel="noopener" class="footer-cu">Rights & Management — CU Music</a>
-    <a href="#hero" class="footer-top">↑ Top</a>
+    <span class="footer-copy" data-i18n="copy">© 2026 Uin 尤因 · All Rights Reserved</span>
+    <a href="https://cumusic.work/" target="_blank" rel="noopener" class="footer-cu" data-i18n="cu">Rights & Management — CU MUSIC</a>
+    <a href="#hero" class="footer-top" data-i18n="top">↑ Top</a>
   </footer>
 
   <script>
@@ -763,10 +869,127 @@
       cur.style.left = e.clientX + 'px';
       cur.style.top  = e.clientY + 'px';
     });
-    document.querySelectorAll('a, .work-card').forEach(el => {
+    document.querySelectorAll('a, button').forEach(el => {
       el.addEventListener('mouseenter', () => { cur.style.width='14px'; cur.style.height='14px'; });
       el.addEventListener('mouseleave', () => { cur.style.width='6px';  cur.style.height='6px'; });
     });
+
+    // Language: ?lang=ko|en|zh, default Korean
+    const I18N = {
+      ko: {
+        _title: 'UIN 유인',
+        eyebrow: '상하이 · 서울',
+        cnname: '유인',
+        herosub: '프로듀서 · DJ · 송라이터',
+        scroll: '스크롤 ↓',
+        l_info: '소개', l_prod: '프로듀서', l_works: '작업', more_netease: 'NetEase Music 전체 카탈로그', more_beats: 'BeatStars 비트 카탈로그', l_contact: '연락처',
+        bio: '유인(Uin, 尤因)은 상하이와 서울을 오가며 활동하는 일렉트로닉 힙합 프로듀서이자 DJ, 송라이터입니다. 클럽 문화에 뿌리를 두고, 장르를 넘나드는 호기심으로 일렉트로닉 · 힙합 · R&B · K-POP을 잇는 사운드를 만들어 왔습니다. 두 도시, 세 개의 언어 속에서 다듬어진 하나의 확고한 사운드 아이덴티티.',
+        inq: '문의',
+        genres: '장르',
+        genresv: '일렉트로닉 · 힙합 · R&B · K-POP',
+        djcap: 'Yeahmao Club, 상하이',
+        perf: '회 공연',
+        djbio: '상하이에서 3년간 Yeahmao Club 레지던트 DJ로 활동하며 60회 이상의 무대에 올랐습니다. 일렉트로닉, 힙합, 팝을 아우르는 매 세트는 계속 진화하는 자신의 음악 세계를 라이브로 탐구하는 시간입니다.',
+        collab_l: '주요 협업',
+        acts: '<span>·</span> Lexie Liu — 텐센트 게임 이벤트<br><span>·</span> Danny K · FFFELEVEN · Sino — 2727 투어<br><span>·</span> 1SHOT — 侬 Cypher 了伐<br><span>·</span> Gali 상하이 콘서트 애프터 파티',
+        prodbio: 'DJ에서 프로듀서로. 유인은 전문적인 음악 프로듀싱을 위해 서울로 건너와 홍익대학교 공연예술학부에서 공부하고 있습니다. 일렉트로닉, 팝, 힙합, R&B를 넘나드는 작업들은 상하이와 서울의 스튜디오에서 만들어집니다.',
+        s1: '스트리밍', s2: '숏폼 영상<br>조회수', s3: '틱톡<br>챌린지', s4: '발매<br>프로젝트',
+        tracks_l: '대표곡',
+        soon: '공개 예정',
+        w_stream: '스트리밍', w_netease: 'NetEase Music 카탈로그', w_netease_m: '网易云音乐<br>카탈로그',
+        w_beats: '비트', w_beats_m: 'Prod_Uin<br>비트 카탈로그',
+        copy: '© 2026 Uin 유인 · All Rights Reserved',
+        cu: '권리 및 매니지먼트 — CU MUSIC',
+        top: '↑ 맨 위로'
+      },
+      zh: {
+        _title: 'UIN 尤因',
+        eyebrow: '上海 · 首尔',
+        cnname: '尤因',
+        herosub: '制作人 · DJ · 词曲创作',
+        scroll: '向下滑动 ↓',
+        l_info: '简介', l_prod: '制作人', l_works: '作品', more_netease: '网易云音乐全部作品', more_beats: 'BeatStars 伴奏目录', l_contact: '联系',
+        bio: '尤因（Uin / 유인）是活跃于上海与首尔之间的电子嘻哈制作人、DJ 与词曲创作者。扎根俱乐部文化，带着跨越曲风的好奇心，她的声音连接电子、嘻哈、R&B 与 K-POP。两座城市，三种语言，一个鲜明而坚定的声音身份。',
+        inq: '合作联系',
+        genres: '风格',
+        genresv: '电子 · 嘻哈 · R&B · K-POP',
+        djcap: '上海 Yeahmao Club',
+        perf: '场演出',
+        djbio: '在上海活跃 3 年，担任 Yeahmao Club 驻场 DJ，累计演出 60 场以上。曲风横跨电子、嘻哈与流行，每一套 set 都是她对自身音乐的一次现场探索。',
+        collab_l: '合作经历',
+        acts: '<span>·</span> 刘柏辛 Lexie Liu — 腾讯游戏活动<br><span>·</span> Danny K · FFFELEVEN · Sino — 2727 巡演<br><span>·</span> 1SHOT — 侬 Cypher 了伐<br><span>·</span> Gali 上海演唱会 After Party',
+        prodbio: '从 DJ 到制作人，尤因来到首尔，就读弘益大学表演艺术学部，专注专业音乐制作。作品横跨电子、流行、嘻哈与 R&B，诞生于上海与首尔两地的录音室。',
+        s1: '播放量', s2: '短视频<br>播放量', s3: 'TikTok<br>挑战视频', s4: '已发行<br>作品',
+        tracks_l: '代表作',
+        soon: '即将发布',
+        w_stream: '流媒体', w_netease: '网易云音乐作品', w_netease_m: 'NetEase Music<br>Catalog',
+        w_beats: '伴奏', w_beats_m: 'Prod_Uin<br>伴奏目录',
+        copy: '© 2026 尤因 Uin · 保留所有权利',
+        cu: '版权与经纪 — CU MUSIC',
+        top: '↑ 回到顶部'
+      }
+    };
+    const EN = { _title: document.title };
+    document.querySelectorAll('[data-i18n]').forEach(el => EN[el.dataset.i18n] = el.innerHTML);
+    EN.cnname = '尤因 · 유인';
+    I18N.en = EN;
+
+    function setLang(lang) {
+      if (!I18N[lang]) lang = 'ko';
+      const d = I18N[lang];
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+      document.title = d._title;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const v = d[el.dataset.i18n];
+        if (v !== undefined) el.innerHTML = v;
+      });
+      document.querySelectorAll('.lang-switch button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+      if (typeof renderRoles === 'function') renderRoles(lang);
+    }
+    document.querySelectorAll('.lang-switch button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+
+    // Works player
+    const ROLES = {
+      en: { lyr: 'Lyrics', comp: 'Composition', arr: 'Arrangement', prod: 'Production', coprod: 'Co-produced', dir: 'Director' },
+      ko: { lyr: '작사', comp: '작곡', arr: '편곡', prod: '프로듀싱', coprod: '공동 프로듀싱', dir: '디렉팅' },
+      zh: { lyr: '作词', comp: '作曲', arr: '编曲', prod: '制作', coprod: '联合制作', dir: '监制' }
+    };
+    function renderRoles(lang) {
+      document.querySelectorAll('.w-roles').forEach(el => {
+        el.innerHTML = el.dataset.roles.split(',').map(k => '<span>' + ROLES[lang][k] + '</span>').join('');
+      });
+    }
+    const player = new Audio(); player.preload = 'none';
+    const bar = document.getElementById('bar'), barBtn = document.getElementById('barBtn');
+    let current = null;
+    function mark() {
+      document.querySelectorAll('.w').forEach(w => {
+        const on = w === current && !player.paused;
+        w.classList.toggle('playing', on);
+        const p = w.querySelector('.w-play:not(.w-ext)'); if (p) p.textContent = on ? '❚❚' : '▶';
+      });
+      barBtn.textContent = player.paused ? '▶' : '❚❚';
+    }
+    document.querySelectorAll('.w').forEach(w => {
+      w.querySelector('.w-cover').addEventListener('click', () => {
+        if (!w.dataset.src) { window.open(w.querySelector('.w-ig[href*="instagram"]').href, '_blank', 'noopener'); return; }
+        if (current === w) { player.paused ? player.play() : player.pause(); return; }
+        current = w; player.src = w.dataset.src; player.play();
+        document.getElementById('barTitle').textContent = w.dataset.title;
+        document.getElementById('barArtist').textContent = w.dataset.artist;
+        bar.hidden = false;
+      });
+    });
+    barBtn.addEventListener('click', () => player.paused ? player.play() : player.pause());
+    document.getElementById('barProg').addEventListener('click', e => {
+      if (player.duration) player.currentTime = player.duration * (e.offsetX / e.currentTarget.clientWidth);
+    });
+    player.addEventListener('play', mark); player.addEventListener('pause', mark);
+    player.addEventListener('timeupdate', () => {
+      document.getElementById('barFill').style.width = (player.duration ? player.currentTime / player.duration * 100 : 0) + '%';
+    });
+
+    setLang('en');
 
     // Scroll reveal
     const observer = new IntersectionObserver(entries => {
