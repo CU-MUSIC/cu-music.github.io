@@ -1062,7 +1062,7 @@ async function renderOk() {
   if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid + '&v=' + encodeURIComponent(cur.ver), { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); OKN = { need: j.need || 1, got: j.got || 0, fgot: j.fgot || 0 }; } catch (e) {} }
   if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>'; return; }
   const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 4 ? '第 ' + rn + ' 轮 · 反馈时限 24 小时' : '';
-  const latest = cur === V[V.length - 1], fbOn = !!OKS['fb:' + cur.ver], showOk = !!(S.prog && S.prog.okb) || !!OKS[cur.ver];   // 「没有问题了」要你手动打开才对客户显示
+  const latest = cur === V[V.length - 1], fbOn = !!OKS['fb:' + cur.ver], showOk = !!OKS[cur.ver] || !!(S.prog && S.prog.okb && S.prog.s !== 7 && !fbOn);   // 「没有问题了」要你手动打开才对客户显示；修改中 / 已点反馈完毕时不显示（意见还没改完，不能同时“没问题”）
   const canFb = latest && S.prog && ([4, 7].includes(S.prog.s) || fbOn) &&   // 每位歌手各点各的：别人点过转成修改中，你这边照样能点
     (fbOn || notes.length || $('#overall').value.trim());
   const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
