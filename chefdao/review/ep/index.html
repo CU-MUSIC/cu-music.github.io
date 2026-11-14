@@ -89,7 +89,7 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .tr .n{color:var(--text-3);font-variant-numeric:tabular-nums;font-size:14px}
 .tr .t{font-size:16px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tr .t i{display:block;font-style:normal;font-weight:400;font-size:13px;color:var(--text-3);margin-top:3px;overflow:hidden;text-overflow:ellipsis}
-.tr .m{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
+.tr .m{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;text-align:right}   /* 每行右边的时长 / 更新时间靠右对齐，行与行才对得齐 */
 @keyframes in{to{opacity:1;transform:none}}
 .flowl{display:flex;align-items:center;gap:14px;width:100%;margin-top:26px;padding:14px 16px;border-radius:16px;background:var(--fill);color:var(--text);text-decoration:none;text-align:left;transition:background .2s}
 .flowl:active{background:var(--fill-2);transform:scale(.99)}
@@ -268,7 +268,7 @@ if (singerSet.size > 1 && !myName && !ls.get('insights:key') && ls.get('review:m
 } 
 
 m.innerHTML = '<div class="cv"' + (P.cover ? ' style="background-image:url(' + API + P.cover + ')"' : '') + '>' + (P.cover ? '' : CU) + '</div>'
-  + '<div class="kind">' + esc(KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '') + '<button class="mename" id="meName"></button>'
+  + '<div class="kind">' + esc(P.kind === 'single' && P.tracks.length > 1 ? 'Singles' : KIND[P.kind] || '') + (P.tracks.length ? ' · ' + P.tracks.length + ' 首' : '') + '</div><h1>' + esc(P.title) + '</h1>' + (P.artist ? '<div class="ar">' + esc(P.artist) + '</div>' : '') + '<button class="mename" id="meName"></button>'
   + '<div id="gate"><div class="ask" id="ask">输入密码收听</div><div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>'
   + '<input class="pin" id="pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="密码"></div><div id="list"></div>';
 // 封面图加载完才亮起下面的柔光；没有封面的项目不显示柔光
