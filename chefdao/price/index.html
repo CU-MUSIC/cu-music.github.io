@@ -1157,19 +1157,19 @@ var PRICING = {
 			ko: { minOrder: 80000, floorNote: "믹싱 최소 주문 ₩80,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩40,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
 		},
 		B: {
-			zh: { perHead: 150, perHeadLabel: "每多 1 位 +¥150（混音）", editPrices: [0, 150, 200, 300], minOrder: 350,
+			zh: { perHead: 150, perHeadLabel: "每多 1 位 +¥150（混音）", editPrices: [0, 150, 150, 200, 300], minOrder: 350,
 				floorNote: "混音最低消费 ¥350（基础混音 ¥200 + 至少 ¥150 音频编辑）。会让总价跌破下限的选项已置灰。" },
-			en: { perHead: 22, perHeadLabel: "+$22 each (mix)", editPrices: [0, 22, 30, 45], minOrder: 52,
+			en: { perHead: 22, perHeadLabel: "+$22 each (mix)", editPrices: [0, 22, 22, 30, 45], minOrder: 52,
 				floorNote: "Minimum mixing order $52 (Basic Mix $30 + at least $22 of editing). Options that would drop the total below it are greyed out." },
-			ko: { perHead: 30000, perHeadLabel: "1인당 +₩30,000 (믹스)", editPrices: [0, 30000, 40000, 60000], minOrder: 70000,
+			ko: { perHead: 30000, perHeadLabel: "1인당 +₩30,000 (믹스)", editPrices: [0, 30000, 30000, 40000, 60000], minOrder: 70000,
 				floorNote: "믹싱 최소 주문 ₩70,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩30,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
 		},
 		C: {
-			zh: { perHead: 150, perHeadLabel: "每多 1 位 +¥150（混音）", prodPrices: [0, 150, 300], editPrices: [0, 150, 300, 450], minOrder: 350,
+			zh: { perHead: 150, perHeadLabel: "每多 1 位 +¥150（混音）", prodPrices: [0, 150, 300], editPrices: [0, 150, 150, 300, 450], minOrder: 350,
 				floorNote: "混音最低消费 ¥350（基础混音 ¥200 + 至少 ¥150 音频编辑）。会让总价跌破下限的选项已置灰。" },
-			en: { perHead: 22, perHeadLabel: "+$22 each (mix)", prodPrices: [0, 22, 45], editPrices: [0, 22, 45, 67], minOrder: 52,
+			en: { perHead: 22, perHeadLabel: "+$22 each (mix)", prodPrices: [0, 22, 45], editPrices: [0, 22, 22, 45, 67], minOrder: 52,
 				floorNote: "Minimum mixing order $52 (Basic Mix $30 + at least $22 of editing). Options that would drop the total below it are greyed out." },
-			ko: { perHead: 30000, perHeadLabel: "1인당 +₩30,000 (믹스)", prodPrices: [0, 30000, 60000], editPrices: [0, 30000, 60000, 90000], minOrder: 70000,
+			ko: { perHead: 30000, perHeadLabel: "1인당 +₩30,000 (믹스)", prodPrices: [0, 30000, 60000], editPrices: [0, 30000, 30000, 60000, 90000], minOrder: 70000,
 				floorNote: "믹싱 최소 주문 ₩70,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩30,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
 		},
 		// D：入口钉死，天花板抬高。通缩期价格敏感的客户集中在低端，
@@ -1178,14 +1178,14 @@ var PRICING = {
 		// 编辑三档必须拉开梯度，否则客户只加 ¥50 就升到我自己做的那档。
 		D: {
 			zh: { perHead: 150, perHeadLabel: "每多 1 位 +¥150（混音）",
-				prodPrices: [0, 150, 350], editPrices: [0, 120, 280, 450], harmPrices: [0, 250, 500, 800], minOrder: 320,
-				floorNote: "混音最低消费 ¥320（基础混音 ¥200 + 至少 ¥120 音频编辑）。会让总价跌破下限的选项已置灰。" },
+				prodPrices: [0, 150, 350], editPrices: [0, 100, 140, 280, 450], harmPrices: [0, 250, 500, 800], minOrder: 300,
+				floorNote: "混音最低消费 ¥300（基础混音 ¥200 + 至少 ¥100 音频编辑）。会让总价跌破下限的选项已置灰。" },
 			en: { perHead: 22, perHeadLabel: "+$22 each (mix)",
-				prodPrices: [0, 22, 53], editPrices: [0, 18, 42, 68], harmPrices: [0, 38, 75, 120], minOrder: 48,
-				floorNote: "Minimum mixing order $48 (Basic Mix $30 + at least $18 of editing). Options that would drop the total below it are greyed out." },
+				prodPrices: [0, 22, 53], editPrices: [0, 15, 21, 42, 68], harmPrices: [0, 38, 75, 120], minOrder: 45,
+				floorNote: "Minimum mixing order $45 (Basic Mix $30 + at least $15 of editing). Options that would drop the total below it are greyed out." },
 			ko: { perHead: 30000, perHeadLabel: "1인당 +₩30,000 (믹스)",
-				prodPrices: [0, 30000, 70000], editPrices: [0, 24000, 56000, 90000], harmPrices: [0, 50000, 100000, 160000], minOrder: 64000,
-				floorNote: "믹싱 최소 주문 ₩64,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩24,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
+				prodPrices: [0, 30000, 70000], editPrices: [0, 20000, 28000, 56000, 90000], harmPrices: [0, 50000, 100000, 160000], minOrder: 60000,
+				floorNote: "믹싱 최소 주문 ₩60,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩20,000). 하한 미만이 되는 옵션은 비활성화됩니다." }
 		}
 	}
 };
@@ -1446,9 +1446,10 @@ var I18N = {
 			prodNote: "<strong>执行向：</strong>升降调、stutter、反转、电话音 / 失真、加宽、ad-lib 摆位、double 对齐、特定词效果。<br><strong>创意向：</strong>包含以上全部，是否添加及添加位置由制作方判断。",
 			editGuideTitle: "各档适用情形",
 			editGuide: [
-				{ t: "只修音准（不含节奏对齐），或只修节奏；叠唱不超过 2 条", i: 1 },
-				{ t: "音准和节奏都要修", i: 2 },
-				{ t: "跑调多、有破音、气声不稳", i: 3 },
+				{ t: "只需要节奏对齐，音准没问题；叠唱不超过 2 条", i: 1 },
+				{ t: "只修音准（不含节奏对齐）；叠唱不超过 2 条", i: 2 },
+				{ t: "音准和节奏都要修", i: 3 },
+				{ t: "跑调多、有破音、气声不稳", i: 4 },
 				{ t: "已经修好了，或不用修", i: 0 }
 			],
 			prodGuideTitle: "各档适用情形",
@@ -1468,16 +1469,17 @@ var I18N = {
 			countUnit: " 位", countMore: "4 位以上",
 			countMoreNote: "更大规模的 cypher，请微信另议",
 			editLabel: "音频编辑", vocalistLabel: "主唱",
-			editNote: "<strong>基础编辑</strong>：音准与节奏二选一，只处理其中一项。选「仅修音」时<strong>不含节奏对齐</strong>。叠唱超过 2 条，需选标准编辑或以上。<br><strong>标准编辑</strong>：节奏对齐 + 音准修正，适合唱得稳的素材。<br><strong>深度编辑</strong>：在标准之上做大量精细修整，用于跑调多、破音、气声不稳的素材。",
+			editNote: "<strong>节奏编辑</strong>：只做节奏对齐，不修音准。<br><strong>音准编辑</strong>：只修音准，<strong>不含节奏对齐</strong>。<br>这两档叠唱超过 2 条，需选标准编辑或以上。<br><strong>标准编辑</strong>：节奏对齐 + 音准修正，适合唱得稳的素材。<br><strong>深度编辑</strong>：在标准之上做大量精细修整，用于跑调多、破音、气声不稳的素材。",
 			edits: [
 				{ name: "不需要", price: 0 },
-				{ name: "基础编辑", price: 100 },
+				{ name: "节奏编辑", price: 80 },
+				{ name: "音准编辑", price: 120 },
 				{ name: "标准编辑", price: 200 },
 				{ name: "深度编辑", price: 300 }
 			],
-			aaStep: 1, minOrder: 300,
-			floorNote: "混音最低消费 ¥300（基础混音 ¥200 + 至少 ¥100 音频编辑）。会让总价跌破下限的选项已置灰。",
-			coverNote: "每位主唱至少选一项人声处理（音频编辑 或 人声制作）。纯混音只处理音色、动态与空间，人声本身的音准、节奏与层次不会有任何改善。最低选「基础编辑」+¥100 即可。",
+			aaStep: 1, minOrder: 280,
+			floorNote: "混音最低消费 ¥280（基础混音 ¥200 + 至少 ¥80 音频编辑）。会让总价跌破下限的选项已置灰。",
+			coverNote: "每位主唱至少选一项人声处理（音频编辑 或 人声制作）。纯混音只处理音色、动态与空间，人声本身的音准、节奏与层次不会有任何改善。最低选「节奏编辑」+¥80 即可。",
 			vpAdviceTitle: "加上人声制作，这首歌会更像「发行版」。",
 			vpAdviceBody: "叠唱、ad-lib 位置、效果器铺排、段落起伏，嘻哈听起来完整，靠的是这些。按主唱单独选。",
 			vpAdviceOk: "歌曲偏流行、人声编排已完整时，仅做音频编辑通常足够，此提示可忽略。",
@@ -1590,7 +1592,7 @@ var I18N = {
 				"开工前换档只补差价；方向确认版之后再升级，差价 + 重混费 ¥100 / 次"
 			],
 			copyNoEdit: "音频编辑选了「不需要」：干声须已修好音准与节奏，未修好的素材不接",
-			noEditLine: "选「不需要」即干声已修好音准与节奏。没修好的素材不接，请至少选「基础编辑」。",
+			noEditLine: "选「不需要」即干声已修好音准与节奏。没修好的素材不接，请至少选「节奏编辑」。",
 			ctaNote: "修改流程与退款明细见下方「常见问题」，下单即视为同意。", catProd: "人声制作", catEdit: "音频编辑", copyMix: "混音", copyDeliver: "预计交付", copyWeChat: "微信预约"
 		},
 		services: [
@@ -2050,9 +2052,10 @@ var I18N = {
 			prodNote: "<strong>Execution covers:</strong> pitch shifts, stutter, reverse, telephone / distortion, widening, ad-lib placement, double alignment, word-level FX.<br><strong>Creative</strong> covers all of it; whether and where to apply is decided by the producer.",
 			editGuideTitle: "Which tier is mine?",
 			editGuide: [
-				{ t: "Pitch only (no timing alignment), or timing only; 2 stacked layers max", i: 1 },
-				{ t: "Both pitch and timing", i: 2 },
-				{ t: "Pitchy, cracking, unstable breath", i: 3 },
+				{ t: "Timing alignment only, pitch is fine; 2 stacked layers max", i: 1 },
+				{ t: "Pitch only (no timing alignment); 2 stacked layers max", i: 2 },
+				{ t: "Both pitch and timing", i: 3 },
+				{ t: "Pitchy, cracking, unstable breath", i: 4 },
 				{ t: "Already edited, or not needed", i: 0 }
 			],
 			prodGuideTitle: "Which tier is mine?",
@@ -2072,16 +2075,17 @@ var I18N = {
 			countUnit: "", countMore: "4 or more",
 			countMoreNote: "Larger cyphers — DM to discuss",
 			editLabel: "Audio Editing", vocalistLabel: "Vocalist",
-			editNote: "<strong>Basic</strong> = pitch or timing, one of the two only. Pitch-only does <strong>not</strong> include timing alignment. More than 2 stacked vocal layers requires Standard or above.<br><strong>Standard</strong> = timing alignment plus pitch correction, for takes that are already steady.<br><strong>Deep</strong> = everything in Standard plus heavy fine correction, for pitchy, cracking or unstable takes.",
+			editNote: "<strong>Timing</strong> = timing alignment only, no pitch correction.<br><strong>Pitch</strong> = pitch correction only, <strong>no</strong> timing alignment.<br>More than 2 stacked vocal layers requires Standard or above for both.<br><strong>Standard</strong> = timing alignment plus pitch correction, for takes that are already steady.<br><strong>Deep</strong> = everything in Standard plus heavy fine correction, for pitchy, cracking or unstable takes.",
 			edits: [
 				{ name: "Not needed", price: 0 },
-				{ name: "Basic", price: 15 },
+				{ name: "Timing", price: 12 },
+				{ name: "Pitch", price: 18 },
 				{ name: "Standard", price: 30 },
 				{ name: "Deep", price: 45 }
 			],
-			aaStep: 1, minOrder: 45,
-			floorNote: "Minimum mixing order $45 (Basic Mix $30 + at least $15 of editing). Options that would drop the total below it are greyed out.",
-			coverNote: "Every vocalist needs at least one form of vocal work (Audio Editing or Vocal Production). A mix alone only shapes tone, dynamics and space — the vocal itself, its pitch, timing and layering, is left untouched. \"Basic\" at +$15 is enough to qualify.",
+			aaStep: 1, minOrder: 42,
+			floorNote: "Minimum mixing order $42 (Basic Mix $30 + at least $12 of editing). Options that would drop the total below it are greyed out.",
+			coverNote: "Every vocalist needs at least one form of vocal work (Audio Editing or Vocal Production). A mix alone only shapes tone, dynamics and space — the vocal itself, its pitch, timing and layering, is left untouched. \"Timing\" at +$12 is enough to qualify.",
 			vpAdviceTitle: "Add vocal production and the record starts sounding like a release.",
 			vpAdviceBody: "Stacks, where the ad-libs sit, how the FX are dialled, how sections build — that is what makes hip-hop feel finished. Picked per vocalist.",
 			vpAdviceOk: "For pop-leaning songs with a complete vocal arrangement, audio editing alone is usually enough. This note can be ignored.",
@@ -2193,7 +2197,7 @@ var I18N = {
 				"Changing tier before work starts: pay the difference only. Upgrading after the direction check: difference + $15 remix fee each time"
 			],
 			copyNoEdit: "Audio Editing set to Not needed: vocals must arrive already pitch- and timing-corrected, otherwise the project is declined",
-			noEditLine: "Not needed = vocals already pitch- and timing-corrected. Uncorrected vocals are declined; select at least Basic editing.",
+			noEditLine: "Not needed = vocals already pitch- and timing-corrected. Uncorrected vocals are declined; select at least Timing editing.",
 			ctaNote: "Revision process and refund terms are in the FAQ below; booking implies agreement.", catProd: "Vocal Production", catEdit: "Audio Editing", copyMix: "Mix", copyDeliver: "Est. delivery", copyWeChat: "Book on WeChat"
 		},
 		services: [
@@ -2649,9 +2653,10 @@ var I18N = {
 			prodNote: "<strong>실행형 작업:</strong> 피치 조정, 스터터, 리버스, 텔레폰 / 디스토션, 와이드닝, 애드립 배치, 더블 정렬, 단어 단위 FX.<br><strong>크리에이티브</strong> = 위 전부 ＋ 적용 여부와 위치는 프로듀서가 결정.",
 			editGuideTitle: "등급별 적용 기준",
 			editGuide: [
-				{ t: "음정만(타이밍 정렬 미포함), 또는 타이밍만; 스택 2트랙 이하", i: 1 },
-				{ t: "음정과 타이밍 둘 다", i: 2 },
-				{ t: "음이탈·삑사리·호흡 불안정", i: 3 },
+				{ t: "타이밍 정렬만 필요, 음정은 문제없음; 스택 2트랙 이하", i: 1 },
+				{ t: "음정만(타이밍 정렬 미포함); 스택 2트랙 이하", i: 2 },
+				{ t: "음정과 타이밍 둘 다", i: 3 },
+				{ t: "음이탈·삑사리·호흡 불안정", i: 4 },
 				{ t: "이미 편집했거나 불필요", i: 0 }
 			],
 			prodGuideTitle: "등급별 적용 기준",
@@ -2671,16 +2676,17 @@ var I18N = {
 			countUnit: "인", countMore: "4인 이상",
 			countMoreNote: "대규모 사이퍼는 DM으로 문의",
 			editLabel: "오디오 편집", vocalistLabel: "보컬",
-			editNote: "<strong>기본 편집</strong> = 음정과 타이밍 중 하나만 처리. 음정만 선택 시 <strong>타이밍 정렬은 포함되지 않습니다</strong>. 더블링(스택)이 2트랙을 넘으면 표준 편집 이상을 선택해야 합니다.<br><strong>표준 편집</strong> = 타이밍 정렬 + 음정 보정, 안정적인 테이크용.<br><strong>정밀 편집</strong> = 표준에 더해 대량의 정밀 보정, 음이탈·삑사리·불안정한 테이크용.",
+			editNote: "<strong>타이밍 편집</strong> = 타이밍 정렬만, 음정 보정 없음.<br><strong>음정 편집</strong> = 음정 보정만, <strong>타이밍 정렬은 포함되지 않습니다</strong>.<br>두 등급 모두 더블링(스택)이 2트랙을 넘으면 표준 편집 이상을 선택해야 합니다.<br><strong>표준 편집</strong> = 타이밍 정렬 + 음정 보정, 안정적인 테이크용.<br><strong>정밀 편집</strong> = 표준에 더해 대량의 정밀 보정, 음이탈·삑사리·불안정한 테이크용.",
 			edits: [
 				{ name: "필요 없음", price: 0 },
-				{ name: "기본 편집", price: 20000 },
+				{ name: "타이밍 편집", price: 16000 },
+				{ name: "음정 편집", price: 24000 },
 				{ name: "표준 편집", price: 40000 },
 				{ name: "정밀 편집", price: 60000 }
 			],
-			aaStep: 100, minOrder: 60000,
-			floorNote: "믹싱 최소 주문 ₩60,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩20,000). 하한 미만이 되는 옵션은 비활성화됩니다.",
-			coverNote: "보컬 1인당 최소 한 가지 보컬 작업(오디오 편집 또는 보컬 프로덕션)이 필요합니다. 믹스만으로는 음색·다이나믹·공간만 다루며 보컬 자체의 음정·타이밍·레이어는 전혀 개선되지 않습니다. 「기본 편집」+₩20,000 이면 충족됩니다.",
+			aaStep: 100, minOrder: 56000,
+			floorNote: "믹싱 최소 주문 ₩56,000 (베이직 믹스 ₩40,000 + 편집 최소 ₩16,000). 하한 미만이 되는 옵션은 비활성화됩니다.",
+			coverNote: "보컬 1인당 최소 한 가지 보컬 작업(오디오 편집 또는 보컬 프로덕션)이 필요합니다. 믹스만으로는 음색·다이나믹·공간만 다루며 보컬 자체의 음정·타이밍·레이어는 전혀 개선되지 않습니다. 「타이밍 편집」+₩16,000 이면 충족됩니다.",
 			vpAdviceTitle: "보컬 프로덕션을 더하면 곡이 「발매작」에 가까워집니다.",
 			vpAdviceBody: "스택, 애드립 위치, FX 세팅, 구간 전개 — 힙합이 완성돼 들리는 건 이 부분 덕분입니다. 보컬별로 선택할 수 있습니다.",
 			vpAdviceOk: "곡이 팝 성향이고 보컬 편곡이 이미 완성되어 있다면 오디오 편집만으로 충분합니다 — 이 안내는 무시하셔도 됩니다.",
@@ -2792,7 +2798,7 @@ var I18N = {
 				"착수 전 등급 변경은 차액만. 방향 확인본 이후 업그레이드는 차액 + 리믹스 비용 ₩20,000 / 회"
 			],
 			copyNoEdit: "오디오 편집 「필요 없음」 선택: 보컬은 음정·타이밍 보정이 끝난 상태여야 하며, 아니면 작업을 받지 않습니다",
-			noEditLine: "「필요 없음」 = 음정·타이밍 보정이 끝난 보컬. 보정 안 된 소스는 받지 않습니다 — 최소 「기본 편집」을 선택해 주세요.",
+			noEditLine: "「필요 없음」 = 음정·타이밍 보정이 끝난 보컬. 보정 안 된 소스는 받지 않습니다 — 최소 「타이밍 편집」을 선택해 주세요.",
 			ctaNote: "수정 절차와 환불 기준은 아래 FAQ에 있습니다 — 예약 시 동의한 것으로 간주합니다.", catProd: "보컬 프로덕션", catEdit: "오디오 편집", copyMix: "믹스", copyDeliver: "예상 납품", copyWeChat: "위챗 예약"
 		},
 		services: [
@@ -3180,16 +3186,16 @@ var I18N = {
 // ── Quote Builder state & logic ─────────────────────────────
 // mode: 'vocal' | 'stems'; prods: per-vocalist vocal-production index array; edits: per-vocalist edit index array
 // prods 索引：0 = 不需要，1 = 执行向（默认，见 QB_PROD_DEFAULT），2 = 创意向（每位主唱各选一档）
-// edits 索引：0 = 不需要，1 = 基础编辑（音准/节奏二选一），2 = 标准编辑（节奏+音准），3 = 深度编辑（每位主唱各选一档）
-// 纯混音（全员 prods=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 100 = 300
+// edits 索引：0 = 不需要，1 = 节奏编辑，2 = 音准编辑，3 = 标准编辑（节奏+音准），4 = 深度编辑（每位主唱各选一档）
+// 纯混音（全员 prods=0）时 qbEnforceFloor 强制至少一位含音编 → 最低单 = 200 + 80 = 280
 // null = 尚未作答。逐步揭示：一步作答后下一步才挂载，引导文案随之分批出现。
 // 三个标准套餐：每一档就是一整套「人声制作 + 音频编辑 + 和声密度」的组合。
 // Apple 的做法——先给一份完整、可直接下单的配置，客户只需要改想改的，
 // 而不是从零把七道题答完。改档位内容只动这张表。
 var QB_PRESETS = [
-	{ prod: 0, edit: 1, harmony: 0 }, // 基础
-	{ prod: 1, edit: 2, harmony: 0 }, // 标准（推荐）
-	{ prod: 2, edit: 3, harmony: 1 }  // 完整
+	{ prod: 0, edit: 1, harmony: 0 }, // 基础（节奏编辑）
+	{ prod: 1, edit: 3, harmony: 0 }, // 标准（推荐，标准编辑）
+	{ prod: 2, edit: 4, harmony: 1 }  // 完整（深度编辑）
 ];
 var QB_PRESET_DEFAULT = 1;
 var QBT_TASTE = {
@@ -3923,10 +3929,10 @@ function qbEnforceCover() {
 }
 // 最低消费：判断的是【标准价】(gross) ≥ minOrder（¥300），不强制"必须有人修节奏"。
 // 刀门会员在此之上再享 8 折，故会员最低实付 = ¥240（有意为之：会员时薪本就该低一档）。
-// 只有跌破下限时，才把主唱 1 抬到「基础编辑」补足。
+// 只有跌破下限时，才把主唱 1 抬到「节奏编辑」补足。
 function qbEnforceFloor(q) {
 	// 从最便宜的一档往上抬，直到够到最低消费。
-	// 只设一次「基础编辑」不够——门槛调高后那一档可能仍然不够。
+	// 只设一次「节奏编辑」不够——门槛调高后那一档可能仍然不够。
 	for (var t = 1; t < q.edits.length; t++) {
 		if (qbGross(q) >= q.minOrder) return;
 		if ((qbState.edits[0] || 0) < t) qbState.edits[0] = t;
