@@ -1011,3 +1011,7 @@ body.rlp-on .rlp-tab{display:none}
 .hdl.busy svg{animation:hdlp 1s ease-in-out infinite}
 @keyframes hdlp{50%{transform:translateY(3px);opacity:.5}}
 .own button.hot{background:#c8644f;color:#fff}
+/* 你看的客户评论：文字占满整行，操作按钮（已读 / 回复 / 报价 / 分类 / 表情）放到文字下面，不再把文字挤成一条窄列 */
+#cfl .row .m{flex:1 1 calc(100% - 64px);font-size:15px;line-height:1.7;max-width:62ch}
+#cfl .acts{flex:1 1 100%;margin-left:0;padding-left:64px;justify-content:flex-start;align-self:auto}
+@media (max-width:480px){#cfl .acts{padding-left:0}}
