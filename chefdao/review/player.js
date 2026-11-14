@@ -200,6 +200,7 @@ document.body.innerHTML = `
   <div class="pnotice" id="pnotice" hidden></div><button class="pnedit press" id="pnedit" hidden></button>
   <section class="lyr" id="lyr" hidden></section>
   <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
+  <div class="vfocus" id="vfocus" hidden></div>
   <div class="composer">
     <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT">0:00</span></span>
     <textarea id="txt" rows="1" placeholder="留下评论…"></textarea>
@@ -1048,10 +1049,10 @@ async function renderOk() {
     if (S.prog && S.prog.s === 8 && !mine.length) { bar.hidden = false; bar.className = 'okbar auto done'; bar.textContent = '⏱ 无反馈已自动确认，交付结算中'; return; }
     const ai = !mine.length && !notes.length ? autoInfo(okAll.some(x => x.ver === 'ext:' + cur.ver)) : null;
     bar.hidden = !mine.length && !ai; if (ai) bar.className = 'okbar auto' + (ai.left <= 0 ? ' done' : '');
-    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + cur.ver + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过反馈时限无意见，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left) + (ai.ext ? ' · 已延长 24 小时' : '')) : '';
+    bar.textContent = mine.length ? '✓ ' + mine.map(x => x.name || '歌手').join('、') + ' 已确认 ' + vname(cur) + ' 没有问题' : ai ? (ai.left <= 0 ? '✓ 超过反馈时限无意见，已视为无意见，可进入母带交付' : '⏳ 自动确认倒计时 ' + leftTxt(ai.left) + (ai.ext ? ' · 已延长 24 小时' : '')) : '';
     // 客户页的「这一版没有问题了」默认不显示，这里手动开（早期版本用不上）；客户点了「反馈已完毕」也在这里看到
     const fbd = okAll.filter(x => x.ver === 'fb:' + cur.ver);
-    if (fbd.length) { bar.hidden = false; bar.textContent = (bar.textContent ? bar.textContent + ' · ' : '') + '📝 ' + fbd.map(x => x.name || '歌手').join('、') + ' 已表示 ' + cur.ver + ' 反馈完毕'; }
+    if (fbd.length) { bar.hidden = false; bar.textContent = (bar.textContent ? bar.textContent + ' · ' : '') + '📝 ' + fbd.map(x => x.name || '歌手').join('、') + ' 已表示 ' + vname(cur) + ' 反馈完毕'; }
     if (S.prog && cur === V[V.length - 1] && [4, 7].includes(S.prog.s)) {
       const on = !!S.prog.okb; bar.hidden = false; bar.insertAdjacentHTML('beforeend', '<button type="button" class="okown' + (on ? ' on' : '') + '">客户页「没有问题了」：' + (on ? '已显示 · 点击隐藏' : '已隐藏 · 点击显示') + '</button>');
       bar.querySelector('.okown').onclick = async () => { const g = S.prog, n = { ...g, okb: on ? 0 : 1 };
@@ -1101,7 +1102,7 @@ function updateCta() {
   if (!$('#cta').classList.contains('ok')) $('#ctaT').textContent = PUSH ? '发送给刀大厨' : '复制反馈';
 }
 function plainText() {
-  const L = ['《' + S.title + '》' + cur.ver + ' 反馈', ...notes.map(o => fmt(o.t) + ' ' + o.m)];
+  const L = ['《' + S.title + '》' + vname(cur) + ' 反馈', ...notes.map(o => fmt(o.t) + ' ' + o.m)];
   const ov = $('#overall').value.trim(); if (ov) L.push('整体：' + ov);
   return L.join('\n');
 }
@@ -1126,7 +1127,7 @@ $('#cta').onclick = async () => {
     + '<p><a href="' + location.href.split('#')[0] + '">打开审听页</a></p>';
   try {
     const r = await fetch('https://www.pushplus.plus/send', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: PUSH, title: '《' + S.title + '》' + cur.ver + ' 反馈 · ' + notes.length + ' 条', content: html, template: 'html' }) });
+      body: JSON.stringify({ token: PUSH, title: '《' + S.title + '》' + vname(cur) + ' 反馈 · ' + notes.length + ' 条', content: html, template: 'html' }) });
     const j = await r.json(); if (j.code !== 200) throw new Error(j.msg);
     done('已发送'); hud('已发送，刀大厨会在微信收到'); track(vi, true, true);
     // 待审听的最新版发了意见：页面上马上换成「下一版预计 X月X日」（服务端同时转成修改中）
@@ -1213,7 +1214,7 @@ function showMeta() {
   const tag = fmtTag(vi);
   const latest = V.reduce((m, v) => (v.date && v.date > m ? v.date : m), '');
   $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + relTime(cur.ts, cur.date) + (latest && latest !== cur.date ? ' · 曲目更新 ' + cdate(latest) : '')) + (tag ? '<span class="ftag' + (tag === 'Lossless' ? ' ll' : '') + '">' + esc(tag) + '</span>' : '');
-  try { miniLine(true); } catch (e) { $('#mt').textContent = S.title + ' · ' + cur.ver; }   // 歌词部分还没初始化时（页面刚载入）
+  try { miniLine(true); } catch (e) { $('#mt').textContent = S.title + ' · ' + vname(cur); }   // 歌词部分还没初始化时（页面刚载入）
 }
 let switching = 0;
 /* ───────── 刀大厨自己看：客户评论 + 从看板跳过来的时间点 ─────────
@@ -2328,6 +2329,10 @@ const vtipUi = force => { const t = $('#vtip'); if (!t) return; t.hidden = !(sta
 $('#vtipX').onclick = () => { store.set('cu-tip-edit', '1'); $('#vtip').hidden = true; };
 document.querySelectorAll('#seg .vgl').forEach(l => { if (l.textContent === STAGE.edit) { l.classList.add('q'); l.title = '什么是编辑版本'; l.onclick = () => { const t = $('#vtip'); if (!t.hidden) t.hidden = true; else { t.hidden = false; } }; } });
 addEventListener('cu-ver', () => vtipUi()); vtipUi();
+// 这一版听什么：编辑版把音准、节奏、对齐、杂音一次提完；混音版只听声音（编辑问题拖进混音会一轮轮来回）
+const VFOCUS = { edit: ['编辑版', '请重点听音准、节奏、和声对齐、杂音与断点，尽量在这一版一次提完。'] };   // 只在编辑版提示
+function vfocusUi() { const el = $('#vfocus'); if (!el) return; if (S.slug === 'yqkfkwa6') { el.hidden = true; return; }   /* Over the Hills 正在收尾，这首不提示 */ const f = VFOCUS[stageOf(cur)]; el.hidden = !f; if (f) el.innerHTML = '<b>' + f[0] + '</b>' + f[1]; }
+addEventListener('cu-ver', vfocusUi); vfocusUi();
 $('#mstBtn').onclick = () => { mstOpen = !mstOpen; $('#mst').hidden = !mstOpen; $('#mstBtn').classList.toggle('on', mstOpen); $('#mstBtn').setAttribute('aria-pressed', mstOpen); showStats(); };
 async function switchTo(i) {
   if (i === vi || !KEY) return;
@@ -2599,11 +2604,11 @@ function lyrDraw() {
 let miniTxt = null;
 function miniLine(force) {
   const L = LYR && LYR.lines, x = L && lyrIdx >= 0 && L[lyrIdx] ? String(L[lyrIdx].x || '').trim() : '';
-  const t = x && !/^[-–—·.。…\s]+$/.test(x) ? x : S.title + ' · ' + cur.ver;
+  const t = x && !/^[-–—·.。…\s]+$/.test(x) ? x : S.title + ' · ' + vname(cur);
   if (t === miniTxt && !force) return; miniTxt = t;
   // 有歌词：上面小字歌名 · 版本，下面大字正在唱的那句；没唱的时候（前奏 / 间奏）大字行显示「♪」
-  const has = miniHasLyr(), ly = t !== S.title + ' · ' + cur.ver;
-  $('#mt').textContent = S.title + ' · ' + cur.ver;
+  const has = miniHasLyr(), ly = t !== S.title + ' · ' + vname(cur);
+  $('#mt').textContent = S.title + ' · ' + vname(cur);
   [$('#mly'), $('#plyrT')].forEach(el => { el.textContent = has ? (ly ? t : '♪') : ''; el.classList.toggle('rest', !ly); el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); });
 }
 const curLine = () => { const L = LYR && LYR.lines, x = L && lyrIdx >= 0 && L[lyrIdx] ? String(L[lyrIdx].x || '').trim() : ''; return x && !/^[-–—·.。…\s]+$/.test(x) ? x : ''; };

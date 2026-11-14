@@ -1015,3 +1015,7 @@ body.rlp-on .rlp-tab{display:none}
 #cfl .row .m{flex:1 1 calc(100% - 64px);font-size:15px;line-height:1.7;max-width:62ch}
 #cfl .acts{flex:1 1 100%;margin-left:0;padding-left:64px;justify-content:flex-start;align-self:auto}
 @media (max-width:480px){#cfl .acts{padding-left:0}}
+/* 评论区上方：这一版重点听什么（按版本阶段） */
+.vfocus{margin:-4px 0 12px;padding:10px 14px;border-radius:12px;background:rgba(236,234,230,.05);color:var(--text-2);font-size:14px;line-height:1.7}
+.vfocus[hidden]{display:none}
+.vfocus b{display:inline-block;margin-right:8px;padding:0 8px;border-radius:99px;background:rgba(232,201,138,.16);color:#e8c98a;font-size:12px;font-weight:600;line-height:20px;vertical-align:1px}
