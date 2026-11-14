@@ -24,7 +24,7 @@
 html{background:var(--bg)}
 body{
   background:
-    radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.06),transparent 60%),
+    radial-gradient(120vw 60vh at 50% -10vh,rgba(236,234,230,.06),transparent 60%),   /* 按屏幕算，不随页面长短变 */
     var(--bg);
   color:var(--text);font:17px/1.6 var(--font);letter-spacing:-.005em;
   -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;

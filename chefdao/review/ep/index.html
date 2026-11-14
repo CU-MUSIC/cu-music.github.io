@@ -15,7 +15,7 @@
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;color-scheme:dark}
 *{box-sizing:border-box;margin:0}
 html{background:var(--bg)}
-body{background:radial-gradient(70% 420px at 50% 210px,rgba(236,234,230,.11),rgba(236,234,230,.04) 55%,transparent 100%),radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.06),transparent 60%),var(--bg);color:var(--text);font:17px/1.6 var(--font);-webkit-font-smoothing:antialiased;
+body{background:radial-gradient(70% 420px at 50% 210px,rgba(236,234,230,.11),rgba(236,234,230,.04) 55%,transparent 100%),radial-gradient(120vw 60vh at 50% -10vh,rgba(236,234,230,.06),transparent 60%),var(--bg);color:var(--text);font:17px/1.6 var(--font);-webkit-font-smoothing:antialiased;
   min-height:100vh;min-height:100dvh;padding:calc(48px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
 main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center}
 /* 封面：近处一层贴身阴影 + 远处一层柔光阴影，顶边一道高光、底边压暗，背后一圈封面色的光晕，看起来浮在页面上 */
@@ -228,7 +228,7 @@ try { let owner = null; try { owner = localStorage.getItem('insights:key'); } ca
   if (!j.ok) throw 0; P = j.project; }
 catch (e) { if (approvalInfo) return approvalGate(approvalInfo); return pjErr(archived ? 'archived' : 'missing'); }
 document.title = P.title;
-if (P.cover) { const sc = document.createElement('script'); sc.src = '../tint.js?v=20261101a'; sc.onload = () => window.cuTint(API + P.cover); document.head.appendChild(sc); }
+if (P.cover) { const sc = document.createElement('script'); sc.src = '../tint.js?v=20261114a'; sc.onload = () => window.cuTint(API + P.cover); document.head.appendChild(sc); }
 if (P.archived) { const d = document.createElement('div'); d.textContent = '已归档 · 客户打不开，只有你的设备能看';
   d.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99;padding:6px 14px;border-radius:99px;background:rgba(232,201,138,.16);border:1px solid rgba(232,201,138,.4);color:#e8c98a;font:500 13px/1.4 -apple-system,"PingFang SC",sans-serif;white-space:nowrap;pointer-events:none'; document.body.appendChild(d); }
 setTimeout(tilt, 0);

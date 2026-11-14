@@ -5,7 +5,7 @@
   const apply = h => {
     let st = document.getElementById('tint-css'); if (!st) { st = document.createElement('style'); st.id = 'tint-css'; document.head.appendChild(st); }
     st.textContent = ':root{--bg:hsl(' + h + ',11%,6.6%);--tint-glow:hsla(' + h + ',32%,24%,.5)}'
-      + 'body{background:radial-gradient(125% 56% at 50% -8%,var(--tint-glow),transparent 64%),radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.04),transparent 60%),var(--bg)!important}'
+      + 'body{background:radial-gradient(125vw 56vh at 50% -8vh,var(--tint-glow),transparent 64%),radial-gradient(120vw 60vh at 50% -10vh,rgba(236,234,230,.04),transparent 60%),var(--bg)!important}'   // 光晕按屏幕高度算：以前按整页长度的百分比，评论多的版本页面长、红光就跟着变大
       + 'html{background:var(--bg)!important}';
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', 'hsl(' + h + ',11%,6.6%)');
   };
