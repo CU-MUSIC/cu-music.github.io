@@ -162,6 +162,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .rqof{display:flex;gap:8px;margin-top:4px}.rqof button{padding:6px 14px;border-radius:99px;font-size:13px;font-weight:600;background:var(--pearl);color:var(--ink)}.rqof .cl{background:none;color:var(--text-3)}
 .rqold summary{padding:8px 4px;font-size:13px;color:var(--text-3);cursor:pointer}
 .lsort{margin-left:auto;margin-right:8px}
+.lfilt{margin-top:-4px;align-items:center}.lfilt button{font-size:14px;padding:5px 13px}.lfilt .lart{margin:0 0 0 auto;flex-shrink:0}.lfilt .lart select{max-width:150px}
 .lsort select{appearance:none;-webkit-appearance:none;height:32px;padding:0 28px 0 12px;border-radius:9px;border:0;background:var(--fill-2,rgba(255,255,255,.06)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center/14px;color:var(--text-2,inherit);font:inherit;font-size:13px;cursor:pointer}
 .lvt{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--fill-2,rgba(255,255,255,.06));margin-right:10px}
 .lvt button{width:32px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--text-3)}
@@ -397,7 +398,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261114.1700';
+const BUILD = '261114.1730';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -796,6 +797,8 @@ function render() {
   });
   root.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => editNote(b.dataset.ln));
   root.querySelectorAll('.lcard[data-p]').forEach(b => b.onclick = () => openProject(b.dataset.p));
+  const lfi = document.getElementById('lfilt'); if (lfi) lfi.onclick = e => { const b = e.target.closest('[data-fk]'); if (b) { store.set('insights:libkind', b.dataset.fk); render(); } };
+  const lar = document.getElementById('lart'); if (lar) lar.onchange = () => { store.set('insights:libart', lar.value); render(); };
   const lso = document.getElementById('lsort'); if (lso) lso.onchange = () => { store.set('insights:libsort', lso.value); render(); };
   const lvt = document.getElementById('lvt'); if (lvt) lvt.onclick = e => { const b = e.target.closest('[data-lv]'); if (b) { store.set('insights:libview', b.dataset.lv); render(); } };
   const ln = document.getElementById('lNew'); if (ln) ln.onclick = newProject;
@@ -1323,11 +1326,17 @@ function renderLib() {
   const lv = store.get('insights:libview') === 'list' ? 'list' : 'grid';
   // 排序：最近更新 = 项目信息或任一曲目最新上传版本的时间；名称、歌手按中文拼音 / 字母
   const ls = LSORT[store.get('insights:libsort')] ? store.get('insights:libsort') : 'upd';
-  const act = LSORT[ls].f(LIB.projects.filter(p => !p.archived)), arch = LSORT[ls].f(LIB.projects.filter(p => p.archived));
+  // 筛选：类型（单曲 / EP / 专辑）+ 歌手（多位歌手的项目，任一位对上就算）
+  const arts = p => String(p.artist || '').split(/[、,，&]/).map(x => x.trim()).filter(Boolean);
+  const AL = [...new Set(LIB.projects.flatMap(arts))].sort(zh);
+  const fk = KINDS[store.get('insights:libkind')] ? store.get('insights:libkind') : '', fa0 = store.get('insights:libart') || '', fa = AL.includes(fa0) ? fa0 : '';
+  const pass = p => (!fk || (p.kind || 'ep') === fk) && (!fa || arts(p).includes(fa));
+  const act = LSORT[ls].f(LIB.projects.filter(p => !p.archived && pass(p))), arch = LSORT[ls].f(LIB.projects.filter(p => p.archived && pass(p)));
+  const filt = `<div class="chips lfilt" id="lfilt"><button data-fk="" class="${fk ? '' : 'on'}">全部</button>${Object.entries(KINDS).map(([k, n]) => `<button data-fk="${k}" class="${fk === k ? 'on' : ''}">${n}</button>`).join('')}${AL.length > 1 ? `<label class="lsort lart"><select id="lart" aria-label="按歌手筛选"><option value="">所有歌手</option>${AL.map(a => `<option value="${esc(a)}"${a === fa ? ' selected' : ''}>${esc(a)}</option>`).join('')}</select></label>` : ''}</div>`;
   const card = (p, a) => `<button class="lcard${a ? ' arch' : ''}" data-p="${esc(p.slug)}">${coverOf(p)}
     <b>${esc(p.title)}</b><span>${esc(p.artist || '未填歌手')} · ${KINDS[p.kind] || 'EP'}${p.tracks.length > 1 ? ' · ' + p.tracks.length + ' 首' : ''}</span></button>`;
-  return `<div class="lbar"><span>${act.length} 个项目</span><label class="lsort"><select id="lsort" aria-label="排序">${Object.entries(LSORT).map(([k, o]) => `<option value="${k}"${k === ls ? ' selected' : ''}>${o.n}</option>`).join('')}</select></label><span class="lvt" id="lvt" role="group" aria-label="视图"><button data-lv="grid" class="${lv === 'grid' ? 'on' : ''}" aria-label="网格" title="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${lv === 'list' ? 'on' : ''}" aria-label="单列" title="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span><button class="go" id="lNew">＋ 新项目</button></div>
-  <div class="lgrid ${lv}">${act.map(p => card(p, false)).join('')}</div>
+  return `<div class="lbar"><span>${act.length} 个项目${fk || fa ? ' · 已筛选' : ''}</span><label class="lsort"><select id="lsort" aria-label="排序">${Object.entries(LSORT).map(([k, o]) => `<option value="${k}"${k === ls ? ' selected' : ''}>${o.n}</option>`).join('')}</select></label><span class="lvt" id="lvt" role="group" aria-label="视图"><button data-lv="grid" class="${lv === 'grid' ? 'on' : ''}" aria-label="网格" title="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${lv === 'list' ? 'on' : ''}" aria-label="单列" title="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span><button class="go" id="lNew">＋ 新项目</button></div>
+  ${filt}<div class="lgrid ${lv}">${act.map(p => card(p, false)).join('') || (fk || fa ? '<div class="dim" style="padding:18px 0">没有符合的项目</div>' : '')}</div>
   ${arch.length ? `<button class="archbar" id="lArch">已归档 ${arch.length} 个<span>${showArch ? '收起' : '展开'}</span></button>${showArch ? `<div class="lgrid ${lv}">${arch.map(p => card(p, true)).join('')}</div>` : ''}` : ''}
   ${renderReqs()}
   ${LIB.loose.length ? `<div class="sect">未归入项目<span>${LIB.loose.length}</span></div><div class="lloose">${LIB.loose.map(x => `<div>《${esc(x.title)}》<a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a></div>`).join('')}</div>` : ''}`;
