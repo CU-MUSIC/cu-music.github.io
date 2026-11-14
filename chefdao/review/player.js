@@ -1702,7 +1702,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
    只有打开响度统一或加了 REF，才把声音接进 Web Audio（默认路径完全不变）。 */
 // 响度三档循环：关 → 对齐最小声（只往下调） → 统一到 -14 LUFS（小声的会放大，后面有防爆音）
 const LMODES = ['', 'min', 'lufs'];
-let LOUD = ({ '1': 'min', min: 'min', lufs: 'lufs' })[store.get('review:loud')] || '', actx = null, gainN = null, refN = null;
+let LOUD = IS_OWNER && ({ '1': 'min', min: 'min', lufs: 'lufs' })[store.get('review:loud')] || '', actx = null, gainN = null, refN = null;
 const LU = {}, lkey = i => 'review:lufs:' + String(V[i].audio).split('/').pop();
 V.forEach((v, i) => { if (Number.isFinite(v.lufs)) LU[i] = v.lufs; else { const c = +store.get(lkey(i)); if (c < 0) LU[i] = c; } });
 let REF = null, refBuf = null, refNode = null, refAt = 0, refOff = 0, AB = 'mix';
@@ -1745,6 +1745,7 @@ async function measureAll() {   // 要和最小声的比，所以每个版本都
   for (let i = V.length - 1; i >= 0; i--) if (LU[i] === undefined) { await measure(i); applyGains(); }
   measuring = false;
 }
+const pairTry = {};
 function applyGains() {
   const lab = $('#loudv'), btn = $('#loud');
   btn.classList.toggle('on', LOUD); btn.setAttribute('aria-pressed', LOUD);
@@ -1752,7 +1753,11 @@ function applyGains() {
   if (!gainN) { lab.textContent = ''; return; }
   const lA = cmpLu ? cmpLu.a : LU[vi], lB = cmpLu ? cmpLu.b : REF && REF.lufs;
   const all = cmpLu ? [lA, lB] : V.map((v, i) => LU[i]).concat(REF ? [REF.lufs] : []).filter(Number.isFinite);
-  const target = LOUD === 'min' && all.length ? Math.min(...all) : LOUD === 'lufs' ? -14 : null;
+  // 客户页没有响度按钮：听 REF / 对比版本时自动把两路对齐到小声那路（只往下调），一般听歌不动
+  const pairOn = !IS_OWNER && REF;
+  if (pairOn && LU[vi] === undefined && !pairTry[vi]) { pairTry[vi] = 1; measure(vi).then(() => applyGains()); }
+  const target = pairOn ? (Number.isFinite(lA) && Number.isFinite(lB) ? Math.min(lA, lB) : null)
+    : LOUD === 'min' && all.length ? Math.min(...all) : LOUD === 'lufs' ? -14 : null;
   const db = l => target === null || !Number.isFinite(l) ? 0 : Math.max(-24, Math.min(12, target - l));
   const now = actx.currentTime, mixDb = db(lA), refDb = REF ? db(lB) : 0;
   gainN.gain.setTargetAtTime(AB === 'mix' ? Math.pow(10, mixDb / 20) : 0, now, .008);
