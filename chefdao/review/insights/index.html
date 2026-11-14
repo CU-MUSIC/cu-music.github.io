@@ -194,6 +194,8 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .pjsort{margin-left:10px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--text);background:var(--fill-2,rgba(255,255,255,.08));box-shadow:inset 0 0 0 .5px rgba(255,255,255,.14)}
 .pjtr .solo{display:block;margin-top:5px;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:500;color:var(--text-3);border:1px solid var(--line,rgba(255,255,255,.16));background:none}.pjtr .solo.on{color:#e8c98a;border-color:rgba(232,201,138,.5)}
 .pjtr .tcv{width:36px;height:36px;padding:0;border-radius:7px;background:var(--fill-2) center/cover no-repeat;position:relative;color:var(--text-3);font-size:16px;line-height:36px;text-align:center}.pjtr .tcv.pj{opacity:.35}.pjtr .tcv.own{box-shadow:0 0 0 1.5px rgba(232,201,138,.7)}
+.tcvm{position:absolute;left:0;top:40px;z-index:20;display:flex;flex-direction:column;min-width:128px;padding:4px;border-radius:12px;background:#2c2e33;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.pjtr .tcvm button{display:block;width:100%;text-align:left;font-size:14px;padding:9px 12px;border-radius:8px;background:none;color:var(--text)}.pjtr .tcvm button:hover{background:var(--fill-2)}
 .pjtr .tcvx{position:absolute;top:-6px;right:-6px;width:18px;height:18px;padding:0;border-radius:50%;font-size:11px;line-height:18px;background:#3a3c42;color:var(--text)}
 .pjtr>div{display:grid;grid-template-columns:24px 36px 1fr auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;padding:10px 6px;margin:-10px -6px}
@@ -398,7 +400,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261114.1730';
+const BUILD = '261114.1800';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1394,7 +1396,7 @@ function openProject(slug) {
     <input type="file" id="pjFile" accept="image/*" hidden>
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
     <div class="sect">曲目<span>${p.tracks.length} 首${p.tracks.filter(t => trackNo(t) !== null).length >= 2 ? '<button type="button" class="pjsort" id="pjSort">按序号排</button>' : ''}</span></div>
-    <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span style="position:relative"><button type="button" class="tcv ${t.cover ? 'own' : p.cover ? 'pj' : ''}" data-cv="${i}" title="${t.cover ? '换这首歌的封面' : '给这首歌单独设封面（不设就用项目封面）'}" style="${t.cover || p.cover ? `background-image:url('${esc(API + (t.cover || p.cover))}')` : ''}">${t.cover || p.cover ? '' : '＋'}</button>${t.cover ? `<button type="button" class="tcvx" data-cvx="${i}" aria-label="去掉这首歌的封面">×</button>` : ''}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i>${p.mode === 'approve' ? `<button type="button" class="solo${t.solo ? ' on' : ''}" data-solo="${i}">${t.solo ? '✓ 单曲凭密码可进' : '单曲凭密码可进'}</button>` : ''}</span>
+    <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span style="position:relative"><button type="button" class="tcv ${t.cover ? 'own' : p.cover ? 'pj' : ''}" data-cv="${i}" title="${t.cover ? '换这首歌的封面（图片或 emoji）' : '给这首歌单独设封面：图片或 emoji（不设就用项目封面）'}" style="${t.cover || p.cover ? `background-image:url('${esc(API + (t.cover || p.cover))}')` : ''}">${t.cover || p.cover ? '' : '＋'}</button>${t.cover ? `<button type="button" class="tcvx" data-cvx="${i}" aria-label="去掉这首歌的封面">×</button>` : ''}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i>${p.mode === 'approve' ? `<button type="button" class="solo${t.solo ? ' on' : ''}" data-solo="${i}">${t.solo ? '✓ 单曲凭密码可进' : '单曲凭密码可进'}</button>` : ''}</span>
       <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-sh="${i}">分享</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
     <div class="msg2" id="pjMsg"></div>
@@ -1447,10 +1449,18 @@ function openProject(slug) {
   $p('pjUp').onclick = () => { close(); openUpload({ project: p }); };
   // 每首歌单独的封面：同一位歌手的几首单曲放一个项目，各用各的封面
   const tcvPut = async (t, body) => { const r = await fetch(API + '/lib/cover?s=' + t.slug + (body ? '' : '&del=1'), { method: 'PUT', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg' }, body: body || '' }); const j = await r.json(); if (!j.ok) throw new Error(); };
-  el.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => { const t = p.tracks[+b.dataset.cv], inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+  const pickImg = t => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
     inp.onchange = async () => { const f = inp.files[0]; if (!f) return; msg('上传《' + t.title + '》的封面…');
       try { await tcvPut(t, await shrink(f)); msg('✓ 《' + t.title + '》用上自己的封面了'); await libReload(slug); } catch (e) { msg('封面没传上，换一张图或检查网络', true); } };
-    inp.click(); });
+    inp.click(); };
+  el.querySelectorAll('[data-cv]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = p.tracks[+b.dataset.cv], old = document.getElementById('tcvm'); if (old) { old.remove(); if (old.dataset.i === b.dataset.cv) return; }
+    const m = document.createElement('div'); m.id = 'tcvm'; m.className = 'tcvm'; m.dataset.i = b.dataset.cv;
+    m.innerHTML = '<button data-k="img">上传图片</button><button data-k="emo">用 emoji</button>' + (t.cover ? '<button data-k="del">改回项目封面</button>' : '');
+    b.parentNode.appendChild(m);
+    m.onclick = async ev => { ev.stopPropagation(); const k = (ev.target.closest('[data-k]') || {}).dataset; if (!k || !k.k) return; m.remove();
+      if (k.k === 'img') pickImg(t); else if (k.k === 'emo') openEmojiCover(slug, t);
+      else { try { await tcvPut(t, null); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } } };
+    setTimeout(() => document.addEventListener('click', () => m.remove(), { once: true })); });
   el.querySelectorAll('[data-cvx]').forEach(b => b.onclick = async () => { const t = p.tracks[+b.dataset.cvx]; if (!confirm('去掉《' + t.title + '》自己的封面，改回用项目封面？')) return;
     try { await tcvPut(t, null); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } });
   $p('pjCv').onclick = () => $p('pjFile').click();
@@ -1510,11 +1520,11 @@ function emojiCover(ch, size, night) {
   g.save(); g.shadowColor = night ? 'rgba(0,0,0,.6)' : 'rgba(40,36,30,.30)'; g.shadowBlur = size * .045; g.shadowOffsetY = size * .018; g.fillText(ch, size / 2, y); g.restore();
   return c;
 }
-function openEmojiCover(slug) {
+function openEmojiCover(slug, song) {   // song：给项目里某一首歌单独做 emoji 封面
   const old = document.getElementById('emo'); if (old) old.remove();
   const apple = /Mac|iPhone|iPad/.test(navigator.userAgent);
   const el = document.createElement('div'); el.className = 'up'; el.id = 'emo'; let base = EMOJIS[0], tone = 0, night = 0; const curE = () => withTone(base, TONES[tone]);
-  el.innerHTML = `<div class="up-s"><div class="up-h">emoji 封面<button type="button" id="emX">关闭</button></div>
+  el.innerHTML = `<div class="up-s"><div class="up-h">${song ? '《' + esc(song.title) + '》' : ''}emoji 封面<button type="button" id="emX">关闭</button></div>
     <canvas class="emp" id="emP" width="440" height="440"></canvas>
     <div class="emt" id="emT">${TONES.map((t, i) => `<button type="button" data-t="${i}" style="background:${TONE_BG[i]}" aria-label="肤色 ${i}"${i ? '' : ' class="on"'}></button>`).join('')}<span id="emTn">人物和手势可以换肤色</span></div>
     <div class="emg" id="emG"></div>
@@ -1535,7 +1545,7 @@ function openEmojiCover(slug) {
     $e('emM').textContent = '上传封面…'; $e('emM').className = 'msg2';
     try {
       const blob = await new Promise(ok => emojiCover(curE(), 1200, night).toBlob(ok, 'image/jpeg', .93));
-      const r = await fetch(API + '/lib/cover?p=' + slug, { method: 'PUT', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg' }, body: blob });
+      const r = await fetch(API + '/lib/cover?' + (song ? 's=' + song.slug : 'p=' + slug), { method: 'PUT', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg' }, body: blob });
       const j = await r.json(); if (!j.ok) throw new Error(); close(); await libReload(slug);
     } catch (e) { $e('emM').textContent = '封面没传上，检查网络再试'; $e('emM').className = 'msg2 err'; }
   };
