@@ -192,7 +192,9 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .pjtr{display:flex;flex-direction:column}
 .pjsort{margin-left:10px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--text);background:var(--fill-2,rgba(255,255,255,.08));box-shadow:inset 0 0 0 .5px rgba(255,255,255,.14)}
 .pjtr .solo{display:block;margin-top:5px;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:500;color:var(--text-3);border:1px solid var(--line,rgba(255,255,255,.16));background:none}.pjtr .solo.on{color:#e8c98a;border-color:rgba(232,201,138,.5)}
-.pjtr>div{display:grid;grid-template-columns:24px 1fr auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
+.pjtr .tcv{width:36px;height:36px;padding:0;border-radius:7px;background:var(--fill-2) center/cover no-repeat;position:relative;color:var(--text-3);font-size:16px;line-height:36px;text-align:center}.pjtr .tcv.pj{opacity:.35}.pjtr .tcv.own{box-shadow:0 0 0 1.5px rgba(232,201,138,.7)}
+.pjtr .tcvx{position:absolute;top:-6px;right:-6px;width:18px;height:18px;padding:0;border-radius:50%;font-size:11px;line-height:18px;background:#3a3c42;color:var(--text)}
+.pjtr>div{display:grid;grid-template-columns:24px 36px 1fr auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;padding:10px 6px;margin:-10px -6px}
 .pjtr>div.drag{position:relative;z-index:5;background:var(--bg-2,#26282d);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.45);cursor:grabbing}
 .pjtr>div.drag .n{color:var(--text)}
@@ -395,7 +397,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261112.1500';
+const BUILD = '261114.1700';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1383,7 +1385,7 @@ function openProject(slug) {
     <input type="file" id="pjFile" accept="image/*" hidden>
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
     <div class="sect">曲目<span>${p.tracks.length} 首${p.tracks.filter(t => trackNo(t) !== null).length >= 2 ? '<button type="button" class="pjsort" id="pjSort">按序号排</button>' : ''}</span></div>
-    <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i>${p.mode === 'approve' ? `<button type="button" class="solo${t.solo ? ' on' : ''}" data-solo="${i}">${t.solo ? '✓ 单曲凭密码可进' : '单曲凭密码可进'}</button>` : ''}</span>
+    <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span style="position:relative"><button type="button" class="tcv ${t.cover ? 'own' : p.cover ? 'pj' : ''}" data-cv="${i}" title="${t.cover ? '换这首歌的封面' : '给这首歌单独设封面（不设就用项目封面）'}" style="${t.cover || p.cover ? `background-image:url('${esc(API + (t.cover || p.cover))}')` : ''}">${t.cover || p.cover ? '' : '＋'}</button>${t.cover ? `<button type="button" class="tcvx" data-cvx="${i}" aria-label="去掉这首歌的封面">×</button>` : ''}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i>${p.mode === 'approve' ? `<button type="button" class="solo${t.solo ? ' on' : ''}" data-solo="${i}">${t.solo ? '✓ 单曲凭密码可进' : '单曲凭密码可进'}</button>` : ''}</span>
       <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-sh="${i}">分享</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
     <div class="msg2" id="pjMsg"></div>
@@ -1434,6 +1436,14 @@ function openProject(slug) {
   el.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { if (confirm('把《' + p.tracks[+b.dataset.rm].title + '》移出这个项目？歌和审听链接都还在')) setTracks(order.filter((_, i) => i !== +b.dataset.rm)); });
   if ($p('pjAdd')) $p('pjAdd').onchange = () => { const v = $p('pjAdd').value; if (v) setTracks(order.concat(v)); };
   $p('pjUp').onclick = () => { close(); openUpload({ project: p }); };
+  // 每首歌单独的封面：同一位歌手的几首单曲放一个项目，各用各的封面
+  const tcvPut = async (t, body) => { const r = await fetch(API + '/lib/cover?s=' + t.slug + (body ? '' : '&del=1'), { method: 'PUT', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg' }, body: body || '' }); const j = await r.json(); if (!j.ok) throw new Error(); };
+  el.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => { const t = p.tracks[+b.dataset.cv], inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => { const f = inp.files[0]; if (!f) return; msg('上传《' + t.title + '》的封面…');
+      try { await tcvPut(t, await shrink(f)); msg('✓ 《' + t.title + '》用上自己的封面了'); await libReload(slug); } catch (e) { msg('封面没传上，换一张图或检查网络', true); } };
+    inp.click(); });
+  el.querySelectorAll('[data-cvx]').forEach(b => b.onclick = async () => { const t = p.tracks[+b.dataset.cvx]; if (!confirm('去掉《' + t.title + '》自己的封面，改回用项目封面？')) return;
+    try { await tcvPut(t, null); await libReload(slug); } catch (e) { msg('没改成，检查网络再试', true); } });
   $p('pjCv').onclick = () => $p('pjFile').click();
   $p('pjEm').onclick = () => openEmojiCover(slug);
   $p('pjFile').onchange = async () => {

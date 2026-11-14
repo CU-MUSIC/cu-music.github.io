@@ -62,6 +62,9 @@ body.kb .cv{width:96px;border-radius:12px}body.kb .cv::after{opacity:0}
 body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:16px}
 #list{width:100%}
 .list{width:100%;margin-top:30px;display:flex;flex-direction:column;border-top:.5px solid var(--hair)}
+/* 项目里有歌用了自己的封面（同一位歌手的几首单曲放一起）：序号换成每首歌的小封面 */
+.list.cvs .tr{grid-template-columns:46px 1fr auto;gap:12px;padding:11px 4px}
+.tr .n.tcv{width:46px;height:46px;border-radius:8px;background:#2b2e33 center/cover no-repeat;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .tr{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:15px 4px;border-bottom:.5px solid var(--hair);color:var(--text);text-decoration:none;text-align:left;
   opacity:0;transform:translateY(8px);animation:in .5s cubic-bezier(.2,.8,.2,1) forwards}
 .tr.lk{position:relative;cursor:default;overflow:hidden;border-radius:12px;isolation:isolate}
@@ -329,9 +332,9 @@ async function open(pw, key) {
   document.getElementById('gate').remove();
   const playable = P.tracks.filter(t => t.dur > 0 && !t.locked);
   document.getElementById('list').innerHTML = (playable.length ? '<button class="pa" id="pa" type="button"><svg viewBox="0 0 16 16"><path d="M4.5 2.6v10.8c0 .6.7 1 1.2.7l8.3-5.4c.5-.3.5-1.1 0-1.4L5.7 1.9c-.5-.3-1.2.1-1.2.7z"/></svg>播放</button>' : '')
-    + (P.tracks.length ? '<div class="list">' + P.tracks.map((t, i) =>
+    + (P.tracks.length ? '<div class="list' + (P.tracks.some(t => t.cover) ? ' cvs' : '') + '">' + P.tracks.map((t, i) =>
     t.locked ? '<div class="tr lk" style="animation-delay:' + (i * 60) + 'ms" aria-label="未开放"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t"><b style="width:' + Math.min(14, 3 + (t.n || 6) * .7).toFixed(1) + 'em"></b><b class="b2" style="width:' + (2.5 + (i * 37 % 4)) + 'em"></b></span><span class="m"><em><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>未开放</em></span></div>' :
-    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
+    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '">' + (P.tracks.some(x => x.cover) ? '<span class="n tcv" style="background-image:url(' + API + (t.cover || P.cover || '') + ')"></span>' : '<span class="n">' + String(i + 1).padStart(2, '0') + '</span>') + '<span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>')
     + (FLOW[slug] ? '<a class="flowl" href="' + FLOW[slug] + '"><div><b>合作流程</b><span>每首怎么推进、怎么给反馈最快</span></div><i>›</i></a>' : '');
   // 播放：记下连播顺序，进第一首直接开播；每首放完曲目页自己切到下一首（见 player.js nextInQueue）
@@ -433,7 +436,7 @@ async function epArm() {
 }
 function epNewSt(t, r) { EP.st = { slug: t.slug, title: r.title, ver: r.ver, wk: r.wk, dur: r.dur, sid: Math.random().toString(36).slice(2, 10) + Date.now().toString(36), sec: 0, saved: 0, ends: 0, bins: new Array(60).fill(0) }; epLast = null; }
 function epMeta(t) { if (!navigator.mediaSession) return;
-  navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist || P.artist || '', album: P.title, artwork: P.cover ? [{ src: API + P.cover, sizes: '512x512' }] : [] });
+  navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist || P.artist || '', album: P.title, artwork: (t.cover || P.cover) ? [{ src: API + (t.cover || P.cover), sizes: '512x512' }] : [] });
   navigator.mediaSession.setActionHandler('previoustrack', () => epPrev()); navigator.mediaSession.setActionHandler('nexttrack', () => epGo(EP.i + 1));
   navigator.mediaSession.setActionHandler('play', () => epToggle(true)); navigator.mediaSession.setActionHandler('pause', () => epToggle(false)); }
 // 统计：和曲目页一样发到 /e（不带评论），你的设备不记
@@ -498,6 +501,7 @@ function epBar() {
 function epBarUi(loading) {
   const b = epBar(), t = EP.list[EP.i];
   b.classList.toggle('playing', epPlaying() && !loading); b.classList.toggle('loading', !!loading);
+  { const cv = (t && t.cover) || P.cover, c = b.querySelector('.epc'); if (c) c.style.backgroundImage = cv ? 'url(' + API + cv + ')' : ''; }
   b.querySelector('#epT').textContent = t ? t.title : '播放完毕'; b.querySelector('#epA').textContent = t ? (loading ? '加载中…' : (t.artist || P.artist || '')) : '';
   document.querySelectorAll('#list .tr').forEach(r => r.classList.toggle('now', !!t && r.getAttribute('href') === t.url));
 }
