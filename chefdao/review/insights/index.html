@@ -387,7 +387,7 @@ button.av{cursor:pointer;padding:0}
 .wsec{margin-bottom:30px}
 .wcal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.wcal .wd{font-size:12px;color:var(--text-3);text-align:center;padding-bottom:4px}
 .wcal button{aspect-ratio:1/1;max-height:62px;border-radius:9px;background:rgba(235,233,229,var(--a,.04));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-variant-numeric:tabular-nums;color:var(--text-2);min-width:0}
-.wcal button b{font-size:13px;font-weight:500}.wcal button i{font-style:normal;font-size:11px;opacity:.75;min-height:13px}.wcal button.hot{color:var(--ink)}.wcal button.tdy{box-shadow:0 0 0 1.5px var(--text) inset}.wcal button.on{box-shadow:0 0 0 2px var(--pearl)}.wcal button.fut{opacity:.4}.wcal .gap{visibility:hidden}
+.wcal button b{font-size:13px;font-weight:500}.wcal button i{font-style:normal;font-size:11px;opacity:.75;min-height:13px}.wcal button.hot{color:var(--ink)}.wcal button.has{color:var(--text)}.wcal button.hot i,.wcal button.has i{opacity:.9}.wcal button.tdy{box-shadow:0 0 0 1.5px var(--text) inset}.wcal button.on{box-shadow:0 0 0 2px var(--pearl)}.wcal button.fut{opacity:.4}.wcal .gap{visibility:hidden}
 .wday{margin-top:10px;background:var(--fill);border-radius:12px;padding:4px 14px}.wday .rk:first-child{border-top:0}
 .wal{padding:13px 0;border-top:.5px solid var(--hair)}.wal:first-of-type{border-top:0}.wal .t{display:flex;justify-content:space-between;gap:10px;font-size:15.5px}.wal .t b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wal .t span{font-size:13px;color:var(--text-2);white-space:nowrap}.wal .t span.stall{color:var(--red)}.wal .bar{height:4px;border-radius:2px;background:var(--fill-3);margin:8px 0 6px;overflow:hidden}.wal .bar i{display:block;height:100%;background:var(--pearl);border-radius:2px}
@@ -419,7 +419,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261115.1200';
+const BUILD = '261115.1500';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1224,8 +1224,8 @@ function renderWork() {
   // 工作日历：格子越亮当天工时越多，点一天看做了哪些歌
   const first = new Date(wY, wM, 1), nd = new Date(wY, wM + 1, 0).getDate(), lead = (first.getDay() + 6) % 7;
   let cal = ['一', '二', '三', '四', '五', '六', '日'].map(x => `<span class="wd">${x}</span>`).join('') + '<button class="gap"></button>'.repeat(lead);
-  for (let d = 1; d <= nd; d++) { const k = wY + '-' + String(wM + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'), h = S.days[k] || 0, a = h ? Math.min(1, h / 8) * .8 + .12 : .04;
-    cal += `<button data-wd="${k}" class="${a > .5 ? 'hot ' : ''}${k === today ? 'tdy ' : ''}${k > today ? 'fut ' : ''}${k === wDay ? 'on' : ''}" style="--a:${a.toFixed(2)}"><b>${d}</b><i>${h ? (Math.round(h * 10) / 10) : ''}</i></button>`; }
+  for (let d = 1; d <= nd; d++) { const k = wY + '-' + String(wM + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'), h = S.days[k] || 0, a = !h ? .04 : h < 4 ? .12 + h / 4 * .22 : .7 + Math.min(1, (h - 4) / 4) * .25;   // 4 小时以下暗底亮字，以上亮底深字，中间那段灰看不清所以跳过
+    cal += `<button data-wd="${k}" class="${a > .5 ? 'hot ' : h ? 'has ' : ''}${k === today ? 'tdy ' : ''}${k > today ? 'fut ' : ''}${k === wDay ? 'on' : ''}" style="--a:${a.toFixed(2)}"><b>${d}</b><i>${h ? (Math.round(h * 10) / 10) : ''}</i></button>`; }
   const dayRows = wDay ? WK.rows.filter(p => p.d[wDay]).sort((a, b) => b.d[wDay] - a.d[wDay]) : [];
   const dayBox = wDay ? `<div class="wday">${dayRows.length ? dayRows.map(p => `<div class="rk"><b>${esc(p.n)}</b><span>${wHr(p.d[wDay])}</span></div>`).join('') : '<div class="msg">这一天没有工时记录</div>'}</div>` : '';
   // 专辑推动：停得最久的排最前；全交付或全在等素材的不显示
