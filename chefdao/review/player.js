@@ -196,6 +196,7 @@ document.body.innerHTML = `
   <section class="fee" id="fee" hidden></section>
 
   <div class="fdue" id="fdue" hidden></div>
+  <div class="finbar" id="finBar" hidden></div>
   <div class="okbar" id="okbar" hidden></div>
   <div class="pnotice" id="pnotice" hidden></div><button class="pnedit press" id="pnedit" hidden></button>
   <section class="lyr" id="lyr" hidden></section>
@@ -369,11 +370,13 @@ const yuan = n => '¥' + n.toLocaleString('en-US');
 const depOf = t => Q && Q.half ? Math.round(t / 2) : Math.ceil(t * (t < 500 ? .8 : t < 1000 ? .7 : .5));   // Q.half：分档之前开的费用单，定金仍然对半
 const hasFix = p => p.fix !== undefined && p.fix !== null;   // 单独报价（例如只做母带），不按菜单选
 const pPrice = p => hasFix(p) ? p.fix : Q.menu.base + Q.menu.vocal[p.v][1] + Q.menu.edit[p.e][1];
+// 每位还没付的钱（没收的定金 + 没收的尾款）；没填费用单就是空
+const oweList = () => Q ? Q.people.map(p => { const t = pPrice(p), d = Math.min(t, p.da ?? depOf(t)); return { n: p.n, a: (p.dep ? 0 : d) + (p.fin ? 0 : t - d) }; }).filter(x => x.a > 0) : [];
 // 母带阶段（有母带版本或已进入交付结算）还没结清：确认按钮上方直接写出要付的金额，不用你再催
 function renderDue() {
   const el = $('#fdue'), g = S.prog || {};
   const on = Q && (V.some(v => stageOf(v) === 'master') || g.s === 8) && g.s !== 5;
-  const owe = on ? Q.people.map(p => { const t = pPrice(p), d = Math.min(t, p.da ?? depOf(t)); return { n: p.n, a: (p.dep ? 0 : d) + (p.fin ? 0 : t - d) }; }).filter(x => x.a > 0) : [];
+  const owe = on ? oweList() : [];
   el.hidden = !owe.length; if (!owe.length) { el.innerHTML = ''; return; }
   const sum = owe.reduce((s, x) => s + x.a, 0);
   el.innerHTML = '<div class="fdt"><span>尾款待付</span><b>' + yuan(sum) + '</b></div>'
@@ -1040,7 +1043,20 @@ const autoInfo = ext => {
   return { left: winH() * 36e5 + (ext ? 864e5 : 0) - (Date.now() - cur.ts), ext };
 };
 const leftTxt = ms => { const m = Math.ceil(ms / 6e4), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mi = m % 60; return d ? d + ' 天 ' + h + ' 小时' : h ? h + ' 小时 ' + mi + ' 分' : mi + ' 分钟'; };
+// 客户这边：刀大厨上传了最终文件就在确认区上方提示，按当前能不能下载给对应的按钮
+function finUi() {
+  const el = $('#finBar'); if (!el) return;
+  if (IS_OWNER || !S.final) { el.hidden = true; return; }
+  const sz = S.final.size >= 1e9 ? (S.final.size / 1e9).toFixed(1) + 'GB' : Math.max(1, Math.round(S.final.size / 1048576)) + 'MB';
+  const [t, sub, btn] = DL.on ? ['最终文件已就绪', S.final.name + ' · ' + sz, '下载']
+    : DL.trust && payConfirmed() ? ['最终文件已上传', (() => { const n = oweList().reduce((x, y) => x + y.a, 0); return n ? '付款 ' + yuan(n) + ' 后即可领取' : '付款后即可领取'; })(), '付款领取']
+    : DL.trust ? ['最终文件已准备好', '确认这一版没问题后，即可付款领取', '']
+    : ['最终文件已上传', '结清费用后开放下载', ''];
+  el.hidden = false; el.innerHTML = '<div><b>' + t + '</b><span>' + esc(sub) + '</span></div>' + (btn ? '<button class="press">' + btn + '</button>' : '');
+  const b = el.querySelector('button'); if (b) b.onclick = () => $('#dlBtn').click();
+}
 async function renderOk() {
+  try { finUi(); } catch (e) {}
   const bar = $('#okbar'); if (!bar || !WK) return;
   const owner = ME || !!store.get('insights:key');
   if (owner) {
@@ -2429,7 +2445,7 @@ let lid = store.get('review:lid');
 if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.set('review:lid', lid); }
 
 /* ───────── 客户下载：你允许后才能下，下的是原文件；文件名带阶段和「ChefDao Mix」，下载了会通知你 ───────── */
-function dlUi() { const b = $('#dlBtn'); if (!b) return; if (IS_OWNER) { b.hidden = true; return; }
+function dlUi() { try { finUi(); } catch (e) {} const b = $('#dlBtn'); if (!b) return; if (IS_OWNER) { b.hidden = true; return; }
   const asked = store.get('review:dlreq:' + S.slug) === '1';
   b.hidden = false; b.classList.toggle('hoff', !DL.on); b.classList.toggle('asked', !DL.on && asked);
   b.title = DL.on ? (S.final ? '下载最终文件' : DL.link ? '获取最终文件' : '下载这一版') : DL.trust ? '付款后领取最终文件' : asked ? dlTip() : '申请下载 · 收到全部费用后开放'; }
@@ -2442,7 +2458,11 @@ const payConfirmed = () => !!(S.prog && (S.prog.s === 8 || S.prog.s === 5)) || O
 function paySheet() {
   if (document.getElementById('paySheet')) return;
   const el = document.createElement('div'); el.id = 'paySheet';
-  el.innerHTML = '<div class="pbox"><b>付款后领取最终文件</b><img src="../pay.jpg?v=20261115a" alt="微信 / 支付宝收款码"><p>请先<b>把上面的二维码图片保存到本地</b>（电脑右键、手机长按图片），再打开微信或支付宝，扫描相册里的这张图完成付款。</p><p class="dim">付款后点下面的按钮，文件马上开放。</p><button class="press pgo" id="payGo">我已付款，获取文件</button><button class="press pno" id="payX">稍后再说</button></div>';
+  const owe = oweList(), sum = owe.reduce((a, x) => a + x.a, 0);   // 填了费用单：写出要付多少；没填就不写金额
+  const amt = sum ? '<div class="pamt"><span>应付尾款</span><b>' + yuan(sum) + '</b></div>' + (owe.length > 1 ? '<div class="pdim">' + owe.map(x => esc(x.n) + ' ' + yuan(x.a)).join(' · ') + '</div>' : '') : '';
+  if (Q && !sum) {   // 费用单上已经全部结清：不用再扫码，直接领
+    el.innerHTML = '<div class="pbox"><b>费用已结清</b><p>点下面的按钮领取最终文件。</p><button class="press pgo" id="payGo">领取最终文件</button><button class="press pno" id="payX">稍后再说</button></div>';
+  } else el.innerHTML = '<div class="pbox"><b>付款后领取最终文件</b>' + amt + '<img src="../pay.jpg?v=20261115a" alt="微信 / 支付宝收款码"><p>请先<b>把上面的二维码图片保存到本地</b>（电脑右键、手机长按图片），再打开微信或支付宝，扫描相册里的这张图完成付款。</p><p class="dim">付款后点下面的按钮，文件马上开放。</p><button class="press pgo" id="payGo">我已付款，获取文件</button><button class="press pno" id="payX">稍后再说</button></div>';
   document.body.appendChild(el); el.onclick = e => { if (e.target === el) el.remove(); };
   $('#payX').onclick = () => el.remove();
   $('#payGo').onclick = async () => { const g = $('#payGo'); g.disabled = true; g.textContent = '处理中…';
