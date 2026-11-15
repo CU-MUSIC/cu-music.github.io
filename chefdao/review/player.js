@@ -2462,7 +2462,7 @@ function paySheet() {
   const amt = sum ? '<div class="pamt"><span>应付尾款</span><b>' + yuan(sum) + '</b></div>' + (owe.length > 1 ? '<div class="pdim">' + owe.map(x => esc(x.n) + ' ' + yuan(x.a)).join(' · ') + '</div>' : '') : '';
   if (Q && !sum) {   // 费用单上已经全部结清：不用再扫码，直接领
     el.innerHTML = '<div class="pbox"><b>费用已结清</b><p>点下面的按钮领取最终文件。</p><button class="press pgo" id="payGo">领取最终文件</button><button class="press pno" id="payX">稍后再说</button></div>';
-  } else el.innerHTML = '<div class="pbox"><b>付款领取最终文件</b>' + amt + '<img src="../pay.jpg?v=20261115a" alt="微信 / 支付宝收款码"><p class="dim">保存图片后，用微信或支付宝扫一扫</p><button class="press psv" id="paySave">保存收款码</button><button class="press pgo" id="payGo">我已付款，获取文件</button><button class="press pno" id="payX">稍后再说</button></div>';
+  } else el.innerHTML = '<div class="pbox"><b>付款领取最终文件</b><p class="pthx">谢谢一直以来的信任，付款后可直接领取</p>' + amt + '<img src="../pay.jpg?v=20261115a" alt="微信 / 支付宝收款码"><p class="dim">保存图片后，用微信或支付宝扫一扫</p><button class="press psv" id="paySave">保存收款码</button><button class="press pgo" id="payGo">我已付款，获取文件</button><button class="press pno" id="payX">稍后再说</button></div>';
   document.body.appendChild(el); el.onclick = e => { if (e.target === el) el.remove(); };
   $('#payX').onclick = () => el.remove();
   const sv = $('#paySave'); if (sv) sv.onclick = async () => {   // 手机：系统分享里选「存储图像」进相册；电脑或不支持分享：直接下载图片
