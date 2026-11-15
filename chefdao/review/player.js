@@ -171,7 +171,7 @@ document.body.innerHTML = `
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
-  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownTrust">自助领取</button><button class="press" id="ownLink">文件链接</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -1385,6 +1385,13 @@ function ownerTools() {
     $('#ownDl').classList.toggle('hot', !DL.on && rq.length > 0);
     $('#ownWm').textContent = '水印 ' + (DL.wm ? '开' : '关'); $('#ownWm').classList.toggle('on', !!DL.wm); $('#ownDl').classList.toggle('on', !!DL.on);
     $('#ownDl').dataset.n = !DL.on && rq.length ? rq.length : ''; iconize(); };
+  const trustOwn = () => { $('#ownTrust').textContent = '自助领取 ' + (DL.trust ? '开' : '关'); $('#ownTrust').classList.toggle('on', !!DL.trust); $('#ownTrust').title = '信任的客户：确认没问题后扫码付款，点「我已付款」就能直接下载，你事后核对到账';
+    $('#ownLink').textContent = DL.link ? '文件链接 ✓' : '文件链接'; $('#ownLink').title = DL.link ? DL.link : '最终压缩包放网盘，把链接填这里：客户拿到文件时给链接，不下载试听版本'; };
+  trustOwn();
+  $('#ownTrust').onclick = async () => { const trust = DL.trust ? 0 : 1;
+    try { await post('/radm/meta', { slug: S.slug, dl: { trust } }); DL.trust = trust; trustOwn(); busy(trust ? '已开启：客户确认没问题后，可扫码付款并自助领取' : '已关闭自助领取'); } catch (e) { busy('没改成，检查网络再试'); } };
+  $('#ownLink').onclick = async () => { const v = prompt('最终文件链接（https 开头，留空清除）', DL.link || ''); if (v == null) return; const link = v.trim();
+    try { await post('/radm/meta', { slug: S.slug, dl: { link } }); DL.link = /^https:\/\/\S{3,480}$/.test(link) ? link : ''; trustOwn(); busy(DL.link ? '已保存文件链接' : '已清除文件链接（需要 https 开头）'); } catch (e) { busy('没改成，检查网络再试'); } };
   dlOwn();
   $('#ownDl').onclick = async () => { const on = DL.on ? 0 : 1;
     try { await post('/radm/meta', { slug: S.slug, dl: { on } }); DL.on = on; if (on) DL.req = []; dlOwn(); busy(on ? '已允许客户下载' : '已关闭客户下载'); } catch (e) { busy('没改成，检查网络再试'); } };
@@ -2396,13 +2403,29 @@ if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.se
 function dlUi() { const b = $('#dlBtn'); if (!b) return; if (IS_OWNER) { b.hidden = true; return; }
   const asked = store.get('review:dlreq:' + S.slug) === '1';
   b.hidden = false; b.classList.toggle('hoff', !DL.on); b.classList.toggle('asked', !DL.on && asked);
-  b.title = DL.on ? '下载这一版' : asked ? dlTip() : '申请下载 · 收到全部费用后开放'; }
+  b.title = DL.on ? (DL.link ? '获取最终文件' : '下载这一版') : DL.trust ? '付款后领取最终文件' : asked ? dlTip() : '申请下载 · 收到全部费用后开放'; }
 const dlPaid = () => !!(typeof Q !== 'undefined' && Q && Array.isArray(Q.people) && Q.people.length && Q.people.every(p => p.fin));   // 费用单上每位都标了尾款已收 = 全款
 const dlTip = () => dlPaid() ? '已提交申请。费用已结清，刀大厨会马上开放下载' : '已提交申请。收到全部费用后，开放下载';
 const dlName = v => { const st = stageOf(v), tag = { edit: 'ChefDao Edit', master: 'ChefDao Master' }[st] || 'ChefDao Mix';
   return ((S.artist ? S.artist + ' - ' : '') + (S.title || 'Untitled') + ' (' + tag + ') ' + (STAGE[st] ? STAGE[st] + ' ' + vlab(v) : v.ver)).replace(/[\\/:*?"<>|]/g, '_'); };
+/* 信任客户的自助领取：确认没问题后弹出收款码，付款后点「我已付款」→ 服务端直接开放下载（给你发推送，你事后核对到账） */
+const payConfirmed = () => !!(S.prog && (S.prog.s === 8 || S.prog.s === 5)) || Object.keys(OKS).some(k => !/^(fb|ext):/.test(k));
+function paySheet() {
+  if (document.getElementById('paySheet')) return;
+  const el = document.createElement('div'); el.id = 'paySheet';
+  el.innerHTML = '<div class="pbox"><b>付款后领取最终文件</b><img src="../pay.jpg?v=20261115a" alt="微信 / 支付宝收款码"><p>请先<b>把上面的二维码图片保存到本地</b>（电脑右键、手机长按图片），再打开微信或支付宝，扫描相册里的这张图完成付款。</p><p class="dim">付款后点下面的按钮，文件马上开放。</p><button class="press pgo" id="payGo">我已付款，获取文件</button><button class="press pno" id="payX">稍后再说</button></div>';
+  document.body.appendChild(el); el.onclick = e => { if (e.target === el) el.remove(); };
+  $('#payX').onclick = () => el.remove();
+  $('#payGo').onclick = async () => { const g = $('#payGo'); g.disabled = true; g.textContent = '处理中…';
+    try { const j = await (await fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, paid: 1 }) })).json();
+      if (!j.ok || !j.on) throw 0; DL.on = 1; if (j.link) DL.link = j.link; dlUi();
+      if (j.link) { el.querySelector('.pbox').innerHTML = '<b>已记录，文件已开放</b><p>点下面的按钮打开文件。</p><a class="press pgo" href="' + j.link.replace(/"/g, '%22') + '" target="_blank" rel="noopener">打开最终文件</a><button class="press pno" id="payX2">关闭</button>'; $('#payX2').onclick = () => el.remove(); }
+      else { el.remove(); $('#dlBtn').click(); } } catch (e) { g.disabled = false; g.textContent = '我已付款，获取文件'; hud('没提交成功，检查网络再试'); } };
+}
 $('#dlBtn').onclick = async () => {
   const b = $('#dlBtn'); if (b.dataset.busy) return;
+  if (DL.on && DL.link) { window.open(DL.link, '_blank', 'noopener'); fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, got: 1, ver: V[vi].ver }) }).catch(() => {}); return; }
+  if (!DL.on && DL.trust) { if (!payConfirmed()) return hud('确认「这一版没问题」后，可以付款领取最终文件', 4500); return paySheet(); }
   if (!DL.on) {
     if (store.get('review:dlreq:' + S.slug) === '1') return hud(dlTip(), 4000);
     try { const j = await (await fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid }) })).json();

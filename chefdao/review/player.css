@@ -1019,3 +1019,10 @@ body.rlp-on .rlp-tab{display:none}
 .vfocus{margin:-4px 0 12px;padding:10px 14px;border-radius:12px;background:rgba(236,234,230,.05);color:var(--text-2);font-size:14px;line-height:1.7}
 .vfocus[hidden]{display:none}
 .vfocus b{display:inline-block;margin-right:8px;padding:0 8px;border-radius:99px;background:rgba(232,201,138,.16);color:#e8c98a;font-size:12px;font-weight:600;line-height:20px;vertical-align:1px}
+
+/* 信任客户自助领取：付款码弹层 */
+#paySheet{position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));overflow:auto;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#paySheet .pbox{background:#1a1c20;color:#d6d3cd;border-radius:20px;padding:20px 18px 16px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.65}
+#paySheet .pbox>b{font-size:18px;color:#ece9e3}#paySheet img{width:100%;border-radius:14px;display:block}#paySheet p{margin:0}#paySheet .dim{color:#9a968e;font-size:14px}
+#paySheet .pgo{display:block;text-align:center;text-decoration:none;font-size:16px;font-weight:600;padding:13px;border-radius:14px;background:#ebe9e5;color:#121213;border:0}#paySheet .pgo:disabled{opacity:.6}
+#paySheet .pno{font-size:15px;padding:10px;border-radius:12px;background:transparent;color:#9a968e;border:0}
