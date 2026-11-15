@@ -171,7 +171,7 @@ document.body.innerHTML = `
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
-  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownTrust">自助领取</button><button class="press" id="ownLink">文件链接</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownTrust">自助领取</button><button class="press" id="ownFinal">最终文件</button><button class="press" id="ownLink">文件链接</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -1387,6 +1387,35 @@ function ownerTools() {
     $('#ownDl').dataset.n = !DL.on && rq.length ? rq.length : ''; iconize(); };
   const trustOwn = () => { $('#ownTrust').textContent = '自助领取 ' + (DL.trust ? '开' : '关'); $('#ownTrust').classList.toggle('on', !!DL.trust); $('#ownTrust').title = '信任的客户：确认没问题后扫码付款，点「我已付款」就能直接下载，你事后核对到账';
     $('#ownLink').textContent = DL.link ? '文件链接 ✓' : '文件链接'; $('#ownLink').title = DL.link ? DL.link : '最终压缩包放网盘，把链接填这里：客户拿到文件时给链接，不下载试听版本'; };
+  // 最终文件：直接传到 R2（免费 10GB，服务端卡在 9GB，超出就拒绝上传，不会产生费用）。客户开放下载后点下载拿到的就是它
+  const gb = n => (n / 1e9).toFixed(n >= 1e9 ? 1 : 2) + 'GB', mb = n => n >= 1e9 ? gb(n) : Math.round(n / 1048576) + 'MB';
+  const finOwn = () => { $('#ownFinal').textContent = S.final ? '最终文件 ✓' : '最终文件'; $('#ownFinal').title = S.final ? S.final.name + '（' + mb(S.final.size) + '）' : '上传最终交付的压缩包：客户开放下载后（你开，或信任客户点了已付款）下载的就是它'; };
+  finOwn();
+  const fcall = async (path, body) => { const r = await fetch(live.api + path, { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return r.json().catch(() => ({ ok: false })); };
+  async function finalUpload(file) {
+    const st = await fcall('/final/start', { slug: S.slug, name: file.name, size: file.size });
+    if (!st.ok) return busy(st.e === 'full' ? '存储快满了（已用 ' + gb(st.used) + ' / ' + gb(st.cap) + '），这个文件 ' + mb(file.size) + ' 放不下，没有上传。先删掉旧歌的最终文件' : '没开始上传（' + (st.e || '网络') + '）');
+    const n = Math.ceil(file.size / st.part), parts = [];
+    try {
+      for (let i = 0; i < n; i++) {
+        const etag = await new Promise((ok, no) => { const x = new XMLHttpRequest(); x.open('PUT', live.api + '/final/part?key=' + encodeURIComponent(st.key) + '&u=' + encodeURIComponent(st.uploadId) + '&n=' + (i + 1));
+          x.setRequestHeader('Authorization', 'Bearer ' + key);
+          x.upload.onprogress = e => { if (e.lengthComputable) busy('上传最终文件 ' + Math.round((i + e.loaded / e.total) / n * 100) + '%（' + mb(file.size) + '）'); };
+          x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} x.status === 200 && j.etag ? ok(j.etag) : no(new Error('上传失败 ' + x.status)); };
+          x.onerror = () => no(new Error('网络断了')); x.send(file.slice(i * st.part, Math.min(file.size, (i + 1) * st.part))); });
+        parts.push({ partNumber: i + 1, etag });
+      }
+      const d = await fcall('/final/done', { slug: S.slug, key: st.key, uploadId: st.uploadId, name: file.name, parts });
+      if (!d.ok) return busy(d.e === 'full' ? '存储快满了，这个文件放不下，已删除，没有保存' : '上传没完成，再试一次');
+      S.final = { name: d.name, size: d.size }; finOwn(); busy('最终文件已上传（存储已用 ' + gb(d.used) + ' / ' + gb(d.cap) + '）');
+    } catch (e) { fcall('/final/done', { slug: S.slug, key: st.key, uploadId: st.uploadId, name: file.name, parts: [], abort: 1 }); busy(e.message + '，没有保存，再试一次'); }
+  }
+  $('#ownFinal').onclick = async () => {
+    if (S.final) { const v = prompt('现在的最终文件：' + S.final.name + '（' + mb(S.final.size) + '）\n输入 1 换成新文件，输入 2 删除', '1'); if (v == null) return;
+      if (v.trim() === '2') { const d = await fcall('/final/del', { slug: S.slug }); if (d.ok) { delete S.final; finOwn(); busy('已删除最终文件（存储已用 ' + gb(d.used) + ' / ' + gb(d.cap) + '）'); } else busy('没删掉，检查网络再试'); return; }
+      if (v.trim() !== '1') return; }
+    const inp = document.createElement('input'); inp.type = 'file'; inp.onchange = () => { if (inp.files[0]) finalUpload(inp.files[0]); }; inp.click();
+  };
   trustOwn();
   $('#ownTrust').onclick = async () => { const trust = DL.trust ? 0 : 1;
     try { await post('/radm/meta', { slug: S.slug, dl: { trust } }); DL.trust = trust; trustOwn(); busy(trust ? '已开启：客户确认没问题后，可扫码付款并自助领取' : '已关闭自助领取'); } catch (e) { busy('没改成，检查网络再试'); } };
@@ -2403,7 +2432,7 @@ if (!lid) { lid = Math.random().toString(36).slice(2, 5).toUpperCase(); store.se
 function dlUi() { const b = $('#dlBtn'); if (!b) return; if (IS_OWNER) { b.hidden = true; return; }
   const asked = store.get('review:dlreq:' + S.slug) === '1';
   b.hidden = false; b.classList.toggle('hoff', !DL.on); b.classList.toggle('asked', !DL.on && asked);
-  b.title = DL.on ? (DL.link ? '获取最终文件' : '下载这一版') : DL.trust ? '付款后领取最终文件' : asked ? dlTip() : '申请下载 · 收到全部费用后开放'; }
+  b.title = DL.on ? (S.final ? '下载最终文件' : DL.link ? '获取最终文件' : '下载这一版') : DL.trust ? '付款后领取最终文件' : asked ? dlTip() : '申请下载 · 收到全部费用后开放'; }
 const dlPaid = () => !!(typeof Q !== 'undefined' && Q && Array.isArray(Q.people) && Q.people.length && Q.people.every(p => p.fin));   // 费用单上每位都标了尾款已收 = 全款
 const dlTip = () => dlPaid() ? '已提交申请。费用已结清，刀大厨会马上开放下载' : '已提交申请。收到全部费用后，开放下载';
 const dlName = v => { const st = stageOf(v), tag = { edit: 'ChefDao Edit', master: 'ChefDao Master' }[st] || 'ChefDao Mix';
@@ -2419,11 +2448,12 @@ function paySheet() {
   $('#payGo').onclick = async () => { const g = $('#payGo'); g.disabled = true; g.textContent = '处理中…';
     try { const j = await (await fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, paid: 1 }) })).json();
       if (!j.ok || !j.on) throw 0; DL.on = 1; if (j.link) DL.link = j.link; dlUi();
-      if (j.link) { el.querySelector('.pbox').innerHTML = '<b>已记录，文件已开放</b><p>点下面的按钮打开文件。</p><a class="press pgo" href="' + j.link.replace(/"/g, '%22') + '" target="_blank" rel="noopener">打开最终文件</a><button class="press pno" id="payX2">关闭</button>'; $('#payX2').onclick = () => el.remove(); }
+      if (j.link && !S.final) { el.querySelector('.pbox').innerHTML = '<b>已记录，文件已开放</b><p>点下面的按钮打开文件。</p><a class="press pgo" href="' + j.link.replace(/"/g, '%22') + '" target="_blank" rel="noopener">打开最终文件</a><button class="press pno" id="payX2">关闭</button>'; $('#payX2').onclick = () => el.remove(); }
       else { el.remove(); $('#dlBtn').click(); } } catch (e) { g.disabled = false; g.textContent = '我已付款，获取文件'; hud('没提交成功，检查网络再试'); } };
 }
 $('#dlBtn').onclick = async () => {
   const b = $('#dlBtn'); if (b.dataset.busy) return;
+  if (DL.on && S.final) { const el = document.createElement('a'); el.href = API_BASE + '/final?s=' + S.slug + '&k=' + encodeURIComponent(WK) + '&lid=' + lid; document.body.appendChild(el); el.click(); el.remove(); hud('开始下载：' + S.final.name, 3500); return; }   // 最终压缩包：浏览器直接下载，不经过内存
   if (DL.on && DL.link) { window.open(DL.link, '_blank', 'noopener'); fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, got: 1, ver: V[vi].ver }) }).catch(() => {}); return; }
   if (!DL.on && DL.trust) { if (!payConfirmed()) return hud('确认「这一版没问题」后，可以付款领取最终文件', 4500); return paySheet(); }
   if (!DL.on) {
