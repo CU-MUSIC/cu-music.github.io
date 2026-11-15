@@ -259,7 +259,8 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .tabs button{flex:1;font-size:15px;padding:8px 6px;border-radius:9px;color:var(--text-2);position:relative}
 .tabs button.on{background:var(--fill-3);color:var(--text);font-weight:600}
 .tabs .dot{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--red);color:var(--ink);font-size:12px;font-weight:700;padding:0 5px;margin-left:5px;vertical-align:1px}
-.tabs .ti,.tabs .tm,.subseg{display:none}
+.tabs .ti{display:none}.tabs button[data-t=price],.tabs button[data-t=beat],.tabs button[data-t=home] .tl{display:none}.tabs .tm{display:inline}.tabs button.son{background:var(--fill-3);color:var(--text);font-weight:600}
+.subseg{display:flex;width:max-content;margin:-8px 0 20px}.subseg button{padding:5px 16px}
 /* ── 像 App：铃铛收通知设置、大标题、手机底部标签栏 ── */
 .ttl{flex:1 1 0;min-width:0}.ttl h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ttl .eyebrow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ttl .bv{text-transform:none;margin-left:4px}
 .top>.rfb{flex:none;margin:0 0 0 8px!important;align-self:center}
@@ -275,14 +276,12 @@ button,.tabs,.seg,.chips{-webkit-user-select:none;user-select:none;-webkit-touch
   .wrap{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
   .tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;border-radius:0;gap:0;padding:6px max(8px,env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom));
     background:rgba(18,18,19,.82);-webkit-backdrop-filter:saturate(1.6) blur(22px);backdrop-filter:saturate(1.6) blur(22px);box-shadow:0 -.5px 0 var(--hair)}
-  .tabs button[data-t=price],.tabs button[data-t=beat]{display:none}
   .tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0 2px;border-radius:0;background:none!important;font-size:10.5px;font-weight:500!important;color:var(--text-3)}
   .tabs button.on,.tabs button.son{color:var(--text)}
   .tabs .ti{display:block;width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
   .tabs button.on .ti,.tabs button.son .ti{stroke-width:2}
-  .tabs button[data-t=home] .tl{display:none}.tabs .tm{display:inline}
   .tabs .dot{position:absolute;top:0;left:calc(50% + 6px);margin:0;min-width:16px;height:16px;line-height:16px;font-size:10.5px;padding:0 4px}
-  .subseg{display:flex;width:100%;margin:-8px 0 18px}.subseg button{flex:1}
+  .subseg{width:100%;margin:0 0 18px}.subseg button{flex:1}
   h1{font-size:32px}
 }
 .cards.three{grid-template-columns:1fr 1fr}
@@ -385,8 +384,12 @@ button.av{cursor:pointer;padding:0}
 .wcards .card{padding-bottom:14px}.wcards .card.tap{cursor:pointer}.wcards .warn{color:var(--red)}
 .wh{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 10px}.wh h2{font-size:19px;font-weight:650}.wh span{font-size:13px;color:var(--text-3)}
 .wsec{margin-bottom:30px}
+.wgrid{display:flex;flex-direction:column}.wcol{display:contents}.wo1{order:1}.wo2{order:2}.wo3{order:3}.wo4{order:4}.wo5{order:5}
+.wnext{background:var(--fill);border-radius:16px;padding:14px 16px 6px}.wnext .wh{margin-bottom:2px}.wnext .wrow{grid-template-columns:22px 1fr auto;align-items:baseline}.wnext .wrow i{font-style:normal;font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums}.wnext .wrow small{grid-column:2/-1}
+@media (min-width:1100px){.wrap:has(.wgrid){max-width:1120px}.wrap:has(.wgrid) .wcards{grid-template-columns:repeat(4,1fr)}
+  .wgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 36px;align-items:start}.wcol{display:block}}
 .wcal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.wcal .wd{font-size:12px;color:var(--text-3);text-align:center;padding-bottom:4px}
-.wcal button{aspect-ratio:1/1;max-height:62px;border-radius:9px;background:rgba(235,233,229,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-variant-numeric:tabular-nums;color:var(--text-2);min-width:0}
+.wcal button{aspect-ratio:1/1;max-height:54px;border-radius:9px;background:rgba(235,233,229,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-variant-numeric:tabular-nums;color:var(--text-2);min-width:0}
 .wcal button b{font-size:13px;font-weight:500}.wcal button i{font-style:normal;font-size:11px;opacity:.75;min-height:13px}.wcal .l1{background:#1d3128;color:var(--text)}.wcal .l2{background:#2a5140;color:var(--text)}.wcal .l3{background:#3a7558;color:#f1efeb}.wcal .l4{background:#5fa57d;color:var(--ink)}.wcal .l5{background:#a3d9b6;color:var(--ink)}.wcal button:not(.l0) i{opacity:.9}.wcal button:not(.l0) b{font-weight:600}
 .wleg{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:10px;font-size:12px;color:var(--text-3)}.wleg i{width:14px;height:14px;border-radius:4px}.wleg i:first-of-type{margin-left:4px}.wleg i:last-of-type{margin-right:4px}.wcal button.tdy{box-shadow:0 0 0 1.5px var(--text) inset}.wcal button.on{box-shadow:0 0 0 2px var(--pearl)}.wcal button.fut{opacity:.4}.wcal .gap{visibility:hidden}
 .wday{margin-top:10px;background:var(--fill);border-radius:12px;padding:4px 14px}.wday .rk:first-child{border-top:0}
@@ -420,7 +423,7 @@ button.av{cursor:pointer;padding:0}
 <script src="../reflib.js?v=20261109p"></script>
 <script>
 (() => {
-const BUILD = '261115.1530';
+const BUILD = '261115.1700';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -455,7 +458,7 @@ const TICON = { work: TI('<rect x="4" y="5" width="16" height="15" rx="3"/><path
   rlib: TI('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2"/>'),
   home: TI('<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.4 2.3 3.5 5 3.5 8s-1.1 5.7-3.5 8c-2.4-2.3-3.5-5-3.5-8s1.1-5.7 3.5-8"/>'),
   orders: TI('<path d="M6.5 3.5h11v17l-2.75-1.6L12 20.5l-2.75-1.6L6.5 20.5z"/><path d="M9.5 8.5h5M9.5 12h5"/>') };
-const TABS = [['work', '工作'], ['lib', 'Library'], ['listen', '审听'], ['rlib', '参考库'], ['beat', '伴奏'], ['home', '主页'], ['price', '价格页'], ['orders', '订单']];
+const TABS = [['work', '工作'], ['listen', '审听'], ['lib', 'Library'], ['orders', '订单'], ['rlib', '参考库'], ['home', '主页'], ['beat', '伴奏'], ['price', '价格页']];   // 后三个在标签栏里合成一个「网站」，进去再用上面的小切换
 // 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
 const SNAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
 // 推进按钮上写的是「进入这一步」的动作
@@ -763,9 +766,8 @@ function render() {
   const SITE = ['home', 'price', 'beat'], TTL = Object.fromEntries(TABS);
   const head = `<div class="top"><div class="ttl"><div class="eyebrow">Insights <span class="bv" title="页面版本号">v${BUILD}</span></div><h1>${TTL[tab] || 'Insights'}</h1></div><button class="rfb nfb${NOPEN ? ' on' : ''}" id="nfb" aria-label="通知设置" title="通知设置"><svg viewBox="0 0 24 24"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i></i></button><button class="rfb ofb${OFF ? ' on' : ''}" id="ofb" aria-label="离线保存" title="${OFF ? '已离线保存在这台设备' : '离线保存：数据和封面存在这台设备，打开秒开'}"><svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M5 17.5c0 1.4 1.1 2.5 2.5 2.5h9c1.4 0 2.5-1.1 2.5-2.5"/></svg></button><button class="rfb" id="rfb" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></button>
     ${tab === 'orders' || tab === 'lib' || tab === 'rlib' || tab === 'work' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
-    ${SITE.includes(tab) ? `<div class="seg subseg">${SITE.map(k => `<button data-t2="${k}" class="${tab === k ? 'on' : ''}">${TTL[k]}</button>`).join('')}</div>` : ''}
     <div class="nbar${NOPEN ? ' open' : ''}" id="nbar" hidden></div><div class="missed" id="missed" hidden></div>
-    <nav class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}${k === 'home' && SITE.includes(tab) ? ' son' : ''}">${TICON[k] || ''}<span class="tl">${t}</span>${k === 'home' ? '<span class="tm">网站</span>' : ''}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</nav>`;
+    <nav class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}${k === 'home' && SITE.includes(tab) ? ' son' : ''}">${TICON[k] || ''}<span class="tl">${t}</span>${k === 'home' ? '<span class="tm">网站</span>' : ''}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</nav>${SITE.includes(tab) ? `<div class="seg subseg">${SITE.map(k => `<button data-t2="${k}" class="${tab === k ? 'on' : ''}">${TTL[k]}</button>`).join('')}</div>` : ''}`;
   root.innerHTML = head + (tab === 'work' ? renderWork() : tab === 'lib' ? renderLib() : tab === 'rlib' ? renderRlib() : tab === 'beat' ? renderBeat() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   if (window.__pushDraw) window.__pushDraw();
@@ -1231,23 +1233,33 @@ function renderWork() {
   const dayBox = wDay ? `<div class="wday">${dayRows.length ? dayRows.map(p => `<div class="rk"><b>${esc(p.n)}</b><span>${wHr(p.d[wDay])}</span></div>`).join('') : '<div class="msg">这一天没有工时记录</div>'}</div>` : '';
   // 专辑推动：停得最久的排最前；全交付或全在等素材的不显示
   const am = {}; WK.rows.forEach(p => { if (wSingle(p) || wCancel(p)) return; const g = am[p.al] || (am[p.al] = { name: p.al, total: 0, done: 0, wait: 0, inc: 0, last: '', todo: [] });
-    g.total++; g.inc += p.net; const l = wLast(p); if (l > g.last) g.last = l; if (wDone(p)) g.done++; else if (/等素材/.test(p.st)) g.wait++; else g.todo.push(p.n); });
+    g.total++; g.inc += p.net; const l = wLast(p); if (l > g.last) g.last = l; if (wDone(p)) g.done++; else if (/等素材/.test(p.st)) g.wait++; else g.todo.push(p); });
   const albums = Object.values(am).filter(g => g.todo.length).sort((a, b) => (a.last || '9') < (b.last || '9') ? -1 : 1);
   const alHtml = albums.map(g => { const ago = wAgo(g.last), stall = ago != null && ago >= 14;
     return `<div class="wal"><div class="t"><b>${esc(g.name)}</b><span class="${stall ? 'stall' : ''}">${ago == null ? '还没开工' : ago === 0 ? '今天动过' : ago + ' 天' + (stall ? '没动了' : '前')}</span></div><div class="bar"><i style="width:${pct(g.done, g.total)}%"></i></div>
-      <div class="m"><span>${g.done}/${g.total} 首${g.wait ? ' · 等素材 ' + g.wait : ''}</span><span>${wYen(g.inc)}</span></div><div class="todo">待推进：${g.todo.slice(0, 4).map(esc).join('、')}${g.todo.length > 4 ? ' 等 ' + g.todo.length + ' 首' : ''}</div></div>`; }).join('');
+      <div class="m"><span>${g.done}/${g.total} 首${g.wait ? ' · 等素材 ' + g.wait : ''}</span><span>${wYen(g.inc)}</span></div><div class="todo">待推进：${g.todo.slice(0, 4).map(x => esc(x.n)).join('、')}${g.todo.length > 4 ? ' 等 ' + g.todo.length + ' 首' : ''}</div></div>`; }).join('');
   // 单曲：没交付的，先看截止日期
   const singles = WK.rows.filter(p => wSingle(p) && !wCancel(p) && !wDone(p)).sort((a, b) => (a.dl || '9') < (b.dl || '9') ? -1 : (a.dl || '9') > (b.dl || '9') ? 1 : wLast(b) < wLast(a) ? -1 : 1);
   const sgRow = p => { const left = p.dl ? -wAgo(p.dl) : null, ago = wAgo(wLast(p));
     return `<a class="wrow" href="https://www.notion.so/${p.id}" target="_blank" rel="noopener"><b>${esc(p.n)}</b><em class="${left != null && left < 0 ? 'warn' : ''}">${left == null ? '' : left < 0 ? '逾期 ' + -left + ' 天' : left === 0 ? '今天截止' : left + ' 天后截止'}</em><small>${esc([p.ar.join('、'), p.st, ago == null ? '还没开工' : ago === 0 ? '今天做过' : ago + ' 天前做过'].filter(Boolean).join(' · '))}</small></a>`; };
   const sgShow = wAll ? singles : singles.slice(0, 8);
   const delivered = S.list.map(p => `<a class="wrow" href="https://www.notion.so/${p.id}" target="_blank" rel="noopener"><b>${esc(p.n)}</b><em>${wYen(p.net)}</em><small>${esc([p.ar.join('、'), p.ty, p.mix ? wHr(p.mix) + (p.net ? ' · ' + wYen(p.net / p.mix) + '/h' : '') : '没有工时记录'].filter(Boolean).join(' · '))}</small></a>`).join('');
+  const nx = [], seen = new Set(), push = (p, why, warn) => { if (nx.length < 5 && !seen.has(p.id + p.n)) { seen.add(p.id + p.n); nx.push({ p, why, warn }); } };
+  late.filter(p => !/等素材/.test(p.st)).sort((a, b) => a.dl < b.dl ? -1 : 1).forEach(p => push(p, '逾期 ' + wAgo(p.dl) + ' 天', 1));
+  soon.filter(p => !/等素材/.test(p.st)).sort((a, b) => a.dl < b.dl ? -1 : 1).forEach(p => push(p, p.dl === today ? '今天截止' : -wAgo(p.dl) + ' 天后截止'));
+  act.filter(p => /修改中/.test(p.st)).forEach(p => push(p, '客户在等修改'));
+  albums.forEach(g => { const ago = wAgo(g.last); if (g.todo[0]) push(g.todo[0], ago == null ? '专辑还没开工' : ago < 7 ? '专辑下一首' : '专辑 ' + ago + ' 天没动', ago >= 14); });
+  const nxHtml = nx.map((x, i) => `<a class="wrow" href="https://www.notion.so/${x.p.id}" target="_blank" rel="noopener"><i>${i + 1}</i><b>${esc(x.p.n)}</b><em class="${x.warn ? 'warn' : ''}">${x.why}</em><small>${esc([x.p.ar.join('、'), wSingle(x.p) ? '' : x.p.al, x.p.st].filter(Boolean).join(' · '))}</small></a>`).join('');
   return `<div class="wnav"><button data-wm="-1" aria-label="上个月">‹</button><b>${wY} 年 ${wM + 1} 月</b><button data-wm="1" aria-label="下个月">›</button><span class="ts">${wkLoading ? '刷新中…' : ''}</span>${isNow ? '' : '<button class="now" data-wm="0">本月</button>'}</div>
     ${cards}
-    <div class="wsec"><div class="wh"><h2>工作日历</h2><span>${S.nd} 天 · ${wHr(S.hrs)}</span></div><div class="wcal">${cal}</div><div class="wleg">少<i style="background:#1d3128"></i><i style="background:#2a5140"></i><i style="background:#3a7558"></i><i style="background:#5fa57d"></i><i style="background:#a3d9b6"></i>多 · 6 小时以上最亮</div>${dayBox}</div>
-    ${alHtml ? `<div class="wsec"><div class="wh"><h2>专辑推动</h2><span>停最久的在前</span></div>${alHtml}</div>` : ''}
-    ${singles.length ? `<div class="wsec"><div class="wh"><h2>单曲</h2><span>${singles.length} 首没交付</span></div>${sgShow.map(sgRow).join('')}${singles.length > 8 ? `<button class="wmore" id="wAll">${wAll ? '收起' : '显示全部 ' + singles.length + ' 首'}</button>` : ''}</div>` : ''}
-    <div class="wsec"><div class="wh"><h2>${isNow ? '本月' : wM + 1 + ' 月'}交付</h2><span>${S.list.length} 首 · ${wYen(S.inc)}</span></div>${delivered || '<div class="msg">这个月还没有交付的歌</div>'}</div>`;
+    <div class="wgrid"><div class="wcol">
+      ${nxHtml ? `<div class="wsec wnext wo1"><div class="wh"><h2>现在该推</h2><span>按紧急程度排</span></div>${nxHtml}</div>` : ''}
+      ${alHtml ? `<div class="wsec wo3"><div class="wh"><h2>专辑推动</h2><span>停最久的在前</span></div>${alHtml}</div>` : ''}
+      ${singles.length ? `<div class="wsec wo4"><div class="wh"><h2>单曲</h2><span>${singles.length} 首没交付</span></div>${sgShow.map(sgRow).join('')}${singles.length > 8 ? `<button class="wmore" id="wAll">${wAll ? '收起' : '显示全部 ' + singles.length + ' 首'}</button>` : ''}</div>` : ''}
+    </div><div class="wcol">
+      <div class="wsec wo2"><div class="wh"><h2>工作日历</h2><span>${S.nd} 天 · ${wHr(S.hrs)}</span></div><div class="wcal">${cal}</div><div class="wleg">少<i style="background:#1d3128"></i><i style="background:#2a5140"></i><i style="background:#3a7558"></i><i style="background:#5fa57d"></i><i style="background:#a3d9b6"></i>多 · 6 小时以上最亮</div>${dayBox}</div>
+      <div class="wsec wo5"><div class="wh"><h2>${isNow ? '本月' : wM + 1 + ' 月'}交付</h2><span>${S.list.length} 首 · ${wYen(S.inc)}</span></div>${delivered || '<div class="msg">这个月还没有交付的歌</div>'}</div>
+    </div></div>`;
 }
 function bindWork() {
   const q = s => root.querySelector(s), rt = q('#wRetry'); if (rt) rt.onclick = () => { wkErr = ''; loadWork(true); render(); };
