@@ -105,6 +105,31 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .upp i{display:block;height:4px;border-radius:2px;background:var(--fill-2);overflow:hidden}.upp i b{display:block;height:100%;background:var(--green);transition:width .2s}
 .upp.err{color:#e9a19a}
 @media (max-width:420px){.upl{flex-direction:column}}
+.top h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tops{display:flex;gap:10px;align-items:center;flex:none}
+.av{display:inline-grid;place-items:center;border-radius:50%;background:center/cover no-repeat;box-shadow:0 0 0 .5px rgba(255,255,255,.12) inset;flex:none}
+.av.df{background:linear-gradient(145deg,#4a4740,#2c2b28);color:#e8e2d4;font-weight:600;letter-spacing:0}
+.avb{border-radius:50%}
+.lk{font-size:13px;color:var(--text-2);text-decoration:underline;text-underline-offset:3px;margin-left:8px}
+/* 上手说明 */
+#intro .up-s{max-width:400px}
+.ix{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:10px 4px 0}
+.ix .ico{width:64px;height:64px;border-radius:18px;background:var(--fill-2);display:grid;place-items:center;margin-bottom:6px}
+.ix .ico svg{width:30px;height:30px;fill:none;stroke:var(--text);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ix b{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.ix p{font-size:16px;line-height:1.7;color:var(--text-2);max-width:30em}
+.dots{display:flex;gap:6px;margin:8px 0 4px}.dots i{width:6px;height:6px;border-radius:3px;background:var(--fill-3);transition:width .2s}.dots i.on{width:18px;background:var(--text)}
+.ib{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:6px}
+.go2{width:100%;padding:13px;border-radius:14px;background:var(--pearl);color:var(--ink);font-size:16px;font-weight:600}
+.go2:disabled{opacity:.6}
+.sk{width:100%;padding:10px;font-size:15px;color:var(--text-3)}
+/* 头像和名字 */
+.pf{display:flex;flex-direction:column;align-items:center;gap:16px}
+.pfav{display:flex;flex-direction:column;align-items:center;gap:8px}.pfav span:last-child{font-size:14px;color:var(--text-2)}
+.pf label{width:100%;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text-2)}
+.pf input{background:var(--fill-2);border:0;border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;color:var(--text);width:100%}
+.pfb{width:100%;display:flex;flex-direction:column;gap:4px}
+.pfm{font-size:13px;color:var(--text-3);min-height:1em}
 </style>
 </head>
 <body><div class="wrap" id="app"><div class="empty">加载中…</div></div>
@@ -134,7 +159,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
     const all = D.projects.flatMap(p => p.tracks), left = all.reduce((n, t) => n + todo(t), 0);
     const wk = all.reduce((n, t) => n + t.vers.filter(v => v.ts > Date.now() - 7 * 864e5).length, 0);
     const busy = D.projects.flatMap(p => p.tracks.map(t => ({ p, t }))).filter(x => todo(x.t) > 0);
-    let h = `<div class="top"><div><div class="eyebrow">CU 工作台</div><h1>${esc(D.name)}</h1></div><button class="rf" id="rf" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button></div>`;
+    let h = `<div class="top"><div style="min-width:0"><div class="eyebrow">CU 工作台</div><h1>${esc(me())}</h1></div><div class="tops"><button class="rf" id="rf" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button><button class="avb" id="avb" aria-label="头像和名字" title="头像和名字">${avatar(40)}</button></div></div>`;
     h += `<div class="cards"><div class="card"><div class="lb">要改的意见</div><div class="n">${left}</div><div class="d">${left ? '在 ' + busy.length + ' 首歌里' : '都改完了'}</div></div>`
       + `<div class="card"><div class="lb">共享给你的歌</div><div class="n">${all.length}</div><div class="d">本周新版本 ${wk} 个</div></div></div>`;
     if (busy.length) h += `<div class="sect">现在要做<span>点开看意见</span></div><div class="todo">${busy.map(({ p, t }) => `<button class="trow" data-p="${esc(p.slug)}">${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><span>${esc(p.title)}</span></div><em>${todo(t)} 条</em></button>`).join('')}</div>`;
@@ -142,8 +167,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
     h += `<div class="sect">项目<span></span></div><div class="lbar"><span>${D.projects.length} 个项目</span><span class="lvt" id="lvt"><button data-lv="grid" class="${v === 'grid' ? 'on' : ''}" aria-label="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${v === 'list' ? 'on' : ''}" aria-label="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span></div>`;
     h += D.projects.length ? `<div class="lgrid ${v}">${D.projects.map(p => { const n = p.tracks.reduce((a, t) => a + todo(t), 0);
       return `<button class="lcard" data-p="${esc(p.slug)}">${cov(p.cover, n || '')}<b>${esc(p.title)}</b><span>${esc(p.artist || '')}${p.artist ? ' · ' : ''}${KIND[p.kind] || 'EP'} · ${p.tracks.length} 首</span></button>`; }).join('')}</div>` : '<div class="empty">暂时没有共享给你的歌</div>';
-    h += `<div class="foot">意见只显示分给你的「${esc(D.cats.join('、'))}」。点时间可以直接跳到那一处听。</div>`;
+    h += `<div class="foot">意见只显示分给你的「${esc(D.cats.join('、'))}」。点时间可以直接跳到那一处听。<button class="lk" id="help">使用说明</button></div>`;
     app.innerHTML = h;
+    document.getElementById('avb').onclick = profile;
+    document.getElementById('help').onclick = () => intro(0);
     app.querySelectorAll('[data-p]').forEach(b => b.onclick = () => sheet(b.dataset.p));
     app.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { ls.set('hp:view', b.dataset.lv); draw(); });
     document.getElementById('rf').onclick = () => load(true);
@@ -180,6 +207,55 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
       catch (e) { x.done = on ? 0 : 1; draw(); }
     });
   }
+  // 头像：没设就用名字首字，暖灰底（和页面同一套中性色，不用纯黑）
+  const me = () => (D && (D.display || D.name)) || '';
+  const avatar = sz => D && D.avatar ? `<span class="av" style="width:${sz}px;height:${sz}px;background-image:url(${esc(D.avatar)})"></span>`
+    : `<span class="av df" style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz * .42)}px">${esc([...me()][0] || '?').toUpperCase()}</span>`;
+  const modal = (id, html) => { let el = document.getElementById(id); if (el) el.remove(); el = document.createElement('div'); el.className = 'up'; el.id = id;
+    el.innerHTML = '<div class="up-s">' + html + '</div>'; document.body.appendChild(el); el.onclick = e => { if (e.target === el) el.remove(); }; return el; };
+
+  // 第一次打开：像软件的上手说明，一页一件事。看完记在这台设备上，页面底部「使用说明」可以再看
+  const STEPS = [
+    ['欢迎来到 CU 工作台', '刀大厨共享给你的歌都在这里。打开就能听，不用密码。', '<path d="M4 7h16v12H4zM8 7V5h8v2"/>'],
+    ['听歌', '点项目封面，看到每首歌的所有版本。点版本卡直接跳到那一版播放。', '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>'],
+    ['改意见', '分给你的修改意见在每首歌下面。点时间跳到那一处听，改完点「改好了」。', '<path d="M5 12l4 4 10-10"/>'],
+    ['提交版本', '点「＋ 提交新版本」，写一句这版改了什么。刀大厨确认后客户才看得到；确认前你可以换文件或删除。', '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'],
+    ['先设个头像和名字', '刀大厨那边会看到你的名字。之后点右上角头像可以随时改。', '<circle cx="12" cy="9" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'],
+  ];
+  function intro(i) {
+    const s = STEPS[i], last = i === STEPS.length - 1;
+    const el = modal('intro', `<div class="ix"><div class="ico"><svg viewBox="0 0 24 24">${s[2]}</svg></div><b>${s[0]}</b><p>${s[1]}</p>
+      <div class="dots">${STEPS.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="ib">${last ? '<button class="go2" id="ixSet">设置头像和名字</button><button class="sk" id="ixEnd">以后再说</button>' : `<button class="go2" id="ixNext">下一步</button><button class="sk" id="ixEnd">跳过</button>`}</div></div>`);
+    const done = () => { ls.set('hp:intro', '1'); el.remove(); };
+    el.onclick = e => { if (e.target === el) done(); };
+    el.querySelector('#ixEnd').onclick = done;
+    const nx = el.querySelector('#ixNext'); if (nx) nx.onclick = () => intro(i + 1);
+    const st = el.querySelector('#ixSet'); if (st) st.onclick = () => { done(); profile(); };
+  }
+
+  // 头像和名字：头像在浏览器里裁成正方形 256px，存到服务器（换手机也在）
+  function profile() {
+    let pic = D.avatar || '';
+    const el = modal('prof', `<div class="up-h">头像和名字<button id="pfX">关闭</button></div>
+      <div class="pf"><button class="pfav" id="pfAv">${avatar(96)}<span>换头像</span></button>
+      <label>名字<input type="text" id="pfN" maxlength="20" value="${esc(D.display || D.name)}" placeholder="${esc(D.name)}"></label>
+      <div class="pfb"><button class="go2" id="pfS">保存</button>${D.avatar ? '<button class="sk" id="pfR">用默认头像</button>' : ''}</div><div class="pfm" id="pfM"></div></div>`);
+    const $e = id => el.querySelector('#' + id), msg = t => { $e('pfM').textContent = t; };
+    $e('pfX').onclick = () => el.remove();
+    const show = () => { $e('pfAv').firstElementChild.outerHTML = pic ? `<span class="av" style="width:96px;height:96px;background-image:url(${esc(pic)})"></span>` : avatar(96).replace(/background-image:url\([^)]*\)/, ''); };
+    $e('pfAv').onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.hidden = true; document.body.appendChild(inp);
+      inp.onchange = async () => { const f = inp.files[0]; inp.remove(); if (!f) return;
+        try { const bm = await createImageBitmap(f), s = Math.min(bm.width, bm.height), c = document.createElement('canvas'); c.width = c.height = 256;
+          c.getContext('2d').drawImage(bm, (bm.width - s) / 2, (bm.height - s) / 2, s, s, 0, 0, 256, 256); pic = c.toDataURL('image/jpeg', .85); show(); msg('点保存生效'); }
+        catch (e) { msg('这张图打不开，换一张试试'); } }; inp.click(); };
+    const r = $e('pfR'); if (r) r.onclick = () => { pic = ''; D.avatar = ''; show(); r.remove(); msg('点保存生效'); };
+    $e('pfS').onclick = async () => { const b = $e('pfS'); b.disabled = true; msg('保存中…');
+      try { const res = await fetch(API + '/hp/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tok, display: $e('pfN').value.trim(), avatar: pic }) }), j = await res.json(); if (!j.ok) throw 0;
+        D.display = j.display; D.avatar = j.avatar; el.remove(); draw(); }
+      catch (e) { b.disabled = false; msg('没存上，检查网络再试'); } };
+  }
+
   function close() { if (UPING) return; const el = document.getElementById('pj'); if (el) el.remove(); openPj = null; }
   // 上传：按需加载 upload.js（和看板同一份），进度写在这首歌的提交栏里；传的时候不让关弹层、不自动刷新
   let UPING = false;
@@ -199,7 +275,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
   async function load(manual) {
     if (!tok) { app.innerHTML = '<div class="empty">链接不完整，请向刀大厨要完整链接</div>'; return; }
     const rf = document.getElementById('rf'); if (manual && rf) rf.classList.add('spin');
-    try { const r = await fetch(API + '/hp?t=' + tok, { cache: 'no-store' }), j = await r.json(); if (!j.ok) throw 0; D = j; draw(); }
+    try { const r = await fetch(API + '/hp?t=' + tok, { cache: 'no-store' }), j = await r.json(); if (!j.ok) throw 0; const first = !D; D = j; draw(); if (first && ls.get('hp:intro') !== '1') intro(0); }
     catch (e) { console.error(e); if (!D) app.innerHTML = '<div class="empty">链接已失效，请向刀大厨要新链接</div>'; }
   }
   load(); setInterval(() => { if (!document.hidden && !document.getElementById('pj') && !UPING) load(); }, 60000);
