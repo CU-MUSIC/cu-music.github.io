@@ -204,6 +204,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .pjtr .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pjtr .t i{font-style:normal;color:var(--text-3);font-size:12px}
 .pjtr button{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
 .pjtr button:disabled{opacity:.3}
+.hplog summary{font-size:14px;color:var(--text-2);cursor:pointer;padding:4px 0}.hpl{display:flex;gap:10px;font-size:13px;line-height:1.6;padding:3px 0}.hpl em{flex:none;width:86px;font-style:normal;color:var(--text-3);font-variant-numeric:tabular-nums}.hpl span{color:var(--text-2);min-width:0;overflow-wrap:anywhere}
 @media (max-width:600px){.pjtr>div{display:flex;flex-wrap:wrap}.pjtr>div>.t{flex:1 1 calc(100% - 90px)}.pjtr>div>button:first-of-type{margin-left:72px}}
 .pjtr button.on,#hpPj.on{background:rgba(159,184,166,.22);color:#9fb8a6}.pjtr button[data-hp]:disabled{opacity:.8}.hpnote{font-size:13px;line-height:1.6;margin:-4px 0 6px}
 .up .ghost{background:var(--fill-2);color:var(--text);border-radius:12px;padding:11px;font-size:15px}
@@ -402,7 +403,7 @@ button.av{cursor:pointer;padding:0}
 <script src="work.js?v=261115c"></script>
 <script>
 (() => {
-const BUILD = '261116.0100';
+const BUILD = '261116.0200';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1406,6 +1407,7 @@ function openProject(slug) {
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
     <div class="sect">共享给助理<span>hanp</span></div>
     <div class="row hprow"><button type="button" class="ghost" id="hpPj">整个项目：关</button><button type="button" class="ghost" id="hpLink">复制 hanp 的链接</button></div>
+    <details class="hplog" id="hpLog"><summary>hanp 的访问记录</summary><div id="hpLogB" class="dim">加载中…</div></details>
     <div class="dim hpnote">打开后 hanp 能看到歌名、进度、试听（带水印），和你分到「音频编辑 / 人声制作」的评论；看不到价格、下载、谁在听。也可以只点某首歌旁边的「助理」。</div>
     <div class="msg2" id="pjMsg"></div>
     <div class="row"><button type="button" class="go" id="pjSave">保存</button><button type="button" class="ghost" id="pjArch">${p.archived ? '取消归档' : '归档'}</button><button type="button" class="ghost danger" id="pjDel">删除项目</button></div></div>`;
@@ -1441,6 +1443,11 @@ function openProject(slug) {
     $p('hpPj').textContent = '整个项目：' + (all ? '开' : '关'); $p('hpPj').classList.toggle('on', all);
     el.querySelectorAll('[data-hp]').forEach(b => { const v = all || on.has(p.tracks[+b.dataset.hp].slug); b.classList.toggle('on', v); b.disabled = all; b.textContent = v ? '助理 ✓' : '助理'; }); };
   hpP.then(hpPaint);
+  // hanp 的访问记录：打开工作台 / 打开某首歌 / 标改好了（服务端已去重：工作台 30 分钟一次、同一首歌 10 分钟一次）
+  hpP.then(h => { const L = ((h && h.log) || []).filter(x => x.name === HPN), K = { open: '打开了工作台', song: '打开了', done: '改好了', undo: '取消了改好', up: '提交了新版本' };
+    const when = ts => { const d = new Date(ts), t = Date.now() - ts; return t < 36e5 ? Math.max(1, Math.round(t / 6e4)) + ' 分钟前' : t < 864e5 ? Math.round(t / 36e5) + ' 小时前' : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+    $p('hpLog').querySelector('summary').textContent = 'hanp 的访问记录' + (L.length ? ' · 最近 ' + when(L[0].ts) : ' · 还没打开过');
+    $p('hpLogB').innerHTML = L.length ? L.slice(0, 30).map(x => `<div class="hpl"><em>${when(x.ts)}</em><span>${K[x.kind] || x.kind}${x.title ? '《' + esc(x.title) + '》' : ''}${x.kind === 'done' || x.kind === 'undo' ? ' ' + esc(x.info) : x.info ? ' · ' + esc(x.info) : ''}</span></div>`).join('') : '还没有记录'; });
   const hpSet = async (id, on) => { try { await lib('/hp/share', { name: HPN, project: id, on: on ? 1 : 0 }); const h = await hpP; if (h) { h.shares = h.shares.filter(x => !(x.name === HPN && x.project === id)); if (on) h.shares.push({ name: HPN, project: id }); } hpPaint(h); toast(on ? '已共享给 ' + HPN : '已取消共享'); }
     catch (e) { msg('没改成，检查网络再试', true); } };
   $p('hpPj').onclick = async () => { const h = await hpP; hpSet(slug, !(h && h.shares.some(x => x.name === HPN && x.project === slug))); };

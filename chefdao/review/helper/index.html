@@ -4,86 +4,169 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#1a1c20">
+<meta name="theme-color" content="#0b0b0b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CU 工作台">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>CU 工作台</title>
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/chefdao/assets/insights-180.png">
 <style>
-/* 助理工作台：共享给他的歌 → 进度 + 要改的评论。一首一张卡，先看还剩几条 */
-:root{--bg:#1a1c20;--card:#23262b;--line:#32363d;--text:#d6d3cd;--dim:#8f8c86;--acc:#9fb8a6;--warm:#c9b98a}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:17px/1.7 -apple-system,"PingFang SC",sans-serif;padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-main{max-width:640px;margin:0 auto}
-h1{font-size:22px;margin:4px 0 2px;font-weight:600;color:#ece9e3}
-.sub{color:var(--dim);font-size:15px;margin-bottom:22px}
-.pj{font-size:14px;color:var(--dim);margin:26px 0 8px;letter-spacing:.04em}
-.song{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:12px}
-.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.top b{font-size:18px;color:#ece9e3;flex:1;min-width:0;word-break:break-word}
-.st{font-size:13px;border-radius:99px;padding:1px 10px;background:rgba(159,184,166,.14);color:var(--acc)}
-.st.w{background:rgba(201,185,138,.14);color:var(--warm)}
-.go{font:inherit;font-size:14px;text-decoration:none;color:var(--bg);background:var(--text);border-radius:99px;padding:4px 14px;font-weight:600}
-.meta{color:var(--dim);font-size:14px;margin-top:2px}
-.vh{font-size:14px;color:var(--acc);margin:14px 0 6px;font-weight:600}
-.it{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--line);padding:10px 0}
+/* 助理工作台：和 Insights 的 Library 同一套样子（封面网格 → 点开项目看曲目），只放共享给他的歌，不含价格、下载、听众 */
+:root{
+  --bg:#0e0e0f;--fill:rgba(236,234,230,.05);--fill-2:rgba(236,234,230,.085);--fill-3:rgba(236,234,230,.14);--hair:rgba(236,234,230,.09);
+  --text:#e8e6e2;--text-2:#a3a19d;--text-3:#74726f;--ink:#121213;--pearl:#ebe9e5;--green:#9fb8a6;--warm:#e8c98a;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;color-scheme:dark}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{background:radial-gradient(120% 60% at 50% -10%,rgba(236,234,230,.06),transparent 60%),var(--bg);color:var(--text);font:17px/1.6 var(--font);letter-spacing:-.005em;-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+a{color:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.wrap{max-width:680px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:22px}
+.eyebrow{font-size:13px;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase}
+h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
+.rf{width:40px;height:40px;border-radius:50%;background:var(--fill-2);display:grid;place-items:center;color:var(--text-2)}
+.rf svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rf.spin svg{animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+.card{background:var(--fill);border-radius:16px;padding:16px 16px 12px;min-width:0}
+.card .lb{font-size:14px;color:var(--text-2)}
+.card .n{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.15;font-variant-numeric:tabular-nums}
+.card .d{font-size:13px;color:var(--text-3)}
+.sect{display:flex;justify-content:space-between;align-items:baseline;font-size:20px;font-weight:700;letter-spacing:-.015em;margin-bottom:10px}
+.sect span{font-size:14px;font-weight:400;color:var(--text-3)}
+.todo{display:flex;flex-direction:column;gap:6px;margin-bottom:28px}
+.trow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:8px 10px;border-radius:14px;background:var(--fill);text-align:left;width:100%}
+.trow .lc{width:44px;border-radius:8px}
+.trow b{display:block;font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow span{display:block;font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow em{font-style:normal;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:rgba(232,201,138,.14);color:var(--warm)}
+.lbar{display:flex;justify-content:space-between;align-items:center;margin:-2px 0 16px;font-size:14px;color:var(--text-3)}
+.lvt{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--fill-2)}
+.lvt button{width:32px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--text-3)}
+.lvt button.on{background:var(--fill-3);color:var(--text)}
+.lvt svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:18px 14px;margin-bottom:26px}
+.lcard{display:flex;flex-direction:column;gap:3px;text-align:left;min-width:0}
+.lcard b{font-size:15px;font-weight:600;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lcard span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc{width:100%;aspect-ratio:1;border-radius:12px;background:#0b0b0b center/cover;display:grid;place-items:center;box-shadow:0 0 0 .5px rgba(255,255,255,.08) inset;transition:transform .2s;position:relative}
+.lcard:hover .lc{transform:scale(1.02)}
+.lc svg{width:42%;height:42%}.lc svg path{fill:none;stroke:#e8e6e2;stroke-width:36;stroke-linecap:round}
+.lc i{position:absolute;top:8px;right:8px;font-style:normal;font-size:12px;font-weight:700;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--warm);color:var(--ink);display:grid;place-items:center}
+.lgrid.list{grid-template-columns:1fr;gap:4px}
+.lgrid.list .lcard{display:grid;grid-template-columns:56px minmax(0,1fr);grid-template-rows:auto auto;column-gap:14px;row-gap:2px;align-items:center;padding:6px 8px;border-radius:12px}
+.lgrid.list .lcard:hover{background:var(--fill)}
+.lgrid.list .lc{grid-row:1/3;width:56px;border-radius:9px}.lgrid.list .lc i{top:-4px;right:-4px}
+.lgrid.list .lcard b{margin-top:0}
+.empty{color:var(--text-3);text-align:center;padding:60px 0}
+.foot{font-size:13px;color:var(--text-3);line-height:1.7;margin-top:8px}
+/* 项目弹层 */
+.up{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55)}
+.up-s{width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow-y:auto;background:#161617;border-radius:18px 18px 0 0;padding:18px max(20px,env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
+@media (min-width:600px){.up{align-items:center}.up-s{border-radius:18px}}
+.up-h{display:flex;justify-content:space-between;align-items:center;font-size:20px;font-weight:700}
+.up-h button{font-size:15px;color:var(--text-2);font-weight:400}
+.pjtop{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:center}
+.pjtop b{display:block;font-size:20px;font-weight:700;line-height:1.3}
+.pjtop span{font-size:14px;color:var(--text-3)}
+.tr{border-top:.5px solid var(--hair);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.trh{display:grid;grid-template-columns:22px 40px minmax(0,1fr) auto;gap:10px;align-items:center}
+.trh .n{font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.trh .lc{width:40px;border-radius:7px}
+.trh b{display:block;font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trh small{display:block;font-size:13px;color:var(--text-3)}
+.go{font-size:14px;font-weight:600;text-decoration:none;background:var(--pearl);color:var(--ink);border-radius:999px;padding:6px 14px;white-space:nowrap}
+.st{display:inline-block;font-size:12px;border-radius:999px;padding:0 8px;margin-right:6px;background:rgba(159,184,166,.14);color:var(--green)}.st.w{background:rgba(232,201,138,.12);color:var(--warm)}
+.vers{display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:2px 20px;scrollbar-width:none}.vers::-webkit-scrollbar{display:none}
+.ver{flex:none;width:132px;padding:8px 10px;border-radius:12px;background:var(--fill);text-decoration:none;display:flex;flex-direction:column;gap:4px}
+.ver.cur{box-shadow:0 0 0 1px var(--fill-3) inset}
+.ver b{font-size:13px;font-weight:600}.ver span{font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.ver svg{width:100%;height:26px;display:block}.ver svg rect{fill:var(--text-3)}.ver.cur svg rect{fill:var(--text-2)}
+.it{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-radius:12px;background:var(--fill);font-size:15px}
 .it.dn{opacity:.5}.it.dn .m{text-decoration:line-through}
-.tm{flex:none;font-variant-numeric:tabular-nums;color:var(--acc);text-decoration:none;font-weight:600}
-.m{flex:1;min-width:0;word-break:break-word}
-.ct{display:inline-block;font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:99px;padding:0 8px;margin-left:8px;line-height:1.6;vertical-align:2px}
-.ck{flex:none;font:inherit;font-size:14px;border:1px solid var(--line);background:none;color:var(--text);border-radius:99px;padding:3px 12px;cursor:pointer}
-.it.dn .ck{background:var(--acc);color:var(--bg);border-color:var(--acc)}
-.none{color:var(--dim);font-size:15px;margin-top:8px}
-.empty{color:var(--dim);text-align:center;padding:60px 0}
+.it .tm{flex:none;font-variant-numeric:tabular-nums;color:var(--green);text-decoration:none;font-weight:600}
+.it .m{flex:1;min-width:0;word-break:break-word}
+.it .ct{display:block;font-size:12px;color:var(--text-3)}
+.it .ck{flex:none;font-size:13px;border-radius:999px;padding:3px 11px;background:var(--fill-2)}
+.it.dn .ck{background:var(--green);color:var(--ink)}
+.none{font-size:14px;color:var(--text-3)}
 </style>
 </head>
-<body><main id="app"><div class="empty">加载中…</div></main>
+<body><div class="wrap" id="app"><div class="empty">加载中…</div></div>
 <script>
 (() => {
   const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
   const app = document.getElementById('app'), ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
-  // 钥匙从链接里取一次就记在这台设备上；之后从主屏幕打开（链接里没钥匙）也能用
+  // 钥匙从链接里取一次就记在这台设备上；之后从主屏幕打开也能用。这台设备打开审听页：带钥匙自动解锁，不记收听、不推送
   const fromHash = location.hash.slice(1); if (/^[0-9a-f]{24}$/.test(fromHash)) ls.set('review:hp', fromHash);
-  const tok = ls.get('review:hp') || '';
-  // 这台设备打开审听页：带助理钥匙取歌（自动解锁），不记收听、不推送
-  ls.set('review:me', '1'); ls.set('review:assist', '1');
+  const tok = ls.get('review:hp') || ''; ls.set('review:me', '1'); ls.set('review:assist', '1');
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fmt = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const STAGE = s => s == null ? ['', ''] : [['准备中', 'w'], ['准备中', 'w'], ['编辑中', ''], ['混音中', ''], ['等客户听', 'w'], ['已交付', 'w'], ['人声制作中', ''], ['修改中', ''], ['交付中', 'w']][s] || ['', ''];
-  const rs = u => u.replace('https://cumusic.work', '');
-  let D = null;
-  const draw = () => {
-    const all = D.projects.flatMap(p => p.tracks), left = all.reduce((n, t) => n + t.items.filter(x => !x.done).length, 0);
-    let h = `<h1>${esc(D.name)} 的工作台</h1><div class="sub">${all.length} 首歌 · 还剩 ${left} 条要改 · 只显示「${esc(D.cats.join('、'))}」的意见</div>`;
-    if (!all.length) h += '<div class="empty">暂时没有共享给你的歌</div>';
-    D.projects.forEach(p => {
-      h += `<div class="pj">${esc(p.title)}${p.artist ? ' · ' + esc(p.artist) : ''}</div>`;
-      p.tracks.forEach(t => {
-        const [sn, sc] = STAGE(t.s), todo = t.items.filter(x => !x.done).length;
-        h += `<div class="song"><div class="top"><b>${esc(t.title)}</b>${sn ? `<span class="st ${sc}">${sn}</span>` : ''}<a class="go" href="${esc(rs(t.url))}" target="_blank" rel="noopener">试听</a></div>`
-          + `<div class="meta">${t.versions} 个版本${t.items.length ? ' · 还剩 ' + todo + ' 条' : ''}</div>`;
-        if (!t.items.length) h += '<div class="none">暂时没有分给你的修改意见</div>';
-        let lv = '';
-        t.items.forEach((x, i) => {
-          if (x.ver !== lv) { lv = x.ver; h += `<div class="vh">${esc(x.ver)}</div>`; }
-          h += `<div class="it${x.done ? ' dn' : ''}"><a class="tm" href="/chefdao/review/s/?at=${x.ver}-${x.t}#${t.slug}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(x.cat)}</span></div><button class="ck" data-s="${t.slug}" data-i="${i}">${x.done ? '已改' : '改好了'}</button></div>`;
-        });
-        h += '</div>';
-      });
-    });
+  const CU = '<svg viewBox="272 164 456 456" aria-hidden="true"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
+  const cov = (c, badge) => `<div class="lc"${c ? ` style="background-image:url(${esc(API + c)})"` : ''}>${c ? '' : CU}${badge ? `<i>${badge}</i>` : ''}</div>`;
+  const KIND = { single: '单曲', ep: 'EP', album: '专辑' };
+  const STAGE = s => [['准备中', 'w'], ['准备中', 'w'], ['编辑中', ''], ['混音中', ''], ['等客户听', 'w'], ['已交付', 'w'], ['人声制作中', ''], ['修改中', ''], ['交付中', 'w']][s] || null;
+  const SNAME = { demo: 'Demo', edit: '编辑', mix: '混音', master: '母带' };
+  const ago = ts => { if (!ts) return ''; const d = (Date.now() - ts) / 864e5; return d < 1 / 24 ? '刚刚' : d < 1 ? Math.floor(d * 24) + ' 小时前' : d < 30 ? Math.floor(d) + ' 天前' : new Date(ts).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }); };
+  const verName = (vs, v) => { if (!v.stage) return v.ver; const same = vs.filter(x => x.stage === v.stage); return (SNAME[v.stage] || v.stage) + ' ' + (same.indexOf(v) + 1); };
+  const wave = pk => `<svg viewBox="0 0 80 26" preserveAspectRatio="none">${(pk || []).map((p, i) => { const h = Math.max(1.5, p * 24); return `<rect x="${i * 2}" y="${(26 - h) / 2}" width="1.2" height="${h}" rx=".6"/>`; }).join('')}</svg>`;
+  const rel = u => String(u || '').replace('https://cumusic.work', '');
+  let D = null, openPj = null;
+  const todo = t => t.items.filter(x => !x.done).length;
+  const view = () => ls.get('hp:view') === 'list' ? 'list' : 'grid';
+
+  function draw() {
+    const all = D.projects.flatMap(p => p.tracks), left = all.reduce((n, t) => n + todo(t), 0);
+    const wk = all.reduce((n, t) => n + t.vers.filter(v => v.ts > Date.now() - 7 * 864e5).length, 0);
+    const busy = D.projects.flatMap(p => p.tracks.map(t => ({ p, t }))).filter(x => todo(x.t) > 0);
+    let h = `<div class="top"><div><div class="eyebrow">CU 工作台</div><h1>${esc(D.name)}</h1></div><button class="rf" id="rf" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button></div>`;
+    h += `<div class="cards"><div class="card"><div class="lb">要改的意见</div><div class="n">${left}</div><div class="d">${left ? '在 ' + busy.length + ' 首歌里' : '都改完了'}</div></div>`
+      + `<div class="card"><div class="lb">共享给你的歌</div><div class="n">${all.length}</div><div class="d">本周新版本 ${wk} 个</div></div></div>`;
+    if (busy.length) h += `<div class="sect">现在要做<span>点开看意见</span></div><div class="todo">${busy.map(({ p, t }) => `<button class="trow" data-p="${esc(p.slug)}">${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><span>${esc(p.title)}</span></div><em>${todo(t)} 条</em></button>`).join('')}</div>`;
+    const v = view();
+    h += `<div class="sect">项目<span></span></div><div class="lbar"><span>${D.projects.length} 个项目</span><span class="lvt" id="lvt"><button data-lv="grid" class="${v === 'grid' ? 'on' : ''}" aria-label="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${v === 'list' ? 'on' : ''}" aria-label="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span></div>`;
+    h += D.projects.length ? `<div class="lgrid ${v}">${D.projects.map(p => { const n = p.tracks.reduce((a, t) => a + todo(t), 0);
+      return `<button class="lcard" data-p="${esc(p.slug)}">${cov(p.cover, n || '')}<b>${esc(p.title)}</b><span>${esc(p.artist || '')}${p.artist ? ' · ' : ''}${KIND[p.kind] || 'EP'} · ${p.tracks.length} 首</span></button>`; }).join('')}</div>` : '<div class="empty">暂时没有共享给你的歌</div>';
+    h += `<div class="foot">意见只显示分给你的「${esc(D.cats.join('、'))}」。点时间可以直接跳到那一处听。</div>`;
     app.innerHTML = h;
-    app.querySelectorAll('.ck').forEach(b => b.onclick = async () => {
-      const t = all.find(y => y.slug === b.dataset.s), x = t.items[+b.dataset.i], on = !x.done; x.done = on ? 1 : 0; draw();
+    app.querySelectorAll('[data-p]').forEach(b => b.onclick = () => sheet(b.dataset.p));
+    app.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { ls.set('hp:view', b.dataset.lv); draw(); });
+    document.getElementById('rf').onclick = () => load(true);
+    if (openPj) sheet(openPj);
+  }
+
+  function sheet(slug) {
+    const p = D.projects.find(x => x.slug === slug); let el = document.getElementById('pj');
+    if (!p) { if (el) el.remove(); openPj = null; return; }
+    openPj = slug; const keep = el && el.querySelector('.up-s').scrollTop;
+    if (!el) { el = document.createElement('div'); el.className = 'up'; el.id = 'pj'; document.body.appendChild(el); el.onclick = e => { if (e.target === el) close(); }; }
+    el.innerHTML = `<div class="up-s"><div class="up-h">项目<button id="pjX">关闭</button></div>
+      <div class="pjtop">${cov(p.cover)}<div><b>${esc(p.title)}</b><span>${esc(p.artist || '')}${p.artist ? ' · ' : ''}${KIND[p.kind] || 'EP'} · ${p.tracks.length} 首</span></div></div>
+      ${p.tracks.map((t, i) => { const st = STAGE(t.s), last = t.vers[t.vers.length - 1];
+        return `<div class="tr"><div class="trh"><span class="n">${String(i + 1).padStart(2, '0')}</span>${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><small>${st ? `<span class="st ${st[1]}">${st[0]}</span>` : ''}${t.vers.length} 个版本${t.updTs ? ' · 更新于 ' + ago(t.updTs) : ''}${t.eta ? ' · 下一版预计 ' + esc(t.eta.slice(5).replace('-', '/')) : ''}</small></div><a class="go" href="${esc(rel(t.url))}" target="_blank" rel="noopener">试听</a></div>
+          ${t.vers.length ? `<div class="vers">${t.vers.slice().reverse().map(v => `<a class="ver${v === last ? ' cur' : ''}" href="/chefdao/review/s/?at=${esc(v.ver)}-0#${esc(t.slug)}" target="_blank" rel="noopener"><b>${esc(verName(t.vers, v))}</b>${wave(v.peaks)}<span>${esc((v.date || '').slice(5).replace('-', '/'))} · ${fmt(v.dur)}</span></a>`).join('')}</div>` : ''}
+          ${t.items.length ? t.items.map((x, j) => `<div class="it${x.done ? ' dn' : ''}"><a class="tm" href="/chefdao/review/s/?at=${esc(x.ver)}-${x.t}#${esc(t.slug)}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(verName(t.vers, t.vers.find(v => v.ver === x.ver) || { ver: x.ver }))} · ${esc(x.cat)}</span></div><button class="ck" data-s="${esc(t.slug)}" data-i="${j}">${x.done ? '已改' : '改好了'}</button></div>`).join('') : '<div class="none">暂时没有分给你的修改意见</div>'}</div>`; }).join('')}</div>`;
+    if (keep) el.querySelector('.up-s').scrollTop = keep;
+    el.querySelector('#pjX').onclick = close;
+    el.querySelectorAll('.ck').forEach(b => b.onclick = async () => {
+      const t = p.tracks.find(y => y.slug === b.dataset.s), x = t.items[+b.dataset.i], on = !x.done; x.done = on ? 1 : 0; draw();
       try { const r = await fetch(API + '/hp/done', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tok, slug: t.slug, ver: x.ver, t: x.t, m: x.m, done: on }) }); if (!(await r.json()).ok) throw 0; }
-      catch (e) { x.done = on ? 0 : 1; draw(); b.textContent = '没存上，检查网络再试'; }
+      catch (e) { x.done = on ? 0 : 1; draw(); }
     });
-  };
-  const load = async () => {
+  }
+  function close() { const el = document.getElementById('pj'); if (el) el.remove(); openPj = null; }
+
+  async function load(manual) {
     if (!tok) { app.innerHTML = '<div class="empty">链接不完整，请向刀大厨要完整链接</div>'; return; }
+    const rf = document.getElementById('rf'); if (manual && rf) rf.classList.add('spin');
     try { const r = await fetch(API + '/hp?t=' + tok, { cache: 'no-store' }), j = await r.json(); if (!j.ok) throw 0; D = j; draw(); }
-    catch (e) { app.innerHTML = '<div class="empty">链接已失效，请向刀大厨要新链接</div>'; }
-  };
-  load(); setInterval(() => { if (!document.hidden) load(); }, 60000);
+    catch (e) { console.error(e); if (!D) app.innerHTML = '<div class="empty">链接已失效，请向刀大厨要新链接</div>'; }
+  }
+  load(); setInterval(() => { if (!document.hidden && !document.getElementById('pj')) load(); }, 60000);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 })();
 </script>
 </body>
