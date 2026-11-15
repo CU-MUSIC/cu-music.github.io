@@ -116,6 +116,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .fr.nw{box-shadow:0 0 0 1px rgba(232,201,138,.4) inset}.fr.nw b::after{content:'新';font-size:11px;font-weight:700;color:var(--ink);background:var(--warm);border-radius:999px;padding:0 6px;margin-left:8px;vertical-align:2px}
 .ver b em.nw{color:var(--ink);background:var(--warm);border-radius:999px;padding:0 5px;font-weight:700}
 .nh{font-size:13px;color:var(--text-3);margin-top:4px}
+.ddl{display:inline-block;margin-top:4px;font-size:12.5px;font-weight:600;padding:1px 9px;border-radius:999px;background:rgba(232,201,138,.12);color:var(--warm)}
+.ddl.hot{background:rgba(233,161,154,.15);color:#e9a19a}.ddl.ok{background:rgba(159,184,166,.14);color:var(--green)}
+.card.hot{box-shadow:0 0 0 1px rgba(233,161,154,.35) inset}.card.hot .n{color:#e9a19a}
+.trow em.hot{background:rgba(233,161,154,.15);color:#e9a19a}
 .it.on{background:rgba(159,184,166,.08)}.it.on.nw{box-shadow:0 0 0 1px rgba(232,201,138,.4) inset}
 .paste{display:flex;flex-direction:column;gap:12px;padding-top:40px}.paste b{font-size:24px;font-weight:700}
 .paste input{background:var(--fill-2);border:0;border-radius:10px;padding:12px;font:inherit;font-size:16px;color:var(--text);width:100%}
@@ -165,6 +169,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
   const wave = pk => `<svg viewBox="0 0 80 26" preserveAspectRatio="none">${(pk || []).map((p, i) => { const h = Math.max(1.5, p * 24); return `<rect x="${i * 2}" y="${(26 - h) / 2}" width="1.2" height="${h}" rx=".6"/>`; }).join('')}</svg>`;
   const rel = u => String(u || '').replace('https://cumusic.work', '');
   let D = null, openPj = null;
+  // 截止时间：按这台设备的日期算还剩几天
+  const dleft = d => { const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((new Date(d + 'T00:00:00') - t) / 864e5); };
+  const dtxt = (d, short) => { const n = dleft(d); return n < 0 ? '过了 ' + -n + ' 天' : n === 0 ? '今天' : n === 1 ? '明天' : (short ? n + ' 天' : '还剩 ' + n + ' 天'); };
+  const md = d => +d.slice(5, 7) + '/' + +d.slice(8, 10) + ' 周' + '日一二三四五六'[new Date(d + 'T12:00:00').getDay()];
   // 上次打开的时间：这之后的新版本、批注、动态标「新」。这次看完（离开页面）才更新
   const SEEN = +(ls.get('hp:seen') || 0) || Date.now();
   const markSeen = () => ls.set('hp:seen', String(Date.now()));
@@ -197,15 +205,19 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
   function draw() {
     const all = D.projects.flatMap(p => p.tracks), left = all.reduce((n, t) => n + todo(t), 0);
     const wk = all.reduce((n, t) => n + t.vers.filter(v => v.ts > Date.now() - 7 * 864e5).length, 0);
-    const busy = D.projects.flatMap(p => p.tracks.map(t => ({ p, t }))).filter(x => todo(x.t) > 0);
+    // 现在要做：有意见没改完的，或有截止时间还没交的；有截止的按日期排在前面
+    const busy = D.projects.flatMap(p => p.tracks.map(t => ({ p, t }))).filter(x => todo(x.t) > 0 || (x.t.ddl && !x.t.ddl.done))
+      .sort((a, b) => ((a.t.ddl && !a.t.ddl.done) ? a.t.ddl.due : '9') .localeCompare((b.t.ddl && !b.t.ddl.done) ? b.t.ddl.due : '9'));
+    const near = busy.find(x => x.t.ddl && !x.t.ddl.done);
     let h = `<div class="top"><div style="min-width:0"><div class="eyebrow">CU 工作台</div><h1>${esc(me())}</h1></div><div class="tops"><button class="rf" id="rf" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button><button class="avb" id="avb" aria-label="头像和名字" title="头像和名字">${avatar(40)}</button></div></div>`;
     h += `<div class="cards"><div class="card"><div class="lb">要改的意见</div><div class="n">${left}</div><div class="d">${left ? '在 ' + busy.length + ' 首歌里' : '都改完了'}</div></div>`
-      + `<div class="card"><div class="lb">共享给你的歌</div><div class="n">${all.length}</div><div class="d">本周新版本 ${wk} 个</div></div></div>`;
+      + (near ? `<div class="card${dleft(near.t.ddl.due) <= 1 ? ' hot' : ''}"><div class="lb">最近截止</div><div class="n">${dtxt(near.t.ddl.due, true)}</div><div class="d">《${esc(near.t.title)}》${md(near.t.ddl.due)}</div></div></div>`
+        : `<div class="card"><div class="lb">共享给你的歌</div><div class="n">${all.length}</div><div class="d">本周新版本 ${wk} 个</div></div></div>`);
     h += '<div class="nbar" id="nbar" hidden></div>';
     // 最近动态：上次打开之后的标「新」
     const fd = (D.feed || []).slice(0, 6);
     if (fd.length) h += `<div class="sect">最近动态<span>${fd.filter(x => x.ts > SEEN).length ? fd.filter(x => x.ts > SEEN).length + ' 条新的' : ''}</span></div><div class="feed">${fd.map(x => `<button class="fr${x.ts > SEEN ? ' nw' : ''}" data-fs="${esc(x.slug)}"><b>${esc(x.title)}</b><span>${esc(x.body)}</span><em>${ago(x.ts)}</em></button>`).join('')}</div>`;
-    if (busy.length) h += `<div class="sect">现在要做<span>点开看意见</span></div><div class="todo">${busy.map(({ p, t }) => `<button class="trow" data-p="${esc(p.slug)}">${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><span>${esc(p.title)}</span></div><em>${todo(t)} 条</em></button>`).join('')}</div>`;
+    if (busy.length) h += `<div class="sect">现在要做<span>点开看意见</span></div><div class="todo">${busy.map(({ p, t }) => `<button class="trow" data-p="${esc(p.slug)}">${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><span>${esc(p.title)}${t.ddl && !t.ddl.done ? ' · ' + md(t.ddl.due) + ' 截止' : ''}</span></div><em${t.ddl && !t.ddl.done && dleft(t.ddl.due) <= 1 ? ' class="hot"' : ''}>${t.ddl && !t.ddl.done ? dtxt(t.ddl.due) : todo(t) + ' 条'}</em></button>`).join('')}</div>`;
     const v = view();
     h += `<div class="sect">项目<span></span></div><div class="lbar"><span>${D.projects.length} 个项目</span><span class="lvt" id="lvt"><button data-lv="grid" class="${v === 'grid' ? 'on' : ''}" aria-label="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${v === 'list' ? 'on' : ''}" aria-label="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span></div>`;
     h += D.projects.length ? `<div class="lgrid ${v}">${D.projects.map(p => { const n = p.tracks.reduce((a, t) => a + todo(t), 0);
@@ -230,7 +242,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
     el.innerHTML = `<div class="up-s"><div class="up-h">项目<button id="pjX">关闭</button></div>
       <div class="pjtop">${cov(p.cover)}<div><b>${esc(p.title)}</b><span>${esc(p.artist || '')}${p.artist ? ' · ' : ''}${KIND[p.kind] || 'EP'} · ${p.tracks.length} 首</span></div></div>
       ${p.tracks.map((t, i) => { const st = STAGE(t.s), last = t.vers[t.vers.length - 1];
-        return `<div class="tr"><div class="trh"><span class="n">${String(i + 1).padStart(2, '0')}</span>${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><small>${st ? `<span class="st ${st[1]}">${st[0]}</span>` : ''}${t.vers.length} 个版本${t.updTs ? ' · 更新于 ' + ago(t.updTs) : ''}${t.eta ? ' · 下一版预计 ' + esc(t.eta.slice(5).replace('-', '/')) : ''}</small></div><a class="go" href="${esc(rel(t.url))}" target="_blank" rel="noopener">试听</a></div>
+        return `<div class="tr"><div class="trh"><span class="n">${String(i + 1).padStart(2, '0')}</span>${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><small>${st ? `<span class="st ${st[1]}">${st[0]}</span>` : ''}${t.vers.length} 个版本${t.updTs ? ' · 更新于 ' + ago(t.updTs) : ''}</small>${t.ddl ? `<span class="ddl${t.ddl.done ? ' ok' : dleft(t.ddl.due) <= 1 ? ' hot' : ''}">截止 ${md(t.ddl.due)} · ${t.ddl.done ? '已交' : dtxt(t.ddl.due)}${t.ddl.note ? ' · ' + esc(t.ddl.note) : ''}</span>` : ''}</div><a class="go" href="${esc(rel(t.url))}" target="_blank" rel="noopener">试听</a></div>
           ${t.vers.length ? `<div class="vers">${t.vers.slice().reverse().map(v => `<a class="ver${v === last ? ' cur' : ''}${v.pend ? ' pd' : ''}" href="/chefdao/review/s/?at=${esc(v.ver)}-0#${esc(t.slug)}" target="_blank" rel="noopener"><b>${esc(verName(t.vers, v))}${v.pend ? ' <em>待确认</em>' : v.ts > SEEN ? ' <em class="nw">新</em>' : ''}</b>${wave(v.peaks)}<span>${esc((v.date || '').slice(5).replace('-', '/'))} · ${fmt(v.dur)}</span></a>`).join('')}</div>` : ''}
           ${t.vers.filter(v => v.pend).map(v => `<div class="pdr"><span><b>${esc(v.ver)}</b> 等刀大厨确认，确认后客户才看得到${v.note ? '<br>' + esc(v.note) : ''}</span><button data-rep="${esc(t.slug)}" data-v="${esc(v.ver)}">换文件</button><button data-del="${esc(t.slug)}" data-v="${esc(v.ver)}">删除</button></div>`).join('')}          ${(t.notes || []).length ? `<div class="nh">刀大厨的批注</div>${t.notes.map(x => `<div class="it on${x.ts > SEEN ? ' nw' : ''}"><a class="tm" href="/chefdao/review/s/?at=${esc(x.ver)}-${x.t}#${esc(t.slug)}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(x.ver)}${x.live ? ' · 待确认的版本' : ''} · ${ago(x.ts)}</span></div></div>`).join('')}` : ''}
           ${t.items.length ? t.items.map((x, j) => `<div class="it${x.done ? ' dn' : ''}"><a class="tm" href="/chefdao/review/s/?at=${esc(x.ver)}-${x.t}#${esc(t.slug)}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(verName(t.vers, t.vers.find(v => v.ver === x.ver) || { ver: x.ver }))} · ${esc(x.cat)}</span></div><button class="ck" data-s="${esc(t.slug)}" data-i="${j}">${x.done ? '已改' : '改好了'}</button></div>`).join('') : '<div class="none">暂时没有分给你的修改意见</div>'}
