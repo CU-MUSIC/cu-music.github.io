@@ -11,6 +11,7 @@
 <title>CU 工作台</title>
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/chefdao/assets/insights-180.png">
+<link rel="manifest" href="manifest.webmanifest">
 <style>
 /* 助理工作台：和 Insights 的 Library 同一套样子（封面网格 → 点开项目看曲目），只放共享给他的歌，不含价格、下载、听众 */
 :root{
@@ -106,6 +107,18 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .upp.err{color:#e9a19a}
 @media (max-width:420px){.upl{flex-direction:column}}
 .top h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nbar{display:flex;gap:10px;align-items:center;margin:-8px 0 22px;padding:10px 14px;border-radius:14px;background:var(--fill);font-size:14px;color:var(--text-2)}
+.nbar span{flex:1;min-width:0}.nbar button{flex:none;font-size:14px;font-weight:600;padding:6px 14px;border-radius:999px;background:var(--pearl);color:var(--ink)}
+.feed{display:flex;flex-direction:column;gap:6px;margin-bottom:28px}
+.fr{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;text-align:left;padding:10px 14px;border-radius:14px;background:var(--fill);width:100%}
+.fr b{font-size:15px;font-weight:600}.fr span{grid-column:1;font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fr em{grid-column:2;grid-row:1/3;align-self:center;font-style:normal;font-size:12px;color:var(--text-3)}
+.fr.nw{box-shadow:0 0 0 1px rgba(232,201,138,.4) inset}.fr.nw b::after{content:'新';font-size:11px;font-weight:700;color:var(--ink);background:var(--warm);border-radius:999px;padding:0 6px;margin-left:8px;vertical-align:2px}
+.ver b em.nw{color:var(--ink);background:var(--warm);border-radius:999px;padding:0 5px;font-weight:700}
+.nh{font-size:13px;color:var(--text-3);margin-top:4px}
+.it.on{background:rgba(159,184,166,.08)}.it.on.nw{box-shadow:0 0 0 1px rgba(232,201,138,.4) inset}
+.paste{display:flex;flex-direction:column;gap:12px;padding-top:40px}.paste b{font-size:24px;font-weight:700}
+.paste input{background:var(--fill-2);border:0;border-radius:10px;padding:12px;font:inherit;font-size:16px;color:var(--text);width:100%}
 .tops{display:flex;gap:10px;align-items:center;flex:none}
 .av{display:inline-grid;place-items:center;border-radius:50%;background:center/cover no-repeat;box-shadow:0 0 0 .5px rgba(255,255,255,.12) inset;flex:none}
 .av.df{background:linear-gradient(145deg,#4a4740,#2c2b28);color:#e8e2d4;font-weight:600;letter-spacing:0}
@@ -152,6 +165,32 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
   const wave = pk => `<svg viewBox="0 0 80 26" preserveAspectRatio="none">${(pk || []).map((p, i) => { const h = Math.max(1.5, p * 24); return `<rect x="${i * 2}" y="${(26 - h) / 2}" width="1.2" height="${h}" rx=".6"/>`; }).join('')}</svg>`;
   const rel = u => String(u || '').replace('https://cumusic.work', '');
   let D = null, openPj = null;
+  // 上次打开的时间：这之后的新版本、批注、动态标「新」。这次看完（离开页面）才更新
+  const SEEN = +(ls.get('hp:seen') || 0) || Date.now();
+  const markSeen = () => ls.set('hp:seen', String(Date.now()));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) markSeen(); }); addEventListener('pagehide', markSeen);
+  if (!ls.get('hp:seen')) markSeen();
+  // 手机通知：开了之后，你上传新版本、写批注、确认 / 退回他的版本、分意见给他，都会推到他手机
+  const VAPID_PUB = 'BO3vEYEyLagnI1Ts843KbJhNsQKh-cRRAze32JEsaqwWFlqnfgDMoi2l6OyJGgG1bjbCyJfzPNGRCDn4XtSbEgc';
+  let REG = null; const pushOk = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(r => { REG = r; pushBar(); }).catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data === 'refresh') load(); });
+  async function pushBar() {
+    const bar = document.getElementById('nbar'); if (!bar) return;
+    const iOS = /iPhone|iPad/.test(navigator.userAgent), sa = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if (iOS && !sa) { bar.hidden = false; bar.innerHTML = '<span>想收到新版本和批注提醒：Safari 点分享 → 添加到主屏幕，再从主屏幕打开</span>'; return; }
+    if (!pushOk || !REG) { bar.hidden = true; return; }
+    const sub = await REG.pushManager.getSubscription();
+    if (sub && Notification.permission === 'granted') { bar.hidden = true; fetch(API + '/hp/psub', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tok, endpoint: sub.endpoint }) }).catch(() => {}); return; }
+    bar.hidden = false; bar.innerHTML = '<span>开启通知：刀大厨传了新版本、给你写了批注，手机会提醒你</span><button id="nOn">开启</button>';
+    bar.querySelector('#nOn').onclick = async () => {
+      try { if (await Notification.requestPermission() !== 'granted') { bar.innerHTML = '<span>通知被拒绝了，到系统设置里给这个网页打开通知</span>'; return; }
+        const u8 = Uint8Array.from(atob(VAPID_PUB.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+        const s = await REG.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8 });
+        const j = await (await fetch(API + '/hp/psub', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tok, endpoint: s.endpoint }) })).json(); if (!j.ok) throw 0;
+        bar.innerHTML = '<span>通知已开启</span>'; setTimeout(() => { bar.hidden = true; }, 2000); }
+      catch (e) { bar.innerHTML = '<span>没开成，刷新再试</span>'; } };
+  }
   const todo = t => t.items.filter(x => !x.done).length;
   const view = () => ls.get('hp:view') === 'list' ? 'list' : 'grid';
 
@@ -162,6 +201,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
     let h = `<div class="top"><div style="min-width:0"><div class="eyebrow">CU 工作台</div><h1>${esc(me())}</h1></div><div class="tops"><button class="rf" id="rf" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button><button class="avb" id="avb" aria-label="头像和名字" title="头像和名字">${avatar(40)}</button></div></div>`;
     h += `<div class="cards"><div class="card"><div class="lb">要改的意见</div><div class="n">${left}</div><div class="d">${left ? '在 ' + busy.length + ' 首歌里' : '都改完了'}</div></div>`
       + `<div class="card"><div class="lb">共享给你的歌</div><div class="n">${all.length}</div><div class="d">本周新版本 ${wk} 个</div></div></div>`;
+    h += '<div class="nbar" id="nbar" hidden></div>';
+    // 最近动态：上次打开之后的标「新」
+    const fd = (D.feed || []).slice(0, 6);
+    if (fd.length) h += `<div class="sect">最近动态<span>${fd.filter(x => x.ts > SEEN).length ? fd.filter(x => x.ts > SEEN).length + ' 条新的' : ''}</span></div><div class="feed">${fd.map(x => `<button class="fr${x.ts > SEEN ? ' nw' : ''}" data-fs="${esc(x.slug)}"><b>${esc(x.title)}</b><span>${esc(x.body)}</span><em>${ago(x.ts)}</em></button>`).join('')}</div>`;
     if (busy.length) h += `<div class="sect">现在要做<span>点开看意见</span></div><div class="todo">${busy.map(({ p, t }) => `<button class="trow" data-p="${esc(p.slug)}">${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><span>${esc(p.title)}</span></div><em>${todo(t)} 条</em></button>`).join('')}</div>`;
     const v = view();
     h += `<div class="sect">项目<span></span></div><div class="lbar"><span>${D.projects.length} 个项目</span><span class="lvt" id="lvt"><button data-lv="grid" class="${v === 'grid' ? 'on' : ''}" aria-label="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${v === 'list' ? 'on' : ''}" aria-label="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span></div>`;
@@ -172,6 +215,8 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
     document.getElementById('avb').onclick = profile;
     document.getElementById('help').onclick = () => intro(0);
     app.querySelectorAll('[data-p]').forEach(b => b.onclick = () => sheet(b.dataset.p));
+    app.querySelectorAll('[data-fs]').forEach(b => b.onclick = () => { const p = D.projects.find(x => x.slug === b.dataset.fs || x.tracks.some(t => t.slug === b.dataset.fs)); if (p) sheet(p.slug); });
+    pushBar();
     app.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { ls.set('hp:view', b.dataset.lv); draw(); });
     document.getElementById('rf').onclick = () => load(true);
     if (openPj) sheet(openPj);
@@ -186,10 +231,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
       <div class="pjtop">${cov(p.cover)}<div><b>${esc(p.title)}</b><span>${esc(p.artist || '')}${p.artist ? ' · ' : ''}${KIND[p.kind] || 'EP'} · ${p.tracks.length} 首</span></div></div>
       ${p.tracks.map((t, i) => { const st = STAGE(t.s), last = t.vers[t.vers.length - 1];
         return `<div class="tr"><div class="trh"><span class="n">${String(i + 1).padStart(2, '0')}</span>${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><small>${st ? `<span class="st ${st[1]}">${st[0]}</span>` : ''}${t.vers.length} 个版本${t.updTs ? ' · 更新于 ' + ago(t.updTs) : ''}${t.eta ? ' · 下一版预计 ' + esc(t.eta.slice(5).replace('-', '/')) : ''}</small></div><a class="go" href="${esc(rel(t.url))}" target="_blank" rel="noopener">试听</a></div>
-          ${t.vers.length ? `<div class="vers">${t.vers.slice().reverse().map(v => `<a class="ver${v === last ? ' cur' : ''}${v.pend ? ' pd' : ''}" href="/chefdao/review/s/?at=${esc(v.ver)}-0#${esc(t.slug)}" target="_blank" rel="noopener"><b>${esc(verName(t.vers, v))}${v.pend ? ' <em>待确认</em>' : ''}</b>${wave(v.peaks)}<span>${esc((v.date || '').slice(5).replace('-', '/'))} · ${fmt(v.dur)}</span></a>`).join('')}</div>` : ''}
-          ${t.vers.filter(v => v.pend).map(v => `<div class="pdr"><span><b>${esc(v.ver)}</b> 等刀大厨确认，确认后客户才看得到${v.note ? '<br>' + esc(v.note) : ''}</span><button data-rep="${esc(t.slug)}" data-v="${esc(v.ver)}">换文件</button><button data-del="${esc(t.slug)}" data-v="${esc(v.ver)}">删除</button></div>`).join('')}
-          <div class="upl" data-slot="${esc(t.slug)}"><input type="text" placeholder="这版改了什么（可选）" maxlength="200" data-note="${esc(t.slug)}"><button class="upb" data-up="${esc(t.slug)}">＋ 提交新版本</button></div>
-          ${t.items.length ? t.items.map((x, j) => `<div class="it${x.done ? ' dn' : ''}"><a class="tm" href="/chefdao/review/s/?at=${esc(x.ver)}-${x.t}#${esc(t.slug)}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(verName(t.vers, t.vers.find(v => v.ver === x.ver) || { ver: x.ver }))} · ${esc(x.cat)}</span></div><button class="ck" data-s="${esc(t.slug)}" data-i="${j}">${x.done ? '已改' : '改好了'}</button></div>`).join('') : '<div class="none">暂时没有分给你的修改意见</div>'}</div>`; }).join('')}</div>`;
+          ${t.vers.length ? `<div class="vers">${t.vers.slice().reverse().map(v => `<a class="ver${v === last ? ' cur' : ''}${v.pend ? ' pd' : ''}" href="/chefdao/review/s/?at=${esc(v.ver)}-0#${esc(t.slug)}" target="_blank" rel="noopener"><b>${esc(verName(t.vers, v))}${v.pend ? ' <em>待确认</em>' : v.ts > SEEN ? ' <em class="nw">新</em>' : ''}</b>${wave(v.peaks)}<span>${esc((v.date || '').slice(5).replace('-', '/'))} · ${fmt(v.dur)}</span></a>`).join('')}</div>` : ''}
+          ${t.vers.filter(v => v.pend).map(v => `<div class="pdr"><span><b>${esc(v.ver)}</b> 等刀大厨确认，确认后客户才看得到${v.note ? '<br>' + esc(v.note) : ''}</span><button data-rep="${esc(t.slug)}" data-v="${esc(v.ver)}">换文件</button><button data-del="${esc(t.slug)}" data-v="${esc(v.ver)}">删除</button></div>`).join('')}          ${(t.notes || []).length ? `<div class="nh">刀大厨的批注</div>${t.notes.map(x => `<div class="it on${x.ts > SEEN ? ' nw' : ''}"><a class="tm" href="/chefdao/review/s/?at=${esc(x.ver)}-${x.t}#${esc(t.slug)}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(x.ver)}${x.live ? ' · 待确认的版本' : ''} · ${ago(x.ts)}</span></div></div>`).join('')}` : ''}
+          ${t.items.length ? t.items.map((x, j) => `<div class="it${x.done ? ' dn' : ''}"><a class="tm" href="/chefdao/review/s/?at=${esc(x.ver)}-${x.t}#${esc(t.slug)}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(verName(t.vers, t.vers.find(v => v.ver === x.ver) || { ver: x.ver }))} · ${esc(x.cat)}</span></div><button class="ck" data-s="${esc(t.slug)}" data-i="${j}">${x.done ? '已改' : '改好了'}</button></div>`).join('') : '<div class="none">暂时没有分给你的修改意见</div>'}
+          <div class="upl" data-slot="${esc(t.slug)}"><input type="text" placeholder="这版改了什么（可选）" maxlength="200" data-note="${esc(t.slug)}"><button class="upb" data-up="${esc(t.slug)}">＋ 提交新版本</button></div></div>`; }).join('')}</div>`;
     if (keep) el.querySelector('.up-s').scrollTop = keep;
     el.querySelector('#pjX').onclick = close;
     // 提交新版本 / 换掉自己还没被确认的版本：和刀大厨上传走同一套（WAV 转 m4a、加密、分块传），只是版本先标「待确认」
@@ -273,7 +318,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
   }
 
   async function load(manual) {
-    if (!tok) { app.innerHTML = '<div class="empty">链接不完整，请向刀大厨要完整链接</div>'; return; }
+    // 从主屏幕图标打开（iPhone 上和 Safari 不共用存储）拿不到钥匙：粘贴一次刀大厨发的链接就记住了
+    if (!tok) { app.innerHTML = '<div class="paste"><div class="eyebrow">CU 工作台</div><b>粘贴刀大厨发给你的链接</b><input type="url" id="pl" placeholder="https://cumusic.work/chefdao/review/helper/#…"><button class="go2" id="plGo">进入</button><div class="pfm" id="plM"></div></div>';
+      document.getElementById('plGo').onclick = () => { const m = /#([0-9a-f]{24})/.exec(document.getElementById('pl').value || ''); if (!m) { document.getElementById('plM').textContent = '链接不对，要完整复制刀大厨发的那条'; return; } ls.set('review:hp', m[1]); location.replace(location.pathname + '#' + m[1]); location.reload(); };
+      return; }
     const rf = document.getElementById('rf'); if (manual && rf) rf.classList.add('spin');
     try { const r = await fetch(API + '/hp?t=' + tok, { cache: 'no-store' }), j = await r.json(); if (!j.ok) throw 0; const first = !D; D = j; draw(); if (first && ls.get('hp:intro') !== '1') intro(0); }
     catch (e) { console.error(e); if (!D) app.innerHTML = '<div class="empty">链接已失效，请向刀大厨要新链接</div>'; }

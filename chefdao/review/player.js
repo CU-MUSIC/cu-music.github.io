@@ -1254,11 +1254,13 @@ function ownerTools() {
   // 助理提交、还没确认的版本：客户看不到。这里听完点「确认发布」才放给客户（进度照常推到待审听），「退回」连音频一起删
   const pendV = (S.versions || []).filter(v => v.pend);
   if (pendV.length) { const pb = document.createElement('div'); pb.className = 'pendbar';
-    pb.innerHTML = pendV.map(v => `<div><span><b>${esc(v.pend)}</b> 提交了 ${esc(v.ver)}${v.note ? '：' + esc(v.note) : ''}<em>客户还看不到</em></span><button class="press ok" data-pv="${esc(v.ver)}" data-ok="1">确认发布</button><button class="press" data-pv="${esc(v.ver)}" data-ok="0">退回</button></div>`).join('');
+    pb.innerHTML = pendV.map(v => `<div><span><b>${esc(v.pend)}</b> 提交了 ${esc(v.ver)}${v.note ? '：' + esc(v.note) : ''}<em>客户还看不到 · 在这一版上写的评论就是给 ${esc(v.pend)} 的批注，发布时不会带给客户</em></span><button class="press ok" data-pv="${esc(v.ver)}" data-ok="1">确认发布</button><button class="press" data-pv="${esc(v.ver)}" data-ok="0">退回</button></div>`).join('');
     own.after(pb);
     pb.querySelectorAll('[data-pv]').forEach(b => b.onclick = async () => {
       if (b.dataset.ok === '0' && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = '确定退回？'; setTimeout(() => { b.dataset.sure = ''; b.textContent = '退回'; }, 3000); return; }
-      b.disabled = true; try { await post('/hp/approve', { slug: S.slug, ver: b.dataset.pv, ok: b.dataset.ok === '1' ? 1 : 0 }); busy(b.dataset.ok === '1' ? '已发布，客户能看到了' : '已退回，这个版本删掉了'); setTimeout(() => softReload(), 600); }
+      b.disabled = true; try { await post('/hp/approve', { slug: S.slug, ver: b.dataset.pv, ok: b.dataset.ok === '1' ? 1 : 0 });
+        // 你在这个版本上写的评论是给助理的批注：服务端已转存成只给助理看，本机也清掉，免得之后自动同步又发给客户
+        const vi0 = V.findIndex(x => x.ver === b.dataset.pv); if (vi0 >= 0) try { const d = JSON.parse(store.get(dataKey(vi0)) || '{}'); d.notes = []; store.set(dataKey(vi0), JSON.stringify(d)); } catch (e) {} busy(b.dataset.ok === '1' ? '已发布，客户能看到了' : '已退回，这个版本删掉了'); setTimeout(() => softReload(), 600); }
       catch (e) { b.disabled = false; busy('没改成，检查网络再试'); } }); }
   // 当前项目的聆听情况：和项目页同一份数据，挂在管理条下面
   (async () => {
