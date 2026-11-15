@@ -197,13 +197,15 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .tcvm{position:absolute;left:0;top:40px;z-index:20;display:flex;flex-direction:column;min-width:128px;padding:4px;border-radius:12px;background:#2c2e33;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .pjtr .tcvm button{display:block;width:100%;text-align:left;font-size:14px;padding:9px 12px;border-radius:8px;background:none;color:var(--text)}.pjtr .tcvm button:hover{background:var(--fill-2)}
 .pjtr .tcvx{position:absolute;top:-6px;right:-6px;width:18px;height:18px;padding:0;border-radius:50%;font-size:11px;line-height:18px;background:#3a3c42;color:var(--text)}
-.pjtr>div{display:grid;grid-template-columns:24px 36px 1fr auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
+.pjtr>div{display:grid;grid-template-columns:24px 36px 1fr auto auto auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .pjtr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;padding:10px 6px;margin:-10px -6px}
 .pjtr>div.drag{position:relative;z-index:5;background:var(--bg-2,#26282d);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.45);cursor:grabbing}
 .pjtr>div.drag .n{color:var(--text)}
 .pjtr .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pjtr .t i{font-style:normal;color:var(--text-3);font-size:12px}
 .pjtr button{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
 .pjtr button:disabled{opacity:.3}
+@media (max-width:600px){.pjtr>div{display:flex;flex-wrap:wrap}.pjtr>div>.t{flex:1 1 calc(100% - 90px)}.pjtr>div>button:first-of-type{margin-left:72px}}
+.pjtr button.on,#hpPj.on{background:rgba(159,184,166,.22);color:#9fb8a6}.pjtr button[data-hp]:disabled{opacity:.8}.hpnote{font-size:13px;line-height:1.6;margin:-4px 0 6px}
 .up .ghost{background:var(--fill-2);color:var(--text);border-radius:12px;padding:11px;font-size:15px}
 .up .ghost.danger{color:var(--red)}
 .up .dim{color:var(--text-3);font-size:14px;padding:8px 0}
@@ -400,7 +402,7 @@ button.av{cursor:pointer;padding:0}
 <script src="work.js?v=261115c"></script>
 <script>
 (() => {
-const BUILD = '261115.2300';
+const BUILD = '261116.0100';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1400,8 +1402,11 @@ function openProject(slug) {
     <div class="pjlink"><code>${esc(p.url.replace('https://', ''))}</code><button type="button" id="pjCopy">复制链接和密码</button><a href="${esc(p.url)}" target="_blank" rel="noopener">打开</a></div>
     <div class="sect">曲目<span>${p.tracks.length} 首${p.tracks.filter(t => trackNo(t) !== null).length >= 2 ? '<button type="button" class="pjsort" id="pjSort">按序号排</button>' : ''}</span></div>
     <div class="pjtr">${p.tracks.map((t, i) => `<div><span class="n">${String(i + 1).padStart(2, '0')}</span><span style="position:relative"><button type="button" class="tcv ${t.cover ? 'own' : p.cover ? 'pj' : ''}" data-cv="${i}" title="${t.cover ? '换这首歌的封面（图片或 emoji）' : '给这首歌单独设封面：图片或 emoji（不设就用项目封面）'}" style="${t.cover || p.cover ? `background-image:url('${esc(API + (t.cover || p.cover))}')` : ''}">${t.cover || p.cover ? '' : '＋'}</button>${t.cover ? `<button type="button" class="tcvx" data-cvx="${i}" aria-label="去掉这首歌的封面">×</button>` : ''}</span><span class="t">${esc(t.title)} <i>${t.versions} 版</i>${p.mode === 'approve' ? `<button type="button" class="solo${t.solo ? ' on' : ''}" data-solo="${i}">${t.solo ? '✓ 单曲凭密码可进' : '单曲凭密码可进'}</button>` : ''}</span>
-      <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-sh="${i}">分享</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
+      <button data-mv="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="上移">↑</button><button data-mv="${i}" data-d="1" ${i < p.tracks.length - 1 ? '' : 'disabled'} aria-label="下移">↓</button><button data-hp="${i}" title="共享给助理 hanp：他的工作台里能看到这首歌（看不到价格和下载）">助理</button><button data-sh="${i}">分享</button><button data-rn="${i}">改名</button><button data-rm="${i}">移出</button></div>`).join('') || '<div class="dim">还没有曲目</div>'}</div>
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
+    <div class="sect">共享给助理<span>hanp</span></div>
+    <div class="row hprow"><button type="button" class="ghost" id="hpPj">整个项目：关</button><button type="button" class="ghost" id="hpLink">复制 hanp 的链接</button></div>
+    <div class="dim hpnote">打开后 hanp 能看到歌名、进度、试听（带水印），和你分到「音频编辑 / 人声制作」的评论；看不到价格、下载、谁在听。也可以只点某首歌旁边的「助理」。</div>
     <div class="msg2" id="pjMsg"></div>
     <div class="row"><button type="button" class="go" id="pjSave">保存</button><button type="button" class="ghost" id="pjArch">${p.archived ? '取消归档' : '归档'}</button><button type="button" class="ghost danger" id="pjDel">删除项目</button></div></div>`;
   document.body.appendChild(el);
@@ -1430,6 +1435,20 @@ function openProject(slug) {
         if (to === i) { prow.forEach(r => { r.style.transform = ''; r.style.transition = ''; }); row.classList.remove('drag'); return; }
         const [m] = order.splice(i, 1); order.splice(to, 0, m); setTracks(order); };
       h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up); }; });
+  // 共享给助理 hanp：整个项目，或单首歌。HP 是 /hp/admin 的结果（钥匙 + 已共享的项目码 / 歌码）
+  const HPN = 'hanp', hpP = api('/hp/admin').catch(() => null);
+  const hpPaint = h => { const on = new Set(((h && h.shares) || []).filter(x => x.name === HPN).map(x => x.project)), all = on.has(slug);
+    $p('hpPj').textContent = '整个项目：' + (all ? '开' : '关'); $p('hpPj').classList.toggle('on', all);
+    el.querySelectorAll('[data-hp]').forEach(b => { const v = all || on.has(p.tracks[+b.dataset.hp].slug); b.classList.toggle('on', v); b.disabled = all; b.textContent = v ? '助理 ✓' : '助理'; }); };
+  hpP.then(hpPaint);
+  const hpSet = async (id, on) => { try { await lib('/hp/share', { name: HPN, project: id, on: on ? 1 : 0 }); const h = await hpP; if (h) { h.shares = h.shares.filter(x => !(x.name === HPN && x.project === id)); if (on) h.shares.push({ name: HPN, project: id }); } hpPaint(h); toast(on ? '已共享给 ' + HPN : '已取消共享'); }
+    catch (e) { msg('没改成，检查网络再试', true); } };
+  $p('hpPj').onclick = async () => { const h = await hpP; hpSet(slug, !(h && h.shares.some(x => x.name === HPN && x.project === slug))); };
+  el.querySelectorAll('[data-hp]').forEach(b => b.onclick = async () => { const t = p.tracks[+b.dataset.hp], h = await hpP; hpSet(t.slug, !(h && h.shares.some(x => x.name === HPN && x.project === t.slug))); });
+  $p('hpLink').onclick = async () => { let h = await hpP, k = h && h.helpers.find(x => x.name === HPN);
+    try { if (!k) k = await lib('/hp/key', { name: HPN });
+      await navigator.clipboard.writeText('CU 工作台（' + HPN + '）\nhttps://cumusic.work/chefdao/review/helper/#' + k.tok + '\n用手机打开后加到主屏幕，以后从主屏幕进'); $p('hpLink').textContent = '已复制'; setTimeout(() => { $p('hpLink').textContent = '复制 ' + HPN + ' 的链接'; }, 1500); }
+    catch (e) { msg('没复制成，检查网络再试', true); } };
   // 曲目单独分享：复制这首歌自己的链接和密码（打开项目时先把歌曲清单取好，点的时候直接复制）
   const songsP = api('/radm/list').catch(() => null);
   el.querySelectorAll('[data-sh]').forEach(b => b.onclick = async () => {

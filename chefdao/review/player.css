@@ -1033,3 +1033,6 @@ body.rlp-on .rlp-tab{display:none}
 .finbar button{flex:none;font-size:15px;font-weight:600;padding:9px 16px;border-radius:999px;background:#ebe9e5;color:#121213;border:0}
 #paySheet .psv{display:block;text-align:center;font-size:16px;font-weight:600;padding:12px;border-radius:14px;background:rgba(236,234,230,.1);color:#ece9e3;border:0}#paySheet .pbox>.dim{text-align:center;margin-top:-4px}
 #paySheet .pthx{color:#9a968e;font-size:14px;margin-top:-6px}
+
+/* 助理设备：费用、尾款、下载、最终文件、确认这一版都不显示 */
+.asst #fee,.asst #fdue,.asst #finBar,.asst #okbar,.asst #dlBtn,.asst #paySheet{display:none!important}

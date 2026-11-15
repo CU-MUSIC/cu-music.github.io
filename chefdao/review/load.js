@@ -51,14 +51,15 @@
   try {
     let owner = null; try { owner = localStorage.getItem('insights:key'); } catch (e) {}   // 你自己的设备带着看板钥匙，归档的项目也能看
     let tok = ''; try { tok = localStorage.getItem('review:tok') || ''; } catch (e) {}
-    const r = await fetch(API + '/rs?s=' + slug + (tok ? '&tok=' + tok : ''), { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} });
+    let hp = ''; try { hp = localStorage.getItem('review:hp') || ''; } catch (e) {}   // 助理设备：带上助理钥匙，共享给他的歌直接解锁
+    const r = await fetch(API + '/rs?s=' + slug + (tok ? '&tok=' + tok : '') + (/^[0-9a-f]{24}$/.test(hp) && !owner ? '&hp=' + hp : ''), { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} });
     const j = await r.json();
     if (!j.ok && j.e === 'archived') return fail('archived');
     if (!j.ok && j.e === 'approval') return fail(j.state === 'locked' ? 'locked' : 'approval', j.project && j.project.url);
     if (!j.ok) return fail('missing');
     j.song.versions.forEach(v => { if (v.audio.startsWith('/')) v.audio = API + v.audio; });
     if (!j.song.versions.length) return fail('empty');
-    if (j.song.archived) { const d = document.createElement('div'); d.textContent = '已归档 · 客户打不开，只有你的设备能看';
+    if (j.song.archived && !j.song.helper) { const d = document.createElement('div'); d.textContent = '已归档 · 客户打不开，只有你的设备能看';
       d.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99;padding:6px 14px;border-radius:99px;background:rgba(232,201,138,.16);border:1px solid rgba(232,201,138,.4);color:#e8c98a;font:500 13px/1.4 -apple-system,"PingFang SC",sans-serif;white-space:nowrap;pointer-events:none'; document.body.appendChild(d); }
     window.SONG = j.song; window.SONG_LIVE = { api: API };   // SONG_LIVE：可以在页面里上传 / 删除版本
     document.title = 'CU MUSIC';   // 歌名等输对密码再显示

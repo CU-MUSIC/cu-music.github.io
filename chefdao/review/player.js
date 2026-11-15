@@ -238,7 +238,9 @@ let MSGS = [];   // 评论下的对话 [{ ver, t, m, who: 'c'|'o', text, ts }]
 let ONOTES = [];   // 刀大厨自己的评论（歌手端显示，来自 /cr）
 const IS_OWNER = !!store.get('insights:key');
 const DL = S.dl || { on: 0, wm: 1 };   // on 允许客户下载（下载的是原文件）；wm 客户播放时前 10 秒随机一处叠一句合唱水印，防内录
-if (!IS_OWNER) document.documentElement.classList.add('cli');   // 客户页：不显示响度统一、数据、快捷评论这些
+if (!IS_OWNER) document.documentElement.classList.add('cli');
+// 助理（服务端认出助理钥匙才给 S.helper）：不显示费用、下载、确认这一版、最终文件
+if (!IS_OWNER && S.helper) document.documentElement.classList.add('asst');   // 客户页：不显示响度统一、数据、快捷评论这些
 const rk = (ver, t, m) => ver + '|' + (Math.round(t * 10) / 10) + '|' + m;
 const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8787' : 'https://stats.cumusic.work';
 
