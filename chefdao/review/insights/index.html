@@ -397,10 +397,10 @@ button.av{cursor:pointer;padding:0}
     return direct(); }; })();</script>
 <script src="../upload.js?v=20261109b"></script>
 <script src="../reflib.js?v=20261109p"></script>
-<script src="work.js?v=261115b"></script>
+<script src="work.js?v=261115c"></script>
 <script>
 (() => {
-const BUILD = '261115.2000';
+const BUILD = '261115.2100';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -423,6 +423,7 @@ const m = /[#&]k=([\w-]+)/.exec(location.hash);
 if (m) { store.set('insights:key', m[1]); history.replaceState(null, '', location.pathname); }
 if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
 if (/rlib/.test(location.hash)) { store.set('insights:tab', 'rlib'); history.replaceState(null, '', location.pathname); }
+else if (/#work/.test(location.hash)) { store.set('insights:tab', 'work'); history.replaceState(null, '', location.pathname); }   // 日报 / 周报推送点开直接到工作页
 let KEY = store.get('insights:key');
 let days = +store.get('insights:days') || 30, song = '', proj = '', ver = '', lis = '', data = null, pdata = null;
 let tab = store.get('insights:tab') || 'listen', ofilter = '';
@@ -468,8 +469,8 @@ async function setupPush() {
   const iOS = /iPhone|iPad/.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const ok = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   let reg = null, sub = null, msg = '', prefs = null, open = false;
-  const PT = [['order', '新订单'], ['apply', '审听申请'], ['fb', '歌手发来评论'], ['reply', '评论里的回复'], ['listen', '有人第一次听（默认关）'], ['promo', '优惠码被领取 / 被使用']];
-  const defPrefs = () => ({ types: { order: 1, apply: 1, fb: 1, reply: 1, listen: 1, promo: 1 }, proj: {}, dnd: { on: 1, from: '22:00', to: '10:00' }, tz: -new Date().getTimezoneOffset() });
+  const PT = [['order', '新订单'], ['apply', '审听申请'], ['fb', '歌手发来评论'], ['reply', '评论里的回复'], ['listen', '有人第一次听（默认关）'], ['promo', '优惠码被领取 / 被使用'], ['report', '日报 / 周报 / 月报']];
+  const defPrefs = () => ({ types: { order: 1, apply: 1, fb: 1, reply: 1, listen: 1, promo: 1, report: 1 }, proj: {}, dnd: { on: 1, from: '22:00', to: '10:00' }, tz: -new Date().getTimezoneOffset() });
   if (!ok || (iOS && !standalone)) msg = iOS ? '要收通知：用 Safari 点分享 → 添加到主屏幕，再从主屏幕图标打开' : '';
   else { reg = await navigator.serviceWorker.register('sw.js').catch(() => null); sub = reg && await reg.pushManager.getSubscription(); }
   const sync = async (p) => { try { const j = await (await fetch(API + '/pushsub', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint, prefs: p }) })).json(); if (j.prefs) prefs = j.prefs; } catch (e) {} };
@@ -737,7 +738,7 @@ function cmts(x) {
 }
 
 // 工作页在 work.js 里，这里把它要用的东西递过去（取值时现读，所以是当前值）
-window.__ins = { API, esc, root, typing, get KEY() { return KEY; }, get tab() { return tab; }, get LIB() { return LIB; }, render: () => render() };
+window.__ins = { API, esc, root, typing, toast: (t, ms) => toast(t, ms), get KEY() { return KEY; }, get tab() { return tab; }, get LIB() { return LIB; }, render: () => render() };
 function render() {
   // 每分钟自动刷新时，保留展开着的报价单
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);

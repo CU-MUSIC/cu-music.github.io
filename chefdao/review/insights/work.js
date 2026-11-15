@@ -9,6 +9,11 @@
 (() => {
   const G = new Proxy({}, { get: (_, k) => window.__ins[k] });   // 每次用的时候现取，拿到的是 index.html 里的当前值
   const css = `
+.wk-rec{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:-4px 0 10px}.wk-rec>div{background:var(--fill);border-radius:14px;padding:12px 14px;min-width:0}
+.wk-rec .lb{font-size:13px;color:var(--text-2)}.wk-rec .n{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.2;font-variant-numeric:tabular-nums}.wk-rec .d{font-size:12.5px;color:var(--text-3);margin-top:1px;font-variant-numeric:tabular-nums}
+.wk-wkb{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px;padding:0 4px}.wk-wkb>div{display:flex;flex-direction:column;align-items:center;gap:4px}.wk-wkb .col{height:44px;width:100%;display:flex;align-items:flex-end}.wk-wkb .col i{display:block;width:100%;border-radius:4px;background:#3a7558;min-height:3px}.wk-wkb .col i.z{background:var(--fill-3)}
+.wk-wkb span{font-size:11.5px;color:var(--text-3)}.wk-wkb .t span{color:var(--text);font-weight:600}.wk-wkb em{font-style:normal;font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums;min-height:13px}
+.wk-rpt{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:22px 2px 6px;font-size:13px;color:var(--text-3)}.wk-rpt button{font-size:13px;padding:6px 12px;border-radius:999px;background:var(--fill);color:var(--text-2)}
 .wk-bar{font-size:14px;color:var(--text-2);font-variant-numeric:tabular-nums;margin:-8px 0 16px;display:flex;gap:6px 14px;flex-wrap:wrap}.wk-bar b{color:var(--text);font-weight:600}.wk-bar .ld{color:var(--text-3)}
 .wk-now{display:block;background:var(--fill);border-radius:18px;padding:18px 18px 16px;margin-bottom:10px;color:inherit;text-decoration:none}
 .wk-now .k{font-size:12.5px;letter-spacing:.06em;color:#7fb894}.wk-now .t{font-size:26px;font-weight:700;letter-spacing:-.01em;line-height:1.25;margin:3px 0 4px;overflow-wrap:anywhere}
@@ -83,6 +88,11 @@
       else if (s === 2 || (s == null && p && /音频编辑/.test(p.st))) { const me = mine(p); it.state = me ? 'me' : 'assist'; it.stage = '音频编辑'; it.wait = since(at[2] || (p && p.le)); it.why = me ? '音频编辑' : '音编：' + p.eb.join('、'); it.nudge = !me && it.wait != null && it.wait >= 5; it.score = 30; }
       else if (s == null && p && /等素材/.test(p.st)) { it.state = 'client'; it.stage = '等素材'; it.wait = since(p.le); it.why = '等客户发素材'; it.nudge = it.wait != null && it.wait >= 14; }
       else { it.state = 'me'; it.stage = s === 6 ? '人声制作中' : s === 1 ? '准备中' : s === 3 ? '混音中' : (p && p.st) || '进行中'; it.score = s == null && p && /修改中/.test(p.st) ? 50 : 30; }   // Notion 里标了修改中：客户在等，排在普通混音前面
+      if (!(s === 7) && p) {   // 搁置：逾期超过 30 天又 30 天没碰 / 等了超过 60 天——这种是遗留数据，别让它们顶在最上面
+        const lw0 = ago(it.lastWork), left0 = it.dl ? -ago(it.dl) : null;
+        if (it.state === 'me' && left0 != null && left0 < -30 && (lw0 == null || lw0 > 30)) { it.state = 'shelved'; it.stage = '搁置'; it.why = '逾期 ' + -left0 + ' 天' + (lw0 == null ? '，没有工时记录' : '，' + lw0 + ' 天没碰'); return it; }
+        if (it.state === 'client' && it.wait != null && it.wait > 60) { it.state = 'shelved'; it.stage = it.stage; it.why = it.stage + ' ' + it.wait + ' 天了'; return it; }
+      }
       if (it.state === 'me') {   // 排序：客户在等的修改 > 逾期 > 快到期 > 这两天正在做的 > 其他（越久没碰越靠前）
         const left = it.dl ? -ago(it.dl) : null, lw = ago(it.lastWork);
         if (left != null && left < 0) { it.score = Math.max(it.score, 80 + Math.min(15, -left)); it.due = '逾期 ' + -left + ' 天'; it.warn = 1; }
@@ -107,7 +117,7 @@
   }
 
   // ── 界面 ──
-  const rowHtml = it => `<a class="wk-row" href="${G.esc(it.url || it.notion || '#')}" target="_blank" rel="noopener"><b>${G.esc(it.name)}</b><em class="${it.warn || it.nudge ? 'warn' : ''}">${G.esc(it.state === 'me' ? (it.due || it.stage) : it.stage + (it.wait != null ? ' · ' + (it.wait === 0 ? '今天' : it.wait + ' 天') : ''))}</em><small>${G.esc([it.artist, it.album, it.state === 'me' ? (it.why0 || it.why) : it.nudge ? '该催了' : ''].filter(Boolean).join(' · '))}</small></a>`;
+  const rowHtml = it => it.state === 'shelved' ? `<a class="wk-row" href="${G.esc(it.url || it.notion || '#')}" target="_blank" rel="noopener"><b>${G.esc(it.name)}</b><em>${G.esc(it.stage)}</em><small>${G.esc([it.artist, it.album, it.why].filter(Boolean).join(' · '))}</small></a>` : `<a class="wk-row" href="${G.esc(it.url || it.notion || '#')}" target="_blank" rel="noopener"><b>${G.esc(it.name)}</b><em class="${it.warn || it.nudge ? 'warn' : ''}">${G.esc(it.state === 'me' ? (it.due || it.stage) : it.stage + (it.wait != null ? ' · ' + (it.wait === 0 ? '今天' : it.wait + ' 天') : ''))}</em><small>${G.esc([it.artist, it.album, it.state === 'me' ? (it.why0 || it.why) : it.nudge ? '该催了' : ''].filter(Boolean).join(' · '))}</small></a>`;
   const fold = (id, title, right, nudge, body) => `<details class="wk-fold" data-wf="${id}"${ls.get('insights:wf:' + id) === '1' ? ' open' : ''}><summary><i>${title}</i><span class="${nudge ? 'nudge' : ''}">${right}</span></summary><div class="wk-in">${body}</div></details>`;
 
   window.renderWork = () => {
@@ -116,11 +126,18 @@
       if (err === 'no_token') return `<div class="msg">还没接上 Notion。在终端运行下面这条，粘贴 Notion 的 Integration Token：<code class="wk-code">cd "/Volumes/正在工作/Claude/01 网站 Website/cumusic-site/tools/stats-worker" && npx wrangler secret put NOTION_TOKEN</code><button class="wk-more" id="wkRetry">已填好，重新读取</button></div>`;
       return `<div class="msg">${loading ? '正在读取…' : '没读到数据' + (err ? '（' + G.esc(err) + '）' : '') + '<button class="wk-more" id="wkRetry">重试</button>'}</div>`;
     }
-    const all = items(), today = iso(new Date());
+    const all = items(), nowD = new Date(), today = iso(nowD);
     const me = all.filter(x => x.state === 'me').sort((a, b) => b.score - a.score), cl = all.filter(x => x.state === 'client').sort((a, b) => (b.nudge ? 1 : 0) - (a.nudge ? 1 : 0) || (b.wait || 0) - (a.wait || 0)), as = all.filter(x => x.state === 'assist');
-    const others = cl.concat(as), nudges = others.filter(x => x.nudge).length;
+    const sh = all.filter(x => x.state === 'shelved').sort((a, b) => (a.dl || '') < (b.dl || '') ? -1 : 1), others = cl.concat(as), nudges = others.filter(x => x.nudge).length;
     const now = month(T0.getFullYear(), T0.getMonth()), todayH = now.days[today] || 0, pct = (a, b) => Math.max(0, Math.min(100, b ? a / b * 100 : 0));
-    const bar = `<div class="wk-bar"><span>今天 <b>${hr(todayH)}</b></span><span>该你动 <b>${me.length}</b> 首</span><span>本月 <b>${Math.round(pct(now.inc, target('inc')))}%</b>（${yen(now.inc)}）</span>${loading ? '<span class="ld">刷新中…</span>' : ''}</div>`;
+    const sumR = (a, b) => { let h = 0; const n = new Set(); WK.rows.forEach(p => { for (const k in p.d) if (k >= a && k <= b) { h += p.d[k]; n.add(p.n); } }); return { h, n: n.size }; };
+    const dow = (nowD.getDay() + 6) % 7, monD = new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate() - dow), mon = iso(monD), pmon = iso(new Date(monD.getFullYear(), monD.getMonth(), monD.getDate() - 7)), pend = iso(new Date(monD.getFullYear(), monD.getMonth(), monD.getDate() - 7 + dow));
+    const dS = sumR(today, today), wS = sumR(mon, today), pS = sumR(pmon, pend), mS = sumR(today.slice(0, 8) + '01', today), mDays = new Set(); WK.rows.forEach(p => { for (const k in p.d) if (k.startsWith(today.slice(0, 7))) mDays.add(k); });
+    const wd = []; for (let i = 0; i < 7; i++) { const k = iso(new Date(monD.getFullYear(), monD.getMonth(), monD.getDate() + i)); wd.push({ k, h: sumR(k, k).h, t: k === today, f: k > today }); }
+    const bar = `<div class="wk-rec"><div><div class="lb">今天</div><div class="n">${hr(dS.h)}</div><div class="d">${dS.n ? dS.n + ' 首' : '还没开工'}</div></div>
+      <div><div class="lb">本周</div><div class="n">${hr(wS.h)}</div><div class="d">${wS.n} 首${pS.h ? ' · 上周同期 ' + hr(pS.h) : ''}</div></div>
+      <div><div class="lb">本月</div><div class="n">${hr(mS.h)}</div><div class="d">${mDays.size} 天 · ${yen(now.inc)}</div></div></div>
+      <div class="wk-wkb">${wd.map((x, i) => `<div class="${x.t ? 't' : ''}"><em>${x.h ? (Math.round(x.h * 10) / 10) : ''}</em><div class="col"><i class="${x.h ? '' : 'z'}" style="height:${x.h ? Math.max(8, Math.min(100, x.h / 8 * 100)) + '%' : '3px'}"></i></div><span>${'一二三四五六日'[i]}</span></div>`).join('')}</div>${loading ? '<div class="wk-bar"><span class="ld">刷新中…</span></div>' : ''}`;
     // ① 现在做这首 + 后面两首
     const top = me[0];
     const nowCard = top ? `<div class="wk-now"><div class="k">现在做这首</div><div class="t">${G.esc(top.name)}</div><div class="w${top.warn ? ' warn' : ''}">${G.esc(top.why)}</div><div class="s">${G.esc([top.artist, top.album].filter(Boolean).join(' · '))}</div>
@@ -152,9 +169,12 @@
     const albums = Object.values(am).filter(g => g.done < g.total).sort((a, b) => (a.last || '9') < (b.last || '9') ? -1 : 1);
     const alBody = albums.map(g => { const a = ago(g.last), stall = a != null && a >= 14; return `<div class="wk-al"><div class="t"><b>${G.esc(g.name)}</b><span class="${stall ? 'warn' : ''}">${g.done}/${g.total} 首 · ${a == null ? '还没开工' : a === 0 ? '今天动过' : a + ' 天' + (stall ? '没动了' : '前')}</span></div><div class="bar"><i style="width:${pct(g.done, g.total)}%"></i></div></div>`; }).join('');
     const stalled = albums.filter(g => { const a = ago(g.last); return a != null && a >= 14; }).length;
+    const rpt = `<div class="wk-rpt">推送到手机：<button data-rp="day">日报</button><button data-rp="week">周报</button><button data-rp="month">月报</button><span>每天 10:00 · 周日 21:00 · 每月 1 号</span></div>`;
     return bar + nowCard + meList
+      + (sh.length ? fold('shelf', '搁置的', sh.length + ' 首 · 逾期很久没动', 0, sh.map(rowHtml).join('')) : '')
       + fold('wait', '等别人', others.length + ' 首' + (nudges ? ' · ' + nudges + ' 首该催了' : ''), nudges, waitBody)
       + fold('num', '本月数字和日历', yen(now.inc) + ' · ' + hr(now.hrs), 0, numBody)
+      + rpt
       + (albums.length ? fold('album', '专辑进度', albums.length + ' 张在做' + (stalled ? ' · ' + stalled + ' 张停了两周' : ''), stalled, alBody) : '');
   };
   window.bindWork = () => {
@@ -163,6 +183,8 @@
     G.root.querySelectorAll('[data-wm]').forEach(b => b.onclick = () => { const d = +b.dataset.wm; if (!d) { Y = T0.getFullYear(); M = T0.getMonth(); } else { const x = new Date(Y, M + d, 1); Y = x.getFullYear(); M = x.getMonth(); } day = ''; G.render(); });
     G.root.querySelectorAll('[data-wd]').forEach(b => b.onclick = () => { day = day === b.dataset.wd ? '' : b.dataset.wd; G.render(); });
     G.root.querySelectorAll('[data-wt]').forEach(c => c.onclick = () => { const k = c.dataset.wt, v = prompt(k === 'inc' ? '月收入目标（元）' : '月工时目标（小时）', target(k)); if (v == null) return; const n = parseFloat(v); if (n > 0) { ls.set('insights:w' + k, n); G.render(); } });
+    G.root.querySelectorAll('[data-rp]').forEach(b => b.onclick = async () => { const k = b.dataset.rp, nm = b.textContent; b.textContent = '发送中…';
+      try { const j = await (await fetch(G.API + '/work/report?kind=' + k + '&send=1', { headers: { Authorization: 'Bearer ' + G.KEY } })).json(); b.textContent = nm; G.toast(j.ok ? (j.sent && j.sent.length ? nm + '已发到手机：' + j.title : nm + '已生成，但没有设备可推送') : '没发出去（' + (j.err || '') + '）', 3500); } catch (e) { b.textContent = nm; G.toast('没发出去，检查网络', 3000); } });
     const al = q('#wkAll'); if (al) al.onclick = () => { allMe = !allMe; G.render(); };
   };
 })();
