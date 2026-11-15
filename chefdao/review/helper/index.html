@@ -93,6 +93,18 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .it .ck{flex:none;font-size:13px;border-radius:999px;padding:3px 11px;background:var(--fill-2)}
 .it.dn .ck{background:var(--green);color:var(--ink)}
 .none{font-size:14px;color:var(--text-3)}
+.ver.pd{box-shadow:0 0 0 1px rgba(232,201,138,.45) inset}.ver b em{font-style:normal;font-size:11px;color:var(--warm);margin-left:4px}
+.pdr{display:flex;gap:8px;align-items:center;padding:9px 12px;border-radius:12px;background:rgba(232,201,138,.08);font-size:14px;color:var(--text-2)}
+.pdr span{flex:1;min-width:0;overflow-wrap:anywhere}.pdr b{color:var(--warm)}
+.pdr button{flex:none;font-size:13px;border-radius:999px;padding:4px 11px;background:var(--fill-2);color:var(--text)}
+.upl{display:flex;gap:8px}
+.upl input{flex:1;min-width:0;background:var(--fill);border:0;border-radius:10px;padding:9px 12px;font:inherit;font-size:15px;color:var(--text)}
+.upl input::placeholder{color:var(--text-3)}
+.upb{flex:none;font-size:14px;font-weight:600;border-radius:10px;padding:9px 14px;background:var(--fill-2)}
+.upp{flex:1;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--text-2)}
+.upp i{display:block;height:4px;border-radius:2px;background:var(--fill-2);overflow:hidden}.upp i b{display:block;height:100%;background:var(--green);transition:width .2s}
+.upp.err{color:#e9a19a}
+@media (max-width:420px){.upl{flex-direction:column}}
 </style>
 </head>
 <body><div class="wrap" id="app"><div class="empty">加载中…</div></div>
@@ -147,17 +159,42 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
       <div class="pjtop">${cov(p.cover)}<div><b>${esc(p.title)}</b><span>${esc(p.artist || '')}${p.artist ? ' · ' : ''}${KIND[p.kind] || 'EP'} · ${p.tracks.length} 首</span></div></div>
       ${p.tracks.map((t, i) => { const st = STAGE(t.s), last = t.vers[t.vers.length - 1];
         return `<div class="tr"><div class="trh"><span class="n">${String(i + 1).padStart(2, '0')}</span>${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><small>${st ? `<span class="st ${st[1]}">${st[0]}</span>` : ''}${t.vers.length} 个版本${t.updTs ? ' · 更新于 ' + ago(t.updTs) : ''}${t.eta ? ' · 下一版预计 ' + esc(t.eta.slice(5).replace('-', '/')) : ''}</small></div><a class="go" href="${esc(rel(t.url))}" target="_blank" rel="noopener">试听</a></div>
-          ${t.vers.length ? `<div class="vers">${t.vers.slice().reverse().map(v => `<a class="ver${v === last ? ' cur' : ''}" href="/chefdao/review/s/?at=${esc(v.ver)}-0#${esc(t.slug)}" target="_blank" rel="noopener"><b>${esc(verName(t.vers, v))}</b>${wave(v.peaks)}<span>${esc((v.date || '').slice(5).replace('-', '/'))} · ${fmt(v.dur)}</span></a>`).join('')}</div>` : ''}
+          ${t.vers.length ? `<div class="vers">${t.vers.slice().reverse().map(v => `<a class="ver${v === last ? ' cur' : ''}${v.pend ? ' pd' : ''}" href="/chefdao/review/s/?at=${esc(v.ver)}-0#${esc(t.slug)}" target="_blank" rel="noopener"><b>${esc(verName(t.vers, v))}${v.pend ? ' <em>待确认</em>' : ''}</b>${wave(v.peaks)}<span>${esc((v.date || '').slice(5).replace('-', '/'))} · ${fmt(v.dur)}</span></a>`).join('')}</div>` : ''}
+          ${t.vers.filter(v => v.pend).map(v => `<div class="pdr"><span><b>${esc(v.ver)}</b> 等刀大厨确认，确认后客户才看得到${v.note ? '<br>' + esc(v.note) : ''}</span><button data-rep="${esc(t.slug)}" data-v="${esc(v.ver)}">换文件</button><button data-del="${esc(t.slug)}" data-v="${esc(v.ver)}">删除</button></div>`).join('')}
+          <div class="upl" data-slot="${esc(t.slug)}"><input type="text" placeholder="这版改了什么（可选）" maxlength="200" data-note="${esc(t.slug)}"><button class="upb" data-up="${esc(t.slug)}">＋ 提交新版本</button></div>
           ${t.items.length ? t.items.map((x, j) => `<div class="it${x.done ? ' dn' : ''}"><a class="tm" href="/chefdao/review/s/?at=${esc(x.ver)}-${x.t}#${esc(t.slug)}" target="_blank" rel="noopener">${fmt(x.t)}</a><div class="m">${esc(x.m)}<span class="ct">${esc(verName(t.vers, t.vers.find(v => v.ver === x.ver) || { ver: x.ver }))} · ${esc(x.cat)}</span></div><button class="ck" data-s="${esc(t.slug)}" data-i="${j}">${x.done ? '已改' : '改好了'}</button></div>`).join('') : '<div class="none">暂时没有分给你的修改意见</div>'}</div>`; }).join('')}</div>`;
     if (keep) el.querySelector('.up-s').scrollTop = keep;
     el.querySelector('#pjX').onclick = close;
+    // 提交新版本 / 换掉自己还没被确认的版本：和刀大厨上传走同一套（WAV 转 m4a、加密、分块传），只是版本先标「待确认」
+    const pick = (slug, ver) => { if (UPING) return; const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'audio/*,.wav,.aif,.aiff,.m4a,.mp3'; inp.hidden = true; document.body.appendChild(inp);
+      inp.onchange = () => { const f = inp.files[0]; inp.remove(); if (f) upload(slug, ver, f, (el.querySelector(`[data-note="${slug}"]`) || {}).value || ''); }; inp.click(); };
+    el.querySelectorAll('[data-up]').forEach(b => b.onclick = () => pick(b.dataset.up, ''));
+    el.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => pick(b.dataset.rep, b.dataset.v));
+    el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+      if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = '确定删除？'; setTimeout(() => { b.dataset.sure = ''; b.textContent = '删除'; }, 3000); return; }
+      b.disabled = true; try { const r = await fetch(API + '/hp/vdel', { method: 'POST', headers: { Authorization: 'Bearer hp_' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: b.dataset.del, ver: b.dataset.v }) }); if (!(await r.json()).ok) throw 0; load(); }
+      catch (e) { b.disabled = false; b.textContent = '没删掉，再试'; } });
     el.querySelectorAll('.ck').forEach(b => b.onclick = async () => {
       const t = p.tracks.find(y => y.slug === b.dataset.s), x = t.items[+b.dataset.i], on = !x.done; x.done = on ? 1 : 0; draw();
       try { const r = await fetch(API + '/hp/done', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tok, slug: t.slug, ver: x.ver, t: x.t, m: x.m, done: on }) }); if (!(await r.json()).ok) throw 0; }
       catch (e) { x.done = on ? 0 : 1; draw(); }
     });
   }
-  function close() { const el = document.getElementById('pj'); if (el) el.remove(); openPj = null; }
+  function close() { if (UPING) return; const el = document.getElementById('pj'); if (el) el.remove(); openPj = null; }
+  // 上传：按需加载 upload.js（和看板同一份），进度写在这首歌的提交栏里；传的时候不让关弹层、不自动刷新
+  let UPING = false;
+  const needUp = () => window.cuUpload ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../upload.js?v=20261116a'; s.onload = ok; s.onerror = () => no(new Error('没加载上上传工具，刷新再试')); document.head.appendChild(s); });
+  async function upload(slug, ver, file, note) {
+    const slot = document.querySelector(`[data-slot="${slug}"]`); if (!slot) return;
+    UPING = true; slot.innerHTML = '<div class="upp"><span>准备上传…</span><i><b style="width:2%"></b></i></div>';
+    const tx = slot.querySelector('span'), br = slot.querySelector('i b');
+    try { await needUp();
+      const r = await window.cuUpload({ api: API, key: 'hp_' + tok, slug, file, ver: ver || undefined, note: note.trim(), step: t => { tx.textContent = t; }, bar: p => { br.style.width = Math.round(p * 100) + '%'; } });
+      tx.textContent = '已提交 ' + r.ver + '，等刀大厨确认'; br.style.width = '100%';
+      UPING = false; setTimeout(load, 900);
+    } catch (e) { UPING = false; tx.textContent = (e.message === 'taken' ? '这个版本号已经被用了，刷新再试' : '没传上：' + (e.message || '网络')) ; slot.querySelector('.upp').classList.add('err');
+      setTimeout(() => { if (openPj) sheet(openPj); }, 4000); }
+  }
 
   async function load(manual) {
     if (!tok) { app.innerHTML = '<div class="empty">链接不完整，请向刀大厨要完整链接</div>'; return; }
@@ -165,7 +202,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
     try { const r = await fetch(API + '/hp?t=' + tok, { cache: 'no-store' }), j = await r.json(); if (!j.ok) throw 0; D = j; draw(); }
     catch (e) { console.error(e); if (!D) app.innerHTML = '<div class="empty">链接已失效，请向刀大厨要新链接</div>'; }
   }
-  load(); setInterval(() => { if (!document.hidden && !document.getElementById('pj')) load(); }, 60000);
+  load(); setInterval(() => { if (!document.hidden && !document.getElementById('pj') && !UPING) load(); }, 60000);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 })();
 </script>

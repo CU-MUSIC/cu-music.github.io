@@ -1036,3 +1036,9 @@ body.rlp-on .rlp-tab{display:none}
 
 /* 助理设备：费用、尾款、下载、最终文件、确认这一版都不显示 */
 .asst #fee,.asst #fdue,.asst #finBar,.asst #okbar,.asst #dlBtn,.asst #paySheet{display:none!important}
+
+/* 助理提交、等你确认的版本（只在你的设备上显示） */
+.pendbar{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.pendbar>div{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-radius:14px;background:rgba(232,201,138,.1);box-shadow:0 0 0 1px rgba(232,201,138,.3) inset;font-size:14px;color:#d8d5cf}
+.pendbar span{flex:1 1 220px;min-width:0;overflow-wrap:anywhere}.pendbar b{color:#e8c98a}.pendbar em{font-style:normal;color:#9a968e;margin-left:8px;font-size:12px}
+.pendbar button{font-size:13px;padding:5px 12px;border-radius:999px;background:rgba(236,234,230,.1);color:#ece9e3;border:0}.pendbar button.ok{background:#ebe9e5;color:#121213;font-weight:600}
