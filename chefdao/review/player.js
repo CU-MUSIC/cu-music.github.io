@@ -1426,11 +1426,18 @@ function ownerTools() {
       S.final = { name: d.name, size: d.size }; finOwn(); busy('最终文件已上传（存储已用 ' + gb(d.used) + ' / ' + gb(d.cap) + '）');
     } catch (e) { fcall('/final/done', { slug: S.slug, key: st.key, uploadId: st.uploadId, name: file.name, parts: [], abort: 1 }); busy(e.message + '，没有保存，再试一次'); }
   }
-  $('#ownFinal').onclick = async () => {
-    if (S.final) { const v = prompt('现在的最终文件：' + S.final.name + '（' + mb(S.final.size) + '）\n输入 1 换成新文件，输入 2 删除', '1'); if (v == null) return;
-      if (v.trim() === '2') { const d = await fcall('/final/del', { slug: S.slug }); if (d.ok) { delete S.final; finOwn(); busy('已删除最终文件（存储已用 ' + gb(d.used) + ' / ' + gb(d.cap) + '）'); } else busy('没删掉，检查网络再试'); return; }
-      if (v.trim() !== '1') return; }
-    const inp = document.createElement('input'); inp.type = 'file'; inp.onchange = () => { if (inp.files[0]) finalUpload(inp.files[0]); }; inp.click();
+  // 已有最终文件：页面内按钮选「换新 / 删除」。不用 prompt：系统弹框会吃掉这次点击，之后的选文件窗口会被浏览器拦下，看起来就是没反应
+  const pickFinal = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.hidden = true; document.body.appendChild(inp);
+    inp.onchange = () => { const f = inp.files[0]; inp.remove(); if (f) finalUpload(f); }; inp.click(); };
+  $('#ownFinal').onclick = () => {
+    if (!S.final) return pickFinal();
+    if (document.getElementById('paySheet')) return;
+    const el = document.createElement('div'); el.id = 'paySheet';
+    el.innerHTML = '<div class="pbox"><b>最终文件</b><div class="pamt"><span>' + esc(S.final.name) + '</span><b style="font-size:16px">' + mb(S.final.size) + '</b></div><button class="press pgo" id="finNew">换成新文件</button><button class="press psv" id="finDel">删除</button><button class="press pno" id="finX">取消</button></div>';
+    document.body.appendChild(el); el.onclick = e => { if (e.target === el) el.remove(); };
+    $('#finX').onclick = () => el.remove();
+    $('#finNew').onclick = () => { el.remove(); pickFinal(); };
+    $('#finDel').onclick = async () => { el.remove(); const d = await fcall('/final/del', { slug: S.slug }); if (d.ok) { delete S.final; finOwn(); busy('已删除最终文件（存储已用 ' + gb(d.used) + ' / ' + gb(d.cap) + '）'); } else busy('没删掉，检查网络再试'); };
   };
   trustOwn();
   $('#ownTrust').onclick = async () => { const trust = DL.trust ? 0 : 1;
