@@ -2462,9 +2462,14 @@ function paySheet() {
   const amt = sum ? '<div class="pamt"><span>应付尾款</span><b>' + yuan(sum) + '</b></div>' + (owe.length > 1 ? '<div class="pdim">' + owe.map(x => esc(x.n) + ' ' + yuan(x.a)).join(' · ') + '</div>' : '') : '';
   if (Q && !sum) {   // 费用单上已经全部结清：不用再扫码，直接领
     el.innerHTML = '<div class="pbox"><b>费用已结清</b><p>点下面的按钮领取最终文件。</p><button class="press pgo" id="payGo">领取最终文件</button><button class="press pno" id="payX">稍后再说</button></div>';
-  } else el.innerHTML = '<div class="pbox"><b>付款后领取最终文件</b>' + amt + '<img src="../pay.jpg?v=20261115a" alt="微信 / 支付宝收款码"><p>请先<b>把上面的二维码图片保存到本地</b>（电脑右键、手机长按图片），再打开微信或支付宝，扫描相册里的这张图完成付款。</p><p class="dim">付款后点下面的按钮，文件马上开放。</p><button class="press pgo" id="payGo">我已付款，获取文件</button><button class="press pno" id="payX">稍后再说</button></div>';
+  } else el.innerHTML = '<div class="pbox"><b>付款领取最终文件</b>' + amt + '<img src="../pay.jpg?v=20261115a" alt="微信 / 支付宝收款码"><p class="dim">保存图片后，用微信或支付宝扫一扫</p><button class="press psv" id="paySave">保存收款码</button><button class="press pgo" id="payGo">我已付款，获取文件</button><button class="press pno" id="payX">稍后再说</button></div>';
   document.body.appendChild(el); el.onclick = e => { if (e.target === el) el.remove(); };
   $('#payX').onclick = () => el.remove();
+  const sv = $('#paySave'); if (sv) sv.onclick = async () => {   // 手机：系统分享里选「存储图像」进相册；电脑或不支持分享：直接下载图片
+    try { const blob = await (await fetch('../pay.jpg?v=20261115a')).blob(), f = new File([blob], '刀大厨收款码.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; }
+      const u = URL.createObjectURL(blob), a2 = document.createElement('a'); a2.href = u; a2.download = '刀大厨收款码.jpg'; document.body.appendChild(a2); a2.click(); a2.remove(); setTimeout(() => URL.revokeObjectURL(u), 30000); hud('收款码已保存', 2500);
+    } catch (e) { if (e && e.name === 'AbortError') return; hud('没保存成功，长按图片也可以保存', 3500); } };
   $('#payGo').onclick = async () => { const g = $('#payGo'); g.disabled = true; g.textContent = '处理中…';
     try { const j = await (await fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, paid: 1 }) })).json();
       if (!j.ok || !j.on) throw 0; DL.on = 1; if (j.link) DL.link = j.link; dlUi();

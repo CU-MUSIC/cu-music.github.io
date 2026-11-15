@@ -95,7 +95,7 @@ html.cu-side-pin #cuBar{left:${W + 12}px}
     if (f === pre) pre = null;
   }
   function make(u) {
-    const el = document.createElement('iframe'); el.src = u.href; el.setAttribute('allow', 'autoplay; fullscreen');
+    const el = document.createElement('iframe'); el.src = u.href; el.setAttribute('allow', 'autoplay; fullscreen; web-share');   // web-share：付款弹层「保存收款码」在手机上调出系统分享，可直接存到相册
     const f = { el, key: keyOf(u), url: u.href };
     el.addEventListener('load', () => {
       const l = curUrl(f); if (!l) return;
