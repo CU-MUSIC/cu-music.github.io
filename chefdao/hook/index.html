@@ -97,6 +97,8 @@ body{isolation:isolate}
 .sbox{width:100%;max-width:30rem;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;display:grid;gap:12px}
 .shd{display:grid;gap:2px}.shd b{font-size:18px;font-weight:600}
 .sbt{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}.sbt .go{height:58px}
+.em{font-size:40px;margin-right:12px;vertical-align:10px;line-height:1}
+.pk{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;height:72px}.pe{font-size:24px;line-height:1.1}
 </style>
 </head>
 <body>
@@ -130,7 +132,7 @@ body{isolation:isolate}
 <h1>最后一个问题：<br>哪首你 <em>最想听完整版</em>？</h1>
 <p class="small">点一下可以再听一遍。</p>
 <div class="picks" id="picks"></div>
-<textarea id="note" maxlength="500" rows="3" placeholder="想说的话（可选）：哪首有感觉、哪里可以更好…"></textarea>
+<textarea id="note" maxlength="500" rows="3" placeholder="想说的话（可选）：提到哪首就带上它的 emoji，比如「🔥 副歌很抓耳」"></textarea>
 <p class="err" id="err2"></p>
 <button class="go" id="send" disabled>提交</button>
 <button class="btn sm" id="bBack">↶ 撤回最后一首</button>
@@ -214,7 +216,7 @@ body{isolation:isolate}
     var c=CLIPS[order[k]], el=document.createElement("div");
     el.className="card"+(cls?" "+cls:"");
     var w="";(c.p||[]).forEach(function(v){w+='<span style="height:'+Math.max(4,v*100)+'%"></span>';});
-    el.innerHTML='<div><div class="nrow"><div class="num">'+label(k)+'<small>/ '+CLIPS.length+'</small></div><button type="button" class="say">'+(cm[c.id]?'✎ 改一句':'✎ 说一句')+'</button></div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
+    el.innerHTML='<div><div class="nrow"><div class="num">'+(c.e?'<span class="em">'+c.e+'</span>':'')+label(k)+'<small>/ '+CLIPS.length+'</small></div><button type="button" class="say">'+(cm[c.id]?'✎ 改一句':'✎ 说一句')+'</button></div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
     el.dataset.id=c.id; var sb=el.querySelector(".say"); if(cm[c.id])sb.classList.add("on");
     sb.addEventListener("pointerdown",function(e){e.stopPropagation();});
     sb.onclick=function(e){e.stopPropagation();openSay(el,c.id,k);};
@@ -224,7 +226,7 @@ body{isolation:isolate}
   function raf2(fn){void stage.offsetWidth;setTimeout(fn,20);}
   // 每首单独说一句：记在这首歌上，结果里直接显示在歌名下面
   var shId=null;
-  function openSay(el,id,k){shId=id;document.getElementById("shT").textContent="对 "+label(k)+" 说一句";var x=document.getElementById("shX");x.value=cm[id]||"";document.getElementById("sheet").hidden=false;setTimeout(function(){x.focus();},50);}
+  function openSay(el,id,k){shId=id;var ce=(CLIPS[order[k]]||{}).e||"";document.getElementById("shT").textContent="对 "+ce+" "+label(k)+" 说一句";var x=document.getElementById("shX");x.value=cm[id]||"";document.getElementById("sheet").hidden=false;setTimeout(function(){x.focus();},50);}
   document.getElementById("shC").onclick=function(){document.getElementById("sheet").hidden=true;};
   document.getElementById("shOk").onclick=function(){
     var v=document.getElementById("shX").value.trim().slice(0,300);
@@ -373,7 +375,7 @@ body{isolation:isolate}
     document.getElementById("btns").hidden=true; cnt.textContent="最后一步";
     var box=document.getElementById("picks"), h="";
     // 只给右滑过的选：左滑的本来就不想要
-    order.forEach(function(idx,k){if(votes[CLIPS[idx].id])h+='<button class="pk" data-id="'+CLIPS[idx].id+'" data-i="'+idx+'">'+label(k)+'</button>';});
+    order.forEach(function(idx,k){if(votes[CLIPS[idx].id])h+='<button class="pk" data-id="'+CLIPS[idx].id+'" data-i="'+idx+'">'+(CLIPS[idx].e?'<span class="pe">'+CLIPS[idx].e+'</span>':'')+label(k)+'</button>';});
     box.innerHTML=h||'<p class="small" style="grid-column:1/-1">你一首都没右滑，直接提交就行。</p>';
     best=null; document.getElementById("send").disabled=!!h;
     box.querySelectorAll(".pk").forEach(function(b){b.onclick=function(){
