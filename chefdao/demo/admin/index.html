@@ -39,8 +39,8 @@ a{color:inherit}
 /* 布局 */
 .wrap{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - 56px)}
 .side{border-right:1px solid var(--border);padding:16px 14px 40px;overflow-y:auto}
-.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:3px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:12px}
-.tabs button{flex:1 1 auto;font-size:13px;color:var(--text-3);border-radius:9px;padding:6px 8px;transition:background .25s var(--ease),color .25s}
+.tabs{display:flex;gap:2px;padding:3px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:12px}
+.tabs button{flex:1 1 0;white-space:nowrap;font-size:13px;color:var(--text-3);border-radius:9px;padding:6px 2px;transition:background .25s var(--ease),color .25s}
 .tabs button:hover{color:var(--text)}
 .tabs button[aria-pressed=true]{background:var(--fill-2);color:var(--text)}
 #list{display:grid;gap:6px}
@@ -198,6 +198,25 @@ select{font:inherit;font-size:14px;color:var(--text);background:var(--fill-2);bo
 .v .src i{font-style:normal;font-size:11px;color:var(--green-soft);background:var(--fill);border-radius:99px;padding:1px 9px;margin-right:8px}
 .v .src i.u{color:var(--text-3)}
 .v span{grid-column:1;color:var(--text-3);font-size:12px}
+/* 批量上传 */
+.drop{display:grid;place-items:center;gap:6px;margin-top:20px;padding:34px 16px;border:1px dashed var(--border-hover);border-radius:18px;background:var(--surface);color:var(--text-2);font-size:14px;text-align:center;cursor:pointer;position:relative;transition:border-color .25s var(--ease),background .25s}
+.drop:hover,.drop.ov{border-color:var(--green-soft);background:var(--lift)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop small{color:var(--text-3);font-size:12px}
+.uopt{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--text-2)}
+.uopt input{font:inherit;font-size:14px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;outline:0;width:180px}
+.uopt input:focus{border-color:var(--border-hover)}
+.ul{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ul:empty{display:none}
+.ur{display:grid;grid-template-columns:120px 1fr 64px 24px;gap:10px;align-items:center;padding:8px 12px}
+.ur+.ur{border-top:1px solid var(--border)}
+.ur input{min-width:0;font:inherit;font-size:14px;color:var(--text);background:transparent;border:0;border-bottom:1px solid transparent;padding:4px 0;outline:0}
+.ur input:focus{border-bottom-color:var(--border-hover)}
+.ur em{font:500 12px var(--mono);font-style:normal;color:var(--text-3);text-align:right;font-variant-numeric:tabular-nums}
+.ur em.ok{color:var(--green-soft)}.ur em.bad{color:var(--red)}
+.ur button{color:var(--text-3);font-size:16px}.ur button:hover{color:var(--text)}
+.ur .bar{grid-column:1/-1;height:2px;margin:-4px 0 0;border-radius:2px;background:var(--fill-2);overflow:hidden}.ur .bar i{display:block;height:100%;width:0;background:var(--green-soft);transition:width .2s}
+@media (max-width:820px){.ur{grid-template-columns:90px 1fr 52px 22px}}
 .v em{grid-column:2;grid-row:1/4;align-self:center;font-style:normal;color:var(--text-2);font-size:12px;text-align:right}
 [hidden]{display:none!important}
 @media (max-width:820px){.wrap{grid-template-columns:1fr}.side{border-right:0;border-bottom:1px solid var(--border);max-height:42vh}.main{padding:22px 20px 80px}.note button.x{opacity:1}.clock{font-size:30px}}
@@ -230,7 +249,7 @@ body.has-bg #bgb{transform:none}body.has-bg .main{padding-bottom:120px}
 <div class="wrap" id="app" hidden>
   <aside class="side">
     <div class="tabs" id="tabs">
-      <button data-f="all" aria-pressed="true">全部</button><button data-f="mem" aria-pressed="false">刀门</button><button data-f="pub" aria-pressed="false">访客</button><button data-f="pick" aria-pressed="false">入选</button><button data-f="qs" aria-pressed="false">提问</button><button data-f="vis" aria-pressed="false">访问</button>
+      <button data-f="all" aria-pressed="true">全部</button><button data-f="mem" aria-pressed="false">刀门</button><button data-f="pub" aria-pressed="false">访客</button><button data-f="pick" aria-pressed="false">入选</button><button data-f="qs" aria-pressed="false">提问</button><button data-f="vis" aria-pressed="false">访问</button><button data-f="up" aria-pressed="false">上传</button>
     </div>
     <div class="ctrls">
       <div class="seg2" id="hf"><button data-h="all" aria-pressed="true">全部</button><button data-h="new" aria-pressed="false">没听过</button><button data-h="heard" aria-pressed="false">听过</button><button data-h="nofb" aria-pressed="false">没反馈</button></div>
@@ -281,7 +300,7 @@ async function load(keep) {
   renderList();
   if (keep && cur) { const d = D.find(x => x.id === cur.id); if (d) { cur.d = d; renderNotes(); renderMeta(); renderScore(); } }
 }
-document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { filter = b.dataset.f; document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (filter === 'vis') return showVisits(); if (filter === 'qs') return showQs(); renderList(); });
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { filter = b.dataset.f; document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (filter === 'vis') return showVisits(); if (filter === 'qs') return showQs(); if (filter === 'up') return showUp(); renderList(); });
 let heardF = 'all', sortM = 'time';
 const nrated = d => CRIT.filter(([k]) => (d.scores || {})[k] > 0).length;
 // 列表上显示的分：有逐项打分用综合分；没有逐项、只拖了「给歌手的分数」就用那个；10 月底以前的旧版四项（1–5 分）换算成 10 分制
@@ -293,7 +312,7 @@ $('#so').onchange = e => { sortM = e.target.value; renderList(); };
 function renderList() {
   const box = $('#list'); box.textContent = '';
   { const nn = D.filter(d => d.status === 'new').length; $('#cnt').textContent = nn ? nn + ' 首没听过' : ''; }
-  if (filter === 'vis' || filter === 'qs') return;
+  if (filter === 'vis' || filter === 'qs' || filter === 'up') return;
   let rows = D.filter(d => (filter === 'all' || (filter === 'pick' ? d.pick > 0 : d.kind === filter)) && (heardF === 'all' || (heardF === 'nofb' ? !d.pub : heardF === 'new' ? d.status === 'new' : d.status !== 'new')));   // 没反馈 = 还没发布给对方
   if (sortM !== 'time') rows = rows.slice().sort((a, b) => { const x = shown(a)[0] || -1, y = shown(b)[0] || -1; if (x < 0 && y < 0) return b.ts - a.ts; if (x < 0) return 1; if (y < 0) return -1; return sortM === 'hi' ? y - x || b.ts - a.ts : x - y || b.ts - a.ts; });
   if (!rows.length) box.append(el('div', 'empty', '没有符合条件的投递'));
@@ -651,6 +670,71 @@ async function remove() {
   if (!confirm('删除这首投递和音频？')) return;
   await api('/demo/del', { id: cur.id }); cur = null; if (audio) audio.pause(); $('#main').textContent = ''; $('#main').append(el('div', 'empty', '已删除')); load();
 }
+/* 批量上传：你自己收到的 demo（微信转来的等）一次拖进来，不受每日限额；文件名「艺名 - 歌名」自动拆开 */
+const UMAX = 24 * 1024 * 1024, AUD = /\.(mp3|m4a|aac|wav|aif|aiff|flac|ogg|opus)$/i;
+let UQ = [], uBusy = false, uWho = '', uMem = false;
+function parseName(f) {
+  const base = f.name.replace(/\.[^.]+$/, '').trim();
+  const m = base.match(/^(.+?)\s*[-–—]\s*(.+)$/) || base.match(/^([^_]+?)_+(.+)$/);
+  return uWho ? [uWho, base.replace(/_+/g, ' ')] : m ? [m[1].trim(), m[2].replace(/_+/g, ' ').trim()] : ['', base.replace(/_+/g, ' ')];
+}
+function addFiles(list) {
+  [...list].forEach(f => { if (!(/^audio\//.test(f.type) || AUD.test(f.name))) return; const [who, title] = parseName(f); UQ.push({ f, who: who.slice(0, 20), title: title.slice(0, 60), st: f.size > UMAX ? 'big' : 'wait', p: 0 }); });
+  if (filter !== 'up') { filter = 'up'; document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === 'up')); showUp(); } else renderUq();
+}
+function showUp() {
+  stash(); $('#list').textContent = ''; cur = null;
+  const m = $('#main'); m.textContent = ''; m.append(el('h1', '', '批量上传'));
+  const dz = el('label', 'drop'), inp = el('input'); inp.type = 'file'; inp.multiple = true; inp.accept = 'audio/*,' + '.mp3,.m4a,.wav,.aif,.aiff,.flac'; inp.onchange = () => { addFiles(inp.files); inp.value = ''; };
+  dz.append(inp, el('span', '', '把音频拖进来，或点这里选'), el('small', '', '不限数量 · 单个 ≤ 24MB · 文件名「艺名 - 歌名」自动拆开'));
+  ['dragenter', 'dragover'].forEach(t => dz.addEventListener(t, () => dz.classList.add('ov'))); ['dragleave', 'drop'].forEach(t => dz.addEventListener(t, () => dz.classList.remove('ov')));
+  const opt = el('div', 'uopt'), wi = el('input'); wi.placeholder = '统一艺名（选填）'; wi.maxLength = 20; wi.value = uWho;
+  wi.oninput = () => { uWho = wi.value.trim(); UQ.forEach(q => { if (q.st === 'wait' || q.st === 'big') { const [w, t] = parseName(q.f); q.who = w.slice(0, 20); q.title = t.slice(0, 60); } }); renderUq(); };
+  const sw = el('button', 'lsw'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', uMem); sw.onclick = () => { uMem = !uMem; sw.setAttribute('aria-checked', uMem); };
+  opt.append(wi, sw, el('span', '', '记为刀门'));
+  const ul = el('div', 'ul'); ul.id = 'uq';
+  const row = el('div', 'row'), go = el('button', 'btn', '开始上传'); go.id = 'ugo'; go.type = 'button'; go.onclick = runUp;
+  const clr = el('button', 'btn ghost', '清空列表'); clr.type = 'button'; clr.onclick = () => { if (uBusy) return; UQ = []; renderUq(); };
+  const hh = el('span', 'hint'); hh.id = 'uh'; row.append(go, clr, hh);
+  m.append(dz, opt, ul, row); renderUq();
+}
+function renderUq() {
+  const ul = $('#uq'); if (!ul) return; ul.textContent = '';
+  UQ.forEach((q, i) => {
+    const r = el('div', 'ur'), w = el('input'), t = el('input');
+    w.value = q.who; w.placeholder = '艺名'; w.maxLength = 20; w.oninput = () => q.who = w.value.trim();
+    t.value = q.title; t.placeholder = '歌名'; t.maxLength = 60; t.oninput = () => q.title = t.value.trim();
+    w.disabled = t.disabled = q.st === 'up' || q.st === 'ok';
+    const s = el('em', q.st === 'ok' ? 'ok' : q.st === 'big' || q.st === 'err' ? 'bad' : '', q.st === 'ok' ? '✓' : q.st === 'big' ? '太大' : q.st === 'err' ? '失败' : q.st === 'up' ? Math.round(q.p * 100) + '%' : (q.f.size / 1048576).toFixed(1) + 'M');
+    const x = el('button', '', '×'); x.type = 'button'; x.setAttribute('aria-label', '移除'); x.onclick = () => { if (q.st === 'up') return; UQ.splice(i, 1); renderUq(); };
+    const bar = el('div', 'bar'), bi = el('i'); bi.style.width = (q.st === 'ok' ? 100 : q.p * 100) + '%'; bar.append(bi); q.bar = bi; q.em = s;
+    r.append(w, t, s, x); if (q.st === 'up') r.append(bar); ul.append(r);
+  });
+  const go = $('#ugo'), n = UQ.filter(q => q.st === 'wait' || q.st === 'err').length;
+  if (go) { go.disabled = uBusy || !n; go.textContent = uBusy ? '上传中…' : n ? '上传 ' + n + ' 首' : '开始上传'; }
+  const h = $('#uh'); if (h && !uBusy) { const ok = UQ.filter(q => q.st === 'ok').length, big = UQ.filter(q => q.st === 'big').length; h.textContent = (ok ? '已上传 ' + ok + ' 首' : '') + (big ? (ok ? ' · ' : '') + big + ' 首超过 24MB，先转成 mp3' : ''); }
+}
+function upOne(q) {
+  return new Promise(res => {
+    const p = new URLSearchParams({ n: q.who, title: q.title, mem: uMem ? '1' : '0', fr: '1', ct: q.f.type || 'audio/mpeg' });
+    const x = new XMLHttpRequest(); x.open('POST', API + '/demo/up?' + p); x.setRequestHeader('Authorization', 'Bearer ' + KEY);
+    x.upload.onprogress = ev => { if (ev.lengthComputable) { q.p = ev.loaded / ev.total; if (q.bar) q.bar.style.width = q.p * 100 + '%'; if (q.em) q.em.textContent = Math.round(q.p * 100) + '%'; } };
+    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} q.st = j.ok ? 'ok' : 'err'; res(); };
+    x.onerror = () => { q.st = 'err'; res(); };
+    x.send(q.f);
+  });
+}
+async function runUp() {
+  if (uBusy) return;
+  const todo = UQ.filter(q => (q.st === 'wait' || q.st === 'err'));
+  const mi = UQ.findIndex(q => (q.st === 'wait' || q.st === 'err') && (!q.who || !q.title)); if (mi >= 0) { $('#uh').textContent = '有一首缺艺名或歌名'; const r = $('#uq').children[mi]; if (r) r.querySelector(UQ[mi].who ? 'input:nth-child(2)' : 'input').focus(); return; }
+  uBusy = true; todo.forEach(q => { q.st = 'up'; q.p = 0; }); renderUq();
+  let i = 0; const worker = async () => { while (i < todo.length) { const q = todo[i++]; await upOne(q); renderUq(); } };
+  await Promise.all([worker(), worker(), worker()]);   // 同时传 3 首
+  uBusy = false; renderUq(); load();
+}
+document.addEventListener('dragover', e => { if (KEY && e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+document.addEventListener('drop', e => { if (!KEY || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); addFiles(e.dataTransfer.files); });
 document.addEventListener('keydown', e => {
   const typing = /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName);
   if (typing || e.metaKey || e.ctrlKey) return;
