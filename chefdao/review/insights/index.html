@@ -410,7 +410,7 @@ button.av{cursor:pointer;padding:0}
 <script src="work.js?v=261115c"></script>
 <script>
 (() => {
-const BUILD = '261116.0800';
+const BUILD = '261116.0900';
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -817,6 +817,7 @@ function render() {
   const lvt = document.getElementById('lvt'); if (lvt) lvt.onclick = e => { const b = e.target.closest('[data-lv]'); if (b) { store.set('insights:libview', b.dataset.lv); render(); } };
   const ln = document.getElementById('lNew'); if (ln) ln.onclick = newProject;
   const la = document.getElementById('lArch'); if (la) la.onclick = () => { showArch = !showArch; render(); };
+  const ld = document.getElementById('lDlv'); if (ld) ld.onclick = () => { showDlv = !showDlv; render(); };
   root.querySelectorAll('[data-rq]').forEach(b => b.onclick = () => reqAct(b.dataset.id, b.dataset.rq));
   root.querySelectorAll('[data-rqo]').forEach(b => b.onclick = () => rqOnlyOpen(b));
   const rsm = document.getElementById('rsm'); if (rsm) rsm.ontoggle = () => { songsOpen = rsm.open; };
@@ -1300,7 +1301,7 @@ let LIB = { projects: [], loose: [] };
 const KINDS = { single: '单曲', ep: 'EP', album: '专辑' };
 const CUSVG = '<svg viewBox="272 164 456 456" aria-hidden="true"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>';
 const coverOf = p => p.cover ? `<div class="lc" style="background-image:url(${esc(API + p.cover)})"></div>` : `<div class="lc">${CUSVG}</div>`;
-let showArch = false, REQS = null;
+let showArch = false, showDlv = false, REQS = null;
 async function loadReqs() { try { const j = await api('/ap/list'); REQS = j.reqs || []; } catch (e) { REQS = REQS || []; } if (tab === 'lib') render(); }
 const reqWhen = t => { const d = new Date(t), p = n => String(n).padStart(2, '0'); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); };
 function renderReqs() {
@@ -1355,7 +1356,7 @@ function renderLib() {
     <b>${esc(p.title)}</b><span>${esc(p.artist || '未填歌手')} · ${KINDS[p.kind] || 'EP'}${p.tracks.length > 1 ? ' · ' + p.tracks.length + ' 首' : ''}</span>${p.deliv && !a ? `<em class="adue">${dleft(p) ? dleft(p) + ' 天后归档' : '今天归档'}</em>` : ''}</button>`;
   return `<div class="lbar"><span>${act.length} 个项目${fk || fa ? ' · 已筛选' : ''}</span><label class="lsort"><select id="lsort" aria-label="排序">${Object.entries(LSORT).map(([k, o]) => `<option value="${k}"${k === ls ? ' selected' : ''}>${o.n}</option>`).join('')}</select></label><span class="lvt" id="lvt" role="group" aria-label="视图"><button data-lv="grid" class="${lv === 'grid' ? 'on' : ''}" aria-label="网格" title="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${lv === 'list' ? 'on' : ''}" aria-label="单列" title="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span><button class="go" id="lNew">＋ 新项目</button></div>
   ${filt}<div class="lgrid ${lv}">${act.map(p => card(p, false)).join('') || (fk || fa ? '<div class="dim" style="padding:18px 0">没有符合的项目</div>' : '')}</div>
-  ${dlv.length ? `<div class="sect lsect">已交付<span>${dlv.length} · 14 天后自动归档</span></div><div class="lgrid ${lv}">${dlv.map(p => card(p, false)).join('')}</div>` : ''}
+  ${dlv.length ? `<button class="archbar" id="lDlv">已交付 ${dlv.length} 个 · 最近 ${dleft(dlv[0]) ? dleft(dlv[0]) + ' 天后' : '今天'}归档<span>${showDlv ? '收起' : '展开'}</span></button>${showDlv ? `<div class="lgrid ${lv}">${dlv.map(p => card(p, false)).join('')}</div>` : ''}` : ''}
   ${arch.length ? `<button class="archbar" id="lArch">已归档 ${arch.length} 个<span>${showArch ? '收起' : '展开'}</span></button>${showArch ? `<div class="lgrid ${lv}">${arch.map(p => card(p, true)).join('')}</div>` : ''}` : ''}
   ${renderReqs()}
   ${LIB.loose.length ? `<div class="sect">未归入项目<span>${LIB.loose.length}</span></div><div class="lloose">${LIB.loose.map(x => `<div>《${esc(x.title)}》<a href="${esc(x.url)}" target="_blank" rel="noopener">打开</a></div>`).join('')}</div>` : ''}`;

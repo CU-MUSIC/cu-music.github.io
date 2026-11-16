@@ -59,13 +59,16 @@
     if (!j.ok) return fail('missing');
     j.song.versions.forEach(v => { if (v.audio.startsWith('/')) v.audio = API + v.audio; });
     if (!j.song.versions.length) return fail('empty');
+    const pills = [];   // 顶部小胶囊（已归档 / 将于…归档）：播放器会重写 body，等它画完再挂上去
     if (j.song.archived && !j.song.helper) { const d = document.createElement('div'); d.textContent = '已归档 · 客户打不开，只有你的设备能看';
-      d.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99;padding:6px 14px;border-radius:99px;background:rgba(232,201,138,.16);border:1px solid rgba(232,201,138,.4);color:#e8c98a;font:500 13px/1.4 -apple-system,"PingFang SC",sans-serif;white-space:nowrap;pointer-events:none'; document.body.appendChild(d); }
+      d.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99;padding:6px 14px;border-radius:99px;background:rgba(232,201,138,.16);border:1px solid rgba(232,201,138,.4);color:#e8c98a;font:500 13px/1.4 -apple-system,"PingFang SC",sans-serif;white-space:nowrap;pointer-events:none'; pills.push(d); }
+    if (j.song.adue && !j.song.helper) { const t = new Date(j.song.adue), d = document.createElement('div'); d.className = 'adue'; d.textContent = '已交付 · 将于 ' + (t.getMonth() + 1) + ' 月 ' + t.getDate() + ' 日归档';
+    d.style.cssText = 'position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99;padding:6px 14px;border-radius:99px;background:rgba(232,201,138,.16);border:1px solid rgba(232,201,138,.4);color:#e8c98a;font:500 13px/1.4 -apple-system,"PingFang SC",sans-serif;white-space:nowrap;pointer-events:none'; pills.push(d); }   // 已交付、14 天后自动归档：客户和你都看到归档日期
     window.SONG = j.song; window.SONG_LIVE = { api: API };   // SONG_LIVE：可以在页面里上传 / 删除版本
     document.title = 'CU MUSIC';   // 歌名等输对密码再显示
     const s = document.createElement('script'); s.src = player;
     // 侧边栏：只有你的设备有。等播放器画完页面再加（播放器会整个重写 body，先加的会被清掉）
-    s.onload = () => { try { if (!embedded && localStorage.getItem('insights:key')) { const sd = document.createElement('script'); sd.src = me.src.replace(/load\.js(\?.*)?$/, 'side.js') + (me.dataset.v ? '?v=' + me.dataset.v : ''); document.body.appendChild(sd); } } catch (e) {} };
+    s.onload = () => { pills.forEach(d => document.body.appendChild(d)); try { if (!embedded && localStorage.getItem('insights:key')) { const sd = document.createElement('script'); sd.src = me.src.replace(/load\.js(\?.*)?$/, 'side.js') + (me.dataset.v ? '?v=' + me.dataset.v : ''); document.body.appendChild(sd); } } catch (e) {} };
     document.body.appendChild(s);
   } catch (e) { fail('net'); }
 })();
