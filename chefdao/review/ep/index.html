@@ -92,6 +92,9 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .tr .m{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;text-align:right}   /* 每行右边的时长 / 更新时间靠右对齐，行与行才对得齐 */
 @keyframes in{to{opacity:1;transform:none}}
 .flowl{display:flex;align-items:center;gap:14px;width:100%;margin-top:26px;padding:14px 16px;border-radius:16px;background:var(--fill);color:var(--text);text-decoration:none;text-align:left;transition:background .2s}
+.paidc{width:100%;margin-top:14px;padding:14px 16px;border-radius:16px;background:var(--fill);text-align:left;font-variant-numeric:tabular-nums}
+.paidc .ph{display:flex;justify-content:space-between;align-items:baseline}.paidc .ph b{font-size:15.5px;font-weight:600}.paidc .ph em{font-style:normal;font-size:19px;font-weight:600}
+.paidc .pr{display:flex;justify-content:space-between;gap:12px;margin-top:6px;font-size:13.5px;color:var(--text-2)}
 .flowl:active{background:var(--fill-2);transform:scale(.99)}
 .flowl b{display:block;font-size:15.5px;font-weight:600}.flowl span{display:block;font-size:13px;color:var(--text-2);margin-top:1px}.flowl i{margin-left:auto;font-style:normal;color:var(--text-3);font-size:20px}
 .empty{margin-top:30px;color:var(--text-3);font-size:14px}
@@ -338,7 +341,10 @@ async function open(pw, key) {
     t.locked ? '<div class="tr lk" style="animation-delay:' + (i * 60) + 'ms" aria-label="未开放"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t"><b style="width:' + Math.min(14, 3 + (t.n || 6) * .7).toFixed(1) + 'em"></b><b class="b2" style="width:' + (2.5 + (i * 37 % 4)) + 'em"></b></span><span class="m"><em><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>未开放</em></span></div>' :
     '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '">' + (P.tracks.some(x => x.cover) ? '<span class="n tcv" style="background-image:url(' + API + (t.cover || P.cover || '') + ')"></span>' : '<span class="n">' + String(i + 1).padStart(2, '0') + '</span>') + '<span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>')
-    + (FLOW[slug] ? '<a class="flowl" href="' + FLOW[slug] + '"><div><b>合作流程</b><span>每首怎么推进、怎么给反馈最快</span></div><i>›</i></a>' : '');
+    + (FLOW[slug] ? '<a class="flowl" href="' + FLOW[slug] + '"><div><b>合作流程</b><span>每首怎么推进、怎么给反馈最快</span></div><i>›</i></a>' : '')
+    // 已收款：整张收费的收款记录（Insights 项目里记的），合计 + 每一笔
+    + (P.paid && P.paid.length ? '<div class="paidc"><div class="ph"><b>已收款</b><em>¥' + P.paid.reduce((s, x) => s + (+x[1] || 0), 0).toLocaleString('zh-CN') + '</em></div>'
+      + P.paid.map(x => '<div class="pr"><span>' + esc(String(x[0] || '').replace(/^\d{4}-0?(\d+)-0?(\d+)$/, '$1 月 $2 日')) + (x[2] ? ' · ' + esc(x[2]) : '') + '</span><span>¥' + (+x[1] || 0).toLocaleString('zh-CN') + '</span></div>').join('') + '</div>' : '');
   // 播放：记下连播顺序，进第一首直接开播；每首放完曲目页自己切到下一首（见 player.js nextInQueue）
   const pa = document.getElementById('pa');
   if (pa) pa.onclick = e => { e.stopPropagation(); epPlay(playable, 0); };
