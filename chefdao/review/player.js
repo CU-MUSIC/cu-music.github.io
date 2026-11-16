@@ -2498,7 +2498,7 @@ function paySheet() {
 }
 $('#dlBtn').onclick = async () => {
   const b = $('#dlBtn'); if (b.dataset.busy) return;
-  if (DL.on && S.final) { const el = document.createElement('a'); el.href = API_BASE + '/final?s=' + S.slug + '&k=' + encodeURIComponent(WK) + '&lid=' + lid; document.body.appendChild(el); el.click(); el.remove(); hud('开始下载：' + S.final.name, 3500); return; }   // 最终压缩包：浏览器直接下载，不经过内存
+  if (DL.on && S.final) { const el = document.createElement('a'); el.href = API_BASE + '/final?s=' + S.slug + '&k=' + encodeURIComponent(WK) + '&lid=' + lid + (IS_OWNER ? '&me=1' : ''); document.body.appendChild(el); el.click(); el.remove(); hud('开始下载：' + S.final.name, 3500); return; }   // 最终压缩包：浏览器直接下载，不经过内存
   if (DL.on && DL.link) { window.open(DL.link, '_blank', 'noopener'); fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, got: 1, ver: V[vi].ver }) }).catch(() => {}); return; }
   if (!DL.on && DL.trust) { if (!payConfirmed()) return hud('确认「这一版没问题」后，可以付款领取最终文件', 4500); return paySheet(); }
   if (!DL.on) {
