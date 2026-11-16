@@ -63,6 +63,7 @@ input:focus{border-color:var(--acc)}
 .pk{height:60px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:300 22px var(--sans);cursor:pointer}
 .pk.sel{border-color:var(--acc);color:var(--acc);background:#22322a}
 .small{font-size:14px;color:var(--mute)}
+.tap{margin-top:6px;height:52px;padding:0 22px;border-radius:26px;border:0;background:var(--acc);color:#14201a;font:600 17px var(--sans);cursor:pointer}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -112,7 +113,7 @@ input:focus{border-color:var(--acc)}
 <script src="clips.js"></script>
 <script>
 (function(){
-  var API="https://stats.cumusic.work", PROJ="lchenius";
+  var API="https://stats.cumusic.work", PROJ="lchenius", CDN="https://cumusic-audio.b-cdn.net/ra/hooklc/v1-";
   var HV=window.HV, CLIPS=HV.clips, urls={}, key=null;
   var order=CLIPS.map(function(c,i){return i;});
   for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t;}
@@ -133,7 +134,10 @@ input:focus{border-color:var(--acc)}
   async function open(u8){return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:u8.subarray(0,12)},key,u8.subarray(12)));}
   function load(idx){
     var c=CLIPS[idx]; if(urls[c.id])return urls[c.id];
-    urls[c.id]=fetch("a/"+c.f).then(function(r){return r.arrayBuffer();}).then(function(b){return open(new Uint8Array(b));})
+    // 先走 Bunny CDN（国内快），12 秒没拿到或失败再回 GitHub Pages
+    var get=function(u,ms){var ac=window.AbortController?new AbortController():null,t=ac&&setTimeout(function(){ac.abort();},ms);
+      return fetch(u,ac?{signal:ac.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.arrayBuffer();}).finally(function(){t&&clearTimeout(t);});};
+    urls[c.id]=get(CDN+c.f,12000).catch(function(){return get("a/"+c.f,30000);}).then(function(b){return open(new Uint8Array(b));})
       .then(function(pt){return URL.createObjectURL(new Blob([pt],{type:"audio/mpeg"}));});
     return urls[c.id];
   }
@@ -175,7 +179,7 @@ input:focus{border-color:var(--acc)}
   }
   function activate(el){
     cur=el; el.classList.remove("back","enter"); el.style.transform=""; el.style.opacity="";
-    el.querySelector(".hint").textContent=HINT;
+    el.querySelector(".hint").textContent="正在加载…";
     cnt.textContent=(pos+1)+" / "+CLIPS.length;
     bar.style.width=(pos/CLIPS.length*100)+"%";
     document.getElementById("bUn").disabled=pos===0;
@@ -193,7 +197,16 @@ input:focus{border-color:var(--acc)}
     cancelAnimationFrame(raf);
     load(idx).then(function(u){
       if(card&&card!==cur)return;
-      audio.src=u; audio.currentTime=0; audio.play().catch(function(){});
+      audio.src=u; audio.currentTime=0;
+      var hint=card&&card.querySelector(".hint");
+      // 微信 / 部分手机不让自动播：换成一个大按钮，点一下就放
+      audio.play().then(function(){if(hint)hint.textContent=HINT;}).catch(function(){
+        if(!hint)return;
+        hint.innerHTML='<button class="tap" type="button">▶ 点这里播放</button>';
+        var tb=hint.querySelector(".tap");
+        tb.addEventListener("pointerdown",function(e){e.stopPropagation();});
+        tb.onclick=function(e){e.stopPropagation();audio.play().then(function(){hint.textContent=HINT;}).catch(function(){});};
+      });
       if(!card)return;
       var spans=card.querySelectorAll(".wave span"), t0=card.querySelector(".t0");
       (function tick(){
@@ -202,7 +215,13 @@ input:focus{border-color:var(--acc)}
         t0.textContent="0:"+String(Math.floor(audio.currentTime)).padStart(2,"0");
         raf=requestAnimationFrame(tick);
       })();
-    }).catch(function(){var h=card&&card.querySelector(".hint");if(h)h.textContent="这段没加载出来，可以先划过去";});
+    }).catch(function(){
+      delete urls[CLIPS[idx].id];
+      var h=card&&card.querySelector(".hint"); if(!h)return;
+      h.innerHTML='没加载出来 <button class="tap" type="button">重新加载</button>';
+      var tb=h.querySelector(".tap"); tb.addEventListener("pointerdown",function(e){e.stopPropagation();});
+      tb.onclick=function(e){e.stopPropagation();h.textContent="正在加载…";audio.play().catch(function(){});play(idx,card);};
+    });
   }
   function decide(yes,dx,dy,vx){
     if(!cur)return;
