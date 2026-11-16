@@ -192,7 +192,7 @@ body{isolation:isolate}
   });
   // 没提交也记下来：每划一张就存一次（done=0），关页面时再补一次；提交后 done=1，服务器不会再被半截记录覆盖
   var sent=false, saveT=0;
-  function payload(done){return {proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done,secs:(function(){var o={};Object.keys(heard).forEach(function(k){o[k]=Math.round(heard[k]);});return o;})()};}
+  function payload(done){return {proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done,secs:(function(){var o={};Object.keys(heard).forEach(function(k){o[k]=Math.round(heard[k]);});return o;})(),pos:(function(){var o={};Object.keys(votes).forEach(function(k){o[k]={p:at[k]||0,m:Math.round((far[k]||0)*10)/10};});return o;})()};}
   function post(done,keep){return fetch(API+"/hv",{method:"POST",keepalive:!!keep,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload(done))});}
   function autosave(){if(sent)return;clearTimeout(saveT);saveT=setTimeout(function(){post(0).catch(function(){});},800);}
   function flush(){if(!sent&&Object.keys(votes).length){clearTimeout(saveT);post(0,true).catch(function(){});}}
@@ -200,7 +200,7 @@ body{isolation:isolate}
   window.addEventListener("pagehide",flush);
   function label(k){return String(k+1).padStart(2,"0");}
   var RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var back=null, dirs={}, heard={};
+  var back=null, dirs={}, heard={}, far={}, at={};
   var HINT="循环播放 · 点波形可以跳着听";
   function makeCard(k,cls){
     var c=CLIPS[order[k]], el=document.createElement("div");
@@ -247,6 +247,7 @@ body{isolation:isolate}
   audio.addEventListener("timeupdate",function(){
     var ct=audio.currentTime, d=ct-lastT; lastT=ct;
     if(hearId&&!audio.paused&&d>0&&d<1.5){heard[hearId]=(heard[hearId]||0)+d; gate();}
+    if(hearId&&ct>(far[hearId]||0))far[hearId]=ct;
   });
   audio.addEventListener("seeked",function(){lastT=audio.currentTime;});
   function play(idx,card){
@@ -282,7 +283,7 @@ body{isolation:isolate}
   }
   function decide(yes,dx,dy,vx){
     if(!cur||left()>0)return;
-    votes[CLIPS[order[pos]].id]=yes?1:0; dirs[pos]=yes?1:-1; autosave();
+    var vid=CLIPS[order[pos]].id; votes[vid]=yes?1:0; at[vid]=Math.round(audio.currentTime*10)/10; dirs[pos]=yes?1:-1; autosave();
     var el=cur; cur=null; document.getElementById("bUn").disabled=true;
     el.querySelector(yes?".stamp.yes":".stamp.no").style.opacity=1;
     var go=function(){
