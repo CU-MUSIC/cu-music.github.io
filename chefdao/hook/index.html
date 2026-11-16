@@ -103,6 +103,10 @@ body{isolation:isolate}
 .ttl.show{filter:none;opacity:1;color:var(--acc)}
 .card.nudge{transition:transform .25s cubic-bezier(.2,.8,.2,1)}
 .pk{height:auto;min-height:84px;padding:8px 4px}.pt{font-size:11px;color:var(--mute);line-height:1.3;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ro{height:52px;border-radius:14px;border:1px solid var(--line);background:rgba(29,27,24,.75);color:var(--fg);font:500 16px var(--sans);cursor:pointer}
+.ro.on{border-color:var(--acc);color:var(--acc);background:#2a2414}
+.ro:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -124,13 +128,14 @@ body{isolation:isolate}
 <h1>帮忙选 <em>主打歌</em></h1>
 <p>每段从一首歌的 hook 开始，至少听 5 秒再决定。不告诉你歌名，顺序随机。</p>
 <div class="rules"><span class="r no">← 不适合</span><span class="r yes">能做主打 →</span></div>
+<div class="roles" role="radiogroup" aria-label="你是"><button type="button" class="ro" data-r="fan">🎧 普通听众</button><button type="button" class="ro" data-r="pro">🎚 音乐人</button></div>
 <div class="form">
 <input id="who" placeholder="你的名字（可以不填，匿名）" autocomplete="off" maxlength="20">
 <input id="pw" placeholder="密码" inputmode="numeric" autocomplete="off" maxlength="20">
 </div>
 <p class="err" id="err"></p>
 <button class="go" id="start" disabled>开始听</button>
-<p class="small c">戴耳机效果最好 · 大约 5 分钟</p>
+<p class="small c">戴耳机效果最好 · 先听 8 首，大约 2 分钟</p>
 </div>
 <div class="screen" id="pick" hidden>
 <h1>最后一个问题：<br>哪首你 <em>最想听完整版</em>？</h1>
@@ -144,6 +149,8 @@ body{isolation:isolate}
 <div class="screen" id="done" hidden>
 <h1>收到了，<em>谢谢</em></h1>
 <p id="sum"></p>
+<button class="go" id="more" hidden>再听剩下的 <span id="moreN"></span> 首</button>
+<p class="small" id="moreT" hidden>不想听也没关系，已经交上了。</p>
 </div>
 </div>
 
@@ -161,8 +168,11 @@ body{isolation:isolate}
 (function(){
   var API="https://stats.cumusic.work", PROJ="lchenius", CDN="https://cumusic-audio.b-cdn.net/ra/hooklc/v2-", MIN=5;
   var HV=window.HV, CLIPS=HV.clips, urls={}, key=null;
-  var order=CLIPS.map(function(c,i){return i;});
-  for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t;}
+  // 每人先听 8 首：从固定的一圈里随机起点连续取 8 首（每首被分到的机会一样），再打乱顺序；听完可以选择再听剩下的
+  function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+  var FIRST=Math.min(8,CLIPS.length), off=Math.floor(Math.random()*CLIPS.length), first=[], rest=[];
+  CLIPS.forEach(function(c,i){var k=(i-off+CLIPS.length)%CLIPS.length;(k<FIRST?first:rest).push(i);});
+  var order=shuf(first); rest=shuf(rest);
   var stage=document.getElementById("stage"),bar=document.getElementById("bar"),cnt=document.getElementById("cnt");
   var who=document.getElementById("who"),pw=document.getElementById("pw"),start=document.getElementById("start"),err=document.getElementById("err");
   var audio=new Audio(); audio.preload="auto"; audio.loop=true; audio.setAttribute("playsinline","");
@@ -170,7 +180,9 @@ body{isolation:isolate}
   function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
   var lid=ls("hv:lid"); if(!lid){lid=Array.from(crypto.getRandomValues(new Uint8Array(12)),function(b){return("0"+b.toString(16)).slice(-2);}).join("");ls("hv:lid",lid);}
   who.value=ls("hv:who")||""; pw.value=ls("hv:pw")||"";
-  function chk(){start.disabled=!pw.value.trim();}
+  var role=ls("hv:role")||"";
+  function chk(){start.disabled=!pw.value.trim()||!role; document.querySelectorAll(".ro").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-r")===role);b.setAttribute("aria-checked",b.getAttribute("data-r")===role);});}
+  document.querySelectorAll(".ro").forEach(function(b){b.setAttribute("role","radio");b.onclick=function(){role=b.getAttribute("data-r");ls("hv:role",role);chk();};});
   who.addEventListener("input",chk); pw.addEventListener("input",chk); chk();
   var b64=function(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0);});};
   async function derive(p){
@@ -207,7 +219,7 @@ body{isolation:isolate}
   });
   // 没提交也记下来：每划一张就存一次（done=0），关页面时再补一次；提交后 done=1，服务器不会再被半截记录覆盖
   var sent=false, saveT=0;
-  function payload(done){return {proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done,secs:(function(){var o={};Object.keys(heard).forEach(function(k){o[k]=Math.round(heard[k]);});return o;})(),pos:(function(){var o={};Object.keys(votes).forEach(function(k){o[k]={p:at[k]||0,m:Math.round((far[k]||0)*10)/10};});return o;})(),cm:cm};}
+  function payload(done){return {role:role,proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done,secs:(function(){var o={};Object.keys(heard).forEach(function(k){o[k]=Math.round(heard[k]);});return o;})(),pos:(function(){var o={};Object.keys(votes).forEach(function(k){o[k]={p:at[k]||0,m:Math.round((far[k]||0)*10)/10};});return o;})(),cm:cm};}
   function post(done,keep){return fetch(API+"/hv",{method:"POST",keepalive:!!keep,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload(done))});}
   function autosave(){if(sent)return;clearTimeout(saveT);saveT=setTimeout(function(){post(0).catch(function(){});},800);}
   function flush(){if(!sent&&Object.keys(votes).length){clearTimeout(saveT);post(0,true).catch(function(){});}}
@@ -221,7 +233,7 @@ body{isolation:isolate}
     var c=CLIPS[order[k]], el=document.createElement("div");
     el.className="card"+(cls?" "+cls:"");
     var w="";(c.p||[]).forEach(function(v){w+='<span style="height:'+Math.max(4,v*100)+'%"></span>';});
-    el.innerHTML='<div><div class="nrow"><div class="num">'+(c.e?'<span class="em">'+c.e+'</span>':'')+label(k)+'<small>/ '+CLIPS.length+'</small></div><button type="button" class="say">'+(cm[c.id]?'✎ 改一句':'✎ 说一句')+'</button></div><div class="ttl'+(c.id in votes?' show':'')+'">'+(T[c.id]||'').replace(/[&<>]/g,'')+'</div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
+    el.innerHTML='<div><div class="nrow"><div class="num">'+(c.e?'<span class="em">'+c.e+'</span>':'')+label(k)+'<small>/ '+order.length+'</small></div><button type="button" class="say">'+(cm[c.id]?'✎ 改一句':'✎ 说一句')+'</button></div><div class="ttl'+(c.id in votes?' show':'')+'">'+(T[c.id]||'').replace(/[&<>]/g,'')+'</div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
     el.dataset.id=c.id; var sb=el.querySelector(".say"); if(cm[c.id])sb.classList.add("on");
     sb.addEventListener("pointerdown",function(e){e.stopPropagation();});
     sb.onclick=function(e){e.stopPropagation();openSay(el,c.id,k);};
@@ -242,15 +254,15 @@ body{isolation:isolate}
   };
   function addBack(){
     if(back){back.remove();back=null;}
-    if(pos+1>=CLIPS.length)return;
+    if(pos+1>=order.length)return;
     back=makeCard(pos+1,"back enter"); stage.insertBefore(back,cur||null); load(order[pos+1]);
     var b=back; raf2(function(){b.classList.remove("enter");});
   }
   function activate(el){
     cur=el; el.classList.remove("back","enter"); el.style.transform=""; el.style.opacity="";
     el.querySelector(".hint").textContent="正在加载…";
-    cnt.textContent=(pos+1)+" / "+CLIPS.length;
-    bar.style.width=(pos/CLIPS.length*100)+"%";
+    cnt.textContent=(pos+1)+" / "+order.length;
+    bar.style.width=(pos/order.length*100)+"%";
     document.getElementById("bUn").disabled=pos===0;
     document.getElementById("bEnd").hidden=pos===0;
     gate(); play(order[pos],el); bindDrag(el);
@@ -258,8 +270,8 @@ body{isolation:isolate}
   // 第一次进来：两张卡从下面浮上来
   function next(){
     stage.querySelectorAll(".card").forEach(function(n){n.remove();}); back=null; cur=null;
-    bar.style.width=(pos/CLIPS.length*100)+"%";
-    if(pos>=CLIPS.length){finish();return;}
+    bar.style.width=(pos/order.length*100)+"%";
+    if(pos>=order.length){finish();return;}
     var el=makeCard(pos,"enter"); stage.appendChild(el);
     raf2(function(){activate(el); addBack();});
   }
@@ -321,7 +333,7 @@ body{isolation:isolate}
       el.style.transform="translate("+far+"px,"+((dy||0)+40)+"px) rotate("+(yes?26:-26)+"deg)"; el.style.opacity="0";
       setTimeout(function(){el.remove();},460);
       pos++;
-      if(pos>=CLIPS.length){setTimeout(function(){bar.style.width="100%";finish();},260);return;}
+      if(pos>=order.length){setTimeout(function(){bar.style.width="100%";finish();},260);return;}
       var b=back; back=null; activate(b); addBack();
     };
     // 先停一下揭晓歌名（模糊变清楚），再飞走
@@ -374,6 +386,12 @@ body{isolation:isolate}
     stage.querySelectorAll(".card").forEach(function(n){n.remove();}); cur=null; back=null;
     if(early){early=false;next();} else undo();
   };
+  document.getElementById("more").onclick=function(){
+    order=order.concat(rest); rest=[]; sent=false; best=null; early=false;
+    document.getElementById("done").hidden=true; document.getElementById("btns").hidden=false;
+    document.getElementById("send").disabled=true;
+    next();
+  };
   document.getElementById("bUn").onclick=function(){if(cur)undo();};
   document.getElementById("bRe").onclick=function(){if(cur){audio.currentTime=0;audio.play().catch(function(){});}};
   document.addEventListener("keydown",function(e){if(!cur||!document.getElementById("sheet").hidden||/TEXTAREA|INPUT/.test((e.target||{}).tagName))return;if(e.key==="ArrowRight")decide(true);if(e.key==="ArrowLeft")decide(false);});
@@ -403,6 +421,7 @@ body{isolation:isolate}
         document.getElementById("pick").hidden=true;
         document.getElementById("sum").textContent="你右滑了 "+yes+" 首。再提交一次会覆盖这次的结果。";
         document.getElementById("done").hidden=false;
+        var mb=document.getElementById("more"); mb.hidden=!rest.length; document.getElementById("moreT").hidden=!rest.length; document.getElementById("moreN").textContent=rest.length;
         bar.style.width="100%"; cnt.textContent="完成";
       }).catch(function(){e2.textContent="没提交上，检查一下网络再点一次"; btn.disabled=false;});
   };

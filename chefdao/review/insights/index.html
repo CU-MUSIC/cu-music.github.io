@@ -233,6 +233,14 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .hvr .rk{font-variant-numeric:tabular-nums;opacity:.5;font-size:14px;text-align:right}
 .hvs{display:flex;height:6px;border-radius:3px;background:rgba(236,234,230,.06);overflow:hidden;margin:6px 0 4px}.hvs i{display:block;height:100%}.hvs .y{background:#8fcf9f}.hvs .x{background:rgba(224,120,110,.45)}
 .hvr .star{font-size:14px;color:#d9bf8c;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hvf{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 4px}.hvf button{border:1px solid rgba(236,234,230,.12);background:none;color:inherit;opacity:.75;border-radius:14px;padding:4px 12px;font-size:13px;cursor:pointer}.hvf button.on{opacity:1;border-color:#d9bf8c;color:#d9bf8c}
+.hvl>.hvbs{display:grid;grid-template-columns:1fr;gap:8px;background:none;padding:0}
+.hvl>.hvf{display:flex;justify-content:flex-start;background:none;padding:0}
+.hvl>.hprow{background:none;padding:0;justify-content:flex-start}
+.hvl .hvb2{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:10px;background:rgba(236,234,230,.04);border:1px solid rgba(236,234,230,.08)}
+.hvb2.hit{border-color:rgba(217,191,140,.35)}.hvb2.gem{border-color:rgba(143,181,217,.35)}.hvb2 .k{font-size:12px;letter-spacing:.08em;opacity:.7}.hvb2.hit .k{color:#d9bf8c;opacity:1}.hvb2.gem .k{color:#8fb5d9;opacity:1}
+.hvbr{display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:baseline}.hvbr .rk{opacity:.5;font-size:13px;text-align:right}.hvbr .n{display:flex;flex-direction:column}.hvbr b{font-weight:600}.hvbr em{font-style:normal;font-size:13px;opacity:.65}
+.hvl>.hvdu{border-style:solid;border-color:rgba(217,191,140,.25)}
 .hvnm{color:#d9bf8c;opacity:.85}.hvc{display:block;font-size:13px;opacity:.85;margin-top:2px}.hvc b{font-weight:600;color:#d9bf8c}.hvdc{margin-top:6px;display:flex;flex-direction:column}
 .hvq{display:flex;flex-direction:column;gap:2px;margin-top:4px}.hvq .y{color:#8fcf9f}.hvq .x{opacity:.65}
 .hvn em{opacity:.9!important;font-size:14px!important;line-height:1.6}.hvn b{font-weight:600;color:#d9bf8c}
@@ -433,9 +441,10 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261109b"></script>
 <script src="../reflib.js?v=20261109p"></script>
 <script src="work.js?v=261115c"></script>
+<script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261117.0130';
+const BUILD = '261117.0300';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1639,36 +1648,46 @@ function openProject(slug) {
     if (reset) msg('已换新链接，旧链接失效'); } catch (e) { msg('没拿到链接，检查网络再试', true); } };
   // 主打盲听：朋友在 cumusic.work/chefdao/hook/ 左右滑投票；片段编号 → 歌名的对照表用管理钥匙加密在 hook/key.bin
   const hv = HOOK[slug];
+  let hvRole = '', hvNames = null;
   const hvLoad = async () => { if (!hv) return; try {
-    const [j, kb] = await Promise.all([api('/hv?proj=' + hv.proj), fetch(hv.url + 'key.bin', { cache: 'no-store' }).then(r => r.arrayBuffer())]);
-    const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('hook:' + KEY)), u8 = new Uint8Array(kb);
-    const ck = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
-    const names = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.subarray(0, 12) }, ck, u8.subarray(12))));
-    const rows = j.rows || [], n = rows.length, st = {};
-    Object.keys(names).forEach(id => { st[id] = { id, t: names[id], yes: 0, seen: 0, best: 0, sec: 0, sn: 0, p: 0, m: 0, pn: 0 }; });
-    rows.forEach(r => { Object.keys(r.votes || {}).forEach(id => { if (st[id]) { st[id].seen++; st[id].yes += r.votes[id] ? 1 : 0; } }); if (st[r.best]) st[r.best].best++; Object.keys(r.secs || {}).forEach(id => { if (st[id]) { st[id].sec += r.secs[id]; st[id].sn++; } }); Object.keys(r.pos || {}).forEach(id => { if (st[id]) { st[id].p += r.pos[id].p; st[id].m += r.pos[id].m; st[id].pn++; } }); });
-    // 排序：被选「最想听完整版」的票数 → 右滑人数 → 右滑比例
-    const list = Object.values(st).sort((a, b) => b.best - a.best || b.yes - a.yes || (b.yes / (b.seen || 1)) - (a.yes / (a.seen || 1)));
-    const pc = (a, b) => b ? Math.round(a / b * 100) : 0;
+    const [j, kb, dj] = await Promise.all([api('/hv?proj=' + hv.proj), fetch(hv.url + 'key.bin', { cache: 'no-store' }).then(r => r.arrayBuffer()), api('/hd?proj=' + hv.proj).catch(() => ({ ids: [], rows: [] }))]);
+    if (!hvNames) { const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('hook:' + KEY)), u8 = new Uint8Array(kb);
+      const ck = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+      hvNames = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.subarray(0, 12) }, ck, u8.subarray(12)))); }
+    const names = hvNames, allRows = j.rows || [], rows = allRows.filter(r => !hvRole || r.role === hvRole), n = rows.length;
+    const R = window.HookScore.compute(allRows, names, hvRole), pc = (a, b) => b ? Math.round(a / b * 100) : 0, sg = v => (v >= 0 ? '+' : '') + Math.round(v * 100);
+    const roleN = k => allRows.filter(r => r.role === k).length;
+    $p('hvSum').textContent = allRows.length ? R.done + ' 人投完' + (R.n - R.done ? ' · ' + (R.n - R.done) + ' 人没听完' : '') : '还没人投';
     // 留言里写的 01、04 是这个人自己听到的顺序：按他的 ord 换算成歌名
     const ann = r => esc(r.note).replace(/(^|[^0-9])(0[1-9]|1[0-6])(?![0-9])/g, (m, a, d) => { const id = (r.ord || [])[+d - 1]; return a + d + (id && names[id] ? '<span class="hvnm">（' + esc(names[id]) + '）</span>' : ''); });
     const cmBy = {}; rows.forEach(r => Object.keys(r.cm || {}).forEach(id => { (cmBy[id] = cmBy[id] || []).push({ who: r.who || '没填名字', t: r.cm[id], y: (r.votes || {})[id] }); }));
     const cmH = id => (cmBy[id] || []).map(c => `<span class="hvc"><b>${esc(c.who)}</b>${c.y === 1 ? '（✓）' : c.y === 0 ? '（✕）' : ''}：${esc(c.t)}</span>`).join('');
-    const live = list.filter(s => s.yes > 0 || s.best > 0), dead = list.filter(s => !s.yes && !s.best && s.seen), top = live[0];
-    const nd = rows.filter(r => r.done !== 0).length;
-    $p('hvSum').textContent = n ? nd + ' 人投完' + (n - nd ? ' · ' + (n - nd) + ' 人没听完' : '') : '还没人投';
-    const tie = top ? live.filter(s => s.best === top.best && s.yes === top.yes) : [];
-    $p('hvList').innerHTML = n ? `<div class="hvtop"><span class="k">${tie.length > 1 ? '并列领先' : n < 5 ? '目前领先' : '主打候选'}</span><b>${top ? tie.map(s => esc(s.t)).join(' / ') : '还没有'}</b>`
-        + (top ? `<em>${top.best} 人最想听完整版 · ${top.yes}/${top.seen} 人右滑</em>` : '')
-        + (n < 5 ? `<em class="warn">才 ${n} 人投，至少 5 人再下结论</em>` : '') + '</div>'
-      + live.map((s, i) => `<div class="hvr"><span class="rk">${i + 1}</span><span class="n">${esc(s.t)}<span class="hvs"><i class="y" style="width:${pc(s.yes, n)}%"></i><i class="x" style="width:${pc(s.seen - s.yes, n)}%"></i></span>${cmH(s.id)}<em>右滑 ${s.yes}/${s.seen}${s.seen ? '（' + pc(s.yes, s.seen) + '%）' : ''}${s.pn ? ' · 平均第 ' + Math.round(s.p / s.pn) + ' 秒划，最远到 ' + Math.round(s.m / s.pn) + ' 秒' : s.sn ? ' · 平均听 ' + Math.round(s.sec / s.sn) + ' 秒' : ''}</em></span>${s.best ? `<span class="star">★ ${s.best}</span>` : '<span></span>'}</div>`).join('')
+    const chips = `<div class="hvf">${[['', '全部 ' + allRows.length], ['fan', '🎧 普通听众 ' + roleN('fan')], ['pro', '🎚 音乐人 ' + roleN('pro')]].map(x => `<button type="button" data-hr="${x[0]}" class="${hvRole === x[0] ? 'on' : ''}">${x[1]}</button>`).join('')}</div>`;
+    const board = (cls, k, list, line) => `<div class="hvb2 ${cls}"><span class="k">${k}</span>${list.length ? list.map((s, i) => `<div class="hvbr"><span class="rk">${i + 1}</span><span class="n"><b>${esc(s.t)}</b><em>${line(s)}</em></span></div>`).join('') : '<em class="dim">数据还不够</em>'}</div>`;
+    const hitTop = R.hit.slice(0, 3), gemTop = R.gem.slice(0, 3);
+    const D = dj.ids && dj.ids.length ? window.HookScore.duel(dj.rows, dj.ids, hvRole) : null;
+    const duelH = D ? `<div class="hvd hvdu"><span class="k">第二轮 · 两两对决 · ${D.n} 人</span>${D.list.map((x, i) => `<div class="hvbr"><span class="rk">${i + 1}</span><span class="n"><b>${esc(names[x.id] || x.id)}</b><em>赢 ${x.w}/${x.g} 场 · 主打概率 ${Math.round(x.share * 100)}%</em></span></div>`).join('')}<div class="row hprow"><button type="button" class="ghost" id="hdCopy">复制第二轮链接</button><button type="button" class="ghost" id="hdOpen">换成主打榜前 4</button></div></div>`
+      : (hitTop.length >= 3 ? `<div class="row hprow"><button type="button" class="ghost" id="hdOpen">用主打榜前 4 开第二轮</button></div>` : '');
+    const live = R.list.filter(s => s.yes > 0 || s.best > 0).sort((a, b) => b.hit - a.hit), dead = R.list.filter(s => !s.yes && !s.best && s.seen);
+    $p('hvList').innerHTML = allRows.length ? chips
+      + (n < 5 ? `<div class="hvtop"><em class="warn">${hvRole ? '这组' : ''}才 ${n} 人投，至少 5 人再下结论</em></div>` : '')
+      + `<div class="hvbs">${board('hit', '主打榜 · 大多数人能接受', hitTop, s => `校正后 ${sg(s.adj)} · 右滑 ${s.yes}/${s.seen}${s.best ? ' · ★' + s.best : ''}`)}${board('gem', '宝藏榜 · 少数人特别上头', gemTop, s => s.why.join(' · ') || '右滑 ' + s.yes + '/' + s.seen)}</div>`
+      + duelH
+      + `<details class="hvp"><summary>全部 ${R.list.length} 首明细（按主打分排）</summary>${live.map((s, i) => `<div class="hvr"><span class="rk">${i + 1}</span><span class="n">${esc(s.t)}<span class="hvs"><i class="y" style="width:${pc(s.yes, R.n)}%"></i><i class="x" style="width:${pc(s.seen - s.yes, R.n)}%"></i></span>${cmH(s.id)}<em>右滑 ${s.yes}/${s.seen}（${pc(s.yes, s.seen)}%）· 校正后 ${sg(s.adj)}${s.pn ? ' · 平均第 ' + Math.round(s.p / s.pn) + ' 秒划，最远到 ' + Math.round(s.m / s.pn) + ' 秒' : s.sn ? ' · 平均听 ' + Math.round(s.avg) + ' 秒' : ''}</em></span>${s.best ? `<span class="star">★ ${s.best}</span>` : '<span></span>'}</div>`).join('')}
+        ${dead.length ? `<div class="hvd"><span class="k">没人右滑 · ${dead.length} 首</span><em>${dead.map(s => esc(s.t)).join('、')}</em>${dead.filter(s => cmBy[s.id]).map(s => `<div class="hvdc"><b>${esc(s.t)}</b>${cmH(s.id)}</div>`).join('')}</div>` : ''}</details>`
       + (rows.some(r => r.note) ? `<div class="hvd hvn"><span class="k">想说的话 · ${rows.filter(r => r.note).length} 条</span>${rows.filter(r => r.note).map(r => `<em><b>${esc(r.who || '没填名字')}</b>：${ann(r)}${names[r.best] ? '<span class="hvnm"> · 最想听 ' + esc(names[r.best]) + '</span>' : ''}</em>`).join('')}</div>` : '')
-      + (dead.length ? `<div class="hvd"><span class="k">没人右滑 · ${dead.length} 首</span><em>${dead.map(s => esc(s.t)).join('、')}</em>${dead.filter(s => cmBy[s.id]).map(s => `<div class="hvdc"><b>${esc(s.t)}</b>${cmH(s.id)}</div>`).join('')}</div>` : '')
-      + `<details class="hvp"><summary>每个人投了什么</summary>${rows.map(r => `<div><b>${esc(r.who || '没填名字')}${r.done === 0 ? '<i style="font-style:normal;opacity:.5;font-weight:400"> · 没听完（听了 ' + Object.keys(r.votes || {}).length + ' 首）</i>' : ''}</b><em>最想听：${esc(names[r.best] || '没选')} · 右滑 ${Object.values(r.votes || {}).filter(Boolean).length} 首 · ${new Date(r.at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</em>${r.note ? `<em>「${esc(r.note)}」</em>` : ''}${r.pos && Object.keys(r.pos).length ? `<em class="hvq">${(r.ord && r.ord.length ? r.ord : Object.keys(r.votes || {})).filter(id => id in (r.votes || {})).map(id => `<span class="${r.votes[id] ? 'y' : 'x'}">${r.votes[id] ? '✓' : '✕'} ${esc(names[id] || id)}${r.pos[id] ? ' · 第 ' + Math.round(r.pos[id].p) + ' 秒划，最远 ' + Math.round(r.pos[id].m) + ' 秒' : ''}${r.secs && r.secs[id] != null ? ' · 共听 ' + r.secs[id] + ' 秒' : ''}</span>`).join('')}</em>` : `<em>${Object.keys(r.votes || {}).filter(id => r.votes[id]).map(id => esc(names[id] || id)).join('、') || '一首都没右滑'}</em>`}</div>`).join('')}</details>` : '<div class="dim">发链接给朋友，投完这里会显示每首的主打概率</div>';
+      + `<details class="hvp"><summary>每个人投了什么</summary>${rows.map(r => `<div><b>${esc(r.who || '没填名字')}${r.role ? '<i style="font-style:normal;opacity:.6;font-weight:400"> · ' + (r.role === 'pro' ? '音乐人' : '普通听众') + '</i>' : ''}${r.done === 0 ? '<i style="font-style:normal;opacity:.5;font-weight:400"> · 没听完（听了 ' + Object.keys(r.votes || {}).length + ' 首）</i>' : ''}</b><em>最想听：${esc(names[r.best] || '没选')} · 右滑 ${Object.values(r.votes || {}).filter(Boolean).length} 首 · ${new Date(r.at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</em>${r.note ? `<em>「${esc(r.note)}」</em>` : ''}${r.pos && Object.keys(r.pos).length ? `<em class="hvq">${(r.ord && r.ord.length ? r.ord : Object.keys(r.votes || {})).filter(id => id in (r.votes || {})).map(id => `<span class="${r.votes[id] ? 'y' : 'x'}">${r.votes[id] ? '✓' : '✕'} ${esc(names[id] || id)}${r.pos[id] ? ' · 第 ' + Math.round(r.pos[id].p) + ' 秒划，最远 ' + Math.round(r.pos[id].m) + ' 秒' : ''}${r.secs && r.secs[id] != null ? ' · 共听 ' + r.secs[id] + ' 秒' : ''}</span>`).join('')}</em>` : `<em>${Object.keys(r.votes || {}).filter(id => r.votes[id]).map(id => esc(names[id] || id)).join('、') || '一首都没右滑'}</em>`}</div>`).join('')}</details>`
+      : '<div class="dim">发链接给朋友，投完这里会显示主打榜和宝藏榜</div>';
+    $p('hvList').querySelectorAll('[data-hr]').forEach(b => { b.onclick = () => { hvRole = b.dataset.hr; hvLoad(); }; });
+    const ho = $p('hdOpen'); if (ho) ho.onclick = async () => { const ids = R.hit.slice(0, 4).map(s => s.id);
+      if (!confirm('第二轮用这 4 首两两对决：\n' + ids.map(id => names[id]).join('\n') + '\n\n已经投过的对决结果会保留，但只统计这 4 首。')) return;
+      try { await lib('/hd/cfg', { proj: hv.proj, ids }); msg('第二轮已开：' + ids.length + ' 首'); hvLoad(); } catch (e) { msg('没开成，检查网络再试', true); } };
+    const hc = $p('hdCopy'); if (hc) hc.onclick = () => { const t = '第二轮来了：每次两首选一首更适合做主打，大概 3 分钟：\nhttps://cumusic.work' + hv.url + 'duel/\n密码 ' + hv.pass;
+      const done = () => { hc.textContent = '已复制'; setTimeout(() => { hc.textContent = '复制第二轮链接'; }, 1600); }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
   } catch (e) { $p('hvSum').textContent = '查询失败'; } };
   if (hv) {
     $p('hvRe').onclick = hvLoad;
-    $p('hvCopy').onclick = () => { const t = '帮我听一下这些 hook，哪首适合做主打（右滑能做、左滑不行，大概 5 分钟）：\nhttps://cumusic.work' + hv.url + '\n密码 ' + hv.pass;
+    $p('hvCopy').onclick = () => { const t = '帮我听一下这些 hook，哪首适合做主打（右滑能做、左滑不行，先听 8 首大概 2 分钟）：\nhttps://cumusic.work' + hv.url + '\n密码 ' + hv.pass;
       const done = () => { $p('hvCopy').textContent = '已复制'; setTimeout(() => { if ($p('hvCopy')) $p('hvCopy').textContent = '复制盲听链接和密码'; }, 1600); };
       navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
     hvLoad();

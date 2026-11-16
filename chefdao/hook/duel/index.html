@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#141311">
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<title>第二轮 · 二选一 · CU MUSIC</title>
+<style>
+/* 一屏：顶栏进度 → 两张卡上下排 → 提示 */
+:root{--bg:#141311;--card:#1d1b18;--fg:#ece6d8;--mute:#9b9384;--line:#2f2b25;--acc:#f2b31b;--no:#d9473c;--dim:#3a362f;color-scheme:dark;
+--sans:Inter,"PingFang SC","Noto Sans SC",-apple-system,sans-serif;--mono:ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:17px/1.6 var(--sans);-webkit-tap-highlight-color:transparent;isolation:isolate}
+body::after{content:"";position:fixed;inset:-40px;background:url("https://cumusic-audio.b-cdn.net/cv/43mxcv6g/SHpBPXJb4b.jpg") center 30%/cover;filter:blur(48px);opacity:.2;z-index:-1;pointer-events:none}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(120% 80% at 50% 0%,rgba(20,19,17,.2),var(--bg) 70%);z-index:-1;pointer-events:none}
+.app{min-height:100%;max-width:30rem;margin:0 auto;display:grid;grid-template-rows:auto 1fr;gap:14px;padding:calc(14px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--mute)}
+.prog{height:3px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}.prog i{display:block;height:100%;background:var(--acc);width:0;transition:width .3s}
+.screen{display:grid;gap:16px;align-content:start}
+h1{font-size:26px;font-weight:400;line-height:1.35;margin:0}h1 em{font-style:normal;color:var(--acc)}
+p{margin:0;color:var(--mute)}
+.cover{width:120px;aspect-ratio:4/5;border-radius:14px;object-fit:cover;box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 0 1px rgba(242,179,27,.35)}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ro{height:52px;border-radius:14px;border:1px solid var(--line);background:rgba(29,27,24,.75);color:var(--fg);font:500 16px var(--sans);cursor:pointer}
+.ro.on{border-color:var(--acc);color:var(--acc);background:#2a2414}
+.form{display:grid;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(29,27,24,.75)}
+input{font:17px var(--sans);background:transparent;color:var(--fg);border:0;padding:14px 16px;outline:none;width:100%}
+input+input{border-top:1px solid var(--line)}input::placeholder{color:var(--mute)}
+.go{height:56px;border-radius:28px;border:0;background:var(--acc);color:#1a1408;font:600 17px var(--sans);cursor:pointer;width:100%}
+.go:disabled{background:transparent;color:var(--mute);box-shadow:inset 0 0 0 1px var(--line)}
+.err{color:var(--no)!important;font-size:15px;min-height:1.4em}
+.q{font-size:20px;color:var(--fg);text-align:center}
+.vs{display:grid;gap:12px}
+.side{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;transition:border-color .2s,transform .25s,opacity .3s}
+.side.playing{border-color:rgba(242,179,27,.6)}
+.side.win{border-color:var(--acc);transform:scale(1.02)}.side.lose{opacity:.45}
+.side .e{font-size:44px;line-height:1;grid-row:span 2}
+.side .ttl{font-size:18px;font-weight:600;filter:blur(8px);opacity:.75;transition:filter .5s,opacity .5s;min-height:1.4em}
+.side .ttl.show{filter:none;opacity:1;color:var(--acc)}
+.side .meta{font-size:13px;color:var(--mute);font-family:var(--mono)}
+.bar2{grid-column:1/-1;height:4px;background:var(--dim);border-radius:2px;overflow:hidden}.bar2 i{display:block;height:100%;width:0;background:var(--acc)}
+.acts{grid-column:1/-1;display:grid;grid-template-columns:1fr 1.3fr;gap:10px;margin-top:4px}
+.pl,.pick{height:52px;border-radius:14px;font:600 16px var(--sans);cursor:pointer}
+.pl{border:1px solid var(--line);background:transparent;color:var(--fg)}
+.pick{border:0;background:var(--acc);color:#1a1408}.pick:disabled{background:transparent;color:var(--mute);box-shadow:inset 0 0 0 1px var(--line)}
+.small{font-size:14px;color:var(--mute);text-align:center}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){.side,.side .ttl{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<div><div class="top"><span>CU MUSIC · 第二轮</span><span id="cnt">二选一</span></div><div class="prog"><i id="bar"></i></div></div>
+
+<div class="screen" id="intro">
+<img class="cover" src="https://cumusic-audio.b-cdn.net/cv/43mxcv6g/SHpBPXJb4b.jpg" alt="LIFE OF CHENIUS 封面" onerror="this.remove()">
+<h1>第二轮：<em>二选一</em></h1>
+<p>第一轮选出了几首候选。每次给你两首，选更适合做主打的那首。每首至少听 5 秒才能选。</p>
+<div class="roles"><button type="button" class="ro" data-r="fan">🎧 普通听众</button><button type="button" class="ro" data-r="pro">🎚 音乐人</button></div>
+<div class="form"><input id="who" placeholder="你的名字（可以不填，匿名）" maxlength="20" autocomplete="off"><input id="pw" placeholder="密码" inputmode="numeric" maxlength="20" autocomplete="off"></div>
+<p class="err" id="err"></p>
+<button class="go" id="start" disabled>开始</button>
+</div>
+
+<div class="screen" id="duel" hidden>
+<div class="q">哪首更适合做主打？</div>
+<div class="vs" id="vs"></div>
+<p class="small" id="tip">两首都听 5 秒以上就能选</p>
+</div>
+
+<div class="screen" id="done" hidden>
+<h1>收到了，<em>谢谢</em></h1>
+<p id="sum"></p>
+</div>
+</div>
+<script src="../clips.js"></script>
+<script>
+(function(){
+  var API="https://stats.cumusic.work", PROJ="lchenius", CDN="https://cumusic-audio.b-cdn.net/ra/hooklc/v2-", MIN=5, HOOK=18;
+  var HV=window.HV, CLIPS=HV.clips, byId={}; CLIPS.forEach(function(c){byId[c.id]=c;});
+  var key=null, T={}, urls={}, pairs=[], pi=0, picks=[], heard={}, role="", tStart=0;
+  var audio=new Audio(); audio.loop=true; audio.setAttribute("playsinline","");
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+  var lid=ls("hv:lid"); if(!lid){lid=Array.from(crypto.getRandomValues(new Uint8Array(12)),function(b){return("0"+b.toString(16)).slice(-2);}).join("");ls("hv:lid",lid);}
+  var who=document.getElementById("who"), pw=document.getElementById("pw"), start=document.getElementById("start"), err=document.getElementById("err");
+  who.value=ls("hv:who")||""; pw.value=ls("hv:pw")||""; role=ls("hv:role")||"";
+  function chk(){start.disabled=!pw.value.trim()||!role;document.querySelectorAll(".ro").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-r")===role);});}
+  document.querySelectorAll(".ro").forEach(function(b){b.onclick=function(){role=b.getAttribute("data-r");ls("hv:role",role);chk();};});
+  pw.addEventListener("input",chk); chk();
+  var b64=function(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0);});};
+  async function open(u8){return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:u8.subarray(0,12)},key,u8.subarray(12)));}
+  function get(u,ms){var ac=window.AbortController?new AbortController():null,t=ac&&setTimeout(function(){ac.abort();},ms);
+    return fetch(u,ac?{signal:ac.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.arrayBuffer();}).finally(function(){t&&clearTimeout(t);});}
+  function load(id){var c=byId[id]; if(urls[id])return urls[id];
+    urls[id]=get(CDN+c.f,12000).catch(function(){return get("../a/"+c.f,30000);}).then(function(b){return open(new Uint8Array(b));})
+      .then(function(pt){return URL.createObjectURL(new Blob([pt],{type:"audio/mpeg"}));});
+    return urls[id];}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+  start.onclick=async function(){
+    start.disabled=true; err.textContent="正在打开…";
+    audio.src="data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYyLjMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTQuMFVVVVVVVVVVVVVVVUxBTUU0LjBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUU0LjBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTQuMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTQuMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC4wVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC4wVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUU0LjBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUU0LjBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"; audio.play().catch(function(){});
+    try{
+      var base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw.value.trim()),"PBKDF2",false,["deriveKey"]);
+      key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(HV.salt),iterations:HV.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+      if(new TextDecoder().decode(await open(b64(HV.check)))!=="ok")throw 0;
+    }catch(e){err.textContent="密码不对";start.disabled=false;return;}
+    var cfg; try{cfg=await (await fetch(API+"/hd/cfg?proj="+PROJ)).json();}catch(e){cfg=null;}
+    var ids=(cfg&&cfg.ids||[]).filter(function(id){return byId[id];});
+    if(ids.length<2){err.textContent="第二轮还没开始，过两天再来";start.disabled=false;return;}
+    for(var i=0;i<ids.length;i++){try{T[ids[i]]=new TextDecoder().decode(await open(b64(byId[ids[i]].tn)));}catch(e){}}
+    ls("hv:who",who.value.trim()); ls("hv:pw",pw.value.trim());
+    // 所有两两组合，顺序和左右都随机
+    for(var a=0;a<ids.length;a++)for(var b=a+1;b<ids.length;b++)pairs.push(Math.random()<.5?[ids[a],ids[b]]:[ids[b],ids[a]]);
+    for(var k=pairs.length-1;k>0;k--){var j=Math.floor(Math.random()*(k+1));var t=pairs[k];pairs[k]=pairs[j];pairs[j]=t;}
+    ids.forEach(load);
+    document.getElementById("intro").hidden=true; document.getElementById("duel").hidden=false; show();
+  };
+  var playing=null, lastT=0;
+  audio.addEventListener("timeupdate",function(){var ct=audio.currentTime,d=ct-lastT;lastT=ct;
+    if(playing&&!audio.paused&&d>0&&d<1.5){var k=pi+":"+playing;heard[k]=(heard[k]||0)+d;gate();}
+    var el=playing&&document.querySelector('.side[data-id="'+playing+'"] .bar2 i'); if(el)el.style.width=Math.min(100,ct/HOOK*100)+"%";});
+  function ready(id){return (heard[pi+":"+id]||0)>=MIN;}
+  function gate(){var p=pairs[pi]; if(!p)return; var ok=ready(p[0])&&ready(p[1]);
+    document.querySelectorAll(".pick").forEach(function(b){b.disabled=!ok;});
+    document.getElementById("tip").textContent=ok?"选一首":"两首都听 5 秒以上就能选";
+    p.forEach(function(id){var m=document.querySelector('.side[data-id="'+id+'"] .meta');if(m)m.textContent=ready(id)?"✓ 听过了":"还要听 "+Math.ceil(MIN-(heard[pi+":"+id]||0))+" 秒";});}
+  function play(id){
+    document.querySelectorAll(".side").forEach(function(s){s.classList.toggle("playing",s.getAttribute("data-id")===id);s.querySelector(".pl").textContent=s.getAttribute("data-id")===id?"⏸ 暂停":"▶ 播放";});
+    if(playing===id&&!audio.paused){audio.pause();document.querySelector('.side[data-id="'+id+'"] .pl').textContent="▶ 播放";return;}
+    playing=id; load(id).then(function(u){if(playing!==id)return;if(audio.src!==u){audio.src=u;audio.currentTime=0;lastT=0;}audio.play().catch(function(){});});
+  }
+  function show(){
+    var p=pairs[pi]; document.getElementById("cnt").textContent=(pi+1)+" / "+pairs.length;
+    document.getElementById("bar").style.width=(pi/pairs.length*100)+"%";
+    var vs=document.getElementById("vs"); vs.innerHTML=p.map(function(id,i){var c=byId[id];
+      return '<div class="side" data-id="'+id+'"><span class="e">'+(c.e||"")+'</span><div class="ttl">'+esc(T[id]||"")+'</div><div class="meta">还要听 5 秒</div><div class="bar2"><i></i></div><div class="acts"><button type="button" class="pl">▶ 播放</button><button type="button" class="pick" disabled>选这首</button></div></div>';}).join("");
+    vs.querySelectorAll(".side").forEach(function(s){var id=s.getAttribute("data-id");
+      s.querySelector(".pl").onclick=function(){play(id);};
+      s.querySelector(".pick").onclick=function(){choose(id);};});
+    tStart=Date.now(); playing=null; audio.pause(); play(p[0]); gate();
+  }
+  function choose(w){
+    var p=pairs[pi]; picks.push({a:p[0],b:p[1],w:w,t:Math.round((Date.now()-tStart)/1000)});
+    document.querySelectorAll(".side").forEach(function(s){var id=s.getAttribute("data-id");s.classList.add(id===w?"win":"lose");s.querySelector(".ttl").classList.add("show");s.querySelectorAll("button").forEach(function(b){b.disabled=true;});});
+    save(0);
+    setTimeout(function(){pi++; if(pi>=pairs.length){finish();}else show();},1300);
+  }
+  function save(final){return fetch(API+"/hd",{method:"POST",keepalive:true,headers:{"Content-Type":"application/json"},body:JSON.stringify({proj:PROJ,lid:lid,who:who.value.trim()||"匿名",role:role,picks:picks})}).catch(function(){});}
+  function finish(){
+    audio.pause(); document.getElementById("bar").style.width="100%"; document.getElementById("cnt").textContent="完成";
+    document.getElementById("duel").hidden=true; document.getElementById("done").hidden=false;
+    var w={}; picks.forEach(function(x){w[x.w]=(w[x.w]||0)+1;});
+    var top=Object.keys(w).sort(function(a,b){return w[b]-w[a];})[0];
+    document.getElementById("sum").textContent=top?"你选得最多的是 "+(byId[top].e||"")+" "+(T[top]||"")+"（"+w[top]+" 次）。":"";
+    save(1);
+  }
+})();
+</script>
+</body>
+</html>
