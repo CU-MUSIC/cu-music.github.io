@@ -90,6 +90,13 @@ body{isolation:isolate}
 .form input{border:0;border-radius:0;background:transparent}
 .form input+input{border-top:1px solid var(--line)}
 .small.c{text-align:center}
+.nrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.say{border:1px solid var(--line);background:rgba(20,19,17,.5);color:var(--fg);border-radius:16px;padding:6px 12px;font:500 14px var(--sans);cursor:pointer;white-space:nowrap;margin-top:6px}
+.say.on{border-color:var(--acc);color:var(--acc)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.sbox{width:100%;max-width:30rem;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;display:grid;gap:12px}
+.shd{display:grid;gap:2px}.shd b{font-size:18px;font-weight:600}
+.sbt{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}.sbt .go{height:58px}
 </style>
 </head>
 <body>
@@ -134,6 +141,7 @@ body{isolation:isolate}
 </div>
 </div>
 
+<div class="sheet" id="sheet" hidden><div class="sbox"><div class="shd"><b id="shT">说一句</b><span class="small">这句话会记在这首歌上</span></div><textarea id="shX" rows="3" maxlength="300" placeholder="比如：副歌一进来就抓耳 / 前面有点平"></textarea><div class="sbt"><button type="button" class="btn sm" id="shC">取消</button><button type="button" class="go" id="shOk">记下</button></div></div></div>
 <div class="btns" id="btns" hidden>
 <button class="btn no" id="bNo" aria-label="不适合做主打">✕ 不适合</button>
 <button class="btn yes" id="bYes" aria-label="能做主打">能做主打 ✓</button>
@@ -192,7 +200,7 @@ body{isolation:isolate}
   });
   // 没提交也记下来：每划一张就存一次（done=0），关页面时再补一次；提交后 done=1，服务器不会再被半截记录覆盖
   var sent=false, saveT=0;
-  function payload(done){return {proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done,secs:(function(){var o={};Object.keys(heard).forEach(function(k){o[k]=Math.round(heard[k]);});return o;})(),pos:(function(){var o={};Object.keys(votes).forEach(function(k){o[k]={p:at[k]||0,m:Math.round((far[k]||0)*10)/10};});return o;})()};}
+  function payload(done){return {proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done,secs:(function(){var o={};Object.keys(heard).forEach(function(k){o[k]=Math.round(heard[k]);});return o;})(),pos:(function(){var o={};Object.keys(votes).forEach(function(k){o[k]={p:at[k]||0,m:Math.round((far[k]||0)*10)/10};});return o;})(),cm:cm};}
   function post(done,keep){return fetch(API+"/hv",{method:"POST",keepalive:!!keep,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload(done))});}
   function autosave(){if(sent)return;clearTimeout(saveT);saveT=setTimeout(function(){post(0).catch(function(){});},800);}
   function flush(){if(!sent&&Object.keys(votes).length){clearTimeout(saveT);post(0,true).catch(function(){});}}
@@ -200,17 +208,31 @@ body{isolation:isolate}
   window.addEventListener("pagehide",flush);
   function label(k){return String(k+1).padStart(2,"0");}
   var RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var back=null, dirs={}, heard={}, far={}, at={};
+  var back=null, dirs={}, heard={}, far={}, at={}, cm={};
   var HINT="循环播放 · 点波形可以跳着听";
   function makeCard(k,cls){
     var c=CLIPS[order[k]], el=document.createElement("div");
     el.className="card"+(cls?" "+cls:"");
     var w="";(c.p||[]).forEach(function(v){w+='<span style="height:'+Math.max(4,v*100)+'%"></span>';});
-    el.innerHTML='<div><div class="num">'+label(k)+'<small>/ '+CLIPS.length+'</small></div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
+    el.innerHTML='<div><div class="nrow"><div class="num">'+label(k)+'<small>/ '+CLIPS.length+'</small></div><button type="button" class="say">'+(cm[c.id]?'✎ 改一句':'✎ 说一句')+'</button></div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
+    el.dataset.id=c.id; var sb=el.querySelector(".say"); if(cm[c.id])sb.classList.add("on");
+    sb.addEventListener("pointerdown",function(e){e.stopPropagation();});
+    sb.onclick=function(e){e.stopPropagation();openSay(el,c.id,k);};
     return el;
   }
   // 先强制排版再改 class，过渡才会生效；不用 rAF，后台页面里 rAF 会被暂停
   function raf2(fn){void stage.offsetWidth;setTimeout(fn,20);}
+  // 每首单独说一句：记在这首歌上，结果里直接显示在歌名下面
+  var shId=null;
+  function openSay(el,id,k){shId=id;document.getElementById("shT").textContent="对 "+label(k)+" 说一句";var x=document.getElementById("shX");x.value=cm[id]||"";document.getElementById("sheet").hidden=false;setTimeout(function(){x.focus();},50);}
+  document.getElementById("shC").onclick=function(){document.getElementById("sheet").hidden=true;};
+  document.getElementById("shOk").onclick=function(){
+    var v=document.getElementById("shX").value.trim().slice(0,300);
+    if(v)cm[shId]=v; else delete cm[shId];
+    document.getElementById("sheet").hidden=true;
+    stage.querySelectorAll(".card").forEach(function(c){if(c.dataset.id===shId){var b=c.querySelector(".say");b.textContent=v?"✎ 改一句":"✎ 说一句";b.classList.toggle("on",!!v);}});
+    autosave();
+  };
   function addBack(){
     if(back){back.remove();back=null;}
     if(pos+1>=CLIPS.length)return;
@@ -344,7 +366,7 @@ body{isolation:isolate}
   };
   document.getElementById("bUn").onclick=function(){if(cur)undo();};
   document.getElementById("bRe").onclick=function(){if(cur){audio.currentTime=0;audio.play().catch(function(){});}};
-  document.addEventListener("keydown",function(e){if(!cur)return;if(e.key==="ArrowRight")decide(true);if(e.key==="ArrowLeft")decide(false);});
+  document.addEventListener("keydown",function(e){if(!cur||!document.getElementById("sheet").hidden||/TEXTAREA|INPUT/.test((e.target||{}).tagName))return;if(e.key==="ArrowRight")decide(true);if(e.key==="ArrowLeft")decide(false);});
   var best=null;
   function finish(){ cur=null; hearId=null; gate(); document.getElementById("bEnd").hidden=true; document.getElementById("bBack").textContent=early?"↶ 回去接着听":"↶ 撤回最后一首";
     audio.pause(); cancelAnimationFrame(raf);

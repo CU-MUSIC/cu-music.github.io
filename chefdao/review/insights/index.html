@@ -233,6 +233,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .hvr .rk{font-variant-numeric:tabular-nums;opacity:.5;font-size:14px;text-align:right}
 .hvs{display:flex;height:6px;border-radius:3px;background:rgba(236,234,230,.06);overflow:hidden;margin:6px 0 4px}.hvs i{display:block;height:100%}.hvs .y{background:#8fcf9f}.hvs .x{background:rgba(224,120,110,.45)}
 .hvr .star{font-size:14px;color:#d9bf8c;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hvnm{color:#d9bf8c;opacity:.85}.hvc{display:block;font-size:13px;opacity:.85;margin-top:2px}.hvc b{font-weight:600;color:#d9bf8c}.hvdc{margin-top:6px;display:flex;flex-direction:column}
 .hvq{display:flex;flex-direction:column;gap:2px;margin-top:4px}.hvq .y{color:#8fcf9f}.hvq .x{opacity:.65}
 .hvn em{opacity:.9!important;font-size:14px!important;line-height:1.6}.hvn b{font-weight:600;color:#d9bf8c}
 .hvl>.hvd{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:1px dashed rgba(236,234,230,.12)}
@@ -434,7 +435,7 @@ button.av{cursor:pointer;padding:0}
 <script src="work.js?v=261115c"></script>
 <script>
 (() => {
-const BUILD = '261117.0100';
+const BUILD = '261117.0130';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1649,6 +1650,10 @@ function openProject(slug) {
     // 排序：被选「最想听完整版」的票数 → 右滑人数 → 右滑比例
     const list = Object.values(st).sort((a, b) => b.best - a.best || b.yes - a.yes || (b.yes / (b.seen || 1)) - (a.yes / (a.seen || 1)));
     const pc = (a, b) => b ? Math.round(a / b * 100) : 0;
+    // 留言里写的 01、04 是这个人自己听到的顺序：按他的 ord 换算成歌名
+    const ann = r => esc(r.note).replace(/(^|[^0-9])(0[1-9]|1[0-6])(?![0-9])/g, (m, a, d) => { const id = (r.ord || [])[+d - 1]; return a + d + (id && names[id] ? '<span class="hvnm">（' + esc(names[id]) + '）</span>' : ''); });
+    const cmBy = {}; rows.forEach(r => Object.keys(r.cm || {}).forEach(id => { (cmBy[id] = cmBy[id] || []).push({ who: r.who || '没填名字', t: r.cm[id], y: (r.votes || {})[id] }); }));
+    const cmH = id => (cmBy[id] || []).map(c => `<span class="hvc"><b>${esc(c.who)}</b>${c.y === 1 ? '（✓）' : c.y === 0 ? '（✕）' : ''}：${esc(c.t)}</span>`).join('');
     const live = list.filter(s => s.yes > 0 || s.best > 0), dead = list.filter(s => !s.yes && !s.best && s.seen), top = live[0];
     const nd = rows.filter(r => r.done !== 0).length;
     $p('hvSum').textContent = n ? nd + ' 人投完' + (n - nd ? ' · ' + (n - nd) + ' 人没听完' : '') : '还没人投';
@@ -1656,9 +1661,9 @@ function openProject(slug) {
     $p('hvList').innerHTML = n ? `<div class="hvtop"><span class="k">${tie.length > 1 ? '并列领先' : n < 5 ? '目前领先' : '主打候选'}</span><b>${top ? tie.map(s => esc(s.t)).join(' / ') : '还没有'}</b>`
         + (top ? `<em>${top.best} 人最想听完整版 · ${top.yes}/${top.seen} 人右滑</em>` : '')
         + (n < 5 ? `<em class="warn">才 ${n} 人投，至少 5 人再下结论</em>` : '') + '</div>'
-      + live.map((s, i) => `<div class="hvr"><span class="rk">${i + 1}</span><span class="n">${esc(s.t)}<span class="hvs"><i class="y" style="width:${pc(s.yes, n)}%"></i><i class="x" style="width:${pc(s.seen - s.yes, n)}%"></i></span><em>右滑 ${s.yes}/${s.seen}${s.seen ? '（' + pc(s.yes, s.seen) + '%）' : ''}${s.pn ? ' · 平均第 ' + Math.round(s.p / s.pn) + ' 秒划，最远到 ' + Math.round(s.m / s.pn) + ' 秒' : s.sn ? ' · 平均听 ' + Math.round(s.sec / s.sn) + ' 秒' : ''}</em></span>${s.best ? `<span class="star">★ ${s.best}</span>` : '<span></span>'}</div>`).join('')
-      + (rows.some(r => r.note) ? `<div class="hvd hvn"><span class="k">想说的话 · ${rows.filter(r => r.note).length} 条</span>${rows.filter(r => r.note).map(r => `<em><b>${esc(r.who || '没填名字')}</b>：${esc(r.note)}</em>`).join('')}</div>` : '')
-      + (dead.length ? `<div class="hvd"><span class="k">没人右滑 · ${dead.length} 首</span><em>${dead.map(s => esc(s.t)).join('、')}</em></div>` : '')
+      + live.map((s, i) => `<div class="hvr"><span class="rk">${i + 1}</span><span class="n">${esc(s.t)}<span class="hvs"><i class="y" style="width:${pc(s.yes, n)}%"></i><i class="x" style="width:${pc(s.seen - s.yes, n)}%"></i></span>${cmH(s.id)}<em>右滑 ${s.yes}/${s.seen}${s.seen ? '（' + pc(s.yes, s.seen) + '%）' : ''}${s.pn ? ' · 平均第 ' + Math.round(s.p / s.pn) + ' 秒划，最远到 ' + Math.round(s.m / s.pn) + ' 秒' : s.sn ? ' · 平均听 ' + Math.round(s.sec / s.sn) + ' 秒' : ''}</em></span>${s.best ? `<span class="star">★ ${s.best}</span>` : '<span></span>'}</div>`).join('')
+      + (rows.some(r => r.note) ? `<div class="hvd hvn"><span class="k">想说的话 · ${rows.filter(r => r.note).length} 条</span>${rows.filter(r => r.note).map(r => `<em><b>${esc(r.who || '没填名字')}</b>：${ann(r)}${names[r.best] ? '<span class="hvnm"> · 最想听 ' + esc(names[r.best]) + '</span>' : ''}</em>`).join('')}</div>` : '')
+      + (dead.length ? `<div class="hvd"><span class="k">没人右滑 · ${dead.length} 首</span><em>${dead.map(s => esc(s.t)).join('、')}</em>${dead.filter(s => cmBy[s.id]).map(s => `<div class="hvdc"><b>${esc(s.t)}</b>${cmH(s.id)}</div>`).join('')}</div>` : '')
       + `<details class="hvp"><summary>每个人投了什么</summary>${rows.map(r => `<div><b>${esc(r.who || '没填名字')}${r.done === 0 ? '<i style="font-style:normal;opacity:.5;font-weight:400"> · 没听完（听了 ' + Object.keys(r.votes || {}).length + ' 首）</i>' : ''}</b><em>最想听：${esc(names[r.best] || '没选')} · 右滑 ${Object.values(r.votes || {}).filter(Boolean).length} 首 · ${new Date(r.at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</em>${r.note ? `<em>「${esc(r.note)}」</em>` : ''}${r.pos && Object.keys(r.pos).length ? `<em class="hvq">${(r.ord && r.ord.length ? r.ord : Object.keys(r.votes || {})).filter(id => id in (r.votes || {})).map(id => `<span class="${r.votes[id] ? 'y' : 'x'}">${r.votes[id] ? '✓' : '✕'} ${esc(names[id] || id)}${r.pos[id] ? ' · 第 ' + Math.round(r.pos[id].p) + ' 秒划，最远 ' + Math.round(r.pos[id].m) + ' 秒' : ''}${r.secs && r.secs[id] != null ? ' · 共听 ' + r.secs[id] + ' 秒' : ''}</span>`).join('')}</em>` : `<em>${Object.keys(r.votes || {}).filter(id => r.votes[id]).map(id => esc(names[id] || id)).join('、') || '一首都没右滑'}</em>`}</div>`).join('')}</details>` : '<div class="dim">发链接给朋友，投完这里会显示每首的主打概率</div>';
   } catch (e) { $p('hvSum').textContent = '查询失败'; } };
   if (hv) {

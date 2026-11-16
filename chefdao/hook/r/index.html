@@ -40,6 +40,7 @@ body::after{content:"";position:fixed;inset:-40px;background:url("https://cumusi
 body::before{content:"";position:fixed;inset:0;background:radial-gradient(120% 80% at 50% 0%,rgba(20,19,17,.2),var(--bg) 70%);z-index:-1;pointer-events:none}
 body{isolation:isolate}
 .card{background:rgba(29,27,24,.82)}
+.nm{color:var(--acc);opacity:.85}.cm{font-size:14px;color:var(--fg);opacity:.85;margin-top:4px}.cm b{color:var(--acc);font-weight:600}
 </style>
 </head>
 <body>
@@ -68,7 +69,10 @@ body{isolation:isolate}
     var rows=j.rows||[], n=rows.length, st={};
     Object.keys(names).forEach(function(id){st[id]={t:names[id],yes:0,seen:0,best:0,sec:0,sn:0,p:0,m:0,pn:0};});
     rows.forEach(function(r){Object.keys(r.votes||{}).forEach(function(id){if(st[id]){st[id].seen++;st[id].yes+=r.votes[id]?1:0;}});if(st[r.best])st[r.best].best++;Object.keys(r.secs||{}).forEach(function(id){if(st[id]){st[id].sec+=r.secs[id];st[id].sn++;}});Object.keys(r.pos||{}).forEach(function(id){if(st[id]){st[id].p+=r.pos[id].p;st[id].m+=r.pos[id].m;st[id].pn++;}});});
-    var list=Object.keys(st).map(function(id){return st[id];}).sort(function(a,b){return b.best-a.best||b.yes-a.yes||(b.yes/(b.seen||1))-(a.yes/(a.seen||1));});
+    var list=Object.keys(st).map(function(id){st[id].id=id;return st[id];}).sort(function(a,b){return b.best-a.best||b.yes-a.yes||(b.yes/(b.seen||1))-(a.yes/(a.seen||1));});
+    function ann(r){return esc(r.note).replace(/(^|[^0-9])(0[1-9]|1[0-6])(?![0-9])/g,function(m,a,d){var id=(r.ord||[])[+d-1];return a+d+(id&&names[id]?'<span class="nm">（'+esc(names[id])+'）</span>':'');});}
+    var cmBy={}; rows.forEach(function(r){Object.keys(r.cm||{}).forEach(function(id){(cmBy[id]=cmBy[id]||[]).push({who:r.who||"朋友",t:r.cm[id],y:(r.votes||{})[id]});});});
+    function cmH(id){return (cmBy[id]||[]).map(function(c){return '<div class="cm"><b>'+esc(c.who)+'</b>'+(c.y===1?'（✓）':c.y===0?'（✕）':'')+'：'+esc(c.t)+'</div>';}).join("");}
     var live=list.filter(function(s){return s.yes||s.best;}), dead=list.filter(function(s){return !s.yes&&!s.best&&s.seen;}), top=live[0];
     var tie=top?live.filter(function(s){return s.best===top.best&&s.yes===top.yes;}):[];
     var nd=rows.filter(function(r){return r.done!==0;}).length;
@@ -80,11 +84,11 @@ body{isolation:isolate}
       +(n<5?'<span class="warn">才 '+n+' 人投，人多一点再下结论</span>':'')+'</div>';
     h+='<div class="legend"><span><span class="sw" style="background:var(--yes)"></span>能做主打</span><span><span class="sw" style="background:rgba(217,71,60,.55)"></span>不适合</span><span><span class="star">★</span> 最想听完整版</span></div>';
     live.forEach(function(s,i){
-      h+='<div class="card row"><span class="rk">'+(i+1)+'</span><div><div class="t">'+esc(s.t)+'</div><div class="bar"><i class="y" style="width:'+pc(s.yes,n)+'%"></i><i class="x" style="width:'+pc(s.seen-s.yes,n)+'%"></i></div><div class="m">'+s.yes+'/'+s.seen+' 人觉得能做主打'+(s.pn?' · 平均第 '+Math.round(s.p/s.pn)+' 秒划，最远到 '+Math.round(s.m/s.pn)+' 秒':s.sn?' · 平均听 '+Math.round(s.sec/s.sn)+' 秒':'')+'</div></div>'+(s.best?'<span class="star">★ '+s.best+'</span>':'<span></span>')+'</div>';
+      h+='<div class="card row"><span class="rk">'+(i+1)+'</span><div><div class="t">'+esc(s.t)+'</div><div class="bar"><i class="y" style="width:'+pc(s.yes,n)+'%"></i><i class="x" style="width:'+pc(s.seen-s.yes,n)+'%"></i></div><div class="m">'+s.yes+'/'+s.seen+' 人觉得能做主打'+(s.pn?' · 平均第 '+Math.round(s.p/s.pn)+' 秒划，最远到 '+Math.round(s.m/s.pn)+' 秒':s.sn?' · 平均听 '+Math.round(s.sec/s.sn)+' 秒':'')+'</div>'+cmH(s.id)+'</div>'+(s.best?'<span class="star">★ '+s.best+'</span>':'<span></span>')+'</div>';
     });
     var notes=rows.filter(function(r){return r.note;});
-    if(notes.length){h+='<div class="card note"><span class="k">大家想说的话 · '+notes.length+' 条</span>'+notes.map(function(r){return '<div><b>'+esc(r.who||"朋友")+'</b>：'+esc(r.note)+'</div>';}).join("")+'</div>';}
-    if(dead.length){h+='<div class="card dead"><span class="k">没人选的 · '+dead.length+' 首</span><div>'+dead.map(function(s){return esc(s.t);}).join("、")+'</div></div>';}
+    if(notes.length){h+='<div class="card note"><span class="k">大家想说的话 · '+notes.length+' 条</span>'+notes.map(function(r){return '<div><b>'+esc(r.who||"朋友")+'</b>：'+ann(r)+(names[r.best]?'<span class="nm"> · 最想听 '+esc(names[r.best])+'</span>':'')+'</div>';}).join("")+'</div>';}
+    if(dead.length){h+='<div class="card dead"><span class="k">没人选的 · '+dead.length+' 首</span><div>'+dead.map(function(s){return esc(s.t);}).join("、")+'</div>'+dead.filter(function(s){return cmBy[s.id];}).map(function(s){return '<div style="margin-top:8px"><b style="color:var(--fg)">'+esc(s.t)+'</b>'+cmH(s.id)+'</div>';}).join("")+'</div>';}
     h+='<details><summary>每个人投了什么</summary>'+rows.map(function(r){
       var y=Object.keys(r.votes||{}).filter(function(id){return r.votes[id];});
       return '<div class="card p"><b>'+esc(r.who||"朋友")+(r.done===0?'<span style="color:var(--mute);font-weight:400"> · 没听完</span>':'')+'</b><em>最想听：'+esc(names[r.best]||"没选")+'</em><em>能做主打：'+(y.map(function(id){return esc(names[id]||id);}).join("、")||"一首都没选")+'</em></div>';
