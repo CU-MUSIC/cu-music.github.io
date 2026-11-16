@@ -1662,9 +1662,9 @@ function openProject(slug) {
     // 留言里的 emoji（🌙、🦋…）每首固定，也换算成歌名
     const emo = {}; Object.keys(names).forEach(id => { const m = /^(\S+)\s+(.+)$/.exec(names[id]); if (m) emo[m[1].replace(/\uFE0F/g, '')] = m[2]; });
     const emoRe = Object.keys(emo).length ? new RegExp('(' + Object.keys(emo).sort((a, b) => b.length - a.length).map(e => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\uFE0F?', 'gu') : null;
-    const ann = r => { let t = esc(r.note).replace(/(^|[^0-9])(0[1-9]|1[0-6])(?![0-9])/g, (m, a, d) => { const id = (r.ord || [])[+d - 1]; return a + d + (id && names[id] ? '<span class="hvnm">（' + esc(names[id]) + '）</span>' : ''); });
-      if (emoRe) t = t.replace(emoRe, (m, e) => e + '<span class="hvnm">（' + esc(emo[e]) + '）</span>');
-      return t; };
+    const ann = r => { let t = esc(r.note);
+      if (emoRe) t = t.replace(emoRe, (m, e) => e + '<span class="hvnm">（' + esc(emo[e]) + '）</span>');   // 先换 emoji，再换编号，免得编号带出来的 emoji 被换两次
+      return t.replace(/(^|[^0-9])(0[1-9]|1[0-6])(?![0-9])/g, (m, a, d) => { const id = (r.ord || [])[+d - 1]; return a + d + (id && names[id] ? '<span class="hvnm">（' + esc(names[id]) + '）</span>' : ''); }); };
     const cmBy = {}; rows.forEach(r => Object.keys(r.cm || {}).forEach(id => { (cmBy[id] = cmBy[id] || []).push({ who: r.who || '没填名字', t: r.cm[id], y: (r.votes || {})[id] }); }));
     const cmH = id => (cmBy[id] || []).map(c => `<span class="hvc"><b>${esc(c.who)}</b>${c.y === 1 ? '（✓）' : c.y === 0 ? '（✕）' : ''}：${esc(c.t)}</span>`).join('');
     const chips = `<div class="hvf">${[['', '全部 ' + allRows.length], ['fan', '🎧 普通听众 ' + roleN('fan')], ['pro', '🎚 音乐人 ' + roleN('pro')]].map(x => `<button type="button" data-hr="${x[0]}" class="${hvRole === x[0] ? 'on' : ''}">${x[1]}</button>`).join('')}</div>`;
