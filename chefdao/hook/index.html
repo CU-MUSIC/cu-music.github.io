@@ -107,6 +107,19 @@ body{isolation:isolate}
 .ro{height:52px;border-radius:14px;border:1px solid var(--line);background:rgba(29,27,24,.75);color:var(--fg);font:500 16px var(--sans);cursor:pointer}
 .ro.on{border-color:var(--acc);color:var(--acc);background:#2a2414}
 .ro:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.r2{display:grid;gap:8px;margin-top:10px;padding:16px;border:1px solid rgba(242,179,27,.4);border-radius:16px;background:rgba(29,27,24,.75)}.r2 b{font-size:18px}
+#duel{align-content:start;gap:14px}.q{font-size:20px;text-align:center}
+.vs{display:grid;gap:12px}
+.side{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;transition:border-color .2s,transform .25s,opacity .3s}
+.side.playing{border-color:rgba(242,179,27,.6)}.side.win{border-color:var(--acc);transform:scale(1.02)}.side.lose{opacity:.45}
+.side .e{font-size:44px;line-height:1;grid-row:span 2}
+.side .st{font-size:18px;font-weight:600;filter:blur(8px);opacity:.75;transition:filter .5s,opacity .5s;min-height:1.4em}.side .st.show{filter:none;opacity:1;color:var(--acc)}
+.side .meta{font-size:13px;color:var(--mute);font-family:var(--mono)}
+.bar2{grid-column:1/-1;height:4px;background:var(--dim);border-radius:2px;overflow:hidden}.bar2 i{display:block;height:100%;width:0;background:var(--acc)}
+.acts{grid-column:1/-1;display:grid;grid-template-columns:1fr 1.3fr;gap:10px;margin-top:4px}
+.pl,.dpk{height:52px;border-radius:14px;font:600 16px var(--sans);cursor:pointer}
+.pl{border:1px solid var(--line);background:transparent;color:var(--fg)}
+.dpk{border:0;background:var(--acc);color:#1a1408}.dpk:disabled{background:transparent;color:var(--mute);box-shadow:inset 0 0 0 1px var(--line)}
 </style>
 </head>
 <body>
@@ -151,6 +164,17 @@ body{isolation:isolate}
 <p id="sum"></p>
 <button class="go" id="more" hidden>再听剩下的 <span id="moreN"></span> 首</button>
 <p class="small" id="moreT" hidden>不想听也没关系，已经交上了。</p>
+<div class="r2" id="r2" hidden><b>还有 3 分钟吗？第二轮：二选一</b><span class="small" id="r2T">第一轮选出了几首候选，每次给你两首，选更适合做主打的那首。</span><button class="go" id="r2Go">开始第二轮</button></div>
+</div>
+<div class="screen" id="duel" hidden>
+<div class="q">哪首更适合做主打？</div>
+<div class="vs" id="vs"></div>
+<p class="small c" id="dtip">两首都听 5 秒以上就能选</p>
+</div>
+<div class="screen" id="ddone" hidden>
+<h1>第二轮也<em>收到了</em></h1>
+<p id="dsum"></p>
+<p class="small">谢谢你帮忙，可以关掉页面了。</p>
 </div>
 </div>
 
@@ -386,8 +410,64 @@ body{isolation:isolate}
     stage.querySelectorAll(".card").forEach(function(n){n.remove();}); cur=null; back=null;
     if(early){early=false;next();} else undo();
   };
+
+  // ── 第二轮：交完第一轮直接接着做，不用另发链接 ──
+  var dIds=[], pairs=[], pi=0, picks=[], dheard={}, dplaying=null, dLast=0, dT0=0, dSent=false;
+  function checkR2(){
+    if(dSent)return;
+    fetch(API+"/hd/cfg?proj="+PROJ).then(function(r){return r.json();}).then(async function(j){
+      dIds=(j&&j.ids||[]).filter(function(id){return CLIPS.some(function(c){return c.id===id;});});
+      if(dIds.length<2)return;
+      document.getElementById("r2T").textContent="第一轮选出了 "+dIds.length+" 首候选，每次两首选一首，一共 "+(dIds.length*(dIds.length-1)/2)+" 次。";
+      document.getElementById("r2").hidden=false;
+    }).catch(function(){});
+  }
+  function cOf(id){for(var i=0;i<CLIPS.length;i++)if(CLIPS[i].id===id)return {c:CLIPS[i],i:i};}
+  document.getElementById("r2Go").onclick=function(){
+    pairs=[]; for(var a=0;a<dIds.length;a++)for(var b=a+1;b<dIds.length;b++)pairs.push(Math.random()<.5?[dIds[a],dIds[b]]:[dIds[b],dIds[a]]);
+    shuf(pairs); pi=0; picks=[];
+    dIds.forEach(function(id){load(cOf(id).i);});
+    audio.play().catch(function(){});
+    document.getElementById("done").hidden=true; document.getElementById("duel").hidden=false;
+    document.getElementById("bEnd").hidden=true; dShow();
+  };
+  audio.addEventListener("timeupdate",function(){
+    if(!dplaying||document.getElementById("duel").hidden)return;
+    var ct=audio.currentTime, d=ct-dLast; dLast=ct;
+    if(!audio.paused&&d>0&&d<1.5){var k=pi+":"+dplaying; dheard[k]=(dheard[k]||0)+d; dGate();}
+    var el=document.querySelector('.side[data-id="'+dplaying+'"] .bar2 i'); if(el)el.style.width=Math.min(100,ct/18*100)+"%";
+  });
+  function dReady(id){return (dheard[pi+":"+id]||0)>=MIN;}
+  function dGate(){var p=pairs[pi]; if(!p)return; var ok=dReady(p[0])&&dReady(p[1]);
+    document.querySelectorAll(".dpk").forEach(function(b){if(!b.dataset.done)b.disabled=!ok;});
+    document.getElementById("dtip").textContent=ok?"选一首":"两首都听 "+MIN+" 秒以上就能选";
+    p.forEach(function(id){var m=document.querySelector('.side[data-id="'+id+'"] .meta');if(m)m.textContent=dReady(id)?"✓ 听过了":"还要听 "+Math.ceil(MIN-(dheard[pi+":"+id]||0))+" 秒";});}
+  function dPlay(id){
+    document.querySelectorAll(".side").forEach(function(sd){var on=sd.getAttribute("data-id")===id;sd.classList.toggle("playing",on);sd.querySelector(".pl").textContent=on?"⏸ 暂停":"▶ 播放";});
+    if(dplaying===id&&!audio.paused){audio.pause();document.querySelector('.side[data-id="'+id+'"] .pl').textContent="▶ 播放";return;}
+    dplaying=id; load(cOf(id).i).then(function(u){if(dplaying!==id)return; if(audio.src!==u){audio.src=u;audio.currentTime=0;dLast=0;} audio.play().catch(function(){});});
+  }
+  function dShow(){
+    var p=pairs[pi]; cnt.textContent="第二轮 "+(pi+1)+" / "+pairs.length; bar.style.width=(pi/pairs.length*100)+"%";
+    var vs=document.getElementById("vs");
+    vs.innerHTML=p.map(function(id){var c=cOf(id).c;return '<div class="side" data-id="'+id+'"><span class="e">'+(c.e||"")+'</span><div class="st">'+(T[id]||"").replace(/[&<>]/g,"")+'</div><div class="meta">还要听 '+MIN+' 秒</div><div class="bar2"><i></i></div><div class="acts"><button type="button" class="pl">▶ 播放</button><button type="button" class="dpk" disabled>选这首</button></div></div>';}).join("");
+    vs.querySelectorAll(".side").forEach(function(sd){var id=sd.getAttribute("data-id");sd.querySelector(".pl").onclick=function(){dPlay(id);};sd.querySelector(".dpk").onclick=function(){dChoose(id);};});
+    dT0=Date.now(); dplaying=null; audio.pause(); dPlay(p[0]); dGate();
+  }
+  function dSave(){return fetch(API+"/hd",{method:"POST",keepalive:true,headers:{"Content-Type":"application/json"},body:JSON.stringify({proj:PROJ,lid:lid,who:who.value.trim()||"匿名",role:role,picks:picks})}).catch(function(){});}
+  function dChoose(w){
+    var p=pairs[pi]; picks.push({a:p[0],b:p[1],w:w,t:Math.round((Date.now()-dT0)/1000)});
+    document.querySelectorAll(".side").forEach(function(sd){var id=sd.getAttribute("data-id");sd.classList.add(id===w?"win":"lose");sd.querySelector(".st").classList.add("show");sd.querySelectorAll("button").forEach(function(b){b.disabled=true;b.dataset.done=1;});});
+    dSave();
+    setTimeout(function(){pi++; if(pi<pairs.length){dShow();return;}
+      audio.pause(); dplaying=null; dSent=true; bar.style.width="100%"; cnt.textContent="完成";
+      var wn={}; picks.forEach(function(x){wn[x.w]=(wn[x.w]||0)+1;}); var top=Object.keys(wn).sort(function(a,b){return wn[b]-wn[a];})[0];
+      document.getElementById("dsum").textContent=top?"你选得最多的是 "+(cOf(top).c.e||"")+" "+(T[top]||"")+"（"+wn[top]+" 次）。":"";
+      document.getElementById("duel").hidden=true; document.getElementById("ddone").hidden=false;
+    },RM?400:1300);
+  }
   document.getElementById("more").onclick=function(){
-    order=order.concat(rest); rest=[]; sent=false; best=null; early=false;
+    order=order.concat(rest); rest=[]; sent=false; best=null; early=false; document.getElementById("r2").hidden=true;
     document.getElementById("done").hidden=true; document.getElementById("btns").hidden=false;
     document.getElementById("send").disabled=true;
     next();
@@ -421,6 +501,7 @@ body{isolation:isolate}
         document.getElementById("pick").hidden=true;
         document.getElementById("sum").textContent="你右滑了 "+yes+" 首。再提交一次会覆盖这次的结果。";
         document.getElementById("done").hidden=false;
+        checkR2();
         var mb=document.getElementById("more"); mb.hidden=!rest.length; document.getElementById("moreT").hidden=!rest.length; document.getElementById("moreN").textContent=rest.length;
         bar.style.width="100%"; cnt.textContent="完成";
       }).catch(function(){e2.textContent="没提交上，检查一下网络再点一次"; btn.disabled=false;});
