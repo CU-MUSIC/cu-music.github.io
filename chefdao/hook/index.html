@@ -47,17 +47,18 @@ body{background:var(--bg);color:var(--fg);font:17px/1.6 var(--sans);overflow:hid
 .btn:focus-visible,.go:focus-visible,.pk:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .btn.no{color:var(--no)}
 .btn.yes{color:var(--acc);border-color:var(--acc)}
-.screen{position:absolute;inset:0;display:grid;align-content:center;gap:18px}
+.screen{position:absolute;inset:0;display:grid;align-content:center;gap:18px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#pick{align-content:start;padding-block:8px;gap:14px}
 .screen h1{font-size:30px;font-weight:400;line-height:1.35;margin:0}
 .screen h1 em{font-style:normal;color:var(--acc)}
 .screen p{margin:0;color:var(--mute)}
-.rules{display:grid;gap:10px;font-size:16px}
-.rules div{display:flex;gap:10px;align-items:center}
-.rules b{display:inline-flex;width:34px;height:34px;border-radius:17px;align-items:center;justify-content:center;border:1px solid var(--line);font-weight:500}
 input{font:17px var(--sans);background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;outline:none;width:100%;-webkit-user-select:text;user-select:text}
-input:focus{border-color:var(--acc)}
+input:focus,textarea:focus{border-color:var(--acc)}
+textarea{font:16px/1.6 var(--sans);background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none;width:100%;resize:none;-webkit-user-select:text;user-select:text}
+textarea::placeholder,input::placeholder{color:var(--mute)}
 .go{height:56px;border-radius:28px;border:0;background:var(--acc);color:#1a1408;font:600 17px var(--sans);cursor:pointer}
-.go:disabled{opacity:.4}
+.go:disabled{background:transparent;color:var(--mute);box-shadow:inset 0 0 0 1px var(--line)}
+.go:not(:disabled){box-shadow:0 10px 30px rgba(242,179,27,.22)}
 .err{color:var(--no)!important;font-size:15px;min-height:1.4em}
 .picks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .pk{height:60px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:300 22px var(--sans);cursor:pointer}
@@ -65,37 +66,61 @@ input:focus{border-color:var(--acc)}
 .small{font-size:14px;color:var(--mute)}
 .lk{color:var(--acc);font-size:12px;letter-spacing:.04em}.lk.shake{animation:sh .4s}
 @keyframes sh{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-.cover{width:96px;height:120px;border-radius:12px;object-fit:cover;border:1px solid var(--line)}
 .tap{margin-top:6px;height:52px;padding:0 22px;border-radius:26px;border:0;background:var(--acc);color:#1a1408;font:600 17px var(--sans);cursor:pointer}
 [hidden]{display:none!important}
+
+/* 开场：封面虚化铺底 + 封面和专辑名并排 */
+body::after{content:"";position:fixed;inset:-40px;background:url("https://cumusic-audio.b-cdn.net/cv/43mxcv6g/SHpBPXJb4b.jpg") center 30%/cover;filter:blur(48px) saturate(1.1);opacity:.22;z-index:-1;pointer-events:none}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(120% 80% at 50% 0%,rgba(20,19,17,.2),var(--bg) 70%);z-index:-1;pointer-events:none}
+body{isolation:isolate}
+#intro{gap:16px}
+.hero{display:flex;gap:18px;align-items:flex-end}
+.cover{width:132px;aspect-ratio:4/5;max-width:40%;border-radius:14px;object-fit:cover;box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 0 1px rgba(242,179,27,.35)}
+.htx{display:grid;gap:6px;padding-bottom:4px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mute);text-transform:uppercase}
+.album{font-size:30px;line-height:1.05;font-weight:800;letter-spacing:.02em;color:var(--fg)}
+#intro h1{font-size:26px;margin-top:6px}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.r{height:36px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;border-bottom:1px solid var(--line)}
+.r.no{color:var(--no)}.r.yes{color:var(--acc)}
+.form{display:grid;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(29,27,24,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.form input{border:0;border-radius:0;background:transparent}
+.form input+input{border-top:1px solid var(--line)}
+.small.c{text-align:center}
 </style>
 </head>
 <body>
 <div class="app">
 <div>
-<div class="top"><span>LIFE OF CHENIUS</span><span id="cnt">盲听</span></div>
+<div class="top"><span>CU MUSIC</span><span id="cnt">盲听</span></div>
 <div class="prog"><i id="bar"></i></div>
 </div>
 
 <div class="stage" id="stage">
 <div class="screen" id="intro">
-<img class="cover" src="https://cumusic-audio.b-cdn.net/cv/43mxcv6g/SHpBPXJb4b.jpg" alt="" onerror="this.remove()">
-<h1>帮忙选 <em>主打歌</em></h1>
-<p>每段从一首歌的 hook 开始。至少听 10 秒才能划，想多听就接着听。不告诉你歌名，顺序随机。</p>
-<div class="rules">
-<div><b style="color:var(--acc)">→</b>右滑：能做主打</div>
-<div><b style="color:var(--no)">←</b>左滑：不适合做主打</div>
+<div class="hero">
+<img class="cover" src="https://cumusic-audio.b-cdn.net/cv/43mxcv6g/SHpBPXJb4b.jpg" alt="LIFE OF CHENIUS 封面" onerror="this.remove()">
+<div class="htx">
+<span class="eyebrow">CheezeKkk · 首张专辑</span>
+<span class="album">LIFE OF<br>CHENIUS</span>
 </div>
+</div>
+<h1>帮忙选 <em>主打歌</em></h1>
+<p>每段从一首歌的 hook 开始，至少听 10 秒再决定。不告诉你歌名，顺序随机。</p>
+<div class="rules"><span class="r no">← 不适合</span><span class="r yes">能做主打 →</span></div>
+<div class="form">
 <input id="who" placeholder="你的名字" autocomplete="off" maxlength="20">
 <input id="pw" placeholder="密码" inputmode="numeric" autocomplete="off" maxlength="20">
+</div>
 <p class="err" id="err"></p>
 <button class="go" id="start" disabled>开始听</button>
-<p class="small">戴耳机听效果最好，大约 5 分钟。</p>
+<p class="small c">戴耳机效果最好 · 大约 5 分钟</p>
 </div>
 <div class="screen" id="pick" hidden>
 <h1>最后一个问题：<br>哪首你 <em>最想听完整版</em>？</h1>
 <p class="small">点一下可以再听一遍。</p>
 <div class="picks" id="picks"></div>
+<textarea id="note" maxlength="500" rows="3" placeholder="想说的话（可选）：哪首有感觉、哪里可以更好…"></textarea>
 <p class="err" id="err2"></p>
 <button class="go" id="send" disabled>提交</button>
 <button class="btn sm" id="bBack">↶ 撤回最后一首</button>
@@ -319,7 +344,7 @@ input:focus{border-color:var(--acc)}
   }
   document.getElementById("send").onclick=function(){
     var btn=this, e2=document.getElementById("err2"); btn.disabled=true; e2.textContent=""; audio.pause();
-    var body={proj:PROJ,lid:lid,who:who.value.trim(),votes:votes,best:best,order:order.map(function(i){return CLIPS[i].id;})};
+    var body={proj:PROJ,lid:lid,who:who.value.trim(),votes:votes,best:best,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;})};
     fetch(API+"/hv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
       .then(function(r){return r.json();}).then(function(j){
         if(!j.ok)throw 0;

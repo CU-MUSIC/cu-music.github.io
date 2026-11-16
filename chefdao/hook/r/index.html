@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#141311">
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<title>盲听结果 · LIFE OF CHENIUS</title>
+<style>
+/* 单栏：结论卡 → 排行 → 想说的话 → 没人右滑 → 每个人 */
+:root{--bg:#141311;--card:#1d1b18;--fg:#ece6d8;--mute:#9b9384;--line:#2f2b25;--acc:#f2b31b;--yes:#f2b31b;--no:#d9473c;color-scheme:dark;
+--sans:Inter,"PingFang SC","Noto Sans SC",-apple-system,sans-serif;--mono:ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 var(--sans)}
+main{max-width:34rem;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:grid;gap:14px}
+.top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--mute)}
+h1{font-size:26px;font-weight:400;margin:4px 0 0;line-height:1.35}
+.sub{color:var(--mute);font-size:15px;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.hero{border-color:rgba(242,179,27,.45);display:grid;gap:4px}
+.k{font-size:12px;letter-spacing:.08em;color:var(--mute)}
+.hero b{font-size:24px;font-weight:600;color:var(--acc);line-height:1.35}
+.warn{color:#e0a46a;font-size:14px}
+.row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center}
+.rk{color:var(--mute);font-variant-numeric:tabular-nums;text-align:right;font-size:15px}
+.t{font-weight:500}
+.bar{display:flex;height:7px;border-radius:4px;background:rgba(236,230,216,.06);overflow:hidden;margin:6px 0 3px}
+.bar i{display:block;height:100%}.bar .y{background:var(--yes)}.bar .x{background:rgba(217,71,60,.55)}
+.m{font-size:13px;color:var(--mute)}
+.star{color:var(--acc);font-variant-numeric:tabular-nums;white-space:nowrap}
+.list{display:grid;gap:8px}
+.note{display:grid;gap:2px;font-size:15px}.note b{color:var(--acc);font-weight:600}
+.dead{border-style:dashed;font-size:15px;color:var(--mute)}
+details{font-size:15px}summary{cursor:pointer;color:var(--mute);padding:4px 0}
+summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.p{margin-top:8px;display:grid;gap:2px}.p em{font-style:normal;color:var(--mute);font-size:14px}
+.legend{display:flex;gap:14px;font-size:13px;color:var(--mute)}.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+body::after{content:"";position:fixed;inset:-40px;background:url("https://cumusic-audio.b-cdn.net/cv/43mxcv6g/SHpBPXJb4b.jpg") center 30%/cover;filter:blur(48px);opacity:.18;z-index:-1;pointer-events:none}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(120% 80% at 50% 0%,rgba(20,19,17,.2),var(--bg) 70%);z-index:-1;pointer-events:none}
+body{isolation:isolate}
+.card{background:rgba(29,27,24,.82)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span>LIFE OF CHENIUS</span><span>盲听结果</span></div>
+<h1>大家怎么选主打</h1>
+<p class="sub" id="meta">正在读取…</p>
+<div id="out"></div>
+</main>
+<script>
+(function(){
+  var API="https://stats.cumusic.work", PROJ="lchenius", k=location.hash.slice(1);
+  var out=document.getElementById("out"), meta=document.getElementById("meta");
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function pc(a,b){return b?Math.round(a/b*100):0;}
+  if(!k){meta.textContent="链接不完整，找刀大厨要完整链接。";return;}
+  Promise.all([
+    fetch(API+"/hv/pub?proj="+PROJ+"&k="+encodeURIComponent(k)).then(function(r){return r.json();}),
+    fetch("key.bin",{cache:"no-store"}).then(function(r){return r.arrayBuffer();})
+  ]).then(async function(res){
+    var j=res[0], u8=new Uint8Array(res[1]);
+    if(!j.ok)throw 0;
+    var raw=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("hookr:"+k));
+    var ck=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+    var names=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:u8.subarray(0,12)},ck,u8.subarray(12))));
+    var rows=j.rows||[], n=rows.length, st={};
+    Object.keys(names).forEach(function(id){st[id]={t:names[id],yes:0,seen:0,best:0};});
+    rows.forEach(function(r){Object.keys(r.votes||{}).forEach(function(id){if(st[id]){st[id].seen++;st[id].yes+=r.votes[id]?1:0;}});if(st[r.best])st[r.best].best++;});
+    var list=Object.keys(st).map(function(id){return st[id];}).sort(function(a,b){return b.best-a.best||b.yes-a.yes||(b.yes/(b.seen||1))-(a.yes/(a.seen||1));});
+    var live=list.filter(function(s){return s.yes||s.best;}), dead=list.filter(function(s){return !s.yes&&!s.best&&s.seen;}), top=live[0];
+    var tie=top?live.filter(function(s){return s.best===top.best&&s.yes===top.yes;}):[];
+    meta.textContent=n?n+" 人听完投了票 · 更新于 "+new Date(Math.max.apply(null,rows.map(function(r){return r.at;}))).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"还没人投";
+    if(!n){out.innerHTML='<div class="card sub">还没有人投票，过两天再来看。</div>';return;}
+    var h='<div class="list">';
+    h+='<div class="card hero"><span class="k">'+(tie.length>1?"并列领先":n<5?"目前领先":"主打候选")+'</span><b>'+(top?tie.map(function(s){return esc(s.t);}).join(" / "):"还没有")+'</b>'
+      +(top?'<span class="m">'+top.best+' 人最想听完整版 · '+top.yes+'/'+top.seen+' 人觉得能做主打</span>':'')
+      +(n<5?'<span class="warn">才 '+n+' 人投，人多一点再下结论</span>':'')+'</div>';
+    h+='<div class="legend"><span><span class="sw" style="background:var(--yes)"></span>能做主打</span><span><span class="sw" style="background:rgba(217,71,60,.55)"></span>不适合</span><span><span class="star">★</span> 最想听完整版</span></div>';
+    live.forEach(function(s,i){
+      h+='<div class="card row"><span class="rk">'+(i+1)+'</span><div><div class="t">'+esc(s.t)+'</div><div class="bar"><i class="y" style="width:'+pc(s.yes,n)+'%"></i><i class="x" style="width:'+pc(s.seen-s.yes,n)+'%"></i></div><div class="m">'+s.yes+'/'+s.seen+' 人觉得能做主打</div></div>'+(s.best?'<span class="star">★ '+s.best+'</span>':'<span></span>')+'</div>';
+    });
+    var notes=rows.filter(function(r){return r.note;});
+    if(notes.length){h+='<div class="card note"><span class="k">大家想说的话 · '+notes.length+' 条</span>'+notes.map(function(r){return '<div><b>'+esc(r.who||"朋友")+'</b>：'+esc(r.note)+'</div>';}).join("")+'</div>';}
+    if(dead.length){h+='<div class="card dead"><span class="k">没人选的 · '+dead.length+' 首</span><div>'+dead.map(function(s){return esc(s.t);}).join("、")+'</div></div>';}
+    h+='<details><summary>每个人投了什么</summary>'+rows.map(function(r){
+      var y=Object.keys(r.votes||{}).filter(function(id){return r.votes[id];});
+      return '<div class="card p"><b>'+esc(r.who||"朋友")+'</b><em>最想听：'+esc(names[r.best]||"没选")+'</em><em>能做主打：'+(y.map(function(id){return esc(names[id]||id);}).join("、")||"一首都没选")+'</em></div>';
+    }).join("")+'</details>';
+    out.innerHTML=h+'</div>';
+  }).catch(function(){meta.textContent="打不开：链接不对，或者网络不好，刷新一下再试。";});
+})();
+</script>
+</body>
+</html>
