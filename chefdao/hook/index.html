@@ -109,7 +109,7 @@ body{isolation:isolate}
 </div>
 </div>
 <h1>帮忙选 <em>主打歌</em></h1>
-<p>每段从一首歌的 hook 开始，至少听 10 秒再决定。不告诉你歌名，顺序随机。</p>
+<p>每段从一首歌的 hook 开始，至少听 5 秒再决定。不告诉你歌名，顺序随机。</p>
 <div class="rules"><span class="r no">← 不适合</span><span class="r yes">能做主打 →</span></div>
 <div class="form">
 <input id="who" placeholder="你的名字（可以不填，匿名）" autocomplete="off" maxlength="20">
@@ -145,7 +145,7 @@ body{isolation:isolate}
 <script src="clips.js"></script>
 <script>
 (function(){
-  var API="https://stats.cumusic.work", PROJ="lchenius", CDN="https://cumusic-audio.b-cdn.net/ra/hooklc/v2-", MIN=10;
+  var API="https://stats.cumusic.work", PROJ="lchenius", CDN="https://cumusic-audio.b-cdn.net/ra/hooklc/v2-", MIN=5;
   var HV=window.HV, CLIPS=HV.clips, urls={}, key=null;
   var order=CLIPS.map(function(c,i){return i;});
   for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t;}
