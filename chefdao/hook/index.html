@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#18211d">
+<meta name="theme-color" content="#141311">
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
 <title>主打盲听 · CU MUSIC</title>
 <style>
 /* 一屏 app：顶栏进度 → 卡片堆 → 底部三个按钮 */
-:root{--bg:#18211d;--card:#1f2a25;--card2:#24302a;--fg:#d3d6ce;--mute:#8f9a93;--line:#2c3933;--acc:#8fb5a2;--no:#b58f8f;--dim:#3a4740;color-scheme:dark;
+:root{--bg:#141311;--card:#1d1b18;--card2:#24221e;--fg:#ece6d8;--mute:#9b9384;--line:#2f2b25;--acc:#f2b31b;--no:#d9473c;--dim:#3a362f;color-scheme:dark;
 --sans:Inter,"PingFang SC","Noto Sans SC",-apple-system,sans-serif;--mono:ui-monospace,Menlo,monospace}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -56,14 +56,17 @@ body{background:var(--bg);color:var(--fg);font:17px/1.6 var(--sans);overflow:hid
 .rules b{display:inline-flex;width:34px;height:34px;border-radius:17px;align-items:center;justify-content:center;border:1px solid var(--line);font-weight:500}
 input{font:17px var(--sans);background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;outline:none;width:100%;-webkit-user-select:text;user-select:text}
 input:focus{border-color:var(--acc)}
-.go{height:56px;border-radius:28px;border:0;background:var(--acc);color:#14201a;font:600 17px var(--sans);cursor:pointer}
+.go{height:56px;border-radius:28px;border:0;background:var(--acc);color:#1a1408;font:600 17px var(--sans);cursor:pointer}
 .go:disabled{opacity:.4}
 .err{color:var(--no)!important;font-size:15px;min-height:1.4em}
 .picks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .pk{height:60px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:300 22px var(--sans);cursor:pointer}
-.pk.sel{border-color:var(--acc);color:var(--acc);background:#22322a}
+.pk.sel{border-color:var(--acc);color:var(--acc);background:#2a2414}
 .small{font-size:14px;color:var(--mute)}
-.tap{margin-top:6px;height:52px;padding:0 22px;border-radius:26px;border:0;background:var(--acc);color:#14201a;font:600 17px var(--sans);cursor:pointer}
+.lk{color:var(--acc);font-size:12px;letter-spacing:.04em}.lk.shake{animation:sh .4s}
+@keyframes sh{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.cover{width:96px;height:120px;border-radius:12px;object-fit:cover;border:1px solid var(--line)}
+.tap{margin-top:6px;height:52px;padding:0 22px;border-radius:26px;border:0;background:var(--acc);color:#1a1408;font:600 17px var(--sans);cursor:pointer}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -76,8 +79,9 @@ input:focus{border-color:var(--acc)}
 
 <div class="stage" id="stage">
 <div class="screen" id="intro">
+<img class="cover" src="https://cumusic-audio.b-cdn.net/cv/43mxcv6g/SHpBPXJb4b.jpg" alt="" onerror="this.remove()">
 <h1>帮忙选 <em>主打歌</em></h1>
-<p>每段是一首歌最抓人的 18 秒。不告诉你歌名，顺序随机。</p>
+<p>每段从一首歌的 hook 开始。至少听 10 秒才能划，想多听就接着听。不告诉你歌名，顺序随机。</p>
 <div class="rules">
 <div><b style="color:var(--acc)">→</b>右滑：能做主打</div>
 <div><b style="color:var(--no)">←</b>左滑：不适合做主打</div>
@@ -113,7 +117,7 @@ input:focus{border-color:var(--acc)}
 <script src="clips.js"></script>
 <script>
 (function(){
-  var API="https://stats.cumusic.work", PROJ="lchenius", CDN="https://cumusic-audio.b-cdn.net/ra/hooklc/v1-";
+  var API="https://stats.cumusic.work", PROJ="lchenius", CDN="https://cumusic-audio.b-cdn.net/ra/hooklc/v2-", MIN=10;
   var HV=window.HV, CLIPS=HV.clips, urls={}, key=null;
   var order=CLIPS.map(function(c,i){return i;});
   for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t;}
@@ -160,13 +164,13 @@ input:focus{border-color:var(--acc)}
   });
   function label(k){return String(k+1).padStart(2,"0");}
   var RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var back=null, dirs={};
+  var back=null, dirs={}, heard={};
   var HINT="循环播放 · 点波形可以跳着听";
   function makeCard(k,cls){
     var c=CLIPS[order[k]], el=document.createElement("div");
     el.className="card"+(cls?" "+cls:"");
     var w="";(c.p||[]).forEach(function(v){w+='<span style="height:'+Math.max(4,v*100)+'%"></span>';});
-    el.innerHTML='<div><div class="num">'+label(k)+'<small>/ '+CLIPS.length+'</small></div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span>0:18</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
+    el.innerHTML='<div><div class="num">'+label(k)+'<small>/ '+CLIPS.length+'</small></div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
     return el;
   }
   // 先强制排版再改 class，过渡才会生效；不用 rAF，后台页面里 rAF 会被暂停
@@ -183,7 +187,7 @@ input:focus{border-color:var(--acc)}
     cnt.textContent=(pos+1)+" / "+CLIPS.length;
     bar.style.width=(pos/CLIPS.length*100)+"%";
     document.getElementById("bUn").disabled=pos===0;
-    play(order[pos],el); bindDrag(el);
+    gate(); play(order[pos],el); bindDrag(el);
   }
   // 第一次进来：两张卡从下面浮上来
   function next(){
@@ -193,6 +197,21 @@ input:focus{border-color:var(--acc)}
     var el=makeCard(pos,"enter"); stage.appendChild(el);
     raf2(function(){activate(el); addBack();});
   }
+  // 至少听 MIN 秒才能划：按真实播放时间累计，拖进度不算
+  function left(){var c=cur&&CLIPS[order[pos]];return c?Math.max(0,Math.ceil(MIN-(heard[c.id]||0))):0;}
+  function gate(){
+    var n=left(), y=document.getElementById("bYes"), no=document.getElementById("bNo");
+    y.disabled=no.disabled=n>0;
+    y.textContent=n>0?"再听 "+n+" 秒":"能做主打 ✓"; no.textContent=n>0?"再听 "+n+" 秒":"✕ 不适合";
+    var lk=cur&&cur.querySelector(".lk"); if(lk)lk.textContent=n>0?"听满 "+MIN+" 秒才能划":"";
+  }
+  // 按播放进度累计：往后跳超过 1.5 秒不算，循环回头也不算；用 timeupdate，后台页面也照常走
+  var lastT=0, hearId=null;
+  audio.addEventListener("timeupdate",function(){
+    var ct=audio.currentTime, d=ct-lastT; lastT=ct;
+    if(hearId&&!audio.paused&&d>0&&d<1.5){heard[hearId]=(heard[hearId]||0)+d; gate();}
+  });
+  audio.addEventListener("seeked",function(){lastT=audio.currentTime;});
   function play(idx,card){
     cancelAnimationFrame(raf);
     load(idx).then(function(u){
@@ -209,6 +228,7 @@ input:focus{border-color:var(--acc)}
       });
       if(!card)return;
       var spans=card.querySelectorAll(".wave span"), t0=card.querySelector(".t0");
+      lastT=0; hearId=card?CLIPS[idx].id:null;
       (function tick(){
         var d=audio.duration||18, p=audio.currentTime/d, n=Math.floor(p*spans.length);
         spans.forEach(function(s,i){s.classList.toggle("on",i<n);});
@@ -224,7 +244,7 @@ input:focus{border-color:var(--acc)}
     });
   }
   function decide(yes,dx,dy,vx){
-    if(!cur)return;
+    if(!cur||left()>0)return;
     votes[CLIPS[order[pos]].id]=yes?1:0; dirs[pos]=yes?1:-1;
     var el=cur; cur=null; document.getElementById("bUn").disabled=true;
     el.querySelector(yes?".stamp.yes":".stamp.no").style.opacity=1;
@@ -260,7 +280,8 @@ input:focus{border-color:var(--acc)}
       if(back){var k=Math.min(1,Math.abs(dx)/140);back.style.transform="translateY("+(14-14*k)+"px) scale("+(.94+.06*k)+")";back.style.opacity=.55+.45*k;}});
     function up(e){if(!down)return;down=false;el.classList.remove("drag");
       // 拖过线，或者甩得够快，就算数
-      if(Math.abs(dx)>100||(Math.abs(vx)>.6&&Math.abs(dx)>30)){decide((Math.abs(dx)>100?dx:vx)>0,dx,dy,vx);return;}
+      if(left()>0&&Math.abs(dx)>30){var lk=el.querySelector(".lk");if(lk){lk.classList.remove("shake");void lk.offsetWidth;lk.classList.add("shake");}}
+      else if(Math.abs(dx)>100||(Math.abs(vx)>.6&&Math.abs(dx)>30)){decide((Math.abs(dx)>100?dx:vx)>0,dx,dy,vx);return;}
       el.classList.add("snap"); el.style.transform=""; yes.style.opacity=0; no.style.opacity=0;
       if(back){back.style.transform="";back.style.opacity="";}
       var wv=el.querySelector(".wave"), r=wv.getBoundingClientRect();
@@ -281,7 +302,7 @@ input:focus{border-color:var(--acc)}
   document.getElementById("bRe").onclick=function(){if(cur){audio.currentTime=0;audio.play().catch(function(){});}};
   document.addEventListener("keydown",function(e){if(!cur)return;if(e.key==="ArrowRight")decide(true);if(e.key==="ArrowLeft")decide(false);});
   var best=null;
-  function finish(){
+  function finish(){ cur=null; hearId=null; gate();
     audio.pause(); cancelAnimationFrame(raf);
     document.getElementById("btns").hidden=true; cnt.textContent="最后一步";
     var box=document.getElementById("picks"), h="";
