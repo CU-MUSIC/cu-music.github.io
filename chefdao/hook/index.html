@@ -64,6 +64,9 @@ textarea::placeholder,input::placeholder{color:var(--mute)}
 .pk{height:60px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:300 22px var(--sans);cursor:pointer}
 .pk.sel{border-color:var(--acc);color:var(--acc);background:#2a2414}
 .small{font-size:14px;color:var(--mute)}
+.tr{display:flex;gap:12px;align-items:center}
+#bEnd{border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:14px;padding:3px 12px;font:500 13px var(--sans);letter-spacing:0;cursor:pointer}
+#bEnd:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .lk{color:var(--acc);font-size:12px;letter-spacing:.04em}.lk.shake{animation:sh .4s}
 @keyframes sh{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .tap{margin-top:6px;height:52px;padding:0 22px;border-radius:26px;border:0;background:var(--acc);color:#1a1408;font:600 17px var(--sans);cursor:pointer}
@@ -92,7 +95,7 @@ body{isolation:isolate}
 <body>
 <div class="app">
 <div>
-<div class="top"><span>CU MUSIC</span><span id="cnt">盲听</span></div>
+<div class="top"><span>CU MUSIC</span><span class="tr"><button type="button" id="bEnd" hidden>提前结束</button><span id="cnt">盲听</span></span></div>
 <div class="prog"><i id="bar"></i></div>
 </div>
 
@@ -220,6 +223,7 @@ body{isolation:isolate}
     cnt.textContent=(pos+1)+" / "+CLIPS.length;
     bar.style.width=(pos/CLIPS.length*100)+"%";
     document.getElementById("bUn").disabled=pos===0;
+    document.getElementById("bEnd").hidden=pos===0;
     gate(); play(order[pos],el); bindDrag(el);
   }
   // 第一次进来：两张卡从下面浮上来
@@ -325,17 +329,23 @@ body{isolation:isolate}
   }
   document.getElementById("bYes").onclick=function(){decide(true);};
   document.getElementById("bNo").onclick=function(){decide(false);};
+  // 提前结束：用已经划过的歌直接进最后一步；从那里返回就接着听，不撤回
+  var early=false;
+  document.getElementById("bEnd").onclick=function(){
+    if(!Object.keys(votes).length)return;
+    early=true; stage.querySelectorAll(".card").forEach(function(n){n.remove();}); cur=null; back=null; finish();
+  };
   document.getElementById("bBack").onclick=function(){
     audio.pause(); best=null; document.getElementById("send").disabled=true;
     document.getElementById("pick").hidden=true; document.getElementById("btns").hidden=false;
     stage.querySelectorAll(".card").forEach(function(n){n.remove();}); cur=null; back=null;
-    undo();
+    if(early){early=false;next();} else undo();
   };
   document.getElementById("bUn").onclick=function(){if(cur)undo();};
   document.getElementById("bRe").onclick=function(){if(cur){audio.currentTime=0;audio.play().catch(function(){});}};
   document.addEventListener("keydown",function(e){if(!cur)return;if(e.key==="ArrowRight")decide(true);if(e.key==="ArrowLeft")decide(false);});
   var best=null;
-  function finish(){ cur=null; hearId=null; gate();
+  function finish(){ cur=null; hearId=null; gate(); document.getElementById("bEnd").hidden=true; document.getElementById("bBack").textContent=early?"↶ 回去接着听":"↶ 撤回最后一首";
     audio.pause(); cancelAnimationFrame(raf);
     document.getElementById("btns").hidden=true; cnt.textContent="最后一步";
     var box=document.getElementById("picks"), h="";
