@@ -266,12 +266,15 @@ input:focus{border-color:var(--acc)}
     audio.pause(); cancelAnimationFrame(raf);
     document.getElementById("btns").hidden=true; cnt.textContent="最后一步";
     var box=document.getElementById("picks"), h="";
-    order.forEach(function(idx,k){h+='<button class="pk" data-id="'+CLIPS[idx].id+'" data-i="'+idx+'">'+label(k)+'</button>';});
-    box.innerHTML=h;
+    // 只给右滑过的选：左滑的本来就不想要
+    order.forEach(function(idx,k){if(votes[CLIPS[idx].id])h+='<button class="pk" data-id="'+CLIPS[idx].id+'" data-i="'+idx+'">'+label(k)+'</button>';});
+    box.innerHTML=h||'<p class="small" style="grid-column:1/-1">你一首都没右滑，直接提交就行。</p>';
+    best=null; document.getElementById("send").disabled=!!h;
     box.querySelectorAll(".pk").forEach(function(b){b.onclick=function(){
       box.querySelectorAll(".pk").forEach(function(x){x.classList.remove("sel");});
       b.classList.add("sel"); best=b.getAttribute("data-id"); document.getElementById("send").disabled=false;
       play(+b.getAttribute("data-i"),null);};});
+    var only=box.querySelectorAll(".pk"); if(only.length===1)only[0].click();
     document.getElementById("pick").hidden=false;
   }
   document.getElementById("send").onclick=function(){
