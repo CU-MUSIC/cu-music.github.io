@@ -149,7 +149,13 @@ body{isolation:isolate}
 </div>
 <p class="err" id="err"></p>
 <button class="go" id="start" disabled>开始听</button>
-<p class="small c">8 首 · 约 2 分钟 · 建议戴耳机</p>
+<p class="small c">16 首 · 约 4 分钟 · 听到一半可以先交 · 建议戴耳机</p>
+</div>
+<div class="screen" id="half" hidden>
+<h1>听了<em>一半</em>了</h1>
+<p id="halfT"></p>
+<button class="go" id="halfGo">继续听</button>
+<button class="btn sm" id="halfEnd">先交，后面的不听了</button>
 </div>
 <div class="screen" id="pick" hidden>
 <h1>最后一个问题：<br>哪首你 <em>最想听完整版</em>？</h1>
@@ -197,7 +203,7 @@ body{isolation:isolate}
   function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
   var FIRST=Math.min(8,CLIPS.length), off=Math.floor(Math.random()*CLIPS.length), first=[], rest=[];
   CLIPS.forEach(function(c,i){var k=(i-off+CLIPS.length)%CLIPS.length;(k<FIRST?first:rest).push(i);});
-  var order=shuf(first); rest=shuf(rest);
+  var order=shuf(first).concat(shuf(rest)); rest=[];   // 默认全部 16 首；听到一半问一次要不要先交
   var stage=document.getElementById("stage"),bar=document.getElementById("bar"),cnt=document.getElementById("cnt");
   var who=document.getElementById("who"),pw=document.getElementById("pw"),start=document.getElementById("start"),err=document.getElementById("err");
   var audio=new Audio(); audio.preload="auto"; audio.loop=true; audio.setAttribute("playsinline","");
@@ -391,6 +397,7 @@ body{isolation:isolate}
       setTimeout(function(){el.remove();},460);
       pos++;
       if(pos>=order.length){setTimeout(function(){bar.style.width="100%";finish();},260);return;}
+      if(pos===HALF&&order.length>HALF+1&&!halfSeen){halfSeen=true;setTimeout(function(){showHalf(b);},260);back=null;return;}
       var b=back; back=null; activate(b); addBack();
     };
     // 先停一下揭晓歌名（模糊变清楚），再飞走
@@ -399,6 +406,18 @@ body{isolation:isolate}
     var tt=el.querySelector(".ttl"); if(tt)tt.classList.add("show");
     setTimeout(go,RM?300:1100);
   }
+  var HALF=8, halfSeen=false;
+  function showHalf(b){
+    audio.pause(); cancelAnimationFrame(raf); hearId=null;
+    if(b)b.remove(); stage.querySelectorAll(".card").forEach(function(n){n.remove();}); cur=null; back=null;
+    document.getElementById("btns").hidden=true; document.getElementById("bEnd").hidden=true;
+    var yes=Object.keys(votes).filter(function(k){return votes[k];}).length;
+    document.getElementById("halfT").textContent=pos+" / "+order.length+" · 已经右滑 "+yes+" 首。后面还有 "+(order.length-pos)+" 首，大约 "+Math.max(1,Math.round((order.length-pos)*15/60))+" 分钟。";
+    cnt.textContent="一半了"; bar.style.width=(pos/order.length*100)+"%";
+    document.getElementById("half").hidden=false;
+  }
+  document.getElementById("halfGo").onclick=function(){document.getElementById("half").hidden=true;document.getElementById("btns").hidden=false;next();};
+  document.getElementById("halfEnd").onclick=function(){document.getElementById("half").hidden=true;early=true;finish();};
   function undo(){
     if(pos===0)return;
     pos--; delete votes[CLIPS[order[pos]].id]; autosave();

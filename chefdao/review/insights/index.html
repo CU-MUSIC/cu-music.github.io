@@ -1691,7 +1691,7 @@ function openProject(slug) {
   } catch (e) { $p('hvSum').textContent = '查询失败'; } };
   if (hv) {
     $p('hvRe').onclick = hvLoad;
-    $p('hvCopy').onclick = () => { const t = '帮我听一下这些 hook，哪首适合做主打（右滑能做、左滑不行，先听 8 首大概 2 分钟）：\nhttps://cumusic.work' + hv.url + '\n密码 ' + hv.pass;
+    $p('hvCopy').onclick = () => { const t = '帮我听一下这些 hook，哪首适合做主打（右滑能做、左滑不行，16 首大概 4 分钟，听到一半可以先交）：\nhttps://cumusic.work' + hv.url + '\n密码 ' + hv.pass;
       const done = () => { $p('hvCopy').textContent = '已复制'; setTimeout(() => { if ($p('hvCopy')) $p('hvCopy').textContent = '复制盲听链接和密码'; }, 1600); };
       navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
     hvLoad();
