@@ -230,14 +230,14 @@ button.chip.ok[aria-expanded=true]::after{transform:rotate(-135deg) translate(-1
   <form id="form" autocomplete="off" novalidate>
     <div class="group">
       <div class="row" style="--k:0"><label class="fl"><input id="n" maxlength="20" placeholder=" "><span>艺名</span></label></div>
-      <div class="row" style="--k:1"><label class="fl"><input id="t" maxlength="60" placeholder=" "><span>歌名</span></label></div>
+      <div class="row" id="tRow" style="--k:1"><label class="fl"><input id="t" maxlength="60" placeholder=" "><span>歌名</span></label></div>
       <div class="row" style="--k:2"><label class="fl"><input id="l" maxlength="200" inputmode="url" placeholder=" "><span>主页链接（选填）</span></label></div>
       <div class="row" style="--k:2"><label class="fl"><input id="nt" maxlength="100" placeholder=" "><span>想对刀大厨说的一句话（选填）</span></label></div>
       <div class="row" id="lyrRow" style="--k:2"><textarea id="ly" maxlength="6000" rows="3" placeholder="歌词（选填，可直接粘贴）" spellcheck="false"></textarea></div>
       <div class="row" style="--k:3"><span class="lab" id="memLab">刀门会员</span><button type="button" class="switch" id="mem" role="switch" aria-checked="false" aria-labelledby="memLab"></button></div>
       <div class="row" style="--k:4"><span class="lab" id="frLab">已是刀大厨微信好友</span><button type="button" class="switch" id="fr" role="switch" aria-checked="false" aria-labelledby="frLab"></button></div>
       <div class="row" id="wxRow" style="--k:5"><label class="fl"><input id="wx" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder=" "><span>你的微信号</span></label><div class="wxhint">还不是好友？请先加刀大厨微信 <b>Cookdao</b>，备注艺名。</div></div>
-      <div class="row file" style="--k:6"><input id="file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.amr,.wma,.aif,.aiff,.mp4" aria-label="选择音频"><span class="lab empty" id="fl">选择音频</span><em id="fmeta">MP3 · M4A · WAV</em></div>
+      <div class="row file" style="--k:6"><input id="file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.amr,.wma,.aif,.aiff,.mp4" aria-label="选择音频" multiple><span class="lab empty" id="fl">选择音频</span><em id="fmeta">MP3 · M4A · WAV</em></div>
     </div>
     <button class="go idle" id="go" type="submit" style="--k:7">投递</button>
     <div class="err" id="err" role="alert"></div>
@@ -328,10 +328,11 @@ else {
 
 /* 外圈 = 必填完成度（艺名 / 歌名 / 音频），内圈 = 上传进度 */
 window.addEventListener('error', e => { const x = document.getElementById('err'); if (x && !x.textContent) x.textContent = '页面出错：' + (e.message || '未知') ; });
-let file = null, busy = false;
+let files = [], busy = false;
+const FMAX = 30;   // 一次投递最多 30 首
 const p1 = $('#p1'), p2 = $('#p2');
 const off = p => p <= 0.002 ? 1.06 : 1 - p;
-const filled = () => [$('#n').value.trim(), $('#t').value.trim(), file].filter(Boolean).length;
+const filled = () => [$('#n').value.trim(), files.length > 1 || $('#t').value.trim(), files.length].filter(Boolean).length;
 function progress() {
   if (!$('#hero').classList.contains('settled') || busy) return;
   const f = filled(); p1.style.strokeDashoffset = off(f / 3);
@@ -351,26 +352,35 @@ const WX = /^[A-Za-z0-9_\-+.@ ]{5,40}$/;
 /* 音频：点这一行选择（透明的文件输入盖在行上，安卓/微信里直接触发系统选择器）或拖进窗口 */
 // 安卓（尤其华为浏览器 / 微信内核）常常把 accept 当成「只能录音」或根本弹不出选择器，所以安卓上去掉 accept，选完再自己按文件头判断是不是音频
 if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) $('#file').removeAttribute('accept');
-$('#file').onchange = e => { const f = e.target.files && e.target.files[0]; if (f) setFile(f); };
+$('#file').onchange = e => { if (e.target.files && e.target.files.length) setFiles(e.target.files); };
 let depth = 0;
 addEventListener('dragenter', e => { if (e.dataTransfer && [].indexOf.call(e.dataTransfer.types || [], 'Files') >= 0) { depth++; document.body.classList.add('dragging'); } });
 addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) document.body.classList.remove('dragging'); });
 addEventListener('dragover', e => e.preventDefault());
-addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dragging'); const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) setFile(f); });
+addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dragging'); if (e.dataTransfer && e.dataTransfer.files.length) setFiles(e.dataTransfer.files); });
 
 const AUDIO_EXT = /\.(mp3|m4a|aac|wav|wave|flac|ogg|oga|opus|amr|awb|wma|aif|aiff|aifc|mp4|3gp|caf|m4b|ape)$/i;
 const readHead = f => new Promise(res => { try { const r = new FileReader(); r.onload = () => res(new Uint8Array(r.result)); r.onerror = () => res(new Uint8Array(0)); r.readAsArrayBuffer(f.slice(0, 16)); } catch (e) { res(new Uint8Array(0)); } });
 const isAudioHead = u => { const at = (a, o) => { o = o || 0; for (let i = 0; i < a.length; i++) if (u[o + i] !== a[i]) return false; return true; };
   return at([82, 73, 70, 70]) || at([73, 68, 51]) || (u[0] === 255 && (u[1] & 224) === 224) || at([102, 116, 121, 112], 4) || at([102, 76, 97, 67]) || at([79, 103, 103, 83]) || at([70, 79, 82, 77]) || at([35, 33, 65, 77, 82]) || at([48, 38, 178, 117]) || at([26, 69, 223, 163]); };
 let prev = null;
-async function setFile(f) {
+// 可以一次选很多首：一首时照旧填歌名；多首时每首用文件名当歌名，歌名和歌词两行收起
+async function setFiles(list) {
   const err = $('#err'); err.textContent = '';
-  if (!f || !f.size) { err.textContent = '没有读到文件，请重新选择。'; return; }
-  if (f.size > MAX) { err.textContent = '文件超过 24MB，请导出 mp3。'; return; }
-  // 类型、扩展名、文件头，任意一个像音频就放行（华为等手机选出来的文件 type 常常是空的）
-  const ok = /^audio\//.test(f.type || '') || AUDIO_EXT.test(f.name || '') || isAudioHead(await readHead(f));
-  if (!ok) { err.textContent = '这个文件看起来不是音频（' + (f.name || '未命名') + '）。请选 mp3、m4a、wav 等音频文件。'; return; }
-  file = f;
+  const out = [], bad = [];
+  for (const f of [...list]) {
+    if (!f || !f.size) { bad.push((f && f.name) || '未命名'); continue; }
+    if (f.size > MAX) { err.textContent = (f.name || '有一首') + ' 超过 24MB，请导出 mp3。'; return; }
+    // 类型、扩展名、文件头，任意一个像音频就放行（华为等手机选出来的文件 type 常常是空的）
+    if (/^audio\//.test(f.type || '') || AUDIO_EXT.test(f.name || '') || isAudioHead(await readHead(f))) out.push(f); else bad.push(f.name || '未命名');
+  }
+  if (!out.length) { err.textContent = bad.length ? '这个文件看起来不是音频（' + bad[0] + '）。请选 mp3、m4a、wav 等音频文件。' : '没有读到文件，请重新选择。'; return; }
+  if (out.length > FMAX) { err.textContent = '一次最多 ' + FMAX + ' 首，请分两次投。'; return; }
+  if (bad.length) err.textContent = '已跳过不是音频的文件：' + bad.slice(0, 3).join('、');
+  files = out;
+  const multi = out.length > 1; $('#tRow').hidden = multi; $('#lyrRow').hidden = multi;
+  if (multi) { $('#fl').textContent = '已选 ' + out.length + ' 首'; $('#fl').classList.remove('empty'); $('#fmeta').textContent = fmtSize(out.reduce((a, f) => a + f.size, 0)); progress(); return; }
+  const f = out[0];
   $('#fl').textContent = (f.name || '音频').replace(/\.[^.]+$/, ''); $('#fl').classList.remove('empty'); $('#fmeta').textContent = fmtSize(f.size);
   if (!$('#t').value.trim()) $('#t').value = (f.name || '').replace(/\.[^.]+$/, '').slice(0, 60);
   try { if (prev) { URL.revokeObjectURL(prev.src); } prev = new Audio(URL.createObjectURL(f)); prev.preload = 'metadata'; prev.onloadedmetadata = () => { if (isFinite(prev.duration)) $('#fmeta').textContent = clock(prev.duration) + ' · ' + fmtSize(f.size); }; } catch (e) {}
@@ -381,37 +391,47 @@ const fmtSize = n => n < 1048576 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (
 /* 投递：标的内圈变成上传进度；完成后两圈画满、轻弹一下 */
 let shown = 0, goal = 0;
 const loop = () => { shown += (goal - shown) * .12; if (Math.abs(goal - shown) < .002) shown = goal; p2.style.strokeDashoffset = off(shown); if (busy) $('#status').textContent = Math.round(shown * 100) + '%'; if (busy || shown < goal) requestAnimationFrame(loop); };
-const ERR = { quota: '今天已经投过了，明天再来。', full: '今天的投递已满，明天再来。', size: '文件超过 24MB，请导出 mp3。', rate: '操作太频繁，稍后再试。', wx: '请填写正确的微信号。', who: '请填写艺名。', title: '请填写歌名。' };
+const ERR = { many: '一次最多 30 首。', batch: '这次投递超时了，请重新投。', quota: '今天已经投过了，明天再来。', full: '今天的投递已满，明天再来。', size: '文件超过 24MB，请导出 mp3。', rate: '操作太频繁，稍后再试。', wx: '请填写正确的微信号。', who: '请填写艺名。', title: '请填写歌名。' };
 const nudge = () => { const g = $('#go'); g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); };
 $('#form').addEventListener('submit', e => {
   e.preventDefault(); if (busy) return;
   const n = $('#n').value.trim(), t = $('#t').value.trim(), err = $('#err');
   if (!n) { err.textContent = '请填写艺名。'; $('#n').focus(); return nudge(); }
-  if (!t) { err.textContent = '请填写歌名。'; $('#t').focus(); return nudge(); }
+  if (!t && files.length < 2) { err.textContent = '请填写歌名。'; $('#t').focus(); return nudge(); }
   const wx = $('#wx').value.trim();
   if (!isFr() && !wx) { err.textContent = '请填写微信号，方便刀大厨加你。'; $('#wx').focus(); return nudge(); }
   if (!isFr() && !WX.test(wx)) { err.textContent = '微信号填字母、数字或下划线（手机号也可以）。'; $('#wx').focus(); return nudge(); }
-  if (!file) { err.textContent = '请选择音频。'; return nudge(); }
+  if (!files.length) { err.textContent = '请选择音频。'; return nudge(); }
   if (wx) store.set('demo:wx', wx);
   let link = $('#l').value.trim(); if (link && !/^https?:\/\//i.test(link)) { const m = link.match(/https?:\/\/\S+/i); link = m ? m[0] : ''; }
     err.textContent = ''; busy = true; $('#go').disabled = true; shown = goal = 0;
   p1.style.strokeDashoffset = 0; p2.style.transition = 'none'; $('#status').classList.add('on'); $('#status').textContent = '0%';
   if ($('#mark').getBoundingClientRect().bottom < 40) window.scrollTo({ top: 0, behavior: REDUCE ? 'auto' : 'smooth' });
   loop();
-  const q = new URLSearchParams({ n, mem: sw.getAttribute('aria-checked') === 'true' ? '1' : '0', lid: LID, title: t, l: link, note: $('#nt').value.trim(), fr: isFr() ? '1' : '0', wx: isFr() ? '' : wx, ct: file.type || 'audio/mpeg' });
-  const x = new XMLHttpRequest();
-  x.open('POST', API + '/demo/up?' + q);
-  x.upload.onprogress = ev => { if (ev.lengthComputable) goal = Math.min(.97, ev.loaded / ev.total); };
+  const multi = files.length > 1, total = files.reduce((a, f) => a + f.size, 0) || 1, nameOf = f => (f.name || '未命名').replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim().slice(0, 60) || '未命名';
   const fail = msg => { busy = false; $('#go').disabled = false; p2.style.transition = ''; p2.style.strokeDashoffset = 1.06; $('#status').classList.remove('on'); err.textContent = msg; nudge(); progress(); };
-  x.onload = () => {
-    let j = {}; try { j = JSON.parse(x.responseText); } catch (er) {}
-    if (!(j.ok && j.token)) return fail(ERR[j.e] || '投递没有成功，请稍后再试。');
+  // 一首一首传：第一首拿到 token，后面带 b=token 进同一次投递（共用一个反馈链接，只算一次）
+  const send = (f, tok) => new Promise(res => {
+    const q = new URLSearchParams({ n, mem: sw.getAttribute('aria-checked') === 'true' ? '1' : '0', lid: LID, title: multi ? nameOf(f) : t, l: link, note: $('#nt').value.trim(), fr: isFr() ? '1' : '0', wx: isFr() ? '' : wx, ct: f.type || 'audio/mpeg' });
+    if (tok) q.set('b', tok);
+    const x = new XMLHttpRequest(); x.open('POST', API + '/demo/up?' + q);
+    x.upload.onprogress = ev => { if (ev.lengthComputable) goal = Math.min(.97, (sent + ev.loaded / ev.total * f.size) / total); };
+    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (er) {} res(j); };
+    x.onerror = () => res({ e: 'net' });
+    x.send(f);
+  });
+  let sent = 0, token = '', first = null, okN = 0;
+  (async () => {
+    for (const f of files) {
+      let j = await send(f, token);
+      if (!(j.ok && j.token) && j.e === 'net') j = await send(f, token);   // 网络抖一下，同一首再试一次
+      if (!(j.ok && j.token)) { if (!token) return fail(j.e === 'net' ? '网络不稳，请稍后再试。' : ERR[j.e] || '投递没有成功，请稍后再试。'); err.textContent = '有 ' + (files.length - okN) + ' 首没传上去：' + (ERR[j.e] || '网络不稳') ; break; }
+      token = j.token; if (!first) first = j; okN++; sent += f.size;
+    }
     goal = 1;
-    const ly = $('#ly').value.trim(); if (ly) { try { fetch(API + '/demo/lyr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: j.id, t: j.token, lyrics: ly }), keepalive: true }); } catch (er) {} }
-    setTimeout(() => { busy = false; $('#go').disabled = false; p2.style.transition = ''; $('#status').textContent = 'RECEIVED'; const m = $('#mark'); m.classList.add('pop'); setTimeout(() => m.classList.remove('pop'), 420); if (navigator.vibrate) navigator.vibrate([10, 40, 14]); done(j.token); }, 900);
-  };
-  x.onerror = () => fail('网络不稳，请稍后再试。');
-  x.send(file);
+    const ly = $('#ly').value.trim(); if (ly && !multi && first) { try { fetch(API + '/demo/lyr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: first.id, t: first.token, lyrics: ly }), keepalive: true }); } catch (er) {} }
+    setTimeout(() => { busy = false; $('#go').disabled = false; p2.style.transition = ''; $('#status').textContent = 'RECEIVED'; const m = $('#mark'); m.classList.add('pop'); setTimeout(() => m.classList.remove('pop'), 420); if (navigator.vibrate) navigator.vibrate([10, 40, 14]); done(token); }, 900);
+  })();
 });
 
 const tokens = () => { try { return JSON.parse(store.get('demo:tokens') || '[]'); } catch (e) { return []; } };
@@ -422,7 +442,7 @@ function done(tok) {
   $('#cp').onclick = async () => { try { await navigator.clipboard.writeText(url); $('#cp').textContent = '已复制'; $('#cp').classList.add('ok'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('#lk')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
   const f = $('#form'); f.classList.add('fade-out');
   setTimeout(() => { f.hidden = true; f.classList.remove('fade-out'); const o = $('#ok'); o.hidden = false; requestAnimationFrame(() => o.classList.add('on')); }, 450);
-  file = null; $('#t').value = ''; $('#l').value = ''; $('#nt').value = ''; $('#ly').value = ''; $('#fl').textContent = '选择音频'; $('#fl').classList.add('empty'); $('#fmeta').textContent = 'MP3 · WAV'; $('#file').value = '';
+  files = []; $('#tRow').hidden = false; $('#lyrRow').hidden = false; $('#t').value = ''; $('#l').value = ''; $('#nt').value = ''; $('#ly').value = ''; $('#fl').textContent = '选择音频'; $('#fl').classList.add('empty'); $('#fmeta').textContent = 'MP3 · WAV'; $('#file').value = '';
   load();
 }
 $('#again').onclick = () => {
