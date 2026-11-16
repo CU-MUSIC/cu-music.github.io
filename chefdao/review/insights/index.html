@@ -227,6 +227,8 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 @media (max-width:600px){.pjtr>div{display:flex;flex-wrap:wrap}.pjtr>div>.t{flex:1 1 calc(100% - 90px)}.pjtr>div>button:first-of-type{margin-left:72px}}
 .pjtr button.on,#hpPj.on{background:rgba(159,184,166,.22);color:#9fb8a6}.pjtr button[data-hp]:disabled{opacity:.8}.hpnote{font-size:13px;line-height:1.6;margin:-4px 0 6px}
 .inl{display:flex;flex-direction:column;gap:6px;margin:4px 0 8px}.inl>div{display:flex;justify-content:space-between;align-items:center;gap:12px;background:rgba(236,234,230,.04);border-radius:10px;padding:8px 12px}
+.hvb{flex:0 0 32%;height:6px;border-radius:3px;background:rgba(236,234,230,.08);overflow:hidden}.hvb i{display:block;height:100%;background:#8fcf9f}
+.hvp{font-size:14px;margin-top:4px}.hvp summary{cursor:pointer;opacity:.7;padding:4px 0}.hvp>div{display:flex;flex-direction:column;gap:2px;padding:8px 12px;background:rgba(236,234,230,.04);border-radius:10px;margin-top:6px}.hvp em{font-style:normal;font-size:13px;opacity:.6}
 .inl .n{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}.inl em{font-style:normal;font-size:13px;opacity:.6}.inl a{white-space:nowrap;color:#d9bf8c;text-decoration:none}.inl .ok{white-space:nowrap;font-size:13px;color:#8fcf9f}
 .up .ghost{background:var(--fill-2);color:var(--text);border-radius:12px;padding:11px;font-size:15px}
 .up .ghost.danger{color:var(--red)}
@@ -424,7 +426,9 @@ button.av{cursor:pointer;padding:0}
 <script src="work.js?v=261115c"></script>
 <script>
 (() => {
-const BUILD = '261116.1900';
+const BUILD = '261116.2130';
+// 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
+const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
    // 版本号：每次改 Insights 提交前用日期时间更新（见记忆 feedback_build_stamp）
 const bust = () => { location.href = location.pathname + '?r=' + Date.now(); };   // 带随机参数重载，绕过缓存拿最新版
@@ -1435,6 +1439,9 @@ function openProject(slug) {
     <div class="row"><button type="button" class="ghost" id="pjUp">＋ 上传新曲目</button>${others.length ? `<select id="pjAdd"><option value="">＋ 加入已有的歌</option>${others.map(o => `<option value="${esc(o.slug)}">《${esc(o.title)}》${o.from ? ' · 来自 ' + esc(o.from) : ''}</option>`).join('')}</select>` : ''}</div>
     <div class="sect">整张收费<span id="feeSum"></span></div>
     <div class="fee" id="pjFee"></div>
+    ${HOOK[slug] ? `<div class="sect">主打盲听<span id="hvSum"></span></div>
+    <div class="row hprow"><button type="button" class="ghost" id="hvCopy">复制盲听链接和密码</button><button type="button" class="ghost" id="hvRe">刷新</button></div>
+    <div class="inl hvl" id="hvList"></div>` : ''}
     <div class="sect">收件<span id="inSum"></span></div>
     <div class="row hprow"><button type="button" class="ghost" id="inCopy">复制收件链接</button><button type="button" class="ghost" id="inNew" hidden>换一条</button></div>
     <div class="inl" id="inList"></div>
@@ -1621,6 +1628,29 @@ function openProject(slug) {
     const done = () => { $p('inCopy').textContent = '已复制'; setTimeout(() => { if ($p('inCopy')) $p('inCopy').textContent = '复制收件链接'; }, 1600); };
     navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); $p('inNew').hidden = false; $p('inCopy').dataset.url = j.url;
     if (reset) msg('已换新链接，旧链接失效'); } catch (e) { msg('没拿到链接，检查网络再试', true); } };
+  // 主打盲听：朋友在 cumusic.work/chefdao/hook/ 左右滑投票；片段编号 → 歌名的对照表用管理钥匙加密在 hook/key.bin
+  const hv = HOOK[slug];
+  const hvLoad = async () => { if (!hv) return; try {
+    const [j, kb] = await Promise.all([api('/hv?proj=' + hv.proj), fetch(hv.url + 'key.bin', { cache: 'no-store' }).then(r => r.arrayBuffer())]);
+    const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('hook:' + KEY)), u8 = new Uint8Array(kb);
+    const ck = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    const names = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.subarray(0, 12) }, ck, u8.subarray(12))));
+    const rows = j.rows || [], n = rows.length, st = {};
+    Object.keys(names).forEach(id => { st[id] = { id, t: names[id], yes: 0, seen: 0, best: 0 }; });
+    rows.forEach(r => { Object.keys(r.votes || {}).forEach(id => { if (st[id]) { st[id].seen++; st[id].yes += r.votes[id] ? 1 : 0; } }); if (st[r.best]) st[r.best].best++; });
+    const list = Object.values(st).sort((a, b) => b.best - a.best || (b.yes / (b.seen || 1)) - (a.yes / (a.seen || 1)));
+    const pc = (a, b) => b ? Math.round(a / b * 100) : 0;
+    $p('hvSum').textContent = n ? n + ' 人投了' : '还没人投';
+    $p('hvList').innerHTML = n ? list.map(s => `<div><span class="n">${esc(s.t)}<em>主打首选 ${pc(s.best, n)}% · 右滑 ${pc(s.yes, s.seen)}%（${s.yes}/${s.seen}）</em></span><span class="hvb"><i style="width:${pc(s.best, n)}%"></i></span></div>`).join('')
+      + `<details class="hvp"><summary>每个人投了什么</summary>${rows.map(r => `<div><b>${esc(r.who || '没填名字')}</b><em>最想听：${esc(names[r.best] || '没选')} · 右滑 ${Object.values(r.votes || {}).filter(Boolean).length} 首 · ${new Date(r.at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</em><em>${Object.keys(r.votes || {}).filter(id => r.votes[id]).map(id => esc(names[id] || id)).join('、') || '一首都没右滑'}</em></div>`).join('')}</details>` : '<div class="dim">发链接给朋友，投完这里会显示每首的主打概率</div>';
+  } catch (e) { $p('hvSum').textContent = '查询失败'; } };
+  if (hv) {
+    $p('hvRe').onclick = hvLoad;
+    $p('hvCopy').onclick = () => { const t = '帮我听一下这些 hook，哪首适合做主打（右滑能做、左滑不行，大概 5 分钟）：\nhttps://cumusic.work' + hv.url + '\n密码 ' + hv.pass;
+      const done = () => { $p('hvCopy').textContent = '已复制'; setTimeout(() => { if ($p('hvCopy')) $p('hvCopy').textContent = '复制盲听链接和密码'; }, 1600); };
+      navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
+    hvLoad();
+  }
   $p('inCopy').onclick = () => inCopy(0);
   $p('inNew').onclick = () => { if (confirm('换一条新链接？旧链接会失效')) inCopy(1); };
   inLoad();
