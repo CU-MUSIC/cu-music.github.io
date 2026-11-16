@@ -237,16 +237,46 @@ body{isolation:isolate}
     }catch(e){err.textContent="密码不对"; start.disabled=false; return;}
     ls("hv:who",who.value.trim()); ls("hv:pw",pw.value.trim());
     err.textContent="";
-    load(order[0]); if(order[1]!==undefined)load(order[1]);
     document.getElementById("intro").hidden=true;
+    // 回来的人：本机有进度就接着听；本机没有（换手机 / 清了缓存）就问服务器听过哪些，避开重复
+    var back2=restore();
+    if(!back2){try{var me=await (await fetch(API+"/hv/me?proj="+PROJ+"&lid="+lid)).json(); if(me&&me.heard&&me.heard.length)avoid(me.heard);}catch(e){}}
+    if(back2==="done"){showDone(true);return;}
+    load(order[pos]); if(order[pos+1]!==undefined)load(order[pos+1]);
     document.getElementById("btns").hidden=false;
     next();
   });
+  var SK="hv:st:"+PROJ;
+  function idx(id){for(var i=0;i<CLIPS.length;i++)if(CLIPS[i].id===id)return i;return -1;}
+  function keep(){try{localStorage.setItem(SK,JSON.stringify({ord:order.map(function(i){return CLIPS[i].id;}),rest:rest.map(function(i){return CLIPS[i].id;}),pos:pos,votes:votes,heard:heard,far:far,at:at,cm:cm,best:best,sent:sent,dirs:dirs}));}catch(e){}}
+  function restore(){
+    var st; try{st=JSON.parse(localStorage.getItem(SK)||"null");}catch(e){st=null;}
+    if(!st||!st.votes||!Object.keys(st.votes).length)return false;
+    var o=(st.ord||[]).map(idx).filter(function(i){return i>=0;}), r=(st.rest||[]).map(idx).filter(function(i){return i>=0&&o.indexOf(i)<0;});
+    if(!o.length)return false;
+    order=o; rest=r; votes=st.votes||{}; heard=st.heard||{}; far=st.far||{}; at=st.at||{}; cm=st.cm||{}; best=st.best||null; sent=!!st.sent; dirs=st.dirs||{};
+    pos=Math.min(order.length,Math.max(0,st.pos|0));
+    return pos>=order.length?"done":"resume";
+  }
+  function avoid(hd){
+    var fresh=[], seen=[]; CLIPS.forEach(function(c,i){(hd.indexOf(c.id)<0?fresh:seen).push(i);});
+    if(!fresh.length)return;
+    order=shuf(fresh.slice(0,FIRST)); rest=shuf(fresh.slice(FIRST));
+  }
+  function showDone(again){
+    document.getElementById("btns").hidden=true; document.getElementById("pick").hidden=true;
+    bar.style.width="100%"; cnt.textContent=again?"欢迎回来":"完成";
+    var yes=Object.keys(votes).filter(function(k){return votes[k];}).length;
+    document.getElementById("sum").textContent=again?"你已经听了 "+Object.keys(votes).length+" 首，右滑了 "+yes+" 首。":"你右滑了 "+yes+" 首。再提交一次会覆盖这次的结果。";
+    document.getElementById("done").hidden=false;
+    var mb=document.getElementById("more"); mb.hidden=!rest.length; document.getElementById("moreT").hidden=!rest.length||again; document.getElementById("moreN").textContent=rest.length;
+    checkR2();
+  }
   // 没提交也记下来：每划一张就存一次（done=0），关页面时再补一次；提交后 done=1，服务器不会再被半截记录覆盖
   var sent=false, saveT=0;
   function payload(done){return {role:role,proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done,secs:(function(){var o={};Object.keys(heard).forEach(function(k){o[k]=Math.round(heard[k]);});return o;})(),pos:(function(){var o={};Object.keys(votes).forEach(function(k){o[k]={p:at[k]||0,m:Math.round((far[k]||0)*10)/10};});return o;})(),cm:cm};}
   function post(done,keep){return fetch(API+"/hv",{method:"POST",keepalive:!!keep,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload(done))});}
-  function autosave(){if(sent)return;clearTimeout(saveT);saveT=setTimeout(function(){post(0).catch(function(){});},800);}
+  function autosave(){keep();if(sent)return;clearTimeout(saveT);saveT=setTimeout(function(){post(0).catch(function(){});},800);}
   function flush(){if(!sent&&Object.keys(votes).length){clearTimeout(saveT);post(0,true).catch(function(){});}}
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")flush();});
   window.addEventListener("pagehide",flush);
@@ -499,7 +529,7 @@ body{isolation:isolate}
     clearTimeout(saveT);
     post(1)
       .then(function(r){return r.json();}).then(function(j){
-        if(!j.ok)throw 0; sent=true;
+        if(!j.ok)throw 0; sent=true; keep();
         var yes=Object.keys(votes).filter(function(k){return votes[k];}).length;
         document.getElementById("pick").hidden=true;
         document.getElementById("sum").textContent="你右滑了 "+yes+" 首。再提交一次会覆盖这次的结果。";
