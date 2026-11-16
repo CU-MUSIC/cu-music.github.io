@@ -192,7 +192,7 @@ body{isolation:isolate}
   });
   // 没提交也记下来：每划一张就存一次（done=0），关页面时再补一次；提交后 done=1，服务器不会再被半截记录覆盖
   var sent=false, saveT=0;
-  function payload(done){return {proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done};}
+  function payload(done){return {proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done,secs:(function(){var o={};Object.keys(heard).forEach(function(k){o[k]=Math.round(heard[k]);});return o;})()};}
   function post(done,keep){return fetch(API+"/hv",{method:"POST",keepalive:!!keep,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload(done))});}
   function autosave(){if(sent)return;clearTimeout(saveT);saveT=setTimeout(function(){post(0).catch(function(){});},800);}
   function flush(){if(!sent&&Object.keys(votes).length){clearTimeout(saveT);post(0,true).catch(function(){});}}

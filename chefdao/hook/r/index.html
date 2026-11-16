@@ -66,8 +66,8 @@ body{isolation:isolate}
     var ck=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
     var names=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:u8.subarray(0,12)},ck,u8.subarray(12))));
     var rows=j.rows||[], n=rows.length, st={};
-    Object.keys(names).forEach(function(id){st[id]={t:names[id],yes:0,seen:0,best:0};});
-    rows.forEach(function(r){Object.keys(r.votes||{}).forEach(function(id){if(st[id]){st[id].seen++;st[id].yes+=r.votes[id]?1:0;}});if(st[r.best])st[r.best].best++;});
+    Object.keys(names).forEach(function(id){st[id]={t:names[id],yes:0,seen:0,best:0,sec:0,sn:0};});
+    rows.forEach(function(r){Object.keys(r.votes||{}).forEach(function(id){if(st[id]){st[id].seen++;st[id].yes+=r.votes[id]?1:0;}});if(st[r.best])st[r.best].best++;Object.keys(r.secs||{}).forEach(function(id){if(st[id]){st[id].sec+=r.secs[id];st[id].sn++;}});});
     var list=Object.keys(st).map(function(id){return st[id];}).sort(function(a,b){return b.best-a.best||b.yes-a.yes||(b.yes/(b.seen||1))-(a.yes/(a.seen||1));});
     var live=list.filter(function(s){return s.yes||s.best;}), dead=list.filter(function(s){return !s.yes&&!s.best&&s.seen;}), top=live[0];
     var tie=top?live.filter(function(s){return s.best===top.best&&s.yes===top.yes;}):[];
@@ -80,7 +80,7 @@ body{isolation:isolate}
       +(n<5?'<span class="warn">才 '+n+' 人投，人多一点再下结论</span>':'')+'</div>';
     h+='<div class="legend"><span><span class="sw" style="background:var(--yes)"></span>能做主打</span><span><span class="sw" style="background:rgba(217,71,60,.55)"></span>不适合</span><span><span class="star">★</span> 最想听完整版</span></div>';
     live.forEach(function(s,i){
-      h+='<div class="card row"><span class="rk">'+(i+1)+'</span><div><div class="t">'+esc(s.t)+'</div><div class="bar"><i class="y" style="width:'+pc(s.yes,n)+'%"></i><i class="x" style="width:'+pc(s.seen-s.yes,n)+'%"></i></div><div class="m">'+s.yes+'/'+s.seen+' 人觉得能做主打</div></div>'+(s.best?'<span class="star">★ '+s.best+'</span>':'<span></span>')+'</div>';
+      h+='<div class="card row"><span class="rk">'+(i+1)+'</span><div><div class="t">'+esc(s.t)+'</div><div class="bar"><i class="y" style="width:'+pc(s.yes,n)+'%"></i><i class="x" style="width:'+pc(s.seen-s.yes,n)+'%"></i></div><div class="m">'+s.yes+'/'+s.seen+' 人觉得能做主打'+(s.sn?' · 平均听 '+Math.round(s.sec/s.sn)+' 秒':'')+'</div></div>'+(s.best?'<span class="star">★ '+s.best+'</span>':'<span></span>')+'</div>';
     });
     var notes=rows.filter(function(r){return r.note;});
     if(notes.length){h+='<div class="card note"><span class="k">大家想说的话 · '+notes.length+' 条</span>'+notes.map(function(r){return '<div><b>'+esc(r.who||"朋友")+'</b>：'+esc(r.note)+'</div>';}).join("")+'</div>';}
