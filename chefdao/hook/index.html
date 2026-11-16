@@ -187,6 +187,14 @@ body{isolation:isolate}
     document.getElementById("btns").hidden=false;
     next();
   });
+  // 没提交也记下来：每划一张就存一次（done=0），关页面时再补一次；提交后 done=1，服务器不会再被半截记录覆盖
+  var sent=false, saveT=0;
+  function payload(done){return {proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:done?best:null,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;}),done:done};}
+  function post(done,keep){return fetch(API+"/hv",{method:"POST",keepalive:!!keep,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload(done))});}
+  function autosave(){if(sent)return;clearTimeout(saveT);saveT=setTimeout(function(){post(0).catch(function(){});},800);}
+  function flush(){if(!sent&&Object.keys(votes).length){clearTimeout(saveT);post(0,true).catch(function(){});}}
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")flush();});
+  window.addEventListener("pagehide",flush);
   function label(k){return String(k+1).padStart(2,"0");}
   var RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
   var back=null, dirs={}, heard={};
@@ -270,7 +278,7 @@ body{isolation:isolate}
   }
   function decide(yes,dx,dy,vx){
     if(!cur||left()>0)return;
-    votes[CLIPS[order[pos]].id]=yes?1:0; dirs[pos]=yes?1:-1;
+    votes[CLIPS[order[pos]].id]=yes?1:0; dirs[pos]=yes?1:-1; autosave();
     var el=cur; cur=null; document.getElementById("bUn").disabled=true;
     el.querySelector(yes?".stamp.yes":".stamp.no").style.opacity=1;
     var go=function(){
@@ -287,7 +295,7 @@ body{isolation:isolate}
   }
   function undo(){
     if(pos===0)return;
-    pos--; delete votes[CLIPS[order[pos]].id];
+    pos--; delete votes[CLIPS[order[pos]].id]; autosave();
     var d=dirs[pos]||1;
     if(back){back.remove();back=null;}
     if(cur){cur.classList.add("back");cur.style.transform="";cur.style.opacity="";cur.querySelectorAll(".stamp").forEach(function(x){x.style.opacity="";});back=cur;cur=null;}
@@ -344,10 +352,10 @@ body{isolation:isolate}
   }
   document.getElementById("send").onclick=function(){
     var btn=this, e2=document.getElementById("err2"); btn.disabled=true; e2.textContent=""; audio.pause();
-    var body={proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:best,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;})};
-    fetch(API+"/hv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+    clearTimeout(saveT);
+    post(1)
       .then(function(r){return r.json();}).then(function(j){
-        if(!j.ok)throw 0;
+        if(!j.ok)throw 0; sent=true;
         var yes=Object.keys(votes).filter(function(k){return votes[k];}).length;
         document.getElementById("pick").hidden=true;
         document.getElementById("sum").textContent="你右滑了 "+yes+" 首。再提交一次会覆盖这次的结果。";

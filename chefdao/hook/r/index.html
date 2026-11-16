@@ -71,7 +71,8 @@ body{isolation:isolate}
     var list=Object.keys(st).map(function(id){return st[id];}).sort(function(a,b){return b.best-a.best||b.yes-a.yes||(b.yes/(b.seen||1))-(a.yes/(a.seen||1));});
     var live=list.filter(function(s){return s.yes||s.best;}), dead=list.filter(function(s){return !s.yes&&!s.best&&s.seen;}), top=live[0];
     var tie=top?live.filter(function(s){return s.best===top.best&&s.yes===top.yes;}):[];
-    meta.textContent=n?n+" 人听完投了票 · 更新于 "+new Date(Math.max.apply(null,rows.map(function(r){return r.at;}))).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"还没人投";
+    var nd=rows.filter(function(r){return r.done!==0;}).length;
+    meta.textContent=n?nd+" 人投完"+(n-nd?" · "+(n-nd)+" 人没听完":"")+" · 更新于 "+new Date(Math.max.apply(null,rows.map(function(r){return r.at;}))).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"还没人投";
     if(!n){out.innerHTML='<div class="card sub">还没有人投票，过两天再来看。</div>';return;}
     var h='<div class="list">';
     h+='<div class="card hero"><span class="k">'+(tie.length>1?"并列领先":n<5?"目前领先":"主打候选")+'</span><b>'+(top?tie.map(function(s){return esc(s.t);}).join(" / "):"还没有")+'</b>'
@@ -86,7 +87,7 @@ body{isolation:isolate}
     if(dead.length){h+='<div class="card dead"><span class="k">没人选的 · '+dead.length+' 首</span><div>'+dead.map(function(s){return esc(s.t);}).join("、")+'</div></div>';}
     h+='<details><summary>每个人投了什么</summary>'+rows.map(function(r){
       var y=Object.keys(r.votes||{}).filter(function(id){return r.votes[id];});
-      return '<div class="card p"><b>'+esc(r.who||"朋友")+'</b><em>最想听：'+esc(names[r.best]||"没选")+'</em><em>能做主打：'+(y.map(function(id){return esc(names[id]||id);}).join("、")||"一首都没选")+'</em></div>';
+      return '<div class="card p"><b>'+esc(r.who||"朋友")+(r.done===0?'<span style="color:var(--mute);font-weight:400"> · 没听完</span>':'')+'</b><em>最想听：'+esc(names[r.best]||"没选")+'</em><em>能做主打：'+(y.map(function(id){return esc(names[id]||id);}).join("、")||"一首都没选")+'</em></div>';
     }).join("")+'</details>';
     out.innerHTML=h+'</div>';
   }).catch(function(){meta.textContent="打不开：链接不对，或者网络不好，刷新一下再试。";});
