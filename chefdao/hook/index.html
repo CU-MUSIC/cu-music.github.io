@@ -99,8 +99,11 @@ body{isolation:isolate}
 .sbt{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}.sbt .go{height:58px}
 .em{font-size:40px;margin-right:12px;vertical-align:10px;line-height:1}
 .pk{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;height:72px}.pe{font-size:24px;line-height:1.1}
-.ttl{font-size:20px;font-weight:600;margin-top:6px;filter:blur(9px);opacity:.75;transition:filter .5s ease,opacity .5s,color .5s;user-select:none;-webkit-user-select:none;min-height:1.4em}
-.ttl.show{filter:none;opacity:1;color:var(--acc)}
+.ttl,.side .st{position:relative;font-weight:600;user-select:none;-webkit-user-select:none;min-height:1.4em}
+.ttl{font-size:20px;margin-top:6px}.side .st{font-size:18px}
+.ttl .b,.st .b{display:block;filter:blur(9px);opacity:.7;transform:translateZ(0);will-change:opacity;transition:opacity .35s ease}
+.ttl .c,.st .c{position:absolute;left:0;top:0;right:0;color:var(--acc);opacity:0;will-change:opacity;transition:opacity .35s ease;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl.show .b,.st.show .b{opacity:0}.ttl.show .c,.st.show .c{opacity:1}
 .card.nudge{transition:transform .25s cubic-bezier(.2,.8,.2,1)}
 .pk{height:auto;min-height:84px;padding:8px 4px}.pt{font-size:11px;color:var(--mute);line-height:1.3;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .roles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -113,7 +116,7 @@ body{isolation:isolate}
 .side{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;transition:border-color .2s,transform .25s,opacity .3s}
 .side.playing{border-color:rgba(242,179,27,.6)}.side.win{border-color:var(--acc);transform:scale(1.02)}.side.lose{opacity:.45}
 .side .e{font-size:44px;line-height:1;grid-row:span 2}
-.side .st{font-size:18px;font-weight:600;filter:blur(8px);opacity:.75;transition:filter .5s,opacity .5s;min-height:1.4em}.side .st.show{filter:none;opacity:1;color:var(--acc)}
+
 .side .meta{font-size:13px;color:var(--mute);font-family:var(--mono)}
 .bar2{grid-column:1/-1;height:4px;background:var(--dim);border-radius:2px;overflow:hidden}.bar2 i{display:block;height:100%;width:0;background:var(--acc)}
 .acts{grid-column:1/-1;display:grid;grid-template-columns:1fr 1.3fr;gap:10px;margin-top:4px}
@@ -255,7 +258,7 @@ body{isolation:isolate}
     var c=CLIPS[order[k]], el=document.createElement("div");
     el.className="card"+(cls?" "+cls:"");
     var w="";(c.p||[]).forEach(function(v){w+='<span style="height:'+Math.max(4,v*100)+'%"></span>';});
-    el.innerHTML='<div><div class="nrow"><div class="num">'+(c.e?'<span class="em">'+c.e+'</span>':'')+label(k)+'<small>/ '+order.length+'</small></div><button type="button" class="say">'+(cm[c.id]?'✎ 改一句':'✎ 说一句')+'</button></div><div class="ttl'+(c.id in votes?' show':'')+'">'+(T[c.id]||'').replace(/[&<>]/g,'')+'</div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
+    el.innerHTML='<div><div class="nrow"><div class="num">'+(c.e?'<span class="em">'+c.e+'</span>':'')+label(k)+'<small>/ '+order.length+'</small></div><button type="button" class="say">'+(cm[c.id]?'✎ 改一句':'✎ 说一句')+'</button></div><div class="ttl'+(c.id in votes?' show':'')+'">'+(function(t){return '<span class="b">'+t+'</span><span class="c">'+t+'</span>';})((T[c.id]||'').replace(/[&<>]/g,''))+'</div><div class="hint"></div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span class="lk"></span><span>0:'+String(Math.round(c.d||18)).padStart(2,"0")+'</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
     el.dataset.id=c.id; var sb=el.querySelector(".say"); if(cm[c.id])sb.classList.add("on");
     sb.addEventListener("pointerdown",function(e){e.stopPropagation();});
     sb.onclick=function(e){e.stopPropagation();openSay(el,c.id,k);};
@@ -448,7 +451,7 @@ body{isolation:isolate}
   function dShow(){
     var p=pairs[pi]; cnt.textContent="第二轮 "+(pi+1)+" / "+pairs.length; bar.style.width=(pi/pairs.length*100)+"%";
     var vs=document.getElementById("vs");
-    vs.innerHTML=p.map(function(id){var c=cOf(id).c;return '<div class="side" data-id="'+id+'"><span class="e">'+(c.e||"")+'</span><div class="st">'+(T[id]||"").replace(/[&<>]/g,"")+'</div><div class="meta">还要听 '+MIN+' 秒</div><div class="bar2"><i></i></div><div class="acts"><button type="button" class="pl">▶ 播放</button><button type="button" class="dpk" disabled>选这首</button></div></div>';}).join("");
+    vs.innerHTML=p.map(function(id){var c=cOf(id).c;return '<div class="side" data-id="'+id+'"><span class="e">'+(c.e||"")+'</span><div class="st">'+(function(t){return '<span class="b">'+t+'</span><span class="c">'+t+'</span>';})((T[id]||"").replace(/[&<>]/g,""))+'</div><div class="meta">还要听 '+MIN+' 秒</div><div class="bar2"><i></i></div><div class="acts"><button type="button" class="pl">▶ 播放</button><button type="button" class="dpk" disabled>选这首</button></div></div>';}).join("");
     vs.querySelectorAll(".side").forEach(function(sd){var id=sd.getAttribute("data-id");sd.querySelector(".pl").onclick=function(){dPlay(id);};sd.querySelector(".dpk").onclick=function(){dChoose(id);};});
     dT0=Date.now(); dplaying=null; audio.pause(); dPlay(p[0]); dGate();
   }
