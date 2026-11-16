@@ -139,16 +139,14 @@ body{isolation:isolate}
 </div>
 </div>
 <h1>帮忙选 <em>主打歌</em></h1>
-<p>每段从一首歌的 hook 开始，至少听 5 秒再决定。不告诉你歌名，顺序随机。</p>
-<div class="rules"><span class="r no">← 不适合</span><span class="r yes">能做主打 →</span></div>
 <div class="roles" role="radiogroup" aria-label="你是"><button type="button" class="ro" data-r="fan">🎧 普通听众</button><button type="button" class="ro" data-r="pro">🎚 音乐人</button></div>
 <div class="form">
-<input id="who" placeholder="你的名字（可以不填，匿名）" autocomplete="off" maxlength="20">
+<input id="who" placeholder="名字（可不填）" autocomplete="off" maxlength="20">
 <input id="pw" placeholder="密码" inputmode="numeric" autocomplete="off" maxlength="20">
 </div>
 <p class="err" id="err"></p>
 <button class="go" id="start" disabled>开始听</button>
-<p class="small c">戴耳机效果最好 · 先听 8 首，大约 2 分钟</p>
+<p class="small c">8 首 · 约 2 分钟 · 建议戴耳机</p>
 </div>
 <div class="screen" id="pick" hidden>
 <h1>最后一个问题：<br>哪首你 <em>最想听完整版</em>？</h1>
