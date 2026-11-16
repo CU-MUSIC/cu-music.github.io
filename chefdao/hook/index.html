@@ -109,7 +109,7 @@ body{isolation:isolate}
 <p>每段从一首歌的 hook 开始，至少听 10 秒再决定。不告诉你歌名，顺序随机。</p>
 <div class="rules"><span class="r no">← 不适合</span><span class="r yes">能做主打 →</span></div>
 <div class="form">
-<input id="who" placeholder="你的名字" autocomplete="off" maxlength="20">
+<input id="who" placeholder="你的名字（可以不填，匿名）" autocomplete="off" maxlength="20">
 <input id="pw" placeholder="密码" inputmode="numeric" autocomplete="off" maxlength="20">
 </div>
 <p class="err" id="err"></p>
@@ -153,7 +153,7 @@ body{isolation:isolate}
   function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
   var lid=ls("hv:lid"); if(!lid){lid=Array.from(crypto.getRandomValues(new Uint8Array(12)),function(b){return("0"+b.toString(16)).slice(-2);}).join("");ls("hv:lid",lid);}
   who.value=ls("hv:who")||""; pw.value=ls("hv:pw")||"";
-  function chk(){start.disabled=!who.value.trim()||!pw.value.trim();}
+  function chk(){start.disabled=!pw.value.trim();}
   who.addEventListener("input",chk); pw.addEventListener("input",chk); chk();
   var b64=function(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0);});};
   async function derive(p){
@@ -344,7 +344,7 @@ body{isolation:isolate}
   }
   document.getElementById("send").onclick=function(){
     var btn=this, e2=document.getElementById("err2"); btn.disabled=true; e2.textContent=""; audio.pause();
-    var body={proj:PROJ,lid:lid,who:who.value.trim(),votes:votes,best:best,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;})};
+    var body={proj:PROJ,lid:lid,who:who.value.trim()||"匿名",votes:votes,best:best,note:document.getElementById("note").value.trim().slice(0,500),order:order.map(function(i){return CLIPS[i].id;})};
     fetch(API+"/hv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
       .then(function(r){return r.json();}).then(function(j){
         if(!j.ok)throw 0;
