@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#18211d">
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
+<title>主打盲听 · CU MUSIC</title>
+<style>
+/* 一屏 app：顶栏进度 → 卡片堆 → 底部三个按钮 */
+:root{--bg:#18211d;--card:#1f2a25;--card2:#24302a;--fg:#d3d6ce;--mute:#8f9a93;--line:#2c3933;--acc:#8fb5a2;--no:#b58f8f;--dim:#3a4740;color-scheme:dark;
+--sans:Inter,"PingFang SC","Noto Sans SC",-apple-system,sans-serif;--mono:ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:17px/1.6 var(--sans);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.app{height:100%;max-width:30rem;margin:0 auto;display:grid;grid-template-rows:auto 1fr auto;padding:calc(14px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.top{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--mute)}
+.prog{height:3px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--acc);width:0;transition:width .3s}
+.stage{position:relative;margin-block:16px;min-height:0}
+.card{position:absolute;inset:0;background:var(--card);border:1px solid var(--line);border-radius:20px;display:grid;grid-template-rows:auto 1fr auto;padding:22px;touch-action:none;will-change:transform;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s}
+.card.back{transform:scale(.95) translateY(12px);opacity:.6;background:var(--card2)}
+.card.drag{transition:none}
+.num{font-weight:300;font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+.num small{font-size:18px;color:var(--mute);margin-left:6px}
+.hint{color:var(--mute);font-size:15px;margin-top:6px}
+.wave{display:flex;align-items:center;gap:3px;height:100%;max-height:180px;align-self:center}
+.wave span{flex:1;background:var(--dim);border-radius:2px;min-height:4px}
+.wave span.on{background:var(--acc)}
+.tbar{display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;color:var(--mute)}
+.stamp{position:absolute;top:26px;padding:4px 14px;border:2px solid;border-radius:8px;font-weight:700;font-size:20px;opacity:0;letter-spacing:.05em}
+.stamp.yes{right:22px;color:var(--acc);border-color:var(--acc);transform:rotate(10deg)}
+.stamp.no{left:22px;color:var(--no);border-color:var(--no);transform:rotate(-10deg)}
+.btns{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center}
+.btn{height:64px;border-radius:32px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:500 17px var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.btn:focus-visible,.go:focus-visible,.pk:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.btn.no{color:var(--no)}
+.btn.yes{color:var(--acc);border-color:var(--acc)}
+.btn.re{width:64px;padding:0;color:var(--mute)}
+.screen{position:absolute;inset:0;display:grid;align-content:center;gap:18px}
+.screen h1{font-size:30px;font-weight:400;line-height:1.35;margin:0}
+.screen h1 em{font-style:normal;color:var(--acc)}
+.screen p{margin:0;color:var(--mute)}
+.rules{display:grid;gap:10px;font-size:16px}
+.rules div{display:flex;gap:10px;align-items:center}
+.rules b{display:inline-flex;width:34px;height:34px;border-radius:17px;align-items:center;justify-content:center;border:1px solid var(--line);font-weight:500}
+input{font:17px var(--sans);background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;outline:none;width:100%;-webkit-user-select:text;user-select:text}
+input:focus{border-color:var(--acc)}
+.go{height:56px;border-radius:28px;border:0;background:var(--acc);color:#14201a;font:600 17px var(--sans);cursor:pointer}
+.go:disabled{opacity:.4}
+.err{color:var(--no)!important;font-size:15px;min-height:1.4em}
+.picks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pk{height:60px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:300 22px var(--sans);cursor:pointer}
+.pk.sel{border-color:var(--acc);color:var(--acc);background:#22322a}
+.small{font-size:14px;color:var(--mute)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+<div>
+<div class="top"><span>LIFE OF CHENIUS</span><span id="cnt">盲听</span></div>
+<div class="prog"><i id="bar"></i></div>
+</div>
+
+<div class="stage" id="stage">
+<div class="screen" id="intro">
+<h1>帮忙选 <em>主打歌</em></h1>
+<p>每段是一首歌最抓人的 18 秒。不告诉你歌名，顺序随机。</p>
+<div class="rules">
+<div><b style="color:var(--acc)">→</b>右滑：能做主打</div>
+<div><b style="color:var(--no)">←</b>左滑：不适合做主打</div>
+</div>
+<input id="who" placeholder="你的名字" autocomplete="off" maxlength="20">
+<input id="pw" placeholder="密码" inputmode="numeric" autocomplete="off" maxlength="20">
+<p class="err" id="err"></p>
+<button class="go" id="start" disabled>开始听</button>
+<p class="small">戴耳机听效果最好，大约 5 分钟。</p>
+</div>
+<div class="screen" id="pick" hidden>
+<h1>最后一个问题：<br>哪首你 <em>最想听完整版</em>？</h1>
+<p class="small">点一下可以再听一遍。</p>
+<div class="picks" id="picks"></div>
+<p class="err" id="err2"></p>
+<button class="go" id="send" disabled>提交</button>
+</div>
+<div class="screen" id="done" hidden>
+<h1>收到了，<em>谢谢</em></h1>
+<p id="sum"></p>
+</div>
+</div>
+
+<div class="btns" id="btns" hidden>
+<button class="btn no" id="bNo" aria-label="不适合做主打">✕ 不适合</button>
+<button class="btn re" id="bRe" aria-label="重听">↺</button>
+<button class="btn yes" id="bYes" aria-label="能做主打">能做主打 ✓</button>
+</div>
+</div>
+
+<script src="clips.js"></script>
+<script>
+(function(){
+  var API="https://stats.cumusic.work", PROJ="lchenius";
+  var HV=window.HV, CLIPS=HV.clips, urls={}, key=null;
+  var order=CLIPS.map(function(c,i){return i;});
+  for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t;}
+  var stage=document.getElementById("stage"),bar=document.getElementById("bar"),cnt=document.getElementById("cnt");
+  var who=document.getElementById("who"),pw=document.getElementById("pw"),start=document.getElementById("start"),err=document.getElementById("err");
+  var audio=new Audio(); audio.preload="auto"; audio.setAttribute("playsinline","");
+  var pos=0, votes={}, cur=null, raf=0;
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+  var lid=ls("hv:lid"); if(!lid){lid=Array.from(crypto.getRandomValues(new Uint8Array(12)),function(b){return("0"+b.toString(16)).slice(-2);}).join("");ls("hv:lid",lid);}
+  who.value=ls("hv:who")||""; pw.value=ls("hv:pw")||"";
+  function chk(){start.disabled=!who.value.trim()||!pw.value.trim();}
+  who.addEventListener("input",chk); pw.addEventListener("input",chk); chk();
+  var b64=function(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0);});};
+  async function derive(p){
+    var base=await crypto.subtle.importKey("raw",new TextEncoder().encode(p),"PBKDF2",false,["deriveKey"]);
+    return crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(HV.salt),iterations:HV.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+  }
+  async function open(u8){return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:u8.subarray(0,12)},key,u8.subarray(12)));}
+  function load(idx){
+    var c=CLIPS[idx]; if(urls[c.id])return urls[c.id];
+    urls[c.id]=fetch("a/"+c.f).then(function(r){return r.arrayBuffer();}).then(function(b){return open(new Uint8Array(b));})
+      .then(function(pt){return URL.createObjectURL(new Blob([pt],{type:"audio/mpeg"}));});
+    return urls[c.id];
+  }
+  start.addEventListener("click",async function(){
+    start.disabled=true; err.textContent="正在打开…";
+    // iOS：在点击里先让 audio 播一下，后面才能自动播
+    audio.src="data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYyLjMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTQuMFVVVVVVVVVVVVVVVUxBTUU0LjBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUU0LjBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTQuMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTQuMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC4wVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC4wVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUU0LjBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUU0LjBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+    audio.play().catch(function(){});
+    try{
+      key=await derive(pw.value.trim());
+      var ok=new TextDecoder().decode(await open(b64(HV.check)));
+      if(ok!=="ok")throw 0;
+    }catch(e){err.textContent="密码不对"; start.disabled=false; return;}
+    ls("hv:who",who.value.trim()); ls("hv:pw",pw.value.trim());
+    err.textContent="";
+    load(order[0]); if(order[1]!==undefined)load(order[1]);
+    document.getElementById("intro").hidden=true;
+    document.getElementById("btns").hidden=false;
+    next();
+  });
+  function label(k){return String(k+1).padStart(2,"0");}
+  function makeCard(k,isBack){
+    var c=CLIPS[order[k]], el=document.createElement("div");
+    el.className="card"+(isBack?" back":"");
+    var w="";(c.p||[]).forEach(function(v){w+='<span style="height:'+Math.max(4,v*100)+'%"></span>';});
+    el.innerHTML='<div><div class="num">'+label(k)+'<small>/ '+CLIPS.length+'</small></div><div class="hint">'+(isBack?'':'正在播放 · 听完再决定也可以')+'</div></div><div class="wave">'+w+'</div><div class="tbar"><span class="t0">0:00</span><span>0:18</span></div><div class="stamp yes">主打</div><div class="stamp no">不适合</div>';
+    return el;
+  }
+  function next(){
+    stage.querySelectorAll(".card").forEach(function(n){n.remove();});
+    bar.style.width=(pos/CLIPS.length*100)+"%";
+    if(pos>=CLIPS.length){finish();return;}
+    cnt.textContent=(pos+1)+" / "+CLIPS.length;
+    if(pos+1<CLIPS.length){stage.appendChild(makeCard(pos+1,true)); load(order[pos+1]);}
+    cur=makeCard(pos,false); stage.appendChild(cur);
+    play(order[pos],cur); bindDrag(cur);
+  }
+  function play(idx,card){
+    cancelAnimationFrame(raf);
+    load(idx).then(function(u){
+      if(card&&card!==cur)return;
+      audio.src=u; audio.currentTime=0; audio.play().catch(function(){});
+      if(!card)return;
+      var spans=card.querySelectorAll(".wave span"), t0=card.querySelector(".t0");
+      (function tick(){
+        var d=audio.duration||18, p=audio.currentTime/d, n=Math.floor(p*spans.length);
+        spans.forEach(function(s,i){s.classList.toggle("on",i<n);});
+        t0.textContent="0:"+String(Math.floor(audio.currentTime)).padStart(2,"0");
+        raf=requestAnimationFrame(tick);
+      })();
+    }).catch(function(){var h=card&&card.querySelector(".hint");if(h)h.textContent="这段没加载出来，可以先划过去";});
+  }
+  function decide(yes){
+    if(!cur)return;
+    votes[CLIPS[order[pos]].id]=yes?1:0;
+    var el=cur; cur=null;
+    el.style.transform="translateX("+(yes?140:-140)+"%) rotate("+(yes?18:-18)+"deg)"; el.style.opacity="0";
+    pos++; setTimeout(next,260);
+  }
+  function bindDrag(el){
+    var x0=0,y0=0,dx=0,down=false,yes=el.querySelector(".stamp.yes"),no=el.querySelector(".stamp.no");
+    el.addEventListener("pointerdown",function(e){down=true;x0=e.clientX;y0=e.clientY;dx=0;el.classList.add("drag");el.setPointerCapture(e.pointerId);});
+    el.addEventListener("pointermove",function(e){if(!down)return;dx=e.clientX-x0;var dy=(e.clientY-y0)*.2;
+      el.style.transform="translate("+dx+"px,"+dy+"px) rotate("+(dx/18)+"deg)";
+      yes.style.opacity=Math.max(0,Math.min(1,dx/90)); no.style.opacity=Math.max(0,Math.min(1,-dx/90));});
+    function up(){if(!down)return;down=false;el.classList.remove("drag");
+      if(Math.abs(dx)>90){decide(dx>0);} else {el.style.transform="";yes.style.opacity=0;no.style.opacity=0;}}
+    el.addEventListener("pointerup",up); el.addEventListener("pointercancel",up);
+  }
+  document.getElementById("bYes").onclick=function(){decide(true);};
+  document.getElementById("bNo").onclick=function(){decide(false);};
+  document.getElementById("bRe").onclick=function(){if(cur){audio.currentTime=0;audio.play().catch(function(){});}};
+  document.addEventListener("keydown",function(e){if(!cur)return;if(e.key==="ArrowRight")decide(true);if(e.key==="ArrowLeft")decide(false);});
+  var best=null;
+  function finish(){
+    audio.pause(); cancelAnimationFrame(raf);
+    document.getElementById("btns").hidden=true; cnt.textContent="最后一步";
+    var box=document.getElementById("picks"), h="";
+    order.forEach(function(idx,k){h+='<button class="pk" data-id="'+CLIPS[idx].id+'" data-i="'+idx+'">'+label(k)+'</button>';});
+    box.innerHTML=h;
+    box.querySelectorAll(".pk").forEach(function(b){b.onclick=function(){
+      box.querySelectorAll(".pk").forEach(function(x){x.classList.remove("sel");});
+      b.classList.add("sel"); best=b.getAttribute("data-id"); document.getElementById("send").disabled=false;
+      play(+b.getAttribute("data-i"),null);};});
+    document.getElementById("pick").hidden=false;
+  }
+  document.getElementById("send").onclick=function(){
+    var btn=this, e2=document.getElementById("err2"); btn.disabled=true; e2.textContent=""; audio.pause();
+    var body={proj:PROJ,lid:lid,who:who.value.trim(),votes:votes,best:best,order:order.map(function(i){return CLIPS[i].id;})};
+    fetch(API+"/hv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+      .then(function(r){return r.json();}).then(function(j){
+        if(!j.ok)throw 0;
+        var yes=Object.keys(votes).filter(function(k){return votes[k];}).length;
+        document.getElementById("pick").hidden=true;
+        document.getElementById("sum").textContent="你右滑了 "+yes+" 首。再提交一次会覆盖这次的结果。";
+        document.getElementById("done").hidden=false;
+        bar.style.width="100%"; cnt.textContent="完成";
+      }).catch(function(){e2.textContent="没提交上，检查一下网络再点一次"; btn.disabled=false;});
+  };
+})();
+</script>
+</body>
+</html>
