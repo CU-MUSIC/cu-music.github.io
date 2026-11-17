@@ -126,6 +126,22 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .bt-bar{height:4px;border-radius:2px;background:var(--fill-2);margin:6px 0 4px;overflow:hidden}
 .bt-bar i{display:block;height:100%;background:var(--text-2);border-radius:2px}
 .blink{font-size:14px;color:var(--text-2);text-decoration:underline;text-underline-offset:3px}
+/* 问卷结果：每题一组横条，NPS 一个大数 + 0–10 柱状 */
+.svq{padding:16px 0;border-top:.5px solid var(--hair)}
+.svq h3{font-size:16px;font-weight:600;line-height:1.5;margin:0 0 10px}
+.svq h3 small{font-weight:400;font-size:13px;color:var(--text-3);margin-left:6px}
+.svr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;margin:8px 0;font-size:14.5px}
+.svr span{min-width:0}
+.svr em{font-style:normal;color:var(--text-2);font-variant-numeric:tabular-nums;font-size:13.5px}
+.svr i{grid-column:1/-1;display:block;height:8px;border-radius:4px;background:var(--fill);overflow:hidden}
+.svr i b{display:block;height:100%;border-radius:4px;background:var(--text-2)}
+.svr.top i b{background:var(--text)}
+.svnps{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;align-items:end;height:90px;margin:6px 0 4px}
+.svnps div{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.svnps div i{display:block;width:100%;border-radius:3px 3px 0 0;min-height:2px}
+.svnps-x{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;font-size:12px;color:var(--text-3);text-align:center;font-variant-numeric:tabular-nums}
+.svnote{padding:12px 0;border-top:.5px solid var(--hair);font-size:15px;line-height:1.7}
+.svnote div{font-size:13px;color:var(--text-3);margin-top:2px}
 .empty,.msg{color:var(--text-3);font-size:15px;padding:24px 0;text-align:center}
 .login{max-width:340px;margin:18vh auto 0;text-align:center;display:flex;flex-direction:column;gap:14px}
 .login input{background:var(--fill-2);border-radius:12px;padding:12px 14px;text-align:center;font-size:16px}
@@ -302,7 +318,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .tabs button{flex:1;font-size:15px;padding:8px 6px;border-radius:9px;color:var(--text-2);position:relative}
 .tabs button.on{background:var(--fill-3);color:var(--text);font-weight:600}
 .tabs .dot{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--red);color:var(--ink);font-size:12px;font-weight:700;padding:0 5px;margin-left:5px;vertical-align:1px}
-.tabs .ti{display:none}.tabs button[data-t=price],.tabs button[data-t=beat],.tabs button[data-t=home] .tl{display:none}.tabs .tm{display:inline}.tabs button.son{background:var(--fill-3);color:var(--text);font-weight:600}
+.tabs .ti{display:none}.tabs button[data-t=price],.tabs button[data-t=beat],.tabs button[data-t=survey],.tabs button[data-t=home] .tl{display:none}.tabs .tm{display:inline}.tabs button.son{background:var(--fill-3);color:var(--text);font-weight:600}
 .subseg{display:flex;width:max-content;margin:-8px 0 20px}.subseg button{padding:5px 16px}
 /* ── 像 App：铃铛收通知设置、大标题、手机底部标签栏 ── */
 .ttl{flex:1 1 0;min-width:0}.ttl h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ttl .eyebrow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ttl .bv{text-transform:none;margin-left:4px}
@@ -444,7 +460,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261117.0400';
+const BUILD = '261117.1033';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -482,7 +498,7 @@ const TICON = { work: TI('<rect x="4" y="5" width="16" height="15" rx="3"/><path
   rlib: TI('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2"/>'),
   home: TI('<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.4 2.3 3.5 5 3.5 8s-1.1 5.7-3.5 8c-2.4-2.3-3.5-5-3.5-8s1.1-5.7 3.5-8"/>'),
   orders: TI('<path d="M6.5 3.5h11v17l-2.75-1.6L12 20.5l-2.75-1.6L6.5 20.5z"/><path d="M9.5 8.5h5M9.5 12h5"/>') };
-const TABS = [['work', '工作'], ['listen', '审听'], ['lib', 'Library'], ['orders', '订单'], ['rlib', '参考库'], ['home', '主页'], ['beat', '伴奏'], ['price', '价格页']];   // 后三个在标签栏里合成一个「网站」，进去再用上面的小切换
+const TABS = [['work', '工作'], ['listen', '审听'], ['lib', 'Library'], ['orders', '订单'], ['rlib', '参考库'], ['home', '主页'], ['beat', '伴奏'], ['price', '价格页'], ['survey', '问卷']];   // 后三个在标签栏里合成一个「网站」，进去再用上面的小切换
 // 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
 const SNAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
 // 推进按钮上写的是「进入这一步」的动作
@@ -666,6 +682,7 @@ async function load() {
     if (UPTO && !window.__upDone) { window.__upDone = 1; const p = LIB.projects.find(x => x.slug === UPTO); if (p) { history.replaceState(null, '', location.pathname); setTimeout(() => openUpload({ project: p }), 300); } }
     if (!window.__pushInit) { window.__pushInit = 1; setTimeout(setupPush, 300); }
     if (tab === 'beat') loadBeat();
+    if (tab === 'survey') loadSurvey();
   } catch (e) { if (!data) root.innerHTML = '<div class="msg">读不到数据，检查网络后下拉刷新</div>'; }
 }
 
@@ -789,12 +806,12 @@ function render() {
   // 每分钟自动刷新时，保留展开着的报价单
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
-  const SITE = ['home', 'price', 'beat'], TTL = Object.fromEntries(TABS);
+  const SITE = ['home', 'price', 'beat', 'survey'], TTL = Object.fromEntries(TABS);
   const head = `<div class="top"><div class="ttl"><div class="eyebrow">Insights <span class="bv" title="页面版本号">v${BUILD}</span></div><h1>${TTL[tab] || 'Insights'}</h1></div><button class="rfb nfb${NOPEN ? ' on' : ''}" id="nfb" aria-label="通知设置" title="通知设置"><svg viewBox="0 0 24 24"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i></i></button><button class="rfb ofb${OFF ? ' on' : ''}" id="ofb" aria-label="离线保存" title="${OFF ? '已离线保存在这台设备' : '离线保存：数据和封面存在这台设备，打开秒开'}"><svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M5 17.5c0 1.4 1.1 2.5 2.5 2.5h9c1.4 0 2.5-1.1 2.5-2.5"/></svg></button><button class="rfb" id="rfb" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></button>
     ${tab === 'orders' || tab === 'lib' || tab === 'rlib' || tab === 'work' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="nbar${NOPEN ? ' open' : ''}" id="nbar" hidden></div><div class="missed" id="missed" hidden></div>
     <nav class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}${k === 'home' && SITE.includes(tab) ? ' son' : ''}">${TICON[k] || ''}<span class="tl">${t}</span>${k === 'home' ? '<span class="tm">网站</span>' : ''}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</nav>${SITE.includes(tab) ? `<div class="seg subseg">${SITE.map(k => `<button data-t2="${k}" class="${tab === k ? 'on' : ''}">${TTL[k]}</button>`).join('')}</div>` : ''}`;
-  root.innerHTML = head + (tab === 'work' ? renderWork() : tab === 'lib' ? renderLib() : tab === 'rlib' ? renderRlib() : tab === 'beat' ? renderBeat() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
+  root.innerHTML = head + (tab === 'work' ? renderWork() : tab === 'lib' ? renderLib() : tab === 'rlib' ? renderRlib() : tab === 'beat' ? renderBeat() : tab === 'survey' ? renderSurvey() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   if (window.__pushDraw) window.__pushDraw();
   drawMissed();
@@ -1159,6 +1176,86 @@ function place(sid, cc) {
   const city = CITY[g.city] || g.city || REGION[g.region] || g.region || '';
   const head = g.country === 'CN' ? '' : (CC[g.country] || g.country || '');
   return [head, city, isp(g.org)].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' · ');
+}
+// ── 问卷：价格页「答问卷领 ¥100 券」的结果（/survey/list）──
+// 题目和选项跟价格页的 SV_Q 保持一致（改题时两边一起改）；选项按问卷里的顺序排，方便看价格区间
+const SVQ = [
+  ['q1', '你是？', ['独立歌手 / 说唱', '乐队', '学生作业 / 比赛', '厂牌 / 公司项目', '爱好玩票']],
+  ['q2', '主要做什么风格？', ['说唱 / 嘻哈', 'R&B', '流行', '独立 / 摇滚', '民谣', '电子', '国风', '其他'], 1],
+  ['q3', '一年大概发几首歌？', ['1 首以内', '2–5 首', '6–12 首', '12 首以上']],
+  ['q4', '你现在在哪？', ['中国大陆', '韩国', '其他海外地区']],
+  ['q5', '怎么知道刀大厨的？', ['抖音', '小红书', '视频号', 'B 站', '朋友推荐', '录音棚介绍', '刀门', '其他']],
+  ['q6', '最常刷的平台', ['抖音', '小红书', '视频号', 'B 站', '微博', 'Instagram / YouTube'], 1],
+  ['q7', '合作过吗？', ['合作过好几次', '合作过一次', '还没有，在考虑', '只是来看看']],
+  ['q8', '现在怎么混？', ['自己混', '录音棚顺带混', '找网上的混音师', '还没混过']],
+  ['q9', '心里的预算', ['¥300 以内', '¥300–500', '¥500–800', '¥800–1,500', '¥1,500 以上']],
+  ['q10', '低于多少会担心质量', ['¥150 以下', '¥250 以下', '¥400 以下', '不会担心']],
+  ['q11', '超过多少就不考虑', ['¥500', '¥800', '¥1,200', '¥2,000', '看效果，没有上限']],
+  ['q12', '对现价的感觉', ['比预期便宜', '差不多', '略贵，但值得', '太贵了', '还没仔细看']],
+  ['q13', '能接受等多久', ['3 天内', '一周', '两周', '三周以上也行，效果优先']],
+  ['q14', '加急愿意多付', ['不加急', '+15%', '+30%', '+50% 以上']],
+  ['q15', '最看重的两项', ['价格', '声音效果', '交付速度', '沟通和修改', '作品案例', '朋友推荐 / 口碑'], 1],
+  ['q16', '下单前最担心', ['效果达不到预期', '沟通麻烦、说不清', '交付拖延', '价格不透明、后面加钱', '被当成新手应付', '没什么担心的']],
+  ['q17', '什么能让人更快下单', ['先听前后对比', '方向不对可退款', '固定套餐一口价', '分期付款', '优惠码', '更快交付'], 1],
+  ['q18', '推荐意愿（0–10）', null],
+  ['q19', '有推荐奖励会推荐吗', ['会，马上就有人选', '遇到合适的人会', '不太会主动推荐']],
+  ['q20', '还对什么感兴趣', ['录音', '人声制作', '母带', '编曲 / 伴奏', '混音课', '刀门会员', '暂时没有'], 1],
+  ['q21', '想在账号看到的内容', ['混音前后对比', '混音技巧教程', '客户作品背后的故事', '在韩国做音乐的日常', '格莱美工程师的思路', '设备和插件'], 1]
+];
+const SVF = [['all', '全部'], ['buy', '合作过的'], ['new', '没合作过'], ['ord', '用券下单的']];
+let SVD = null, svBusy = false, svF = 'all';
+async function loadSurvey() {
+  if (svBusy) return; svBusy = true;
+  try {
+    const j = await (await fetch(API + '/survey/list', { headers: { Authorization: 'Bearer ' + KEY } })).json();
+    if (j.ok) SVD = j.surveys.map(r => { let a = {}; try { a = JSON.parse(r.a) || {}; } catch (e) {} return { ...r, a }; });
+  } catch (e) {}
+  svBusy = false;
+  if (tab === 'survey' && !typing()) render();
+}
+window.__svf = k => { svF = k; render(); };
+function renderSurvey() {
+  if (!SVD) { loadSurvey(); return '<div class="msg">正在读取…</div>'; }
+  const now = Date.now(), from = now - days * 864e5;
+  const inWin = SVD.filter(r => r.created >= from);
+  const pick = { all: () => true, buy: r => /合作过/.test(r.a.q7 || ''), new: r => !/合作过/.test(r.a.q7 || ''), ord: r => !!r.ord }[svF];
+  const rows = inWin.filter(pick);
+  const used = inWin.filter(r => r.used > 0).length, codes = inWin.filter(r => r.code).length;
+  const seg = `<div class="seg" style="margin:0 0 18px">${SVF.map(([k, t]) => `<button class="${svF === k ? 'on' : ''}" onclick="__svf('${k}')">${t}</button>`).join('')}</div>`;
+  if (!inWin.length) return `<div class="empty">近 ${days} 天还没有人填问卷。入口在价格页开屏的绿条：cumusic.work/chefdao/price</div>`;
+  // NPS：9–10 推荐者，0–6 贬损者，NPS = 推荐者% − 贬损者%
+  const sc = rows.map(r => parseInt(r.a.q18, 10)).filter(x => x >= 0 && x <= 10);
+  const pro = sc.filter(x => x >= 9).length, det = sc.filter(x => x <= 6).length;
+  const nps = sc.length ? Math.round((pro - det) / sc.length * 100) : null;
+  const avg = sc.length ? (sc.reduce((a, b) => a + b, 0) / sc.length).toFixed(1) : '—';
+  const hist = Array.from({ length: 11 }, (_, i) => sc.filter(x => x === i).length), hmax = Math.max(1, ...hist);
+  const bars = (q) => {
+    const [k, t, opts, multi] = q;
+    if (!opts) return '';
+    const cnt = {}; let n = 0;
+    rows.forEach(r => { const v = r.a[k]; if (v == null || v === '' || (Array.isArray(v) && !v.length)) return; n++; (Array.isArray(v) ? v : [v]).forEach(x => cnt[x] = (cnt[x] || 0) + 1); });
+    const extra = Object.keys(cnt).filter(x => !opts.includes(x));
+    const list = opts.concat(extra), mx = Math.max(1, ...list.map(x => cnt[x] || 0));
+    return `<div class="svq"><h3>${esc(t)}<small>${n} 人答${multi ? ' · 多选，比例按人数算' : ''}</small></h3>${list.map(x => {
+      const c = cnt[x] || 0, pc = n ? Math.round(c / n * 100) : 0;
+      return `<div class="svr${c && c === mx ? ' top' : ''}"><span>${esc(x)}</span><em>${c} · ${pc}%</em><i><b style="width:${c / mx * 100}%"></b></i></div>`;
+    }).join('')}</div>`;
+  };
+  const notes = rows.filter(r => r.note).slice(0, 50);
+  return `${seg}
+  <div class="cards">
+    <div class="card"><div class="lb">答卷</div><div class="n">${rows.length}</div><div class="d">近 ${days} 天${svF === 'all' ? '' : ' · 共 ' + inWin.length}</div></div>
+    <div class="card"><div class="lb">推荐值 NPS</div><div class="n">${nps == null ? '—' : (nps > 0 ? '+' : '') + nps}</div><div class="d">平均 ${avg} 分 · 推荐 ${pro} / 贬损 ${det}</div></div>
+    <div class="card"><div class="lb">领券</div><div class="n">${codes}</div><div class="d">满 ¥400 减 ¥100</div></div>
+    <div class="card"><div class="lb">用券下单</div><div class="n">${used}</div><div class="d">${codes ? Math.round(used / codes * 100) + '% 转化' : '—'}</div></div>
+  </div>
+  <div class="sect">推荐意愿<span>9–10 推荐 · 7–8 中立 · 0–6 贬损</span></div>
+  <div class="svnps">${hist.map((c, i) => `<div>${c || ''}<i style="height:${c / hmax * 70}px;background:${i >= 9 ? 'var(--text)' : i >= 7 ? 'var(--text-2)' : 'var(--text-3)'}"></i></div>`).join('')}</div>
+  <div class="svnps-x">${hist.map((_, i) => `<span>${i}</span>`).join('')}</div>
+  <div class="sect" style="margin-top:28px">每道题<span>${rows.length} 份</span></div>
+  ${SVQ.map(bars).join('')}
+  <div class="sect" style="margin-top:28px">补充意见<span>${notes.length} 条</span></div>
+  ${notes.length ? notes.map(r => `<div class="svnote">${esc(r.note)}<div>${when(r.created, now)} · ${esc(r.a.q1 || '')}${r.a.q4 ? ' · ' + esc(r.a.q4) : ''}${r.ord ? ' · 已下单' : ''}</div></div>`).join('') : '<div class="empty">还没有人写补充</div>'}`;
 }
 // ── 伴奏：cumusic.work/beat 的播放和购买意向（/badm/stats）──
 let BSTAT = null, bFor = null;
