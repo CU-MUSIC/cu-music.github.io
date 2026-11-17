@@ -1106,7 +1106,16 @@ async function renderOk() {
     return;
   }
   if (!okLoaded) { okLoaded = true; try { const j = await (await fetch(API_BASE + '/okq?s=' + S.slug + '&lid=' + lid + '&v=' + encodeURIComponent(cur.ver), { cache: 'no-store' })).json(); (j.mine || []).forEach(x => { OKS[x.ver] = x.ts; }); OKN = { need: j.need || 1, got: j.got || 0, fgot: j.fgot || 0 }; } catch (e) {} }
-  if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>'; return; }
+  if (S.prog && S.prog.s === 8 && cur === V[V.length - 1]) { bar.hidden = false; bar.className = 'okbar settle'; bar.innerHTML = '<div class="okset"><b>交付结算</b>已确认没有问题。结清尾款后，即交付成品。</div>';
+    // 点错了：还没领最终文件前可以撤回自己的确认，退回待审听（刀大厨会收到推送）
+    if (OKS[cur.ver] && !store.get('review:got:' + S.slug)) { bar.insertAdjacentHTML('beforeend', '<button type="button" class="okundo">撤回确认</button>');
+      bar.querySelector('.okundo').onclick = async () => { const v = cur.ver, u = bar.querySelector('.okundo'); u.disabled = true; u.textContent = '撤回中…';
+        try { const j = await (await fetch(API_BASE + '/ok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, ver: v, lid, on: 0 }) })).json();
+          if (!j.ok) throw 0; delete OKS[v];
+          if (j.s && S.prog) { S.prog = { ...S.prog, s: j.s, at: { ...(S.prog.at || {}), [j.s]: Date.now() } }; const sp = document.querySelector('.sprog'); if (sp) sp.outerHTML = progHtml(S.prog); try { renderFee(); } catch (e) {} }
+          renderOk(); hud('已撤回确认，回到待审听', 3000);
+        } catch (e) { u.disabled = false; u.textContent = '撤回确认'; hud('没撤回成功，检查网络再试'); } }; }
+    return; }
   const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 4 ? '第 ' + rn + ' 轮 · 反馈时限 24 小时' : '';
   const latest = cur === V[V.length - 1], fbOn = !!OKS['fb:' + cur.ver], showOk = !!OKS[cur.ver] || !!(S.prog && S.prog.okb && S.prog.s !== 7 && !fbOn);   // 「没有问题了」要你手动打开才对客户显示；修改中 / 已点反馈完毕时不显示（意见还没改完，不能同时“没问题”）
   const canFb = latest && S.prog && ([4, 7].includes(S.prog.s) || fbOn) &&   // 每位歌手各点各的：别人点过转成修改中，你这边照样能点
@@ -2552,8 +2561,8 @@ function rateAsk(force) {
 }
 $('#dlBtn').onclick = async () => {
   const b = $('#dlBtn'); if (b.dataset.busy) return;
-  if (DL.on && S.final) { rateAsk(); const el = document.createElement('a'); el.href = API_BASE + '/final?s=' + S.slug + '&k=' + encodeURIComponent(WK) + '&lid=' + lid + (IS_OWNER ? '&me=1' : ''); document.body.appendChild(el); el.click(); el.remove(); hud('开始下载：' + S.final.name, 3500); return; }   // 最终压缩包：浏览器直接下载，不经过内存
-  if (DL.on && DL.link) { rateAsk(); window.open(DL.link, '_blank', 'noopener'); fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, got: 1, ver: V[vi].ver }) }).catch(() => {}); return; }
+  if (DL.on && S.final) { rateAsk(); store.set('review:got:' + S.slug, '1'); const el = document.createElement('a'); el.href = API_BASE + '/final?s=' + S.slug + '&k=' + encodeURIComponent(WK) + '&lid=' + lid + (IS_OWNER ? '&me=1' : ''); document.body.appendChild(el); el.click(); el.remove(); hud('开始下载：' + S.final.name, 3500); return; }   // 最终压缩包：浏览器直接下载，不经过内存
+  if (DL.on && DL.link) { rateAsk(); store.set('review:got:' + S.slug, '1'); window.open(DL.link, '_blank', 'noopener'); fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, got: 1, ver: V[vi].ver }) }).catch(() => {}); return; }
   if (!DL.on && DL.trust) { if (!payConfirmed()) return hud('确认「这一版没问题」后，可以付款领取最终文件', 4500); return paySheet(); }
   if (!DL.on) {
     if (store.get('review:dlreq:' + S.slug) === '1') return hud(dlTip(), 4000);
