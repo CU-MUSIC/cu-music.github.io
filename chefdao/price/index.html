@@ -5645,11 +5645,11 @@ function svRefIn() {
 		return v && v !== own ? v : "";
 	} catch (e) { return ""; }
 }
-var svLeft = null; // 问卷券还剩几张（null = 不限量或还没读到）
+var svLeft = null, svVal = 100; // 第一档（¥100）还剩几张；svVal = 现在答能拿到的金额（前 50 名 ¥100，之后 ¥50）
 function svLeftSync() {
 	fetch(QBS_API + "/survey/left", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) {
 		if (!j || !j.ok) return;
-		svLeft = j.left;
+		svLeft = j.left; if (j.value) svVal = j.value;
 		var gs = document.getElementById("gate-survey"); if (gs) gs.innerHTML = svGateHtml();
 	}).catch(function () {});
 }
@@ -5673,8 +5673,8 @@ function svGateHtml() {
 	var m = svMine();
 	if (m && m.code && m.expires && Date.now() > m.expires && !nNew) return frHtml;
 	return frHtml + '<button class="gate-survey" onclick="svOpen(true)">'
-		+ '<span class="gate-survey-t"><b>' + (nNew ? "你有 " + nNew + " 张推荐奖励券（¥50）" : m && m.code ? "你的问卷优惠码 " + m.code : svLeft === 0 ? "价格问卷 · 这一期的券已发完" : "答 2 分钟问卷，领 ¥100 混音券") + '</b>'
-		+ '<span>' + (m && m.code ? "满 ¥400 可用 · 点开看券和你的推荐链接" : svLeft === 0 ? "答卷照样收，帮我把价格定得更合理" : "限量 50 张" + (svLeft != null ? " · 还剩 " + svLeft + " 张" : "") + " · 不用填名字") + '</span></span>'
+		+ '<span class="gate-survey-t"><b>' + (nNew ? "你有 " + nNew + " 张推荐奖励券（¥50）" : m && m.code ? "你的问卷优惠码 " + m.code : "答 2 分钟问卷，领 ¥" + svVal + " 混音券") + '</b>'
+		+ '<span>' + (m && m.code ? "满 ¥400 可用 · 点开看券和你的推荐链接" : svLeft === 0 ? "前 50 名的 ¥100 已发完 · 不用填名字" : "前 50 名 ¥100" + (svLeft != null ? "（还剩 " + svLeft + " 张）" : "") + "，之后 ¥50 · 不用填名字") + '</span></span>'
 		+ '<span class="gate-survey-a">→</span></button>';
 }
 function svOpen(fromGate) {
@@ -5716,9 +5716,9 @@ function svRender(dir, mine) {
 		body = '<div class="' + cls + '"><div class="sv-kick">CU MUSIC · 价格问卷</div>'
 			+ '<h2 class="sv-h">帮我把价格和交付时间定得更合理</h2>'
 			+ '<p class="sv-p">21 道选择题，大约 2 分钟，点一下就是一题。没有标准答案，按你真实的想法选就好。</p>'
-			+ '<ul class="sv-perks"><li><i>1</i><span>' + (svLeft === 0 ? '这一期的 50 张券已经发完，你的答案我依然会认真看' : '答完立刻领一张 <b>¥100 混音券</b>，满 ¥400 可用，今年内有效' + (svLeft != null ? '（还剩 ' + svLeft + ' 张）' : '')) + '</span></li>'
+			+ '<ul class="sv-perks"><li><i>1</i><span>' + (svLeft === 0 ? '答完立刻领一张 <b>¥' + svVal + ' 混音券</b>（前 50 名的 ¥100 已发完），满 ¥400 可用，今年内有效' : '前 50 名领 <b>¥100 混音券</b>' + (svLeft != null ? '（还剩 ' + svLeft + ' 张）' : '') + '，之后领 ¥50；满 ¥400 可用，今年内有效') + '</span></li>'
 			+ '<li><i>2</i><span>不用填名字、电话，答案只用来调整价格和服务</span></li>'
-			+ '<li><i>3</i><span>刀门会员也能用：先减 ¥100，再打 8 折</span></li></ul></div>';
+			+ '<li><i>3</i><span>刀门会员也能用：先减券面金额，再打 8 折</span></li></ul></div>';
 		foot = '<button type="button" class="qb-cta" onclick="svGo(1)">开始</button>';
 	} else if (pg >= 1 && pg < SV_SUBMIT) {
 		var g = SV_PAGES[pg];
@@ -5741,7 +5741,7 @@ function svRender(dir, mine) {
 			+ '<label class="qbo-hp" aria-hidden="true">Website<input id="sv-hp" tabindex="-1" autocomplete="off"></label>'
 			+ '<div class="sv-err" id="sv-err" role="alert"></div></div>';
 		foot = '<button type="button" class="sv-back" onclick="svGo(' + (SV_SUBMIT - 1) + ')">上一步</button>'
-			+ '<button type="button" class="qb-cta" id="sv-send" onclick="svSend()">提交，领取 ¥100 券</button>';
+			+ '<button type="button" class="qb-cta" id="sv-send" onclick="svSend()">提交，领取 ¥' + svVal + ' 券</button>';
 	} else {
 		var m = mine || svMine() || {};
 		if (!m.code) {
@@ -5838,7 +5838,7 @@ function svSend() {
 	svBusy = true; btn.disabled = true; btn.textContent = "提交中…";
 	var hp = document.getElementById("sv-hp");
 	var body = JSON.stringify({ a: svA, note: (svNote || "").trim(), website: hp ? hp.value : "", lid: qbs.lid, sid: qbs.sid, device: qbs.device });
-	var fail = function (msg) { svBusy = false; btn.disabled = false; btn.textContent = "提交，领取 ¥100 券"; err.textContent = msg; };
+	var fail = function (msg) { svBusy = false; btn.disabled = false; btn.textContent = "提交，领取 ¥" + svVal + " 券"; err.textContent = msg; };
 	fetch(QBS_API + "/survey", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
 		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
 		.then(function (j) {
