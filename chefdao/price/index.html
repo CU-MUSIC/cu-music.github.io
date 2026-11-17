@@ -5575,7 +5575,8 @@ function qbStatPlanLocal() {
 // 优惠码：?code=XXX 打开价格页会记下，下单表单自动带入；折扣由服务端算，这里只是预览
 var qbPromo = null;
 (function () { try { var c = new URLSearchParams(location.search).get("code"); if (c) qbLsSet("cd_promo", c.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 20)); } catch (e) {} })();
-setTimeout(function () { try { svRefSync(); } catch (e) {} }, 1200); // 推荐人：看看有没有新到的奖励券
+setTimeout(function () { try { svRefSync(); } catch (e) {} }, 1200);
+try { svLeftSync(); } catch (e) {} // 推荐人：看看有没有新到的奖励券
 function qbPromoApply() {
 	var t = qbOrderT(), inp = document.getElementById("qbo-promo"), pm = document.getElementById("qbo-pm");
 	if (!inp || !pm) return;
@@ -5644,6 +5645,14 @@ function svRefIn() {
 		return v && v !== own ? v : "";
 	} catch (e) { return ""; }
 }
+var svLeft = null; // 问卷券还剩几张（null = 不限量或还没读到）
+function svLeftSync() {
+	fetch(QBS_API + "/survey/left", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) {
+		if (!j || !j.ok) return;
+		svLeft = j.left;
+		var gs = document.getElementById("gate-survey"); if (gs) gs.innerHTML = svGateHtml();
+	}).catch(function () {});
+}
 function svRefInfo() { try { return JSON.parse(qbLsGet("cd_refinfo") || "null"); } catch (e) { return null; } }
 // 推荐人：每次打开价格页查一下有没有新到的奖励券（只在本机领过问卷券时才查）
 function svRefSync(cb) {
@@ -5664,8 +5673,8 @@ function svGateHtml() {
 	var m = svMine();
 	if (m && m.code && m.expires && Date.now() > m.expires && !nNew) return frHtml;
 	return frHtml + '<button class="gate-survey" onclick="svOpen(true)">'
-		+ '<span class="gate-survey-t"><b>' + (nNew ? "你有 " + nNew + " 张推荐奖励券（¥50）" : m && m.code ? "你的问卷优惠码 " + m.code : "答 2 分钟问卷，领 ¥100 混音券") + '</b>'
-		+ '<span>' + (m && m.code ? "满 ¥400 可用 · 点开看券和你的推荐链接" : "21 道选择题 · 不用填名字") + '</span></span>'
+		+ '<span class="gate-survey-t"><b>' + (nNew ? "你有 " + nNew + " 张推荐奖励券（¥50）" : m && m.code ? "你的问卷优惠码 " + m.code : svLeft === 0 ? "价格问卷 · 这一期的券已发完" : "答 2 分钟问卷，领 ¥100 混音券") + '</b>'
+		+ '<span>' + (m && m.code ? "满 ¥400 可用 · 点开看券和你的推荐链接" : svLeft === 0 ? "答卷照样收，帮我把价格定得更合理" : "限量 50 张" + (svLeft != null ? " · 还剩 " + svLeft + " 张" : "") + " · 不用填名字") + '</span></span>'
 		+ '<span class="gate-survey-a">→</span></button>';
 }
 function svOpen(fromGate) {
@@ -5707,7 +5716,7 @@ function svRender(dir, mine) {
 		body = '<div class="' + cls + '"><div class="sv-kick">CU MUSIC · 价格问卷</div>'
 			+ '<h2 class="sv-h">帮我把价格和交付时间定得更合理</h2>'
 			+ '<p class="sv-p">21 道选择题，大约 2 分钟，点一下就是一题。没有标准答案，按你真实的想法选就好。</p>'
-			+ '<ul class="sv-perks"><li><i>1</i><span>答完立刻领一张 <b>¥100 混音券</b>，满 ¥400 可用，今年内有效</span></li>'
+			+ '<ul class="sv-perks"><li><i>1</i><span>' + (svLeft === 0 ? '这一期的 50 张券已经发完，你的答案我依然会认真看' : '答完立刻领一张 <b>¥100 混音券</b>，满 ¥400 可用，今年内有效' + (svLeft != null ? '（还剩 ' + svLeft + ' 张）' : '')) + '</span></li>'
 			+ '<li><i>2</i><span>不用填名字、电话，答案只用来调整价格和服务</span></li>'
 			+ '<li><i>3</i><span>刀门会员也能用：先减 ¥100，再打 8 折</span></li></ul></div>';
 		foot = '<button type="button" class="qb-cta" onclick="svGo(1)">开始</button>';
