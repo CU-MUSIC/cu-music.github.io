@@ -900,26 +900,67 @@
 .qb-order-btn { display: block; width: 100%; margin-top: 9px; background: rgba(var(--green-ink), 0.10); border: 0.5px solid var(--green-line); border-radius: 10px; padding: 14px; font-family: var(--font); font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--green-soft); cursor: pointer; transition: background 0.2s; }
 .qb-order-btn:hover { background: rgba(var(--green-ink), 0.18); }
 html.qbo-lock, html.qbo-lock body { overflow: hidden; }
-/* 价格问卷：开屏页底部一条入口 + 底部弹层；选项是可换行的胶囊按钮 */
+/* 价格问卷：开屏页底部一条入口 + 分页问卷（手机优先：整屏高的底部弹层，顶部进度，底部固定按钮，一页 1–3 题） */
 .gate-survey { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; text-align: left; background: var(--green-fill); border: 0.5px solid var(--green-line); border-radius: var(--r); padding: 16px 20px; cursor: pointer; font-family: var(--font); color: var(--text-primary); opacity: 0; transform: translateY(18px); animation: gateIn 0.7s var(--ease) 0.24s forwards; }
 .gate-survey:hover { filter: brightness(1.08); }
 .gate-survey-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .gate-survey-t b { font-size: 15.5px; font-weight: 600; color: var(--green-soft); }
 .gate-survey-t span { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
 .gate-survey-a { flex-shrink: 0; font-size: 14px; color: var(--green-soft); }
-.sv-q { margin: 0 0 20px; border: 0; padding: 0; }
-.sv-q legend { padding: 0; font-size: 15.5px; font-weight: 600; line-height: 1.55; color: var(--text-primary); margin-bottom: 10px; }
-.sv-q legend small { font-weight: 400; font-size: 12.5px; color: var(--text-secondary); margin-left: 6px; }
-.sv-n { color: var(--text-dim); font-variant-numeric: tabular-nums; margin-right: 6px; font-weight: 500; }
-.sv-opts { display: flex; flex-wrap: wrap; gap: 8px; }
-.sv-opt { border: 0.5px solid var(--border); background: var(--well); color: var(--text-primary); border-radius: 999px; padding: 9px 14px; font: inherit; font-size: 14.5px; line-height: 1.3; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
-.sv-opt.on { border-color: var(--green-line); background: var(--green-fill); color: var(--green-soft); font-weight: 600; }
-.sv-q.miss legend { color: var(--warn); }
-.sv-prog { position: sticky; top: -10px; z-index: 2; background: var(--surface); padding: 6px 0 10px; margin: 0 0 8px; font-size: 12.5px; color: var(--text-secondary); }
-.sv-prog i { display: block; height: 3px; border-radius: 2px; background: rgba(var(--ink), 0.1); margin-top: 6px; overflow: hidden; }
-.sv-prog i b { display: block; height: 100%; background: var(--green-soft); transition: width 0.3s var(--ease); }
-.sv-code { margin: 6px 0 4px; text-align: center; font-size: 30px; font-weight: 700; letter-spacing: 0.14em; color: var(--green-soft); background: var(--green-fill); border: 0.5px dashed var(--green-line); border-radius: 12px; padding: 16px 10px; -webkit-user-select: all; user-select: all; font-variant-numeric: tabular-nums; }
-.sv-rule { font-size: 13.5px; line-height: 1.7; color: var(--text-secondary); text-align: center; margin: 8px 0 14px; }
+.qbo.sv .qbo-sheet { display: flex; flex-direction: column; height: 94vh; height: 94dvh; max-height: none; padding: 0; overflow: hidden; }
+@media (min-width: 641px) { .qbo.sv .qbo-sheet { height: min(760px, 90vh); max-width: 460px; } }
+.sv-head { flex-shrink: 0; padding: 10px 20px 0; }
+.sv-top { display: flex; align-items: center; justify-content: space-between; min-height: 36px; }
+.sv-step { font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.sv-x { width: 36px; height: 36px; margin-right: -8px; border: 0; background: none; color: var(--text-secondary); font-size: 22px; line-height: 1; cursor: pointer; border-radius: 50%; }
+.sv-x:hover { background: rgba(var(--ink), 0.06); }
+.sv-bar { height: 3px; border-radius: 2px; background: rgba(var(--ink), 0.08); overflow: hidden; margin: 6px 0 0; }
+.sv-bar b { display: block; height: 100%; background: var(--green-soft); border-radius: 2px; transition: width 0.4s var(--ease); }
+.sv-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 22px 20px 12px; }
+.sv-page { animation: svIn 0.36s var(--ease) both; }
+.sv-page.back { animation-name: svInBack; }
+@keyframes svIn { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes svInBack { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sv-page, .sv-page.back { animation: none; } .sv-bar b { transition: none; } }
+.sv-kick { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: var(--green-soft); margin-bottom: 8px; }
+.sv-h { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; color: var(--text-primary); margin: 0 0 6px; text-wrap: balance; }
+.sv-p { font-size: 15px; line-height: 1.7; color: var(--text-secondary); margin: 0 0 18px; }
+.sv-q { margin: 0 0 26px; }
+.sv-q:last-child { margin-bottom: 4px; }
+.sv-qt { font-size: 17px; font-weight: 600; line-height: 1.5; color: var(--text-primary); margin: 0 0 4px; }
+.sv-qn { display: block; font-size: 12px; font-weight: 500; color: var(--text-dim); letter-spacing: 0.04em; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.sv-qh { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+.sv-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.sv-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; text-align: left; border: 0.5px solid var(--border); background: var(--well); color: var(--text-primary); border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 15.5px; line-height: 1.4; cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.12s; -webkit-tap-highlight-color: transparent; }
+.sv-row:active { transform: scale(0.985); }
+.sv-dot { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(var(--ink), 0.28); display: grid; place-items: center; font-size: 12px; color: transparent; transition: background 0.2s, border-color 0.2s; }
+.sv-row.multi .sv-dot { border-radius: 6px; }
+.sv-row.on { border-color: var(--green-line); background: var(--green-fill); color: var(--green-soft); font-weight: 600; }
+.sv-row.on .sv-dot { background: var(--green-soft); border-color: var(--green-soft); color: var(--surface); }
+.sv-q.miss .sv-qt { color: var(--warn); }
+.sv-perks { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.sv-perks li { display: flex; gap: 10px; font-size: 15px; line-height: 1.6; color: var(--text-primary); }
+.sv-perks li i { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--green-fill); color: var(--green-soft); font-style: normal; font-size: 12px; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+.sv-foot { flex-shrink: 0; display: flex; gap: 10px; padding: 12px 20px calc(14px + env(safe-area-inset-bottom)); border-top: 0.5px solid var(--border); background: var(--surface); }
+.sv-foot .qb-cta { flex: 1; margin: 0; }
+.sv-foot .qb-cta:disabled { opacity: 0.4; cursor: default; }
+.sv-foot .qb-cta.dim { opacity: 0.45; }
+.sv-back { flex-shrink: 0; padding: 0 18px; border-radius: 12px; border: 0.5px solid var(--border); background: none; color: var(--text-secondary); font: inherit; font-size: 15px; cursor: pointer; }
+.sv-err { min-height: 0; font-size: 13.5px; color: var(--warn); margin-top: 8px; }
+.sv-err:empty { display: none; }
+.sv-ticket { position: relative; border-radius: 16px; overflow: hidden; background: var(--green-fill); border: 0.5px solid var(--green-line); margin: 6px 0 16px; }
+.sv-ticket-a { padding: 20px 20px 16px; }
+.sv-ticket-k { font-size: 11.5px; font-weight: 700; letter-spacing: 0.16em; color: var(--green-soft); opacity: 0.85; }
+.sv-ticket-v { font-size: 44px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; color: var(--green-soft); margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+.sv-ticket-r { font-size: 13.5px; line-height: 1.65; color: var(--text-secondary); }
+.sv-ticket-b { border-top: 1.5px dashed var(--green-line); padding: 14px 20px 18px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.sv-ticket-b span { font-size: 12px; color: var(--text-secondary); letter-spacing: 0.04em; }
+.sv-ticket-b b { font-size: 26px; letter-spacing: 0.16em; color: var(--text-primary); -webkit-user-select: all; user-select: all; font-variant-numeric: tabular-nums; }
+.sv-shot { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; line-height: 1.65; color: var(--text-primary); background: var(--well); border-radius: 12px; padding: 12px 14px; margin-bottom: 4px; }
+.sv-shot i { font-style: normal; font-size: 18px; line-height: 1.3; }
+.sv-note { display: block; width: 100%; box-sizing: border-box; background: var(--well); border: 0.5px solid var(--border); border-radius: 12px; padding: 12px 13px; font-family: var(--font); font-size: 16px; line-height: 1.6; color: var(--text-primary); outline: none; resize: vertical; min-height: 120px; -webkit-appearance: none; appearance: none; }
+.sv-note:focus { border-color: var(--green-line); }
+.sv-note::placeholder { color: var(--text-dim); }
 .qbo { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; justify-content: center; }
 .qbo-back { position: absolute; inset: 0; background: rgba(var(--veil), 0.62); opacity: 0; transition: opacity 0.3s; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .qbo-sheet { position: relative; width: 100%; max-width: 480px; max-height: 92vh; max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
@@ -5543,8 +5584,9 @@ function qbPromoApply() {
 		.catch(function () { pm.className = "qbo-pm err"; pm.textContent = t.promoErr; });
 }
 // ── 价格问卷 ────────────────────────────────────────────────
-// 开屏页底部一条入口；答完 11 题，Worker 发一个专属立减码（模板 SURVEY26：满 ¥600 减 ¥100，2026-12-31 前有效）。
-// 只在中文页出现（立减码只对人民币订单有效）。领过的设备：入口换成「你的优惠码」，点开直接看码。
+// 开屏页底部一条入口；分页答 11 题（一页 1–3 题，单选答完自动翻页），Worker 发专属立减码。
+// 码的规则在后台模板 SURVEY26：满 ¥400 减 ¥100，2026-12-31 前有效；刀门会员先减后打 8 折。
+// 只在中文页出现（立减码只对人民币订单有效）。领过的设备入口换成「你的优惠码」，点开直接看券。
 var SV_Q = [
 	{ k: "q1", t: "你是？", o: ["独立歌手 / 说唱", "乐队", "学生作业 / 比赛", "厂牌 / 公司项目", "爱好玩票"] },
 	{ k: "q2", t: "一年大概发几首歌？", o: ["1 首以内", "2–5 首", "6–12 首", "12 首以上"] },
@@ -5552,13 +5594,15 @@ var SV_Q = [
 	{ k: "q4", t: "一首歌的混音，你心里的预算是？", o: ["¥300 以内", "¥300–500", "¥500–800", "¥800–1,500", "¥1,500 以上"] },
 	{ k: "q5", t: "混音低于多少钱，你会担心质量？", o: ["¥150 以下", "¥250 以下", "¥400 以下", "不会担心"] },
 	{ k: "q6", t: "混音超过多少钱，你就不考虑了？", o: ["¥500", "¥800", "¥1,200", "¥2,000", "看效果，没有上限"] },
-	{ k: "q7", t: "看完这页的价格（常见一首 ¥400–800），感觉是？", o: ["比预期便宜", "差不多", "略贵，但值得", "太贵了", "还没仔细看"] },
+	{ k: "q7", t: "这页的价格（常见一首 ¥400–800），你的感觉是？", o: ["比预期便宜", "差不多", "略贵，但值得", "太贵了", "还没仔细看"] },
 	{ k: "q8", t: "一首歌的混音，你能接受等多久？", o: ["3 天内", "一周", "两周", "三周以上也行，效果优先"] },
 	{ k: "q9", t: "想更快拿到，加急费愿意多付多少？", o: ["不加急", "+15%", "+30%", "+50% 以上"] },
-	{ k: "q10", t: "选混音师最看重哪两项？", m: 2, o: ["价格", "声音效果", "交付速度", "沟通和修改", "作品案例", "朋友推荐 / 口碑"] },
-	{ k: "q11", t: "什么能让你更快下单？", m: 6, o: ["先听前后对比", "方向不对可退款", "固定套餐一口价", "分期付款", "优惠码", "更快交付"] }
+	{ k: "q10", t: "选混音师，你最看重哪两项？", h: "最多选 2 项", m: 2, o: ["价格", "声音效果", "交付速度", "沟通和修改", "作品案例", "朋友推荐 / 口碑"] },
+	{ k: "q11", t: "什么能让你更快下单？", h: "可多选", m: 6, o: ["先听前后对比", "方向不对可退款", "固定套餐一口价", "分期付款", "优惠码", "更快交付"] }
 ];
-var svA = {}, svBusy = false;
+// 页：0 开场；1–4 题目分组；5 补充 + 提交；6 领券
+var SV_PAGES = [null, { k: "关于你", q: [0, 1, 2] }, { k: "预算", q: [3, 4, 5] }, { k: "价格与交付", q: [6, 7, 8] }, { k: "怎么选", q: [9, 10] }, null];
+var svA = {}, svBusy = false, svPg = 0, svNote = "";
 function svMine() { try { return JSON.parse(qbLsGet("cd_survey") || "null"); } catch (e) { return null; } }
 function svGateHtml() {
 	if (currentLang !== "zh") return "";
@@ -5566,52 +5610,111 @@ function svGateHtml() {
 	if (m && m.code && m.expires && Date.now() > m.expires) return "";
 	return '<button class="gate-survey" onclick="svOpen(true)">'
 		+ '<span class="gate-survey-t"><b>' + (m && m.code ? "你的问卷优惠码 " + m.code : "答 1 分钟问卷，领 ¥100 混音券") + '</b>'
-		+ '<span>' + (m && m.code ? "满 ¥600 可用 · 2026 年 12 月 31 日前有效" : "关于价格和交付时间的 11 个问题 · 满 ¥600 可用 · 今年内有效") + '</span></span>'
+		+ '<span>' + (m && m.code ? "满 ¥400 可用 · 2026 年 12 月 31 日前有效" : "11 道选择题，关于价格和交付时间 · 不用填名字") + '</span></span>'
 		+ '<span class="gate-survey-a">→</span></button>';
 }
 function svOpen(fromGate) {
 	if (fromGate) entryGo("browse");
 	var el = document.getElementById("qbo");
 	if (el) el.parentNode.removeChild(el);
-	el = document.createElement("div"); el.id = "qbo"; el.className = "qbo";
-	el.innerHTML = '<div class="qbo-back" onclick="qbOrderClose()"></div><div class="qbo-sheet" role="dialog" aria-modal="true" aria-labelledby="qbo-t" id="sv-sheet"></div>';
+	el = document.createElement("div"); el.id = "qbo"; el.className = "qbo sv";
+	el.innerHTML = '<div class="qbo-back" onclick="qbOrderClose()"></div><div class="qbo-sheet" role="dialog" aria-modal="true" aria-label="价格与交付问卷" id="sv-sheet"></div>';
 	document.body.appendChild(el);
 	var m = svMine();
-	if (m && m.code) svDone(m); else svRender();
+	svPg = m && m.code ? 6 : 0;
+	svRender(1, m);
 	document.documentElement.classList.add("qbo-lock");
 	document.addEventListener("keydown", qbOrderKey);
 	requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("on"); }); });
 	qbStatHit("survey_open");
 }
-function svCount() { var n = 0; for (var i = 0; i < SV_Q.length; i++) { var v = svA[SV_Q[i].k]; if (v && (!Array.isArray(v) || v.length)) n++; } return n; }
-function svRender() {
-	var sh = document.getElementById("sv-sheet"); if (!sh) return;
-	var h = '<div class="qbo-grab"></div><div class="qbo-t" id="qbo-t">价格与交付问卷</div>'
-		+ '<div class="qbo-sub">11 个选择题，大约 1 分钟。答完立刻拿到 ¥100 混音券（满 ¥600 可用，2026 年 12 月 31 日前有效）。</div>'
-		+ '<div class="sv-prog" id="sv-prog"></div>';
-	for (var i = 0; i < SV_Q.length; i++) {
-		var q = SV_Q[i], v = svA[q.k], opts = "";
-		for (var j = 0; j < q.o.length; j++) {
-			var on = q.m ? (v || []).indexOf(q.o[j]) >= 0 : v === q.o[j];
-			opts += '<button type="button" class="sv-opt' + (on ? " on" : "") + '" aria-pressed="' + on + '" onclick="svPick(' + i + ',' + j + ')">' + q.o[j] + '</button>';
-		}
-		h += '<fieldset class="sv-q" id="sv-' + q.k + '"><legend><span class="sv-n">' + (i + 1) + '</span>' + q.t
-			+ (q.m === 2 ? '<small>最多选 2 项</small>' : q.m ? '<small>可多选</small>' : '') + '</legend><div class="sv-opts">' + opts + '</div></fieldset>';
+function svHas(k) { var v = svA[k]; return !!v && (!Array.isArray(v) || v.length > 0); }
+function svPageDone(pg) { var g = SV_PAGES[pg]; if (!g) return true; for (var i = 0; i < g.q.length; i++) if (!svHas(SV_Q[g.q[i]].k)) return false; return true; }
+function svRowsHtml(i) {
+	var q = SV_Q[i], v = svA[q.k], h = "";
+	for (var j = 0; j < q.o.length; j++) {
+		var on = q.m ? (v || []).indexOf(q.o[j]) >= 0 : v === q.o[j];
+		h += '<button type="button" class="sv-row' + (q.m ? " multi" : "") + (on ? " on" : "") + '" role="' + (q.m ? "checkbox" : "radio") + '" aria-checked="' + on + '" onclick="svPick(' + i + ',' + j + ')">'
+			+ '<span class="sv-dot">✓</span><span>' + q.o[j] + '</span></button>';
 	}
-	h += '<label class="qbo-f"><span>还想说的（选填）</span><textarea id="sv-note" maxlength="500" rows="3" placeholder="比如：希望有学生价、想要分轨导出、交付想按周末算…"></textarea></label>'
-		+ '<label class="qbo-hp" aria-hidden="true">Website<input id="sv-hp" tabindex="-1" autocomplete="off"></label>'
-		+ '<div class="qbo-err" id="sv-err" role="alert"></div>'
-		+ '<button type="button" class="qb-cta qbo-send" id="sv-send" onclick="svSend()">提交，领取优惠码</button>';
-	var keep = document.getElementById("sv-note"), note = keep ? keep.value : "";
-	sh.innerHTML = h;
-	if (note) document.getElementById("sv-note").value = note;
-	svProg();
+	return h;
 }
-function svProg() {
-	var el = document.getElementById("sv-prog"); if (!el) return;
-	var n = svCount();
-	el.innerHTML = '已答 ' + n + ' / ' + SV_Q.length + '<i><b style="width:' + Math.round(n / SV_Q.length * 100) + '%"></b></i>';
+function svRender(dir, mine) {
+	var sh = document.getElementById("sv-sheet"); if (!sh) return;
+	var n = SV_PAGES.length - 1, pg = svPg, body = "", foot = "";
+	var cls = 'sv-page' + (dir < 0 ? " back" : "");
+	if (pg === 0) {
+		body = '<div class="' + cls + '"><div class="sv-kick">CU MUSIC · 价格问卷</div>'
+			+ '<h2 class="sv-h">帮我把价格和交付时间定得更合理</h2>'
+			+ '<p class="sv-p">11 道选择题，大约 1 分钟。没有标准答案，按你真实的想法选就好。</p>'
+			+ '<ul class="sv-perks"><li><i>1</i><span>答完立刻领一张 <b>¥100 混音券</b>，满 ¥400 可用，今年内有效</span></li>'
+			+ '<li><i>2</i><span>不用填名字、电话，答案只用来调整价格和服务</span></li>'
+			+ '<li><i>3</i><span>刀门会员也能用：先减 ¥100，再打 8 折</span></li></ul></div>';
+		foot = '<button type="button" class="qb-cta" onclick="svGo(1)">开始</button>';
+	} else if (pg >= 1 && pg <= 4) {
+		var g = SV_PAGES[pg];
+		body = '<div class="' + cls + '"><div class="sv-kick">' + g.k + '</div>';
+		for (var t = 0; t < g.q.length; t++) {
+			var qi = g.q[t], q = SV_Q[qi];
+			body += '<div class="sv-q" id="sv-' + q.k + '" role="' + (q.m ? "group" : "radiogroup") + '" aria-labelledby="sv-t-' + q.k + '">'
+				+ '<div class="sv-qt" id="sv-t-' + q.k + '"><span class="sv-qn">' + (qi + 1) + ' / ' + SV_Q.length + '</span>' + q.t + '</div>'
+				+ (q.h ? '<div class="sv-qh">' + q.h + '</div>' : '')
+				+ '<div class="sv-list">' + svRowsHtml(qi) + '</div></div>';
+		}
+		body += '<div class="sv-err" id="sv-err" role="alert"></div></div>';
+		foot = '<button type="button" class="sv-back" onclick="svGo(' + (pg - 1) + ')">上一步</button>'
+			+ '<button type="button" class="qb-cta" id="sv-next" onclick="svNext()">下一步</button>';
+	} else if (pg === 5) {
+		body = '<div class="' + cls + '"><div class="sv-kick">最后一步</div>'
+			+ '<h2 class="sv-h">还有想说的吗？</h2>'
+			+ '<p class="sv-p">选填。价格、交付、沟通方式，或者希望我增加的服务，都可以写。</p>'
+			+ '<textarea class="sv-note" id="sv-note" maxlength="500" rows="5" placeholder="比如：希望有学生价、想要分轨导出、想周末也能交付…" oninput="svNote=this.value"></textarea>'
+			+ '<label class="qbo-hp" aria-hidden="true">Website<input id="sv-hp" tabindex="-1" autocomplete="off"></label>'
+			+ '<div class="sv-err" id="sv-err" role="alert"></div></div>';
+		foot = '<button type="button" class="sv-back" onclick="svGo(4)">上一步</button>'
+			+ '<button type="button" class="qb-cta" id="sv-send" onclick="svSend()">提交，领取 ¥100 券</button>';
+	} else {
+		var m = mine || svMine() || {};
+		if (!m.code) {
+			body = '<div class="' + cls + '"><h2 class="sv-h">收到了，谢谢</h2><p class="sv-p">这一期的优惠券已经发完，你的答案我都会认真看。</p></div>';
+			foot = '<button type="button" class="qb-cta" onclick="qbOrderClose()">关闭</button>';
+		} else {
+			body = '<div class="' + cls + '"><div class="sv-kick">谢谢你的回答</div><h2 class="sv-h">这是你的混音券</h2>'
+				+ '<div class="sv-ticket"><div class="sv-ticket-a"><div class="sv-ticket-k">CU MUSIC · 混音券</div>'
+				+ '<div class="sv-ticket-v">¥' + (m.value || 100) + '</div>'
+				+ '<div class="sv-ticket-r">满 ¥' + (m.min || 400) + ' 可用 · ' + svExp(m.expires) + '前有效 · 限用一次<br>刀门会员：先减 ¥' + (m.value || 100) + '，再打 8 折</div></div>'
+				+ '<div class="sv-ticket-b"><span>优惠码</span><b>' + qbOrderEsc(m.code) + '</b></div></div>'
+				+ '<div class="sv-shot"><i>📸</i><span><b>截图保存这张券。</b>这台手机下单时会自动填好；换手机或清了浏览器记录，凭截图里的码也能用。</span></div></div>';
+			foot = '<button type="button" class="sv-back" id="sv-copy" onclick="svCopy(\'' + qbOrderEsc(m.code) + '\')">复制</button>'
+				+ '<button type="button" class="qb-cta" onclick="svGoBook()">去配一首歌的报价</button>';
+		}
+	}
+	var stepTxt = pg === 0 ? "约 1 分钟" : pg <= 5 ? "第 " + pg + " 步，共 " + n + " 步" : "已完成";
+	var pct = pg >= 6 ? 100 : Math.round(pg / n * 100);
+	sh.innerHTML = '<div class="sv-head"><div class="qbo-grab"></div><div class="sv-top"><span class="sv-step">' + stepTxt + '</span>'
+		+ '<button type="button" class="sv-x" aria-label="关闭" onclick="qbOrderClose()">×</button></div>'
+		+ '<div class="sv-bar"><b style="width:' + pct + '%"></b></div></div>'
+		+ '<div class="sv-body" id="sv-body">' + body + '</div>'
+		+ '<div class="sv-foot">' + foot + '</div>';
+	if (pg === 5) { var ta = document.getElementById("sv-note"); if (ta) ta.value = svNote; }
+	svNextState();
 }
+function svNextState() { var b = document.getElementById("sv-next"); if (b) b.classList.toggle("dim", !svPageDone(svPg)); }
+function svGo(pg) { var dir = pg >= svPg ? 1 : -1; svPg = pg; svRender(dir); var bd = document.getElementById("sv-body"); if (bd) bd.scrollTop = 0; }
+function svNext() {
+	var g = SV_PAGES[svPg];
+	for (var t = 0; g && t < g.q.length; t++) {
+		var q = SV_Q[g.q[t]];
+		if (!svHas(q.k)) {
+			var box = document.getElementById("sv-" + q.k);
+			if (box) { box.classList.add("miss"); box.scrollIntoView({ behavior: "smooth", block: "center" }); }
+			var err = document.getElementById("sv-err"); if (err) err.textContent = "第 " + (g.q[t] + 1) + " 题还没选。";
+			return;
+		}
+	}
+	svGo(svPg + 1);
+}
+var svAutoT = null;
 function svPick(i, j) {
 	var q = SV_Q[i], val = q.o[j];
 	if (q.m) {
@@ -5623,64 +5726,53 @@ function svPick(i, j) {
 	var box = document.getElementById("sv-" + q.k);
 	if (box) {
 		box.classList.remove("miss");
-		var bs = box.querySelectorAll(".sv-opt");
+		var bs = box.querySelectorAll(".sv-row");
 		for (var b = 0; b < bs.length; b++) {
 			var on = q.m ? svA[q.k].indexOf(q.o[b]) >= 0 : svA[q.k] === q.o[b];
-			bs[b].classList.toggle("on", on); bs[b].setAttribute("aria-pressed", on);
+			bs[b].classList.toggle("on", on); bs[b].setAttribute("aria-checked", on);
 		}
 	}
-	svProg();
+	var err = document.getElementById("sv-err"); if (err) err.textContent = "";
+	svNextState();
+	if (q.m) return;
+	// 单选：这一页答完就自动翻页；没答完就把下一道没答的题滚到眼前
+	var g = SV_PAGES[svPg]; if (!g) return;
+	clearTimeout(svAutoT);
+	if (svPageDone(svPg)) {
+		var allSingle = true; for (var t = 0; t < g.q.length; t++) if (SV_Q[g.q[t]].m) allSingle = false;
+		if (allSingle) svAutoT = setTimeout(function () { svGo(svPg + 1); }, 320);
+		return;
+	}
+	for (var u = 0; u < g.q.length; u++) {
+		var nq = SV_Q[g.q[u]];
+		if (!svHas(nq.k)) { var nb = document.getElementById("sv-" + nq.k); if (nb && g.q[u] > i) setTimeout(function () { nb.scrollIntoView({ behavior: "smooth", block: "start" }); }, 180); break; }
+	}
 }
 function svSend() {
 	if (svBusy) return;
+	for (var pg = 1; pg <= 4; pg++) if (!svPageDone(pg)) { svGo(pg); setTimeout(svNext, 50); return; }
 	var err = document.getElementById("sv-err"), btn = document.getElementById("sv-send");
-	for (var i = 0; i < SV_Q.length; i++) {
-		var v = svA[SV_Q[i].k];
-		if (!v || (Array.isArray(v) && !v.length)) {
-			var box = document.getElementById("sv-" + SV_Q[i].k);
-			if (box) { box.classList.add("miss"); box.scrollIntoView({ behavior: "smooth", block: "center" }); }
-			err.textContent = "还有第 " + (i + 1) + " 题没选。";
-			return;
-		}
-	}
-	err.textContent = "";
 	svBusy = true; btn.disabled = true; btn.textContent = "提交中…";
-	var hp = document.getElementById("sv-hp"), nt = document.getElementById("sv-note");
-	var body = JSON.stringify({ a: svA, note: nt ? nt.value.trim() : "", website: hp ? hp.value : "", lid: qbs.lid, sid: qbs.sid, device: qbs.device });
-	var fail = function (msg) { svBusy = false; btn.disabled = false; btn.textContent = "提交，领取优惠码"; err.textContent = msg; };
+	var hp = document.getElementById("sv-hp");
+	var body = JSON.stringify({ a: svA, note: (svNote || "").trim(), website: hp ? hp.value : "", lid: qbs.lid, sid: qbs.sid, device: qbs.device });
+	var fail = function (msg) { svBusy = false; btn.disabled = false; btn.textContent = "提交，领取 ¥100 券"; err.textContent = msg; };
 	fetch(QBS_API + "/survey", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
 		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
 		.then(function (j) {
 			svBusy = false;
 			if (!j.ok) return fail(j.status === 429 ? "提交太频繁了，过一分钟再试。" : "没提交成功，检查一下网络再点一次。");
 			qbStatHit("survey_done");
-			if (!j.code) return svThanks();
-			var m = { code: j.code, value: j.value, min: j.min, expires: j.expires };
-			qbLsSet("cd_survey", JSON.stringify(m));
-			qbLsSet("cd_promo", j.code);
+			var m = j.code ? { code: j.code, value: j.value, min: j.min, expires: j.expires } : {};
+			if (j.code) { qbLsSet("cd_survey", JSON.stringify(m)); qbLsSet("cd_promo", j.code); }
 			var gs = document.getElementById("gate-survey"); if (gs) gs.innerHTML = svGateHtml();
-			svDone(m);
+			svPg = 6; svRender(1, m);
 		})
 		.catch(function () { fail("没提交成功，检查一下网络再点一次。"); });
 }
 function svExp(ms) { var d = new Date((ms || 0) + 8 * 3600e3); return ms ? d.getUTCFullYear() + " 年 " + (d.getUTCMonth() + 1) + " 月 " + d.getUTCDate() + " 日" : "2026 年 12 月 31 日"; } // 截止日按北京时间显示
-function svDone(m) {
-	var sh = document.getElementById("sv-sheet"); if (!sh) return;
-	sh.innerHTML = '<div class="qbo-grab"></div><div class="qbo-done" style="margin:6px auto 14px">✓</div><div class="qbo-t" id="qbo-t" style="text-align:center">谢谢，这是你的优惠码</div>'
-		+ '<div class="sv-code">' + qbOrderEsc(m.code) + '</div>'
-		+ '<div class="sv-rule">满 ¥' + (m.min || 600) + ' 减 ¥' + (m.value || 100) + ' · ' + svExp(m.expires) + '前有效 · 限用一次<br>下单时已自动填好，不用记</div>'
-		+ '<button type="button" class="qb-cta" onclick="svGoBook()">去配一首歌的报价</button>'
-		+ '<button type="button" class="qb-reset qb-copy" id="sv-copy" onclick="svCopy(\'' + qbOrderEsc(m.code) + '\')">复制优惠码</button>';
-}
-function svThanks() {
-	var sh = document.getElementById("sv-sheet"); if (!sh) return;
-	sh.innerHTML = '<div class="qbo-grab"></div><div class="qbo-done" style="margin:6px auto 14px">✓</div><div class="qbo-t" id="qbo-t" style="text-align:center">收到了，谢谢</div>'
-		+ '<div class="sv-rule">这一期的优惠码已经发完，答案我都会看。</div>'
-		+ '<button type="button" class="qb-cta" onclick="qbOrderClose()">关闭</button>';
-}
 function svCopy(code) {
 	var b = document.getElementById("sv-copy");
-	var done = function () { if (b) { b.textContent = "已复制 ✓"; setTimeout(function () { b.textContent = "复制优惠码"; }, 2000); } };
+	var done = function () { if (b) { b.textContent = "已复制 ✓"; setTimeout(function () { b.textContent = "复制"; }, 2000); } };
 	try { navigator.clipboard.writeText(code).then(done).catch(done); } catch (e) { done(); }
 }
 function svGoBook() { qbOrderClose(); setTimeout(function () { bookGo("mix"); }, 330); }
