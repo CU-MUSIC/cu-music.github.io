@@ -157,6 +157,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .sva{display:grid;grid-template-columns:10.5em minmax(0,1fr);gap:10px;padding:5px 0;font-size:14px;line-height:1.55}
 .sva span{color:var(--text-3)}.sva b{font-weight:500;color:var(--text);word-break:break-word}
 @media (max-width:520px){.svb{padding-left:0}.sva{grid-template-columns:7em minmax(0,1fr)}}
+.crs{color:var(--text);letter-spacing:2px}.crs .crs-off{color:var(--text-3)}
 .svnote{padding:12px 0;border-top:.5px solid var(--hair);font-size:15px;line-height:1.7}
 .svnote div{font-size:13px;color:var(--text-3);margin-top:2px}
 .empty,.msg{color:var(--text-3);font-size:15px;padding:24px 0;text-align:center}
@@ -477,7 +478,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261117.1106';
+const BUILD = '261117.1233';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1220,7 +1221,7 @@ const SVQ = [
   ['q21', '想在账号看到的内容', ['混音前后对比', '混音技巧教程', '客户作品背后的故事', '在韩国做音乐的日常', '格莱美工程师的思路', '设备和插件'], 1]
 ];
 const SVF = [['all', '全部'], ['buy', '合作过的'], ['new', '没合作过'], ['ord', '用券下单的']];
-let SVD = null, svBusy = false, svF = 'all', svSel = null;
+let SVD = null, svBusy = false, svF = 'all', svSel = null, svK = 'price';
 async function loadSurvey() {
   if (svBusy) return; svBusy = true;
   try {
@@ -1231,6 +1232,37 @@ async function loadSurvey() {
   if (tab === 'survey' && !typing()) render();
 }
 window.__svf = k => { svF = k; render(); };
+window.__svk = k => { svK = k; svSel = null; render(); };
+// 老客户评分（kind = client）：5 个方向的平均星数 + 推荐值 + 每一条
+const CRQ = [['q31', '声音效果'], ['q32', '需求理解与沟通'], ['q33', '交付准时'], ['q34', '修改体验'], ['q35', '性价比']];
+function renderRate(all, now) {
+  const rows = all.filter(r => r.kind === 'client');
+  if (!rows.length) return `<div class="empty">还没有客户评分。私发给老客户：<br><b>cumusic.work/chefdao/price?for=client&amp;song=歌名</b></div>`;
+  const sc = rows.map(r => parseInt(r.a.q36, 10)).filter(x => x >= 0);
+  const pro = sc.filter(x => x >= 9).length, det = sc.filter(x => x <= 6).length, nps = sc.length ? Math.round((pro - det) / sc.length * 100) : null;
+  const avgOf = k => { const v = rows.map(r => +r.a[k]).filter(x => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
+  const all5 = CRQ.map(([k]) => avgOf(k)), overall = all5.reduce((a, b) => a + b, 0) / all5.length;
+  const low = CRQ.map(([k, t], i) => [t, all5[i]]).sort((a, b) => a[1] - b[1])[0];
+  const stars = v => '★★★★★'.slice(0, Math.round(v)) + '<span class="crs-off">' + '★★★★★'.slice(Math.round(v)) + '</span>';
+  return `<div class="cards">
+    <div class="card"><div class="lb">评分</div><div class="n">${rows.length}</div><div class="d">老客户私发链接</div></div>
+    <div class="card"><div class="lb">平均</div><div class="n">${overall.toFixed(1)}</div><div class="d">5 个方向的平均星数</div></div>
+    <div class="card"><div class="lb">推荐值 NPS</div><div class="n">${nps == null ? '—' : (nps > 0 ? '+' : '') + nps}</div><div class="d">推荐 ${pro} / 贬损 ${det}</div></div>
+    <div class="card"><div class="lb">最弱的一项</div><div class="n" style="font-size:22px">${esc(low[0])}</div><div class="d">${low[1].toFixed(1)} 星</div></div>
+  </div>
+  <div class="sect">5 个方向<span>平均星数</span></div>
+  ${CRQ.map(([k, t], i) => `<div class="svr"><span>${esc(t)}</span><em>${all5[i].toFixed(1)}</em><i><b style="width:${all5[i] / 5 * 100}%"></b></i></div>`).join('')}
+  <div class="sect" style="margin-top:28px">每一条<span>${rows.length} 条</span></div>
+  ${rows.map(r => {
+    const av = CRQ.reduce((a, [k]) => a + (+r.a[k] || 0), 0) / CRQ.length, n = parseInt(r.a.q36, 10);
+    return `<details class="svc"><summary><span class="svs ${n >= 9 ? 'hi' : n >= 7 ? 'mid' : 'lo'}">${Number.isFinite(n) ? n : '—'}</span>
+      <span class="svm"><b>${r.song ? '《' + esc(r.song) + '》' : '没写歌名'}${r.oid ? ' · #' + r.oid : ''} · ${av.toFixed(1)} 星</b><span>${when(r.created, now)} · ${esc(svPlace(r) || '地点未知')} · ${esc(r.device || '')}</span></span></summary>
+      <div class="svb">${CRQ.map(([k, t]) => `<div class="sva"><span>${esc(t)}</span><b class="crs">${stars(+r.a[k] || 0)}</b></div>`).join('')}
+      <div class="sva"><span>推荐意愿</span><b>${esc(r.a.q36)} / 10</b></div>
+      <div class="sva"><span>访客</span><b>${r.lid ? who(r.lid, '访客') : '—'}</b></div>
+      ${r.note ? `<div class="sva"><span>希望改进</span><b>${esc(r.note)}</b></div>` : ''}</div></details>`;
+  }).join('')}`;
+}
 window.__svs = (k, v) => { svSel = svSel && svSel.k === k && svSel.v === v ? null : { k, v }; render(); const el = document.getElementById('svlist'); if (el && svSel) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 // 地点：国家（国内不写）· 城市 · 运营商 —— 跟价格页访客用同一套写法
 function svPlace(r) {
@@ -1259,14 +1291,16 @@ function svCard(r, now) {
 function renderSurvey() {
   if (!SVD) { loadSurvey(); return '<div class="msg">正在读取…</div>'; }
   const now = Date.now(), from = now - days * 864e5;
-  const inWin = SVD.filter(r => r.created >= from);
+  const ksw = `<div class="seg" style="margin:0 0 12px">${[['price', '价格问卷'], ['client', '客户评分']].map(([k, t]) => `<button class="${svK === k ? 'on' : ''}" onclick="__svk('${k}')">${t}</button>`).join('')}</div>`;
+  if (svK === 'client') return ksw + renderRate(SVD.filter(r => r.created >= from), now);
+  const inWin = SVD.filter(r => r.created >= from && r.kind !== 'client');
   const pick = { all: () => true, buy: r => /合作过/.test(r.a.q7 || ''), new: r => !/合作过/.test(r.a.q7 || ''), ord: r => !!r.ord }[svF];
   const base = inWin.filter(pick);
   const hit = r => { if (!svSel) return true; const v = r.a[svSel.k]; return Array.isArray(v) ? v.includes(svSel.v) : String(v) === svSel.v; };
   const rows = base;
   const used = inWin.filter(r => r.used > 0).length, codes = inWin.filter(r => r.code).length;
   const seg = `<div class="seg" style="margin:0 0 18px">${SVF.map(([k, t]) => `<button class="${svF === k ? 'on' : ''}" onclick="__svf('${k}')">${t}</button>`).join('')}</div>`;
-  if (!inWin.length) return `<div class="empty">近 ${days} 天还没有人填问卷。入口在价格页开屏的绿条：cumusic.work/chefdao/price</div>`;
+  if (!inWin.length) return ksw + `<div class="empty">近 ${days} 天还没有人填问卷。入口在价格页开屏的绿条：cumusic.work/chefdao/price</div>`;
   // NPS：9–10 推荐者，0–6 贬损者，NPS = 推荐者% − 贬损者%
   const sc = rows.map(r => parseInt(r.a.q18, 10)).filter(x => x >= 0 && x <= 10);
   const pro = sc.filter(x => x >= 9).length, det = sc.filter(x => x <= 6).length;
@@ -1287,7 +1321,7 @@ function renderSurvey() {
     }).join('')}</div>`;
   };
   const notes = rows.filter(r => r.note).slice(0, 50);
-  return `${seg}
+  return `${ksw}${seg}
   <div class="cards">
     <div class="card"><div class="lb">答卷</div><div class="n">${rows.length}</div><div class="d">近 ${days} 天${svF === 'all' ? '' : ' · 共 ' + inWin.length}</div></div>
     <div class="card"><div class="lb">推荐值 NPS</div><div class="n">${nps == null ? '—' : (nps > 0 ? '+' : '') + nps}</div><div class="d">平均 ${avg} 分 · 推荐 ${pro} / 贬损 ${det}</div></div>
