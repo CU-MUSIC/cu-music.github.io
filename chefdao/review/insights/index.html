@@ -478,7 +478,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261117.1235';
+const BUILD = '261117.1300';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1641,6 +1641,8 @@ function openProject(slug) {
     ${HOOK[slug] ? `<div class="sect">主打盲听<span id="hvSum"></span></div>
     <div class="row hprow"><button type="button" class="ghost" id="hvCopy">复制盲听链接和密码</button><button type="button" class="ghost" id="hvRe">刷新</button></div>
     <div class="inl hvl" id="hvList"></div>` : ''}
+    <div class="sect">客户评分<span id="rtSum">查询中…</span></div>
+    <div class="inl" id="rtList"></div>
     <div class="sect">收件<span id="inSum"></span></div>
     <div class="row hprow"><button type="button" class="ghost" id="inCopy">复制收件链接</button><button type="button" class="ghost" id="inNew" hidden>换一条</button></div>
     <div class="inl" id="inList"></div>
@@ -1880,6 +1882,14 @@ function openProject(slug) {
   $p('inCopy').onclick = () => inCopy(0);
   $p('inNew').onclick = () => { if (confirm('换一条新链接？旧链接会失效')) inCopy(1); };
   inLoad();
+  // 客户评分：客户在审听页领到最终文件后打的分（和价格页客户评分同一套题，问卷页「混音评分」里也能看到）
+  (async () => { try { const j = await api('/survey/list'), RQ = ['q31', 'q32', 'q33', 'q34', 'q35'];
+    const rs = j.surveys.filter(r => r.proj === slug).map(r => { let a = {}; try { a = JSON.parse(r.a) || {}; } catch (e) {} return { ...r, a }; });
+    if (!rs.length) { $p('rtSum').textContent = '还没有'; return; }
+    const avg = r => RQ.reduce((s, k) => s + (+r.a[k] || 0), 0) / RQ.length, all = rs.reduce((s, r) => s + avg(r), 0) / rs.length, nps = rs.reduce((s, r) => s + (+r.a.q36 || 0), 0) / rs.length;
+    $p('rtSum').textContent = '平均 ' + all.toFixed(1) + ' 星 · 推荐 ' + nps.toFixed(1) + ' / 10 · ' + rs.length + ' 条';
+    $p('rtList').innerHTML = rs.map(r => `<div><span class="n">${avg(r).toFixed(1)} 星 · 推荐 ${esc(r.a.q36)}${r.song ? ' · 《' + esc(r.song) + '》' : ''}<em>声音 ${r.a.q31} · 沟通 ${r.a.q32} · 准时 ${r.a.q33} · 修改 ${r.a.q34} · 性价比 ${r.a.q35}</em>${r.note ? '<em>「' + esc(r.note) + '」</em>' : ''}</span><span class="ok">${new Date(r.created).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span></div>`).join('');
+  } catch (e) { $p('rtSum').textContent = '查询失败'; } })();
   $p('pjCopy').onclick = () => { const t = shareText($p('pjT').value, p.url, $p('pjP').value);
     const done = () => { $p('pjCopy').textContent = '已复制'; }; navigator.clipboard ? navigator.clipboard.writeText(t).then(done, done) : done(); };
   $p('pjSave').onclick = async () => {

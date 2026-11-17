@@ -1042,3 +1042,12 @@ body.rlp-on .rlp-tab{display:none}
 .pendbar>div{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-radius:14px;background:rgba(232,201,138,.1);box-shadow:0 0 0 1px rgba(232,201,138,.3) inset;font-size:14px;color:#d8d5cf}
 .pendbar span{flex:1 1 220px;min-width:0;overflow-wrap:anywhere}.pendbar b{color:#e8c98a}.pendbar em{font-style:normal;color:#9a968e;margin-left:8px;font-size:12px}
 .pendbar button{font-size:13px;padding:5px 12px;border-radius:999px;background:rgba(236,234,230,.1);color:#ece9e3;border:0}.pendbar button.ok{background:#ebe9e5;color:#121213;font-weight:600}
+/* 交付后评分（rateAsk）：沿用 #paySheet 的卡片 */
+#paySheet .pbox.rate{gap:10px;max-height:calc(100dvh - 32px);overflow:auto}#paySheet .pbox.rate>*{flex-shrink:0}
+#paySheet .rq{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:12px;background:rgba(236,234,230,.04);transition:background .2s}
+#paySheet .rq.miss{background:rgba(233,161,154,.14)}
+#paySheet .rq span{font-size:15px;color:#ece9e3}#paySheet .rq i{font-style:normal;color:#9a968e;font-size:13px;margin-left:8px}
+#paySheet .rs{display:flex;gap:4px}#paySheet .rs button{flex:1;min-height:40px;border:0;border-radius:10px;background:rgba(236,234,230,.06);color:#5d5a55;font-size:22px;line-height:1}
+#paySheet .rs button.on{color:#e2c07a}#paySheet .rs.nps{gap:3px}#paySheet .rs.nps button{font-size:14px;color:#9a968e;min-height:36px;padding:0}#paySheet .rs.nps button.on{background:#e2c07a;color:#1a1c20;font-weight:600}
+#paySheet textarea{font:15px/1.5 inherit;font-family:inherit;color:#d6d3cd;background:rgba(236,234,230,.05);border:1px solid rgba(236,234,230,.1);border-radius:12px;padding:10px 12px;resize:vertical}
+#paySheet .rerr{color:#e9a19a;font-size:14px;min-height:0}#paySheet .rerr:empty{display:none}

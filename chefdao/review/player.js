@@ -2496,10 +2496,37 @@ function paySheet() {
       if (j.link && !S.final) { el.querySelector('.pbox').innerHTML = '<b>已记录，文件已开放</b><p>点下面的按钮打开文件。</p><a class="press pgo" href="' + j.link.replace(/"/g, '%22') + '" target="_blank" rel="noopener">打开最终文件</a><button class="press pno" id="payX2">关闭</button>'; $('#payX2').onclick = () => el.remove(); }
       else { el.remove(); $('#dlBtn').click(); } } catch (e) { g.disabled = false; g.textContent = '我已付款，获取文件'; hud('没提交成功，检查网络再试'); } };
 }
+// 交付后评分：客户领到最终文件 2.5 秒后在页面里弹一次，可跳过；每个项目只问一次，你自己的设备不弹。
+// 题目和价格页「客户评分」同一套（q31–q35 各 1–5 星 + q36 推荐 0–10 + 选填改进），交到同一个 /survey（kind: client），带上项目 → Insights 合并看
+const RATE_Q = [['q31', '声音效果', '成品听起来是不是你想要的'], ['q32', '需求理解与沟通', '说得清、听得懂、回得及时'], ['q33', '交付准时', '按约定的日期交付'], ['q34', '修改体验', '改得到位、改得顺畅'], ['q35', '性价比', '这个价格值不值']];
+function rateAsk(force) {
+  if (IS_OWNER && !force) return; const k = 'cr:asked:' + (S.project ? S.project.slug : S.slug);
+  if (store.get(k) && !force) return; store.set(k, '1');
+  setTimeout(() => { if (document.getElementById('paySheet')) return;
+    const A = {}, el = document.createElement('div'); el.id = 'paySheet';
+    el.innerHTML = '<div class="pbox rate"><b>文件拿到了 ✓ 给这次合作打个分？</b><p class="dim">点星星就行，大约 30 秒。说实话对我最有用，打低分也没关系。</p>'
+      + RATE_Q.map(q => '<div class="rq" data-k="' + q[0] + '"><span>' + q[1] + '<i>' + q[2] + '</i></span><div class="rs">' + [1, 2, 3, 4, 5].map(i => '<button type="button" data-v="' + i + '" aria-label="' + i + ' 星">★</button>').join('') + '</div></div>').join('')
+      + '<div class="rq rn" data-k="q36"><span>会把我推荐给做音乐的朋友吗？<i>0 完全不会 · 10 一定会</i></span><div class="rs nps">' + [...Array(11).keys()].map(i => '<button type="button" data-v="' + i + '">' + i + '</button>').join('') + '</div></div>'
+      + '<textarea id="rateNote" maxlength="500" rows="2" placeholder="最希望我改进的一件事（选填）"></textarea>'
+      + '<p class="rerr" id="rateErr"></p><button class="press pgo" id="rateGo">提交</button><button class="press pno" id="rateX">下次再说</button></div>';
+    document.body.appendChild(el);
+    el.querySelectorAll('.rq').forEach(r => r.querySelectorAll('button').forEach(b => b.onclick = () => { A[r.dataset.k] = b.dataset.v; r.classList.remove('miss'); $('#rateErr').textContent = '';
+      r.querySelectorAll('button').forEach(x => x.classList.toggle('on', r.dataset.k === 'q36' ? x === b : +x.dataset.v <= +b.dataset.v)); }));
+    $('#rateX').onclick = () => el.remove();
+    $('#rateGo').onclick = async () => {
+      const miss = [...el.querySelectorAll('.rq')].filter(r => A[r.dataset.k] == null); miss.forEach(r => r.classList.add('miss'));
+      if (miss.length) { $('#rateErr').textContent = '还有 ' + miss.length + ' 项没选'; miss[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      const g = $('#rateGo'); g.disabled = true; g.textContent = '提交中…';
+      try { const j = await (await fetch(API_BASE + '/survey', { method: 'POST', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ kind: 'client', a: A, note: $('#rateNote').value.trim(), song: (S.title || '').slice(0, 60), proj: S.project ? S.project.slug : '', lid, device: '审听页' }) })).json();
+        if (!j.ok) throw 0; el.querySelector('.pbox').innerHTML = '<b>收到了，谢谢 ✓</b><p>每一条我都会看。</p><button class="press pno" id="rateX">关闭</button>'; $('#rateX').onclick = () => el.remove(); }
+      catch (e) { g.disabled = false; g.textContent = '提交'; $('#rateErr').textContent = '没提交成功，检查网络再点一次'; } };
+  }, force ? 0 : 2500);
+}
 $('#dlBtn').onclick = async () => {
   const b = $('#dlBtn'); if (b.dataset.busy) return;
-  if (DL.on && S.final) { const el = document.createElement('a'); el.href = API_BASE + '/final?s=' + S.slug + '&k=' + encodeURIComponent(WK) + '&lid=' + lid + (IS_OWNER ? '&me=1' : ''); document.body.appendChild(el); el.click(); el.remove(); hud('开始下载：' + S.final.name, 3500); return; }   // 最终压缩包：浏览器直接下载，不经过内存
-  if (DL.on && DL.link) { window.open(DL.link, '_blank', 'noopener'); fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, got: 1, ver: V[vi].ver }) }).catch(() => {}); return; }
+  if (DL.on && S.final) { rateAsk(); const el = document.createElement('a'); el.href = API_BASE + '/final?s=' + S.slug + '&k=' + encodeURIComponent(WK) + '&lid=' + lid + (IS_OWNER ? '&me=1' : ''); document.body.appendChild(el); el.click(); el.remove(); hud('开始下载：' + S.final.name, 3500); return; }   // 最终压缩包：浏览器直接下载，不经过内存
+  if (DL.on && DL.link) { rateAsk(); window.open(DL.link, '_blank', 'noopener'); fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, got: 1, ver: V[vi].ver }) }).catch(() => {}); return; }
   if (!DL.on && DL.trust) { if (!payConfirmed()) return hud('确认「这一版没问题」后，可以付款领取最终文件', 4500); return paySheet(); }
   if (!DL.on) {
     if (store.get('review:dlreq:' + S.slug) === '1') return hud(dlTip(), 4000);
