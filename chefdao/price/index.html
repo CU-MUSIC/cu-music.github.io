@@ -5643,7 +5643,7 @@ var SV_Q = [
 	{ k: "q20", t: "除了混音，你还对什么感兴趣？", h: "可多选", m: 7, o: ["录音", "人声制作", "母带", "编曲 / 伴奏", "混音课", "刀门会员", "暂时没有"] },
 	{ k: "q21", t: "想在刀大厨的账号看到什么内容？", h: "最多选 3 项", m: 3, o: ["混音前后对比", "混音技巧教程", "客户作品背后的故事", "在韩国做音乐的日常", "格莱美工程师的思路", "设备和插件"] }
 ];
-// 页：0 开场；1–7 题目分组；8 补充 + 提交；9 领券
+// 页：0 开场；1–7 题目分组；8 混音评分（合作过的才有）；9 补充 + 提交；10 领券
 var SV_PAGES = [null,
 	{ k: "关于你", q: [0, 1, 2, 3] },
 	{ k: "怎么认识的", q: [4, 5, 6] },
@@ -5652,6 +5652,7 @@ var SV_PAGES = [null,
 	{ k: "怎么选", q: [14, 15, 16] },
 	{ k: "推荐", q: [17, 18] },
 	{ k: "还想要什么", q: [19, 20] },
+	{ k: "给我的混音打分", rate: 1 },   // 只有第 7 题选了「合作过」才出现
 	null];
 var SV_SUBMIT = SV_PAGES.length - 1, SV_DONE = SV_PAGES.length;
 var svA = {}, svBusy = false, svPg = 0, svNote = "";
@@ -5715,7 +5716,7 @@ function svOpen(fromGate) {
 	qbStatHit("survey_open");
 }
 function svHas(k) { var v = svA[k]; return !!v && (!Array.isArray(v) || v.length > 0); }
-function svPageDone(pg) { var g = SV_PAGES[pg]; if (!g) return true; for (var i = 0; i < g.q.length; i++) if (!svHas(SV_Q[g.q[i]].k)) return false; return true; }
+function svPageDone(pg) { var g = SV_PAGES[pg]; if (!g) return true; if (g.rate) { if (!svIsClient()) return true; for (var r = 0; r < CR_Q.length; r++) if (!svA[CR_Q[r][0]]) return false; return true; } for (var i = 0; i < g.q.length; i++) if (!svHas(SV_Q[g.q[i]].k)) return false; return true; }
 function svRowsHtml(i) {
 	var q = SV_Q[i], v = svA[q.k], h = "";
 	if (q.nps) {
@@ -5741,6 +5742,15 @@ function svRender(dir, mine) {
 			+ '<li><i>2</i><span>不用填名字、电话，答案只用来调整价格和服务</span></li>'
 			+ '<li><i>3</i><span>刀门会员也能用：先减券面金额，再打 8 折</span></li></ul></div>';
 		foot = '<button type="button" class="qb-cta" onclick="svGo(1)">开始</button>';
+	} else if (pg >= 1 && pg < SV_SUBMIT && SV_PAGES[pg].rate) {
+		body = '<div class="' + cls + '"><div class="sv-kick">给我的混音打分</div>'
+			+ '<p class="sv-p">你合作过，想听听你对这几方面的打分。说实话对我最有用，打低分也没关系。</p>';
+		for (var c = 0; c < CR_Q.length; c++) body += '<div class="sv-q cr-q" id="sv-' + CR_Q[c][0] + '"><div class="sv-qt">' + CR_Q[c][1] + '</div><div class="sv-qh">' + CR_Q[c][2] + '</div>' + svStars(CR_Q[c][0]) + '</div>';
+		body += '<div class="sv-q"><div class="sv-qt">最希望我改进的一件事</div><div class="sv-qh">选填</div>'
+			+ '<textarea class="sv-note" id="sv-q37" maxlength="200" rows="3" placeholder="比如：沟通再快一点、修改说明写清楚一点…" oninput="svA.q37=this.value"></textarea></div>'
+			+ '<div class="sv-err" id="sv-err" role="alert"></div></div>';
+		foot = '<button type="button" class="sv-back" onclick="svGo(' + (pg - 1) + ')">上一步</button>'
+			+ '<button type="button" class="qb-cta" id="sv-next" onclick="svNext()">下一步</button>';
 	} else if (pg >= 1 && pg < SV_SUBMIT) {
 		var g = SV_PAGES[pg];
 		body = '<div class="' + cls + '"><div class="sv-kick">' + g.k + '</div>';
@@ -5780,20 +5790,31 @@ function svRender(dir, mine) {
 				+ '<button type="button" class="qb-cta" onclick="svGoBook()">去配一首歌的报价</button>';
 		}
 	}
-	var stepTxt = pg === 0 ? "约 2 分钟" : pg <= SV_SUBMIT ? "第 " + pg + " 步，共 " + n + " 步" : "已完成";
-	var pct = pg >= SV_DONE ? 100 : Math.round(pg / n * 100);
+	var vis = []; for (var vp = 1; vp <= SV_SUBMIT; vp++) if (!(SV_PAGES[vp] && SV_PAGES[vp].rate && !svIsClient())) vis.push(vp);
+	var vi = vis.indexOf(pg) + 1; n = vis.length;
+	var stepTxt = pg === 0 ? "约 2 分钟" : pg <= SV_SUBMIT ? "第 " + vi + " 步，共 " + n + " 步" : "已完成";
+	var pct = pg >= SV_DONE ? 100 : Math.round(vi / n * 100);
 	sh.innerHTML = '<div class="sv-head"><div class="qbo-grab"></div><div class="sv-top"><span class="sv-step">' + stepTxt + '</span>'
 		+ '<button type="button" class="sv-x" aria-label="关闭" onclick="qbOrderClose()">×</button></div>'
 		+ '<div class="sv-bar"><b style="width:' + pct + '%"></b></div></div>'
 		+ '<div class="sv-body" id="sv-body">' + body + '</div>'
 		+ '<div class="sv-foot">' + foot + '</div>';
 	if (pg === SV_SUBMIT) { var ta = document.getElementById("sv-note"); if (ta) ta.value = svNote; }
+	var t37 = document.getElementById("sv-q37"); if (t37) t37.value = svA.q37 || "";
 	svNextState();
 }
 function svNextState() { var b = document.getElementById("sv-next"); if (b) b.classList.toggle("dim", !svPageDone(svPg)); }
-function svGo(pg) { var dir = pg >= svPg ? 1 : -1; svPg = pg; svRender(dir); var bd = document.getElementById("sv-body"); if (bd) bd.scrollTop = 0; }
+function svGo(pg) { var dir = pg >= svPg ? 1 : -1; if (SV_PAGES[pg] && SV_PAGES[pg].rate && !svIsClient()) pg += dir; svPg = pg; svRender(dir); var bd = document.getElementById("sv-body"); if (bd) bd.scrollTop = 0; }
 function svNext() {
 	var g = SV_PAGES[svPg];
+	if (g && g.rate) {
+		for (var r = 0; r < CR_Q.length; r++) if (!svA[CR_Q[r][0]]) {
+			var bx = document.getElementById("sv-" + CR_Q[r][0]); if (bx) { bx.classList.add("miss"); bx.scrollIntoView({ behavior: "smooth", block: "center" }); }
+			var er = document.getElementById("sv-err"); if (er) er.textContent = "「" + CR_Q[r][1] + "」还没打分。";
+			return;
+		}
+		return svGo(svPg + 1);
+	}
 	for (var t = 0; g && t < g.q.length; t++) {
 		var q = SV_Q[g.q[t]];
 		if (!svHas(q.k)) {
@@ -5858,7 +5879,9 @@ function svSend() {
 	var err = document.getElementById("sv-err"), btn = document.getElementById("sv-send");
 	svBusy = true; btn.disabled = true; btn.textContent = "提交中…";
 	var hp = document.getElementById("sv-hp");
-	var body = JSON.stringify({ a: svA, note: (svNote || "").trim(), website: hp ? hp.value : "", lid: qbs.lid, sid: qbs.sid, device: qbs.device });
+	var sa = {}; for (var kk in svA) if (svIsClient() || !/^q3\d$/.test(kk)) sa[kk] = svA[kk];
+	if (sa.q37) sa.q37 = String(sa.q37).trim();
+	var body = JSON.stringify({ a: sa, note: (svNote || "").trim(), website: hp ? hp.value : "", lid: qbs.lid, sid: qbs.sid, device: qbs.device });
 	var fail = function (msg) { svBusy = false; btn.disabled = false; btn.textContent = "提交，领取 ¥" + svVal + " 券"; err.textContent = msg; };
 	fetch(QBS_API + "/survey", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
 		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
@@ -5897,94 +5920,22 @@ function svCopy(code) {
 	try { navigator.clipboard.writeText(code).then(done).catch(done); } catch (e) { done(); }
 }
 function svGoBook() { qbOrderClose(); setTimeout(function () { bookGo("mix"); }, 330); }
-// ── 老客户评分：只通过私发链接打开 ?for=client（可带 &song=歌名 &o=订单号）──
-// 5 个方向各 1–5 星 + 推荐意愿 0–10 + 选填一句改进。不发券，不出现在开屏。结果在 Insights → 问卷 → 客户评分
+// ── 混音评分：问卷里第 7 题选了「合作过」才出现的一页（5 个方向各 1–5 星 + 选填改进），推荐意愿用第 18 题，不重复问
 var CR_Q = [["q31", "声音效果", "成品听起来是不是你想要的"], ["q32", "需求理解与沟通", "说得清、听得懂、回得及时"], ["q33", "交付准时", "按约定的日期交付"], ["q34", "修改体验", "改得到位、改得顺畅"], ["q35", "性价比", "这个价格值不值"]];
 var CR_LBL = ["", "很差", "不太好", "一般", "满意", "非常满意"];
-var crA = {}, crPg = 0, crNote = "", crSong = "", crOid = 0, crBusy = false;
-function crOpen() {
-	try { var u = new URLSearchParams(location.search); crSong = (u.get("song") || "").slice(0, 60); crOid = parseInt(u.get("o"), 10) || 0; } catch (e) {}
-	var el = document.getElementById("qbo"); if (el) el.parentNode.removeChild(el);
-	el = document.createElement("div"); el.id = "qbo"; el.className = "qbo sv";
-	el.innerHTML = '<div class="qbo-back" onclick="qbOrderClose()"></div><div class="qbo-sheet" role="dialog" aria-modal="true" aria-label="混音服务评分" id="sv-sheet"></div>';
-	document.body.appendChild(el);
-	crPg = 0; crRender(1);
-	document.documentElement.classList.add("qbo-lock");
-	document.addEventListener("keydown", qbOrderKey);
-	requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("on"); }); });
-}
-function crStars(k) {
-	var v = parseInt(crA[k], 10) || 0, h = "";
-	for (var i = 1; i <= 5; i++) h += '<button type="button" class="cr-star' + (i <= v ? " on" : "") + '" role="radio" aria-checked="' + (i === v) + '" aria-label="' + i + ' 星 ' + CR_LBL[i] + '" onclick="crPick(\'' + k + '\',' + i + ')">★</button>';
+function svIsClient() { return /合作过/.test(svA.q7 || ""); }
+function svStars(k) {
+	var v = parseInt(svA[k], 10) || 0, h = "";
+	for (var i = 1; i <= 5; i++) h += '<button type="button" class="cr-star' + (i <= v ? " on" : "") + '" role="radio" aria-checked="' + (i === v) + '" aria-label="' + i + ' 星 ' + CR_LBL[i] + '" onclick="svPickStar(\'' + k + '\',' + i + ')">★</button>';
 	return '<div class="cr-stars">' + h + '<span class="cr-lbl">' + (v ? CR_LBL[v] : "") + '</span></div>';
 }
-function crRender(dir) {
-	var sh = document.getElementById("sv-sheet"); if (!sh) return;
-	var cls = 'sv-page' + (dir < 0 ? " back" : ""), body = "", foot = "", n = 2;
-	if (crPg === 0) {
-		body = '<div class="' + cls + '"><div class="sv-kick">CU MUSIC · 合作评分</div>'
-			+ '<h2 class="sv-h">给这次混音打个分</h2>'
-			+ '<p class="sv-p">5 个方向，点星星就行，大约 30 秒。说实话对我最有用，打低分也没关系。</p>'
-			+ '<label class="qbo-f"><span>哪首歌（选填）</span><input id="cr-song" maxlength="60" placeholder="歌名" value="' + qbOrderEsc(crSong) + '" oninput="crSong=this.value"></label>'
-			+ '<div class="sv-err" id="sv-err" role="alert"></div>';
-		for (var i = 0; i < CR_Q.length; i++) body += '<div class="sv-q cr-q" id="sv-' + CR_Q[i][0] + '"><div class="sv-qt">' + CR_Q[i][1] + '</div><div class="sv-qh">' + CR_Q[i][2] + '</div>' + crStars(CR_Q[i][0]) + '</div>';
-		body += '</div>';
-		foot = '<button type="button" class="qb-cta" id="sv-next" onclick="crNext()">下一步</button>';
-	} else if (crPg === 1) {
-		var v = crA.q36, nb = "";
-		for (var x = 0; x <= 10; x++) nb += '<button type="button" class="sv-num' + (v === String(x) ? " on" : "") + '" role="radio" aria-checked="' + (v === String(x)) + '" onclick="crPick(\'q36\',' + x + ')">' + x + '</button>';
-		body = '<div class="' + cls + '"><div class="sv-q" id="sv-q36"><div class="sv-qt">你有多大可能把刀大厨推荐给做音乐的朋友？</div>'
-			+ '<div class="sv-nps">' + nb + '</div><div class="sv-nps-l"><span>完全不会</span><span>一定会</span></div></div>'
-			+ '<div class="sv-q"><div class="sv-qt">最希望我改进的一件事</div><div class="sv-qh">选填</div>'
-			+ '<textarea class="sv-note" id="cr-note" maxlength="500" rows="4" placeholder="比如：沟通再快一点、修改说明写清楚一点…" oninput="crNote=this.value"></textarea></div>'
-			+ '<label class="qbo-hp" aria-hidden="true">Website<input id="cr-hp" tabindex="-1" autocomplete="off"></label>'
-			+ '<div class="sv-err" id="sv-err" role="alert"></div></div>';
-		foot = '<button type="button" class="sv-back" onclick="crGo(0)">上一步</button><button type="button" class="qb-cta" id="cr-send" onclick="crSend()">提交</button>';
-	} else {
-		body = '<div class="' + cls + '"><div class="sv-kick">收到了</div><h2 class="sv-h">谢谢你的评分</h2>'
-			+ '<p class="sv-p">每一条我都会看。有想单独聊的，直接微信找我：' + CONTACT.wechat + '</p></div>';
-		foot = '<button type="button" class="qb-cta" onclick="qbOrderClose()">关闭</button>';
-	}
-	var stepTxt = crPg < 2 ? "第 " + (crPg + 1) + " 步，共 " + n + " 步" : "已完成";
-	sh.innerHTML = '<div class="sv-head"><div class="qbo-grab"></div><div class="sv-top"><span class="sv-step">' + stepTxt + '</span>'
-		+ '<button type="button" class="sv-x" aria-label="关闭" onclick="qbOrderClose()">×</button></div>'
-		+ '<div class="sv-bar"><b style="width:' + (crPg >= 2 ? 100 : Math.round(crPg / n * 100)) + '%"></b></div></div>'
-		+ '<div class="sv-body" id="sv-body">' + body + '</div><div class="sv-foot">' + foot + '</div>';
-	if (crPg === 1) { var ta = document.getElementById("cr-note"); if (ta) ta.value = crNote; }
-}
-function crGo(pg) { var d = pg >= crPg ? 1 : -1; crPg = pg; crRender(d); var bd = document.getElementById("sv-body"); if (bd) bd.scrollTop = 0; }
-function crPick(k, v) {
-	crA[k] = String(v);
+function svPickStar(k, v) {
+	svA[k] = String(v);
 	var box = document.getElementById("sv-" + k);
-	if (box) {
-		box.classList.remove("miss");
-		if (k === "q36") { var ns = box.querySelectorAll(".sv-num"); for (var i = 0; i < ns.length; i++) { ns[i].classList.toggle("on", i === v); ns[i].setAttribute("aria-checked", i === v); } }
-		else { var w = document.createElement("div"); w.innerHTML = crStars(k); box.querySelector(".cr-stars").replaceWith(w.firstChild); }
-	}
+	if (box) { box.classList.remove("miss"); var w = document.createElement("div"); w.innerHTML = svStars(k); box.querySelector(".cr-stars").replaceWith(w.firstChild); }
 	var err = document.getElementById("sv-err"); if (err) err.textContent = "";
+	svNextState();
 }
-function crNext() {
-	for (var i = 0; i < CR_Q.length; i++) if (!crA[CR_Q[i][0]]) {
-		var b = document.getElementById("sv-" + CR_Q[i][0]); if (b) { b.classList.add("miss"); b.scrollIntoView({ behavior: "smooth", block: "center" }); }
-		document.getElementById("sv-err").textContent = "「" + CR_Q[i][1] + "」还没打分。"; return;
-	}
-	crGo(1);
-}
-function crSend() {
-	if (crBusy) return;
-	var err = document.getElementById("sv-err"), btn = document.getElementById("cr-send");
-	if (!crA.q36) { var b = document.getElementById("sv-q36"); if (b) b.classList.add("miss"); err.textContent = "推荐意愿还没选。"; return; }
-	crBusy = true; btn.disabled = true; btn.textContent = "提交中…";
-	var hp = document.getElementById("cr-hp");
-	var body = JSON.stringify({ kind: "client", a: crA, note: (crNote || "").trim(), song: (crSong || "").trim(), oid: crOid || 0, website: hp ? hp.value : "", lid: qbs.lid, sid: qbs.sid, device: qbs.device });
-	var fail = function (m) { crBusy = false; btn.disabled = false; btn.textContent = "提交"; err.textContent = m; };
-	fetch(QBS_API + "/survey", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
-		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
-		.then(function (j) { crBusy = false; if (!j.ok) return fail(j.status === 429 ? "提交太频繁了，过一分钟再试。" : "没提交成功，检查一下网络再点一次。"); qbStatHit("rate_done"); crGo(2); })
-		.catch(function () { fail("没提交成功，检查一下网络再点一次。"); });
-}
-// 打开 ?for=client：跳过开屏，直接弹评分
-(function () { try { if (new URLSearchParams(location.search).get("for") === "client") setTimeout(function () { try { entryGo("browse"); } catch (e) {} crOpen(); }, 400); } catch (e) {} })();
 function qbOrderKey(e) { if (e.key === "Escape") qbOrderClose(); }
 function qbOrderClose() {
 	qbMO = null;
