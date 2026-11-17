@@ -938,6 +938,10 @@ html.qbo-lock, html.qbo-lock body { overflow: hidden; }
 .sv-row.on { border-color: var(--green-line); background: var(--green-fill); color: var(--green-soft); font-weight: 600; }
 .sv-row.on .sv-dot { background: var(--green-soft); border-color: var(--green-soft); color: var(--surface); }
 .sv-q.miss .sv-qt { color: var(--warn); }
+.sv-nps { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; margin-top: 12px; }
+.sv-num { min-width: 0; height: 44px; padding: 0; border: 0.5px solid var(--border); background: var(--well); color: var(--text-primary); border-radius: 8px; font: inherit; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.2s, border-color 0.2s; }
+.sv-num.on { background: var(--green-soft); border-color: var(--green-soft); color: var(--surface); }
+.sv-nps-l { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-secondary); margin-top: 8px; }
 .sv-perks { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
 .sv-perks li { display: flex; gap: 10px; font-size: 15px; line-height: 1.6; color: var(--text-primary); }
 .sv-perks li i { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--green-fill); color: var(--green-soft); font-style: normal; font-size: 12px; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
@@ -5545,7 +5549,7 @@ function qbOrderOpen() {
 	qbOrderOpened = Date.now();
 	var cc = null; if (!qbMO) { try { cc = qbCompute(q); } catch (e) {} }
 	qbOrderLast = { plan: qbMO ? qbMO.plan : qbStatPlan(), total: total, sch: qbMO ? { edit: false } : qbOrderSchedule(), kind: qbMO ? "master" : "",
-		mem: cc ? cc.memCount : 0, old: cc ? cc.memCount - cc.joinCount : 0, nb: cc && currentLang === "zh" ? cc.newbie : 0 };
+		mem: cc ? cc.memCount : 0, old: cc ? cc.memCount - cc.joinCount : 0, nb: cc && currentLang === "zh" ? cc.newbie : 0, pre: cc ? cc.total + cc.discount : total }; // pre = 会员 8 折之前的价，问卷码的满额按它算
 	qbPromo = null;
 	if (qbMO) { var pf = document.getElementById("qbo-promo"); if (pf && pf.closest(".qbo-f")) pf.closest(".qbo-f").remove(); }
 	var pgo = document.getElementById("qbo-promo-go"), pin = document.getElementById("qbo-promo");
@@ -5573,7 +5577,7 @@ function qbPromoApply() {
 	if (!code) { pm.textContent = ""; qbLsSet("cd_promo", ""); return; }
 	pm.textContent = "…";
 	fetch(QBS_API + "/promo?c=" + encodeURIComponent(code) + "&total=" + (qbOrderLast && qbOrderLast.total || 0) + "&lang=" + currentLang
-		+ "&mem=" + (qbOrderLast && qbOrderLast.mem || 0) + "&old=" + (qbOrderLast && qbOrderLast.old || 0) + "&nb=" + (qbOrderLast && qbOrderLast.nb || 0))
+		+ "&mem=" + (qbOrderLast && qbOrderLast.mem || 0) + "&old=" + (qbOrderLast && qbOrderLast.old || 0) + "&nb=" + (qbOrderLast && qbOrderLast.nb || 0) + "&pre=" + (qbOrderLast && qbOrderLast.pre || 0))
 		.then(function (r) { return r.json(); })
 		.then(function (j) {
 			if (!j.ok) { pm.className = "qbo-pm err"; pm.textContent = (t["promo_" + j.e] || t.promoErr).replace("{min}", j.min || ""); return; }
@@ -5589,19 +5593,38 @@ function qbPromoApply() {
 // 只在中文页出现（立减码只对人民币订单有效）。领过的设备入口换成「你的优惠码」，点开直接看券。
 var SV_Q = [
 	{ k: "q1", t: "你是？", o: ["独立歌手 / 说唱", "乐队", "学生作业 / 比赛", "厂牌 / 公司项目", "爱好玩票"] },
-	{ k: "q2", t: "一年大概发几首歌？", o: ["1 首以内", "2–5 首", "6–12 首", "12 首以上"] },
-	{ k: "q3", t: "现在的歌一般怎么混？", o: ["自己混", "录音棚顺带混", "找网上的混音师", "还没混过"] },
-	{ k: "q4", t: "一首歌的混音，你心里的预算是？", o: ["¥300 以内", "¥300–500", "¥500–800", "¥800–1,500", "¥1,500 以上"] },
-	{ k: "q5", t: "混音低于多少钱，你会担心质量？", o: ["¥150 以下", "¥250 以下", "¥400 以下", "不会担心"] },
-	{ k: "q6", t: "混音超过多少钱，你就不考虑了？", o: ["¥500", "¥800", "¥1,200", "¥2,000", "看效果，没有上限"] },
-	{ k: "q7", t: "这页的价格（常见一首 ¥400–800），你的感觉是？", o: ["比预期便宜", "差不多", "略贵，但值得", "太贵了", "还没仔细看"] },
-	{ k: "q8", t: "一首歌的混音，你能接受等多久？", o: ["3 天内", "一周", "两周", "三周以上也行，效果优先"] },
-	{ k: "q9", t: "想更快拿到，加急费愿意多付多少？", o: ["不加急", "+15%", "+30%", "+50% 以上"] },
-	{ k: "q10", t: "选混音师，你最看重哪两项？", h: "最多选 2 项", m: 2, o: ["价格", "声音效果", "交付速度", "沟通和修改", "作品案例", "朋友推荐 / 口碑"] },
-	{ k: "q11", t: "什么能让你更快下单？", h: "可多选", m: 6, o: ["先听前后对比", "方向不对可退款", "固定套餐一口价", "分期付款", "优惠码", "更快交付"] }
+	{ k: "q2", t: "主要做什么风格？", h: "最多选 3 项", m: 3, o: ["说唱 / 嘻哈", "R&B", "流行", "独立 / 摇滚", "民谣", "电子", "国风", "其他"] },
+	{ k: "q3", t: "一年大概发几首歌？", o: ["1 首以内", "2–5 首", "6–12 首", "12 首以上"] },
+	{ k: "q4", t: "你现在在哪？", o: ["中国大陆", "韩国", "其他海外地区"] },
+	{ k: "q5", t: "你是怎么知道刀大厨的？", o: ["抖音", "小红书", "视频号", "B 站", "朋友推荐", "录音棚介绍", "刀门", "其他"] },
+	{ k: "q6", t: "平时最常刷哪个平台？", h: "最多选 2 项", m: 2, o: ["抖音", "小红书", "视频号", "B 站", "微博", "Instagram / YouTube"] },
+	{ k: "q7", t: "和刀大厨合作过吗？", o: ["合作过好几次", "合作过一次", "还没有，在考虑", "只是来看看"] },
+	{ k: "q8", t: "现在的歌一般怎么混？", o: ["自己混", "录音棚顺带混", "找网上的混音师", "还没混过"] },
+	{ k: "q9", t: "一首歌的混音，你心里的预算是？", o: ["¥300 以内", "¥300–500", "¥500–800", "¥800–1,500", "¥1,500 以上"] },
+	{ k: "q10", t: "混音低于多少钱，你会担心质量？", o: ["¥150 以下", "¥250 以下", "¥400 以下", "不会担心"] },
+	{ k: "q11", t: "混音超过多少钱，你就不考虑了？", o: ["¥500", "¥800", "¥1,200", "¥2,000", "看效果，没有上限"] },
+	{ k: "q12", t: "这页的价格（常见一首 ¥400–800），你的感觉是？", o: ["比预期便宜", "差不多", "略贵，但值得", "太贵了", "还没仔细看"] },
+	{ k: "q13", t: "一首歌的混音，你能接受等多久？", o: ["3 天内", "一周", "两周", "三周以上也行，效果优先"] },
+	{ k: "q14", t: "想更快拿到，加急费愿意多付多少？", o: ["不加急", "+15%", "+30%", "+50% 以上"] },
+	{ k: "q15", t: "选混音师，你最看重哪两项？", h: "最多选 2 项", m: 2, o: ["价格", "声音效果", "交付速度", "沟通和修改", "作品案例", "朋友推荐 / 口碑"] },
+	{ k: "q16", t: "下单之前，你最担心什么？", o: ["效果达不到预期", "沟通麻烦、说不清", "交付拖延", "价格不透明、后面加钱", "被当成新手应付", "没什么担心的"] },
+	{ k: "q17", t: "什么能让你更快下单？", h: "可多选", m: 6, o: ["先听前后对比", "方向不对可退款", "固定套餐一口价", "分期付款", "优惠码", "更快交付"] },
+	{ k: "q18", t: "你有多大可能把刀大厨推荐给做音乐的朋友？", nps: 1 },
+	{ k: "q19", t: "如果推荐朋友成交，你和朋友各得一张券，你会推荐吗？", o: ["会，马上就有人选", "遇到合适的人会", "不太会主动推荐"] },
+	{ k: "q20", t: "除了混音，你还对什么感兴趣？", h: "可多选", m: 7, o: ["录音", "人声制作", "母带", "编曲 / 伴奏", "混音课", "刀门会员", "暂时没有"] },
+	{ k: "q21", t: "想在刀大厨的账号看到什么内容？", h: "最多选 3 项", m: 3, o: ["混音前后对比", "混音技巧教程", "客户作品背后的故事", "在韩国做音乐的日常", "格莱美工程师的思路", "设备和插件"] }
 ];
-// 页：0 开场；1–4 题目分组；5 补充 + 提交；6 领券
-var SV_PAGES = [null, { k: "关于你", q: [0, 1, 2] }, { k: "预算", q: [3, 4, 5] }, { k: "价格与交付", q: [6, 7, 8] }, { k: "怎么选", q: [9, 10] }, null];
+// 页：0 开场；1–7 题目分组；8 补充 + 提交；9 领券
+var SV_PAGES = [null,
+	{ k: "关于你", q: [0, 1, 2, 3] },
+	{ k: "怎么认识的", q: [4, 5, 6] },
+	{ k: "预算", q: [7, 8, 9, 10] },
+	{ k: "价格与交付", q: [11, 12, 13] },
+	{ k: "怎么选", q: [14, 15, 16] },
+	{ k: "推荐", q: [17, 18] },
+	{ k: "还想要什么", q: [19, 20] },
+	null];
+var SV_SUBMIT = SV_PAGES.length - 1, SV_DONE = SV_PAGES.length;
 var svA = {}, svBusy = false, svPg = 0, svNote = "";
 function svMine() { try { return JSON.parse(qbLsGet("cd_survey") || "null"); } catch (e) { return null; } }
 function svGateHtml() {
@@ -5610,7 +5633,7 @@ function svGateHtml() {
 	if (m && m.code && m.expires && Date.now() > m.expires) return "";
 	return '<button class="gate-survey" onclick="svOpen(true)">'
 		+ '<span class="gate-survey-t"><b>' + (m && m.code ? "你的问卷优惠码 " + m.code : "答 1 分钟问卷，领 ¥100 混音券") + '</b>'
-		+ '<span>' + (m && m.code ? "满 ¥400 可用 · 2026 年 12 月 31 日前有效" : "11 道选择题，关于价格和交付时间 · 不用填名字") + '</span></span>'
+		+ '<span>' + (m && m.code ? "满 ¥400 可用 · 2026 年 12 月 31 日前有效" : "21 道选择题，约 2 分钟 · 不用填名字") + '</span></span>'
 		+ '<span class="gate-survey-a">→</span></button>';
 }
 function svOpen(fromGate) {
@@ -5621,7 +5644,7 @@ function svOpen(fromGate) {
 	el.innerHTML = '<div class="qbo-back" onclick="qbOrderClose()"></div><div class="qbo-sheet" role="dialog" aria-modal="true" aria-label="价格与交付问卷" id="sv-sheet"></div>';
 	document.body.appendChild(el);
 	var m = svMine();
-	svPg = m && m.code ? 6 : 0;
+	svPg = m && m.code ? SV_DONE : 0;
 	svRender(1, m);
 	document.documentElement.classList.add("qbo-lock");
 	document.addEventListener("keydown", qbOrderKey);
@@ -5632,6 +5655,10 @@ function svHas(k) { var v = svA[k]; return !!v && (!Array.isArray(v) || v.length
 function svPageDone(pg) { var g = SV_PAGES[pg]; if (!g) return true; for (var i = 0; i < g.q.length; i++) if (!svHas(SV_Q[g.q[i]].k)) return false; return true; }
 function svRowsHtml(i) {
 	var q = SV_Q[i], v = svA[q.k], h = "";
+	if (q.nps) {
+		for (var x = 0; x <= 10; x++) h += '<button type="button" class="sv-num' + (v === String(x) ? " on" : "") + '" role="radio" aria-checked="' + (v === String(x)) + '" onclick="svPickNps(' + i + ',' + x + ')">' + x + '</button>';
+		return '<div class="sv-nps">' + h + '</div><div class="sv-nps-l"><span>完全不会</span><span>一定会</span></div>';
+	}
 	for (var j = 0; j < q.o.length; j++) {
 		var on = q.m ? (v || []).indexOf(q.o[j]) >= 0 : v === q.o[j];
 		h += '<button type="button" class="sv-row' + (q.m ? " multi" : "") + (on ? " on" : "") + '" role="' + (q.m ? "checkbox" : "radio") + '" aria-checked="' + on + '" onclick="svPick(' + i + ',' + j + ')">'
@@ -5646,12 +5673,12 @@ function svRender(dir, mine) {
 	if (pg === 0) {
 		body = '<div class="' + cls + '"><div class="sv-kick">CU MUSIC · 价格问卷</div>'
 			+ '<h2 class="sv-h">帮我把价格和交付时间定得更合理</h2>'
-			+ '<p class="sv-p">11 道选择题，大约 1 分钟。没有标准答案，按你真实的想法选就好。</p>'
+			+ '<p class="sv-p">21 道选择题，大约 2 分钟，点一下就是一题。没有标准答案，按你真实的想法选就好。</p>'
 			+ '<ul class="sv-perks"><li><i>1</i><span>答完立刻领一张 <b>¥100 混音券</b>，满 ¥400 可用，今年内有效</span></li>'
 			+ '<li><i>2</i><span>不用填名字、电话，答案只用来调整价格和服务</span></li>'
 			+ '<li><i>3</i><span>刀门会员也能用：先减 ¥100，再打 8 折</span></li></ul></div>';
 		foot = '<button type="button" class="qb-cta" onclick="svGo(1)">开始</button>';
-	} else if (pg >= 1 && pg <= 4) {
+	} else if (pg >= 1 && pg < SV_SUBMIT) {
 		var g = SV_PAGES[pg];
 		body = '<div class="' + cls + '"><div class="sv-kick">' + g.k + '</div>';
 		for (var t = 0; t < g.q.length; t++) {
@@ -5659,19 +5686,19 @@ function svRender(dir, mine) {
 			body += '<div class="sv-q" id="sv-' + q.k + '" role="' + (q.m ? "group" : "radiogroup") + '" aria-labelledby="sv-t-' + q.k + '">'
 				+ '<div class="sv-qt" id="sv-t-' + q.k + '"><span class="sv-qn">' + (qi + 1) + ' / ' + SV_Q.length + '</span>' + q.t + '</div>'
 				+ (q.h ? '<div class="sv-qh">' + q.h + '</div>' : '')
-				+ '<div class="sv-list">' + svRowsHtml(qi) + '</div></div>';
+				+ (q.nps ? svRowsHtml(qi) : '<div class="sv-list">' + svRowsHtml(qi) + '</div>') + '</div>';
 		}
 		body += '<div class="sv-err" id="sv-err" role="alert"></div></div>';
 		foot = '<button type="button" class="sv-back" onclick="svGo(' + (pg - 1) + ')">上一步</button>'
 			+ '<button type="button" class="qb-cta" id="sv-next" onclick="svNext()">下一步</button>';
-	} else if (pg === 5) {
+	} else if (pg === SV_SUBMIT) {
 		body = '<div class="' + cls + '"><div class="sv-kick">最后一步</div>'
 			+ '<h2 class="sv-h">还有想说的吗？</h2>'
 			+ '<p class="sv-p">选填。价格、交付、沟通方式，或者希望我增加的服务，都可以写。</p>'
 			+ '<textarea class="sv-note" id="sv-note" maxlength="500" rows="5" placeholder="比如：希望有学生价、想要分轨导出、想周末也能交付…" oninput="svNote=this.value"></textarea>'
 			+ '<label class="qbo-hp" aria-hidden="true">Website<input id="sv-hp" tabindex="-1" autocomplete="off"></label>'
 			+ '<div class="sv-err" id="sv-err" role="alert"></div></div>';
-		foot = '<button type="button" class="sv-back" onclick="svGo(4)">上一步</button>'
+		foot = '<button type="button" class="sv-back" onclick="svGo(' + (SV_SUBMIT - 1) + ')">上一步</button>'
 			+ '<button type="button" class="qb-cta" id="sv-send" onclick="svSend()">提交，领取 ¥100 券</button>';
 	} else {
 		var m = mine || svMine() || {};
@@ -5689,14 +5716,14 @@ function svRender(dir, mine) {
 				+ '<button type="button" class="qb-cta" onclick="svGoBook()">去配一首歌的报价</button>';
 		}
 	}
-	var stepTxt = pg === 0 ? "约 1 分钟" : pg <= 5 ? "第 " + pg + " 步，共 " + n + " 步" : "已完成";
-	var pct = pg >= 6 ? 100 : Math.round(pg / n * 100);
+	var stepTxt = pg === 0 ? "约 2 分钟" : pg <= SV_SUBMIT ? "第 " + pg + " 步，共 " + n + " 步" : "已完成";
+	var pct = pg >= SV_DONE ? 100 : Math.round(pg / n * 100);
 	sh.innerHTML = '<div class="sv-head"><div class="qbo-grab"></div><div class="sv-top"><span class="sv-step">' + stepTxt + '</span>'
 		+ '<button type="button" class="sv-x" aria-label="关闭" onclick="qbOrderClose()">×</button></div>'
 		+ '<div class="sv-bar"><b style="width:' + pct + '%"></b></div></div>'
 		+ '<div class="sv-body" id="sv-body">' + body + '</div>'
 		+ '<div class="sv-foot">' + foot + '</div>';
-	if (pg === 5) { var ta = document.getElementById("sv-note"); if (ta) ta.value = svNote; }
+	if (pg === SV_SUBMIT) { var ta = document.getElementById("sv-note"); if (ta) ta.value = svNote; }
 	svNextState();
 }
 function svNextState() { var b = document.getElementById("sv-next"); if (b) b.classList.toggle("dim", !svPageDone(svPg)); }
@@ -5748,9 +5775,22 @@ function svPick(i, j) {
 		if (!svHas(nq.k)) { var nb = document.getElementById("sv-" + nq.k); if (nb && g.q[u] > i) setTimeout(function () { nb.scrollIntoView({ behavior: "smooth", block: "start" }); }, 180); break; }
 	}
 }
+function svPickNps(i, x) {
+	var q = SV_Q[i]; svA[q.k] = String(x);
+	var box = document.getElementById("sv-" + q.k);
+	if (box) {
+		box.classList.remove("miss");
+		var bs = box.querySelectorAll(".sv-num");
+		for (var b = 0; b < bs.length; b++) { var on = b === x; bs[b].classList.toggle("on", on); bs[b].setAttribute("aria-checked", on); }
+	}
+	var err = document.getElementById("sv-err"); if (err) err.textContent = "";
+	svNextState();
+	var g = SV_PAGES[svPg];
+	if (g) for (var u = 0; u < g.q.length; u++) { var nq = SV_Q[g.q[u]]; if (!svHas(nq.k) && g.q[u] > i) { var nb = document.getElementById("sv-" + nq.k); if (nb) setTimeout(function () { nb.scrollIntoView({ behavior: "smooth", block: "start" }); }, 180); break; } }
+}
 function svSend() {
 	if (svBusy) return;
-	for (var pg = 1; pg <= 4; pg++) if (!svPageDone(pg)) { svGo(pg); setTimeout(svNext, 50); return; }
+	for (var pg = 1; pg < SV_SUBMIT; pg++) if (!svPageDone(pg)) { svGo(pg); setTimeout(svNext, 50); return; }
 	var err = document.getElementById("sv-err"), btn = document.getElementById("sv-send");
 	svBusy = true; btn.disabled = true; btn.textContent = "提交中…";
 	var hp = document.getElementById("sv-hp");
@@ -5765,7 +5805,7 @@ function svSend() {
 			var m = j.code ? { code: j.code, value: j.value, min: j.min, expires: j.expires } : {};
 			if (j.code) { qbLsSet("cd_survey", JSON.stringify(m)); qbLsSet("cd_promo", j.code); }
 			var gs = document.getElementById("gate-survey"); if (gs) gs.innerHTML = svGateHtml();
-			svPg = 6; svRender(1, m);
+			svPg = SV_DONE; svRender(1, m);
 		})
 		.catch(function () { fail("没提交成功，检查一下网络再点一次。"); });
 }
@@ -5811,7 +5851,7 @@ function qbOrderSend(e) {
 	var detail = ""; try { detail = qbMO ? qbMO.detail : qbQuoteText(); } catch (x) {}
 	if (qbPromo) { var sy = { zh: "¥", en: "$", ko: "₩" }[currentLang] || "¥"; detail += "\n" + (currentLang === "zh" ? "优惠码 " : "Promo ") + qbPromo.code + " −" + sy + qbPromo.off + " → " + sy + qbPromo.final; }
 	var body = JSON.stringify({ name: name, wechat: wx, song: v("qbo-song"), note: v("qbo-note"), website: v("qbo-hp"), promo: qbPromo ? qbPromo.code : "",
-		plan: qbOrderLast.plan, total: qbOrderLast.total, sch: qbOrderLast.sch, mem: qbOrderLast.mem, old: qbOrderLast.old, nb: qbOrderLast.nb, kind: qbOrderLast.kind, detail: detail, q: qbMO ? "" : qbEncodeState(), lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
+		plan: qbOrderLast.plan, total: qbOrderLast.total, sch: qbOrderLast.sch, mem: qbOrderLast.mem, old: qbOrderLast.old, nb: qbOrderLast.nb, pre: qbOrderLast.pre, kind: qbOrderLast.kind, detail: detail, q: qbMO ? "" : qbEncodeState(), lang: currentLang, sid: qbs.sid, lid: qbs.lid, t: Date.now() - qbOrderOpened });
 	var fail = function (msg) { err.textContent = msg.replace("{w}", w); btn.disabled = false; btn.textContent = t.send; };
 	fetch(QBS_API + "/o", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })
 		.then(function (r) { return r.json().catch(function () { return { ok: false }; }).then(function (j) { j.status = r.status; return j; }); })
