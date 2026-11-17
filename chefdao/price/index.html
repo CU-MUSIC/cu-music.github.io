@@ -1664,7 +1664,7 @@ var I18N = {
 			copyTermsList: [
 				"修正不限次数；换方向、加新想法属新方案，动手前先报价",
 				"每版交付后 24 小时内反馈（听完整首，汇总为一条）；收到后 24 小时内提供修改版",
-				"方向确认版不符可退一半混音定金，之后混音定金不退",
+				"方向确认版不符：仅收 ¥99，其余全退；方向确认后混音定金不退",
 				"默认交付成品母带 ×1；TV Mix / 纯伴奏提前说可一起给",
 				"付定金后我先听素材确认档位，不合适会在开工前告知，多退少补；方向确认版之后再升级，差价 + 重混费 ¥100 / 次"
 			],
@@ -1812,7 +1812,7 @@ var I18N = {
 				steps: [
 					{ t: "方向对齐", d: "确认风格方向、参考作品与期望交付日期。" },
 					{ t: "定金与素材", d: "支付定金后锁定档期与报价，比例按订单金额分档（详见付款 FAQ）。请提供未经效果处理的干声与伴奏，24-bit / 48kHz 或更高。" },
-					{ t: "方向确认版", d: "交付 30–60 秒试听片段用于确认整体方向（此阶段仅供方向判断，非最终质感）。如方向不符，<strong>退还一半混音定金</strong>，项目终止。" },
+					{ t: "方向确认版", d: "用原始干声先出 30–60 秒基础混音，确认整体方向（尚未修音准节奏，仅供方向判断，非最终质感）。确认后才进入音频编辑与人声制作；如方向不符，<strong>仅收 ¥99，其余全额退还</strong>，项目终止。" },
 					{ t: "制作与审听", d: "朝既定方向的修正<strong>不限次数</strong>。变更方向或追加创意需求视为新方案，将于执行前另行报价。审听意见通过 Samply 时间轴提交，建议完整试听后一并汇总。" },
 					{ t: "母带与交付", d: "尾款结清后交付成品母带，附制作信息（Credits）。修改意见请于交付后 <strong>7 天内</strong>提出。" }
 				]
@@ -1843,7 +1843,7 @@ var I18N = {
 				a: "不提供免费完整试混，混音本身即为高强度的创作与判断工作。如需先行评估契合度：",
 				list: [
 					"提供参考曲与一小段 demo，先行沟通方向",
-					"正式下单后设有「方向确认版」环节：交付 30–60 秒试听片段，如方向不符，退还一半混音定金"
+					"正式下单后先出「方向确认版」：30–60 秒基础混音，方向不符仅收 ¥99，其余全退"
 				]
 			},
 			{
@@ -1940,8 +1940,8 @@ var I18N = {
 					"录音取消退款：72 小时以上退 100%，48–72 小时退 70%，24–48 小时退 30%，24 小时内或未到场不退；提前 48 小时以上可免费改期 1 次",
 					"录音与混音的定金合并一次支付。录音金额满 ¥600 时，混音立减 ¥100（与刀门 8 折取更优）",
 					"用了新客首单立减的，混音定金固定为 70%、尾款 30%（与分档取较高者）",
-					"定金到账后，先于音频编辑前交付 30–60 秒方向确认版",
-					"如方向不符：退还一半混音定金，项目终止（另一半抵方向确认版的制作）",
+					"定金到账后，先用原始干声交付 30–60 秒方向确认版（基础混音），确认后才开始音频编辑与人声制作",
+					"如方向不符：仅收 ¥99（方向确认版的制作），其余全额退还，项目终止",
 					"方向确认后正式开工；此后中途终止，按「不满意 / 中途终止，怎么退款？」逐项结算"
 				]
 			},
@@ -1963,7 +1963,7 @@ var I18N = {
 				q: "不满意 / 中途终止，怎么退款？",
 				a: "按环节结算，一句话：<strong>做完并交给你的，收；没开始的，不收；我的原因，退</strong>。",
 				list: [
-					"<strong>方向确认版</strong>：方向不符，退还一半混音定金，项目终止；另一半抵方向确认版的制作",
+					"<strong>方向确认版</strong>：方向不符，仅收 ¥99，其余全额退还，项目终止；音频编辑与人声制作尚未开始，不收费",
 					"<strong>音频编辑</strong>：编辑完成后不退编辑费，修好的干声交给你带走，可拿去任何地方继续做",
 					"<strong>人声制作 · 创意向</strong>：提案都不满意、但混音满意 → 撤掉人声制作，按无人声制作版本交付，按实际工作量退部分人声制作费：做满 3 版退一半，没做满的按未做版数多退（从尾款扣，已付则退）。须在混音定稿前提出",
 					"<strong>人声制作 · 执行向</strong>：按你的指令做到位即不退：做的就是你要的；没做到位，我改到位",
@@ -2256,7 +2256,7 @@ var I18N = {
 			copyTermsList: [
 				"Corrections are unlimited; changing direction or adding ideas is a new approach, quoted before work starts",
 				"Listen through, then send notes in one message; within 7 days of delivery",
-				"Direction check not right: half the mix deposit is refunded; after that the mix deposit is non-refundable",
+				"Direction check not right: only $15 is kept, the rest is refunded; after the direction check the mix deposit is non-refundable",
 				"Default delivery is the final master ×1; TV mix / instrumental included if requested in advance",
 				"After your deposit I listen to your vocals and confirm the tier; if another fits better I tell you first and settle the difference either way. Upgrading after the direction check: difference + $15 remix fee each time"
 			],
@@ -2397,7 +2397,7 @@ var I18N = {
 				steps: [
 					{ t: "Direction alignment", d: "Confirm the stylistic direction, reference tracks and target delivery date." },
 					{ t: "Deposit & material", d: "A deposit secures the slot and the quote — the percentage is tiered by order size (see the payment FAQ). Please supply unprocessed dry vocals and the instrumental at 24-bit / 48kHz or higher." },
-					{ t: "Direction check", d: "A 30–60 second excerpt is delivered to confirm the overall direction (indicative of direction only, not the final sound). Should the direction not be right, <strong>half the mix deposit is refunded</strong> and the project ends." },
+					{ t: "Direction check", d: "A 30–60 second basic mix built from the raw vocals confirms the overall direction (pitch and timing not yet edited; for direction only, not the final sound). Editing and vocal production start only once it is approved; should the direction not be right, <strong>only $15 is kept and the rest is refunded</strong>, and the project ends." },
 					{ t: "Production & review", d: "Corrections toward the agreed direction are <strong>unlimited</strong>. A change of direction or additional creative requests constitute a new approach and are quoted before work begins. Notes are submitted on the Samply timeline, ideally consolidated after a full listen." },
 					{ t: "Mastering & delivery", d: "The final master is delivered with credits once the balance is settled. Revision notes are accepted <strong>within 7 days</strong> of delivery." }
 				]
@@ -2521,8 +2521,8 @@ var I18N = {
 					"Recording cancellation: 100% refund at 72+ hours, 70% at 48–72 hours, 30% at 24–48 hours, none under 24 hours or for a no-show; one free reschedule with 48+ hours' notice",
 					"Recording and mix deposits are paid together. Recording of $90 or more takes $15 off the mix (applied against the Daomen 20% discount, whichever saves more)",
 					"With the first-order discount, the mix deposit is a flat 70% (whichever is higher between the tier and the discount rate)",
-					"Once the deposit lands, a 30–60 second <strong>direction check</strong> is built from the raw material before any editing starts, so the direction can be heard in advance",
-					"If the direction does not fit, <strong>half the mix deposit is refunded</strong> and the project ends; the other half covers building the direction check",
+					"Once the deposit lands, a 30–60 second <strong>direction check</strong> (a basic mix of the raw vocals) is delivered first; editing and vocal production start only after it is approved",
+					"If the direction does not fit, <strong>only $15 is kept (for building the direction check) and the rest is refunded</strong>; the project ends",
 					"Once the direction is signed off, work starts properly; cancelling after that is settled item by item (see the refund question below)"
 				]
 			},
@@ -2544,7 +2544,7 @@ var I18N = {
 				q: "Not happy, or stopping mid-way — how do refunds work?",
 				a: "Settled item by item: <strong>finished and handed over is charged; not started is not; my fault is refunded</strong>.",
 				list: [
-					"<strong>Direction check</strong>: not the right direction → half the mix deposit is refunded and the project ends; the other half covers the direction check",
+					"<strong>Direction check</strong>: not the right direction → only $15 is kept, the rest is refunded, and the project ends; editing and vocal production have not started, so they are not charged",
 					"<strong>Audio editing</strong>: not refunded once done — you keep the edited vocals and can take them anywhere",
 					"<strong>Vocal Production · Creative</strong>: none of the proposals work but you like the mix → I remove the vocal production, deliver without it, and refund part of the fee by work done: all 3 versions made = half back, fewer = more back. Ask before the mix is final",
 					"<strong>Vocal Production · Execution</strong>: done to your notes = not refunded; not done right = I fix it",
@@ -2837,7 +2837,7 @@ var I18N = {
 			copyTermsList: [
 				"보정은 횟수 무제한. 방향 변경·새 아이디어 추가는 새 방향으로 착수 전 견적",
 				"전체를 들으신 뒤 의견을 한 번에 모아 주세요. 납품 후 7일 이내",
-				"방향 확인본이 맞지 않으면 믹스 계약금 절반 환불, 이후에는 환불되지 않습니다",
+				"방향 확인본이 맞지 않으면 ₩20,000만 받고 나머지는 전액 환불, 방향 확인 이후 믹스 계약금은 환불되지 않습니다",
 				"기본 납품은 완성 마스터 ×1. TV 믹스 / 인스트루멘탈은 미리 말씀하시면 함께 드립니다",
 				"계약금 입금 후 소스를 먼저 듣고 등급을 확인합니다. 다른 등급이 맞으면 미리 알려 드리며 차액은 환불 또는 추가 정산합니다. 방향 확인본 이후 업그레이드는 차액 + 리믹스 비용 ₩20,000 / 회"
 			],
@@ -2978,7 +2978,7 @@ var I18N = {
 				steps: [
 					{ t: "방향 확정", d: "스타일 방향, 레퍼런스, 희망 납품일을 확정합니다." },
 					{ t: "계약금 및 소스", d: "계약금 입금 시 일정과 견적이 확정됩니다. 비율은 주문 금액에 따라 분담됩니다(결제 FAQ 참고). 이펙트를 적용하지 않은 드라이 보컬과 반주를 24-bit / 48kHz 이상으로 보내주시기 바랍니다." },
-					{ t: "방향 확인본", d: "전체 방향 확인을 위해 30–60초 발췌본을 전달합니다(방향 판단용이며 최종 사운드가 아닙니다). 방향이 맞지 않을 경우 <strong>계약금의 절반을 환불</strong>하고 프로젝트는 종료됩니다." },
+					{ t: "방향 확인본", d: "원본 보컬로 30–60초 베이직 믹스를 먼저 만들어 전체 방향을 확인합니다(음정·타이밍 편집 전, 방향 판단용이며 최종 사운드가 아닙니다). 확인 후에 오디오 편집과 보컬 프로덕션을 시작하며, 방향이 맞지 않으면 <strong>₩20,000만 받고 나머지는 전액 환불</strong>하고 프로젝트는 종료됩니다." },
 					{ t: "제작 및 검토", d: "합의된 방향으로의 보정은 <strong>횟수 제한이 없습니다</strong>. 방향 변경 또는 크리에이티브 추가 요청은 새로운 방안으로 간주되어 착수 전 별도 견적을 드립니다. 검토 의견은 Samply 타임라인을 통해, 전체 청취 후 일괄 정리하여 전달해 주시기 바랍니다." },
 					{ t: "마스터링 및 납품", d: "잔금 정산 후 크레딧과 함께 완성 마스터를 납품합니다. 수정 의견은 납품 후 <strong>7일 이내</strong>에 접수됩니다." }
 				]
@@ -3102,8 +3102,8 @@ var I18N = {
 					"녹음 취소 환불: 72시간 이상 전 100%, 48–72시간 전 70%, 24–48시간 전 30%, 24시간 이내 또는 불참 시 환불 불가. 48시간 이상 전이면 1회 무료 변경 가능",
 					"녹음과 믹스 계약금은 한 번에 함께 결제합니다. 녹음 금액이 ₩120,000 이상이면 믹스 ₩20,000 할인(刀门 20% 할인과 중복 불가, 더 유리한 쪽 적용)",
 					"첫 주문 할인을 적용한 경우: 믹스 계약금은 고정 70%입니다 (구간별 비율과 할인 비율 중 더 높은 쪽 적용)",
-					"계약금이 확인되면 편집에 들어가기 전에 원본 소스로 30–60초 <strong>방향 확인본</strong>을 만들어 방향을 미리 확인할 수 있습니다",
-					"방향이 맞지 않으면 <strong>믹스 계약금 절반 환불</strong>, 프로젝트 종료 — 나머지 절반은 방향 확인본 제작 비용입니다",
+					"계약금이 확인되면 원본 보컬로 30–60초 <strong>방향 확인본</strong>(베이직 믹스)을 먼저 전달하고, 확인 후에 오디오 편집과 보컬 프로덕션을 시작합니다",
+					"방향이 맞지 않으면 <strong>₩20,000(방향 확인본 제작비)만 받고 나머지는 전액 환불</strong>, 프로젝트 종료",
 					"방향 확정 후 본격 착수하며, 이후 중도 취소는 아래 환불 기준에 따라 항목별로 정산합니다"
 				]
 			},
@@ -3125,7 +3125,7 @@ var I18N = {
 				q: "마음에 안 들거나 중도 종료하면 환불은 어떻게 되나요?",
 				a: "항목별로 정산합니다: <strong>완성해서 드린 것은 청구, 시작 안 한 것은 청구 안 함, 제 사유면 환불</strong>.",
 				list: [
-					"<strong>방향 확인본</strong>: 방향이 맞지 않으면 믹스 계약금 절반 환불 후 종료. 나머지 절반은 방향 확인본 제작 비용입니다",
+					"<strong>방향 확인본</strong>: 방향이 맞지 않으면 ₩20,000만 받고 나머지는 전액 환불 후 종료. 오디오 편집과 보컬 프로덕션은 시작 전이므로 청구하지 않습니다",
 					"<strong>오디오 편집</strong>: 편집 완료 후에는 환불되지 않으며, 편집된 보컬은 가져가셔서 어디서든 쓰실 수 있습니다",
 					"<strong>보컬 프로덕션 · 크리에이티브</strong>: 제안이 모두 마음에 안 들지만 믹스는 만족 → 보컬 프로덕션을 빼고 납품하며, 작업량에 따라 일부 환불: 3개 버전을 모두 만들었으면 절반, 덜 만들었으면 더 환불. 믹스 확정 전에 말씀해 주세요",
 					"<strong>보컬 프로덕션 · 실행형</strong>: 지시대로 완료했다면 환불되지 않습니다. 제대로 안 됐다면 제가 고칩니다",
