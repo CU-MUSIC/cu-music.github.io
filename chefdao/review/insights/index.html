@@ -478,7 +478,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261117.1300';
+const BUILD = '261118.1000';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -629,7 +629,11 @@ async function offlineSave() {
   toast('✓ 已存到这台设备：' + n + ' 首最新版音频' + (got ? '（新存 ' + (bytes / 1048576).toFixed(0) + ' MB）' : '') + '、全部评论、' + covers.length + ' 张封面' + (fail ? '，' + fail + ' 首没存上，再点一次补' : '') + (ok ? '' : '。从主屏幕图标打开，系统才不会清掉'), 5200);
 }
 document.addEventListener('click', e => { if (e.target.closest('#ofb')) offlineSave(); });
-document.addEventListener('click', e => { const b = e.target.closest('#rfb'); if (b) { b.classList.add('spin'); setTimeout(bust, 150); } });
+// 右上角刷新：不重载页面，原地重新拉数据（听众、评论、Library、问卷…），开着的盲听结果也一起刷新；页面本身有新版本时底部另有「有新版本，点这里刷新」
+let rfBusy = false;
+document.addEventListener('click', async e => { const b = e.target.closest('#rfb'); if (!b || rfBusy) return; rfBusy = true; b.classList.add('spin');
+  const t0 = Date.now(); try { await load(); const hv = document.getElementById('hvRe'); if (hv) hv.click(); } catch (x) {}
+  setTimeout(() => { rfBusy = false; const nb = document.getElementById('rfb'); if (nb) { nb.classList.remove('spin'); nb.animate([{ color: '#8fcf9f' }, { color: '' }], { duration: 900 }); } }, Math.max(0, 500 - (Date.now() - t0))); });
 { let y0 = null, tip = null;
   addEventListener('touchstart', e => { y0 = scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; }, { passive: true });
   addEventListener('touchmove', e => { if (y0 === null) return; const d = e.touches[0].clientY - y0;

@@ -942,6 +942,33 @@ function verCheck() {
   newsBar('', null, { title: '刀大厨更新了新版本', sub: vname(v) + (v.date ? ' · ' + v.date.slice(5).replace('-', ' 月 ') + ' 日' : '') + (fresh.length > 1 ? ' 等 ' + fresh.length + ' 版' : ''), btn: '去听',
     act: async () => { if (i !== vi) await switchTo(i); scrollTo({ top: 0, behavior: 'smooth' }); try { if (!$('#play').disabled) a.play(); } catch (e) {} } });
 }
+// 页面开着时发现更新：每 60 秒（页面在前台时）和从别的 App 切回来时查一次 /rs。
+// 有新版本 → 弹「更新了新版本」，点了软刷新直接切到新版（不重新输密码）；最终文件开放了 → 弹「最终文件已准备好」，下载按钮原地亮起来
+let liveBusy = false, liveAt = 0, liveFinal = false; const liveSeen = new Set();   // 已经提示过的新版本：点了「稍后」不再反复弹
+const dlReady = (d, f) => !!(d && d.on && (f || d.link));
+async function liveCheck() {
+  if (IS_OWNER || liveBusy || document.hidden || Date.now() - liveAt < 20000 || !window.SONG_LIVE) return;
+  liveBusy = true; liveAt = Date.now();
+  try {
+    const tok = store.get('review:tok') || '', hp = store.get('review:hp') || '';
+    const j = await (await fetch(SONG_LIVE.api + '/rs?s=' + S.slug + (tok ? '&tok=' + tok : '') + (/^[0-9a-f]{24}$/.test(hp) ? '&hp=' + hp : ''), { cache: 'no-store' })).json();
+    if (!j.ok || !j.song) return;
+    const nv = (j.song.versions || []).filter(v => v.ver !== 'REF'), fresh = nv.filter(v => !V.some(x => x.ver === v.ver) && !liveSeen.has(v.ver));
+    if (fresh.length && !$('#newsb')) {
+      const v = fresh[fresh.length - 1];
+      fresh.forEach(x => liveSeen.add(x.ver));
+      newsBar('', null, { title: '刀大厨更新了新版本', sub: vname(v) + (fresh.length > 1 ? ' 等 ' + fresh.length + ' 版' : ''), btn: '去听',
+        act: () => { store.set('review:vseen:' + S.slug, JSON.stringify(nv.map(x => x.ver))); softReload(v.ver); } });
+    }
+    const d = j.song.dl || {};
+    if (!liveFinal && !dlReady(DL, S.final) && dlReady(d, j.song.final)) {
+      liveFinal = true; Object.assign(DL, d); if (j.song.final) S.final = j.song.final; try { dlUi(); } catch (e) {}
+      newsBar('', null, { title: '最终文件已准备好', sub: '点下面的按钮就能下载', btn: '去下载', act: () => { const b = $('#dlBtn'); if (b) { b.scrollIntoView({ behavior: 'smooth', block: 'center' }); b.animate([{ boxShadow: '0 0 0 0 rgba(226,192,122,.7)' }, { boxShadow: '0 0 0 14px rgba(226,192,122,0)' }], { duration: 900, iterations: 3, delay: 300 }); } } });
+    }
+  } catch (e) {} finally { liveBusy = false; }
+}
+setInterval(liveCheck, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) liveCheck(); });
 let NEWSQ = [];   // 同时有新版本和评论动态：一张看完再弹下一张
 function newsBar(txt, go, opt) {   // 屏幕正中一张卡片，背后压暗；点「查看」跳到那条，点空白或「稍后」关掉
   if ($('#newsb')) { NEWSQ.push([txt, go, opt]); return; }
