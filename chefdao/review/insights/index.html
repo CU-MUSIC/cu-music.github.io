@@ -478,7 +478,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261117.1233';
+const BUILD = '261117.1235';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1233,19 +1233,20 @@ async function loadSurvey() {
 }
 window.__svf = k => { svF = k; render(); };
 window.__svk = k => { svK = k; svSel = null; render(); };
-// 老客户评分（kind = client）：5 个方向的平均星数 + 推荐值 + 每一条
+// 混音评分：价格问卷里第 7 题选了「合作过」的人多答的 5 个方向（q31–q35）+ 改进（q37）；推荐值用第 18 题
 const CRQ = [['q31', '声音效果'], ['q32', '需求理解与沟通'], ['q33', '交付准时'], ['q34', '修改体验'], ['q35', '性价比']];
 function renderRate(all, now) {
-  const rows = all.filter(r => r.kind === 'client');
-  if (!rows.length) return `<div class="empty">还没有客户评分。私发给老客户：<br><b>cumusic.work/chefdao/price?for=client&amp;song=歌名</b></div>`;
-  const sc = rows.map(r => parseInt(r.a.q36, 10)).filter(x => x >= 0);
+  const rows = all.filter(r => r.a && r.a.q31);
+  if (!rows.length) return `<div class="empty">还没有评分。价格问卷里选了「合作过」的人，会多答一页混音评分。</div>`;
+  const npsOf = r => parseInt(r.a.q36 != null ? r.a.q36 : r.a.q18, 10);
+  const sc = rows.map(npsOf).filter(x => x >= 0);
   const pro = sc.filter(x => x >= 9).length, det = sc.filter(x => x <= 6).length, nps = sc.length ? Math.round((pro - det) / sc.length * 100) : null;
   const avgOf = k => { const v = rows.map(r => +r.a[k]).filter(x => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
   const all5 = CRQ.map(([k]) => avgOf(k)), overall = all5.reduce((a, b) => a + b, 0) / all5.length;
   const low = CRQ.map(([k, t], i) => [t, all5[i]]).sort((a, b) => a[1] - b[1])[0];
   const stars = v => '★★★★★'.slice(0, Math.round(v)) + '<span class="crs-off">' + '★★★★★'.slice(Math.round(v)) + '</span>';
   return `<div class="cards">
-    <div class="card"><div class="lb">评分</div><div class="n">${rows.length}</div><div class="d">老客户私发链接</div></div>
+    <div class="card"><div class="lb">评分</div><div class="n">${rows.length}</div><div class="d">合作过的人在问卷里打的</div></div>
     <div class="card"><div class="lb">平均</div><div class="n">${overall.toFixed(1)}</div><div class="d">5 个方向的平均星数</div></div>
     <div class="card"><div class="lb">推荐值 NPS</div><div class="n">${nps == null ? '—' : (nps > 0 ? '+' : '') + nps}</div><div class="d">推荐 ${pro} / 贬损 ${det}</div></div>
     <div class="card"><div class="lb">最弱的一项</div><div class="n" style="font-size:22px">${esc(low[0])}</div><div class="d">${low[1].toFixed(1)} 星</div></div>
@@ -1254,13 +1255,13 @@ function renderRate(all, now) {
   ${CRQ.map(([k, t], i) => `<div class="svr"><span>${esc(t)}</span><em>${all5[i].toFixed(1)}</em><i><b style="width:${all5[i] / 5 * 100}%"></b></i></div>`).join('')}
   <div class="sect" style="margin-top:28px">每一条<span>${rows.length} 条</span></div>
   ${rows.map(r => {
-    const av = CRQ.reduce((a, [k]) => a + (+r.a[k] || 0), 0) / CRQ.length, n = parseInt(r.a.q36, 10);
+    const av = CRQ.reduce((a, [k]) => a + (+r.a[k] || 0), 0) / CRQ.length, n = npsOf(r), imp = r.a.q37 || (r.kind === 'client' ? r.note : '');
     return `<details class="svc"><summary><span class="svs ${n >= 9 ? 'hi' : n >= 7 ? 'mid' : 'lo'}">${Number.isFinite(n) ? n : '—'}</span>
-      <span class="svm"><b>${r.song ? '《' + esc(r.song) + '》' : '没写歌名'}${r.oid ? ' · #' + r.oid : ''} · ${av.toFixed(1)} 星</b><span>${when(r.created, now)} · ${esc(svPlace(r) || '地点未知')} · ${esc(r.device || '')}</span></span></summary>
+      <span class="svm"><b>${av.toFixed(1)} 星 · ${esc(r.a.q7 || '')}${r.song ? ' · 《' + esc(r.song) + '》' : ''}</b><span>${when(r.created, now)} · ${esc(svPlace(r) || '地点未知')} · ${esc(r.device || '')}</span></span></summary>
       <div class="svb">${CRQ.map(([k, t]) => `<div class="sva"><span>${esc(t)}</span><b class="crs">${stars(+r.a[k] || 0)}</b></div>`).join('')}
-      <div class="sva"><span>推荐意愿</span><b>${esc(r.a.q36)} / 10</b></div>
+      <div class="sva"><span>推荐意愿</span><b>${Number.isFinite(n) ? n : '—'} / 10</b></div>
       <div class="sva"><span>访客</span><b>${r.lid ? who(r.lid, '访客') : '—'}</b></div>
-      ${r.note ? `<div class="sva"><span>希望改进</span><b>${esc(r.note)}</b></div>` : ''}</div></details>`;
+      ${imp ? `<div class="sva"><span>希望改进</span><b>${esc(imp)}</b></div>` : ''}</div></details>`;
   }).join('')}`;
 }
 window.__svs = (k, v) => { svSel = svSel && svSel.k === k && svSel.v === v ? null : { k, v }; render(); const el = document.getElementById('svlist'); if (el && svSel) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
@@ -1285,13 +1286,14 @@ function svCard(r, now) {
       <div class="sva"><span>问卷券</span><b>${coupon}</b></div>
       ${r.ref ? `<div class="sva"><span>推荐码</span><b>${esc(r.ref)}${r.refd ? ' · 带来 ' + r.refd + ' 单' : ''}</b></div>` : ''}
       ${rows}
+      ${r.a.q31 ? CRQ.map(([k, t]) => `<div class="sva"><span>评分 · ${esc(t)}</span><b>${esc(r.a[k] || '—')} 星</b></div>`).join('') + (r.a.q37 ? `<div class="sva"><span>希望改进</span><b>${esc(r.a.q37)}</b></div>` : '') : ''}
       ${r.note ? `<div class="sva"><span>补充</span><b>${esc(r.note)}</b></div>` : ''}
     </div></details>`;
 }
 function renderSurvey() {
   if (!SVD) { loadSurvey(); return '<div class="msg">正在读取…</div>'; }
   const now = Date.now(), from = now - days * 864e5;
-  const ksw = `<div class="seg" style="margin:0 0 12px">${[['price', '价格问卷'], ['client', '客户评分']].map(([k, t]) => `<button class="${svK === k ? 'on' : ''}" onclick="__svk('${k}')">${t}</button>`).join('')}</div>`;
+  const ksw = `<div class="seg" style="margin:0 0 12px">${[['price', '价格问卷'], ['client', '混音评分']].map(([k, t]) => `<button class="${svK === k ? 'on' : ''}" onclick="__svk('${k}')">${t}</button>`).join('')}</div>`;
   if (svK === 'client') return ksw + renderRate(SVD.filter(r => r.created >= from), now);
   const inWin = SVD.filter(r => r.created >= from && r.kind !== 'client');
   const pick = { all: () => true, buy: r => /合作过/.test(r.a.q7 || ''), new: r => !/合作过/.test(r.a.q7 || ''), ord: r => !!r.ord }[svF];
