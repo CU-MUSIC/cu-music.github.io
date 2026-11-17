@@ -720,6 +720,7 @@
 		.qb-preset-desc { font-size: 12px; line-height: 1.6; color: var(--text-secondary); flex-grow: 1; }
 		.qb-sets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 22px; }
 		.qb-sets .qb-preset-card { cursor: default; }
+		.qb-sets .qb-set:only-child { grid-column: 1 / -1; }
 		.qb-sets .qb-preset-card .qb-preset-desc { display: block; font-size: 12.5px; }
 		.qb-set-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 		@media (max-width: 640px) { .qb-sets { grid-template-columns: 1fr; } }
@@ -3234,11 +3235,11 @@ var QB_TASTE_FEE = { zh: 99, en: 15, ko: 20000 };
 // trial：¥99 试混——用客户自己的干声混 30–60 秒副歌，审听页干声 / 混音对比，不开放下载；正式下单抵定金，不下单不退
 var QB_SETS = {
 	zh: { rapName: "说唱单曲套餐", rapPrice: 400, rapTag: "一口价", rapDesc: "基础混音 + 执行向人声制作 + 编辑二选一 · 1 位主唱", rapPick: ["节奏编辑版", "音准编辑版"], rapAdj: "说唱单曲套餐 · 一口价",
-		trialName: "试混", trialPrice: 99, trialDesc: "用你自己的干声先混 30–60 秒副歌，干声和混音两个版本来回对比。正式下单 ¥99 抵定金，不下单不退。", trialCta: "下单试混", trialPlan: "试混 ¥99" },
+		trialName: "试混", trialTag: "仅限首次合作", trialPrice: 99, trialDesc: "用你自己的干声先混 30–60 秒副歌，干声和混音两个版本来回对比。正式下单 ¥99 抵定金，不下单不退。", trialCta: "下单试混", trialPlan: "试混 ¥99" },
 	en: { rapName: "Rap Single Package", rapPrice: 60, rapTag: "Flat price", rapDesc: "Basic mix + execution vocal production + one editing type · 1 vocalist", rapPick: ["With timing edit", "With pitch edit"], rapAdj: "Rap Single Package · flat price",
-		trialName: "Trial mix", trialPrice: 15, trialDesc: "I mix 30–60 seconds of your hook from your own vocals; compare dry and mixed side by side. Book the full mix and the $15 counts toward your deposit; non-refundable otherwise.", trialCta: "Order a trial mix", trialPlan: "试混 ¥99" },
+		trialName: "Trial mix", trialTag: "First-time clients only", trialPrice: 15, trialDesc: "I mix 30–60 seconds of your hook from your own vocals; compare dry and mixed side by side. Book the full mix and the $15 counts toward your deposit; non-refundable otherwise.", trialCta: "Order a trial mix", trialPlan: "试混 ¥99" },
 	ko: { rapName: "랩 싱글 패키지", rapPrice: 80000, rapTag: "고정가", rapDesc: "베이직 믹스 + 실행형 보컬 프로덕션 + 편집 택1 · 보컬 1인", rapPick: ["타이밍 편집", "음정 편집"], rapAdj: "랩 싱글 패키지 · 고정가",
-		trialName: "트라이얼 믹스", trialPrice: 20000, trialDesc: "직접 녹음한 보컬로 훅 30–60초를 먼저 믹스하고, 드라이와 믹스 버전을 비교해 들을 수 있습니다. 정식 주문 시 계약금에 포함되며, 주문하지 않으면 환불되지 않습니다.", trialCta: "트라이얼 믹스 주문", trialPlan: "试混 ¥99" }
+		trialName: "트라이얼 믹스", trialTag: "첫 의뢰 고객 전용", trialPrice: 20000, trialDesc: "직접 녹음한 보컬로 훅 30–60초를 먼저 믹스하고, 드라이와 믹스 버전을 비교해 들을 수 있습니다. 정식 주문 시 계약금에 포함되며, 주문하지 않으면 환불되지 않습니다.", trialCta: "트라이얼 믹스 주문", trialPlan: "试混 ¥99" }
 };
 function qbSetsT() { return QB_SETS[currentLang] || QB_SETS.zh; }
 // 一口价只在配置和套餐完全一致时生效；客户往下改了任何一项，就自动回到逐项计价
@@ -3258,6 +3259,14 @@ function qbTrialOrder() {
 	qbMO = { total: t.trialPrice, label: t.trialName + " · " + qbFmt(q, t.trialPrice), plan: QB_SETS.zh.trialPlan, detail: QB_SETS.zh.trialPlan + "\n" + QB_SETS.zh.trialDesc, kind: "trial" };
 	qbOrderOpen();
 }
+// 试混只给第一次合作的客户：本机记得是刀门会员，或下过单（cd_orders / cd_tracks 有记录）就不显示入口。
+// 是不是真的首单，接单时人工核对，不做服务端校验
+function qbTrialEligible() {
+	if (qbIsRemembered()) return false;
+	try { if (qbOrders().length) return false; } catch (e) {}
+	try { if ((JSON.parse(qbLsGet("cd_tracks") || "[]") || []).length) return false; } catch (e) {}
+	return true;
+}
 function qbTopSetsHtml(q) {
 	var t = qbSetsT(), on = qbRapSetOn();
 	return '<div class="qb-sets">'
@@ -3266,10 +3275,10 @@ function qbTopSetsHtml(q) {
 		+ '<span class="qb-preset-desc">' + t.rapDesc + '</span>'
 		+ '<span class="qb-set-btns"><button type="button" class="qb-chip' + (on && qbState.edits[0] === 1 ? " active" : "") + '" onclick="qbPickRapSet(1)">' + t.rapPick[0] + '</button>'
 		+ '<button type="button" class="qb-chip' + (on && qbState.edits[0] === 2 ? " active" : "") + '" onclick="qbPickRapSet(2)">' + t.rapPick[1] + '</button></span></div>'
-		+ '<div class="qb-preset-card qb-set"><span class="qb-preset-name">' + t.trialName + '</span>'
+		+ (qbTrialEligible() ? '<div class="qb-preset-card qb-set"><span class="qb-preset-name">' + t.trialName + qbBadge(t.trialTag) + '</span>'
 		+ '<span class="qb-preset-price">' + qbFmt(q, t.trialPrice) + '</span>'
 		+ '<span class="qb-preset-desc">' + t.trialDesc + '</span>'
-		+ '<span class="qb-set-btns"><button type="button" class="qb-chip" onclick="qbTrialOrder()">' + t.trialCta + '</button></span></div>'
+		+ '<span class="qb-set-btns"><button type="button" class="qb-chip" onclick="qbTrialOrder()">' + t.trialCta + '</button></span></div>' : '')
 		+ '</div>';
 }
 function qbTasteFee() { return QB_TASTE_FEE[currentLang] || QB_TASTE_FEE.zh; }
