@@ -140,6 +140,23 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .svnps div{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
 .svnps div i{display:block;width:100%;border-radius:3px 3px 0 0;min-height:2px}
 .svnps-x{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;font-size:12px;color:var(--text-3);text-align:center;font-variant-numeric:tabular-nums}
+.svr[role=button],.svnps div[role=button]{cursor:pointer}
+.svr.sel span{color:var(--text);font-weight:600}.svr.sel i b{background:var(--text)}
+.svnps div.sel{color:var(--text);font-weight:700}.svnps div.sel i{outline:2px solid var(--text);outline-offset:1px}
+.svchip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--text-2);background:var(--fill);border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.svchip b{color:var(--text)}.svchip button{margin-left:auto;border:0;background:var(--fill-3);color:var(--text);border-radius:8px;padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
+.svc{border-top:.5px solid var(--hair)}
+.svc summary{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer;list-style:none}
+.svc summary::-webkit-details-marker{display:none}
+.svs{flex-shrink:0;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;background:var(--fill-2)}
+.svs.hi{background:var(--text);color:var(--bg,#111)}.svs.lo{color:var(--text-3)}
+.svm{min-width:0;display:flex;flex-direction:column;gap:2px}
+.svm b{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.svm span{font-size:13px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.svb{padding:2px 0 14px 48px}
+.sva{display:grid;grid-template-columns:10.5em minmax(0,1fr);gap:10px;padding:5px 0;font-size:14px;line-height:1.55}
+.sva span{color:var(--text-3)}.sva b{font-weight:500;color:var(--text);word-break:break-word}
+@media (max-width:520px){.svb{padding-left:0}.sva{grid-template-columns:7em minmax(0,1fr)}}
 .svnote{padding:12px 0;border-top:.5px solid var(--hair);font-size:15px;line-height:1.7}
 .svnote div{font-size:13px;color:var(--text-3);margin-top:2px}
 .empty,.msg{color:var(--text-3);font-size:15px;padding:24px 0;text-align:center}
@@ -460,7 +477,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261117.1033';
+const BUILD = '261117.1106';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1203,7 +1220,7 @@ const SVQ = [
   ['q21', '想在账号看到的内容', ['混音前后对比', '混音技巧教程', '客户作品背后的故事', '在韩国做音乐的日常', '格莱美工程师的思路', '设备和插件'], 1]
 ];
 const SVF = [['all', '全部'], ['buy', '合作过的'], ['new', '没合作过'], ['ord', '用券下单的']];
-let SVD = null, svBusy = false, svF = 'all';
+let SVD = null, svBusy = false, svF = 'all', svSel = null;
 async function loadSurvey() {
   if (svBusy) return; svBusy = true;
   try {
@@ -1214,12 +1231,39 @@ async function loadSurvey() {
   if (tab === 'survey' && !typing()) render();
 }
 window.__svf = k => { svF = k; render(); };
+window.__svs = (k, v) => { svSel = svSel && svSel.k === k && svSel.v === v ? null : { k, v }; render(); const el = document.getElementById('svlist'); if (el && svSel) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+// 地点：国家（国内不写）· 城市 · 运营商 —— 跟价格页访客用同一套写法
+function svPlace(r) {
+  if (!r.gc && !r.country) return '';
+  const cc = r.gc || r.country, city = CITY[r.gcity] || r.gcity || REGION[r.gr] || r.gr || '';
+  return [cc === 'CN' ? '' : (CC[cc] || cc), city, isp(r.gorg || '')].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' · ');
+}
+const svAns = v => Array.isArray(v) ? v.join('、') : (v == null ? '' : String(v));
+function svCard(r, now) {
+  const sc = parseInt(r.a.q18, 10), tone = sc >= 9 ? 'hi' : sc >= 7 ? 'mid' : 'lo';
+  const rows = SVQ.map(([k, t]) => `<div class="sva"><span>${esc(t)}</span><b>${esc(svAns(r.a[k])) || '—'}</b></div>`).join('');
+  const coupon = r.code ? `${esc(r.code)} · ¥${r.val || ''} · ${r.ord ? '已下单 #' + r.ord : r.used ? '已用' : '未用'}` : '没发券（重复答或发完）';
+  return `<details class="svc"><summary>
+      <span class="svs ${tone}">${Number.isFinite(sc) ? sc : '—'}</span>
+      <span class="svm"><b>${esc(r.a.q1 || '')}${r.a.q4 ? ' · ' + esc(r.a.q4) : ''}</b><span>${when(r.created, now)} · ${esc(svPlace(r) || '地点未知')} · ${esc(r.device || '')}</span></span>
+    </summary><div class="svb">
+      <div class="sva"><span>访客</span><b>${r.lid ? who(r.lid, '访客') : '—'}</b></div>
+      <div class="sva"><span>地点 / 网络</span><b>${esc(svPlace(r) || '—')}</b></div>
+      <div class="sva"><span>设备</span><b>${esc(r.device || '—')}</b></div>
+      <div class="sva"><span>问卷券</span><b>${coupon}</b></div>
+      ${r.ref ? `<div class="sva"><span>推荐码</span><b>${esc(r.ref)}${r.refd ? ' · 带来 ' + r.refd + ' 单' : ''}</b></div>` : ''}
+      ${rows}
+      ${r.note ? `<div class="sva"><span>补充</span><b>${esc(r.note)}</b></div>` : ''}
+    </div></details>`;
+}
 function renderSurvey() {
   if (!SVD) { loadSurvey(); return '<div class="msg">正在读取…</div>'; }
   const now = Date.now(), from = now - days * 864e5;
   const inWin = SVD.filter(r => r.created >= from);
   const pick = { all: () => true, buy: r => /合作过/.test(r.a.q7 || ''), new: r => !/合作过/.test(r.a.q7 || ''), ord: r => !!r.ord }[svF];
-  const rows = inWin.filter(pick);
+  const base = inWin.filter(pick);
+  const hit = r => { if (!svSel) return true; const v = r.a[svSel.k]; return Array.isArray(v) ? v.includes(svSel.v) : String(v) === svSel.v; };
+  const rows = base;
   const used = inWin.filter(r => r.used > 0).length, codes = inWin.filter(r => r.code).length;
   const seg = `<div class="seg" style="margin:0 0 18px">${SVF.map(([k, t]) => `<button class="${svF === k ? 'on' : ''}" onclick="__svf('${k}')">${t}</button>`).join('')}</div>`;
   if (!inWin.length) return `<div class="empty">近 ${days} 天还没有人填问卷。入口在价格页开屏的绿条：cumusic.work/chefdao/price</div>`;
@@ -1238,7 +1282,8 @@ function renderSurvey() {
     const list = opts.concat(extra), mx = Math.max(1, ...list.map(x => cnt[x] || 0));
     return `<div class="svq"><h3>${esc(t)}<small>${n} 人答${multi ? ' · 多选，比例按人数算' : ''}</small></h3>${list.map(x => {
       const c = cnt[x] || 0, pc = n ? Math.round(c / n * 100) : 0;
-      return `<div class="svr${c && c === mx ? ' top' : ''}"><span>${esc(x)}</span><em>${c} · ${pc}%</em><i><b style="width:${c / mx * 100}%"></b></i></div>`;
+      const on = svSel && svSel.k === k && svSel.v === x;
+      return `<div class="svr${c && c === mx ? ' top' : ''}${on ? ' sel' : ''}"${c ? ` onclick="__svs('${k}','${esc(x).replace(/'/g, "\\'")}')" role="button" tabindex="0"` : ''}><span>${esc(x)}</span><em>${c} · ${pc}%</em><i><b style="width:${c / mx * 100}%"></b></i></div>`;
     }).join('')}</div>`;
   };
   const notes = rows.filter(r => r.note).slice(0, 50);
@@ -1249,11 +1294,14 @@ function renderSurvey() {
     <div class="card"><div class="lb">领券</div><div class="n">${codes}</div><div class="d">满 ¥400 减 ¥100</div></div>
     <div class="card"><div class="lb">用券下单</div><div class="n">${used}</div><div class="d">${codes ? Math.round(used / codes * 100) + '% 转化' : '—'}</div></div>
   </div>
-  <div class="sect">推荐意愿<span>9–10 推荐 · 7–8 中立 · 0–6 贬损</span></div>
-  <div class="svnps">${hist.map((c, i) => `<div>${c || ''}<i style="height:${c / hmax * 70}px;background:${i >= 9 ? 'var(--text)' : i >= 7 ? 'var(--text-2)' : 'var(--text-3)'}"></i></div>`).join('')}</div>
+  <div class="sect">推荐意愿<span>点柱子看那几个人</span></div>
+  <div class="svnps">${hist.map((c, i) => `<div class="${svSel && svSel.k === 'q18' && svSel.v === String(i) ? 'sel' : ''}" ${c ? `onclick="__svs('q18','${i}')" role="button" tabindex="0" title="看打 ${i} 分的人"` : ''}>${c || ''}<i style="height:${c / hmax * 70}px;background:${i >= 9 ? 'var(--text)' : i >= 7 ? 'var(--text-2)' : 'var(--text-3)'}"></i></div>`).join('')}</div>
   <div class="svnps-x">${hist.map((_, i) => `<span>${i}</span>`).join('')}</div>
   <div class="sect" style="margin-top:28px">每道题<span>${rows.length} 份</span></div>
   ${SVQ.map(bars).join('')}
+  <div class="sect" id="svlist" style="margin-top:28px">每一份答卷<span>${svSel ? rows.filter(hit).length + ' / ' + rows.length + ' 份' : rows.length + ' 份 · 点开看全部选择'}</span></div>
+  ${svSel ? `<div class="svchip">只看：${esc((SVQ.find(q => q[0] === svSel.k) || [])[1] || '')} = <b>${esc(svSel.k === 'q18' ? svSel.v + ' 分' : svSel.v)}</b><button onclick="__svs('${svSel.k}','${esc(svSel.v).replace(/'/g, "\\'")}')">清除</button></div>` : ''}
+  ${rows.filter(hit).map(r => svCard(r, now)).join('') || '<div class="empty">没有符合的答卷</div>'}
   <div class="sect" style="margin-top:28px">补充意见<span>${notes.length} 条</span></div>
   ${notes.length ? notes.map(r => `<div class="svnote">${esc(r.note)}<div>${when(r.created, now)} · ${esc(r.a.q1 || '')}${r.a.q4 ? ' · ' + esc(r.a.q4) : ''}${r.ord ? ' · 已下单' : ''}</div></div>`).join('') : '<div class="empty">还没有人写补充</div>'}`;
 }
