@@ -718,6 +718,11 @@
 		.qb-preset-card.active .qb-preset-price { color: var(--green-soft); }
 		.qb-preset-per { font-size: 12px; font-weight: 500; color: var(--text-dim); letter-spacing: 0; }
 		.qb-preset-desc { font-size: 12px; line-height: 1.6; color: var(--text-secondary); flex-grow: 1; }
+		.qb-sets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 22px; }
+		.qb-sets .qb-preset-card { cursor: default; }
+		.qb-sets .qb-preset-card .qb-preset-desc { display: block; font-size: 12.5px; }
+		.qb-set-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+		@media (max-width: 640px) { .qb-sets { grid-template-columns: 1fr; } }
 		.qb-preset-safe { font-size: 13px; line-height: 1.65; color: var(--text-secondary); margin: 10px 2px 2px; }
 		.qb-preset-diy { margin-top: 10px; width: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; text-align: left; background: none; border: 0.5px dashed var(--border-hover); border-radius: 12px; padding: 13px 14px; cursor: pointer; font-family: var(--font); transition: border-color 0.25s, background 0.25s; }
 		.qb-preset-diy:hover { border-color: var(--text-secondary); }
@@ -1607,8 +1612,6 @@ var I18N = {
 			pbNoSub: "本单省 {save} · 权益终身有效 · 点此加入 ›",
 			recLabel: "需要录音吗？", recNone: "不需要，直接混音", recNeed: "录音 + 混音", recOnly: "只录音", modeRec: "只录音", recOnlyWhen: "录音时间", recOnlyWhenV: "微信确认档期", recDepLabel: "定金（锁档期）", recBalLabel: "尾款（录完结清）", recPlace: "选场地与方式", recHrUnit: " 小时", recHrUnitShort: "时", recLine: "录音", recPerk: 100,
 			recOpts: [
-				{ name: "上海 · 棚内录制", rate: 300 },
-				{ name: "上海 · 监制（含录音）", rate: 450 },
 				{ name: "首尔 · 棚内录制", rate: 300, perk: true, lead: true },
 				{ name: "首尔 · 监制（含录音）", rate: 450, perk: true, lead: true },
 				{ name: "首尔 · 外派录制", rate: 200, perk: true, travel: true }
@@ -1672,24 +1675,6 @@ var I18N = {
 			{
 				id: "recording", type: "recording", step: "Step 01", title: "录音 Recording", groupHead: "核心流程 Core",
 				locations: [
-					{
-						city: "上海 Shanghai", engineer: "录音师 Tior",
-						rates: [
-							{ label: "棚内录制", price: "¥300/hr" },
-							{ label: "监制 · 线上（含录音）", price: "¥450/hr" },
-							{ label: "监制 · 线下（含录音）", price: "¥450/hr" }
-						],
-						ratesNote: "监制人可选 刀大厨 或 Tior，两种方式同价。",
-						packHead: "3H SESSION",
-						packs: [
-							{ label: "棚内录制 · 3H", was: "¥900", price: "¥800" },
-							{ label: "监制 · 3H", was: "¥1,350", price: "¥1,200" }
-						],
-						overtime: "<strong>超时</strong>：超出 3H 的部分按原价逐半小时计：棚内 ¥150 / 半小时，监制 ¥225 / 半小时。不足半小时按半小时算，现场先确认再继续；能否延长还要看当天棚的档期。",
-						packNote: "需一次性付清，当次连续使用，不可拆分或跨日结转。",
-						venue: "Bimental Studio 录音棚", address: "虹漕路 443 号虹漕园 61 号楼 4 楼", mapUrl: "https://surl.amap.com/pptXUKJfY5",
-						gear: ["U87", "HA73", "1176", "Genelec 8030"]
-					},
 					{
 						city: "首尔 Seoul", engineer: "录音师 ChefDao",
 						rates: [
@@ -1992,7 +1977,7 @@ var I18N = {
 				a: "质量我保证：按我的审美和标准交付，修到作品立得住。但没有人能保证「上热门」：那取决于歌曲本身、发行、运营和运气，不是混音能决定的。谁跟你保证爆款，谁就在骗你。我能保证的，是作品在听感上站得住。"
 			},
 			{
-				q: "我不在上海 / 首尔，能远程合作吗？",
+				q: "我不在首尔，能远程合作吗？",
 				a: "可以，多数项目均为远程协作。提供干声、伴奏与参考曲，全程通过微信沟通并交付成品。需监制录音的项目亦可线上实时指导，地域不构成限制。"
 			},
 			{
@@ -2220,8 +2205,6 @@ var I18N = {
 			pbNoSub: "Saves {save} here · membership is for life · tap to join ›",
 			recLabel: "Need a recording session?", recNone: "No — straight to mixing", recNeed: "Record + mix", recOnly: "Recording only", modeRec: "Recording only", recOnlyWhen: "Session date", recOnlyWhenV: "Confirmed on WeChat", recDepLabel: "Deposit (books the slot)", recBalLabel: "Balance (after the session)", recPlace: "Pick a location", recHrUnit: " hrs", recHrUnitShort: "hr", recLine: "Recording", recPerk: 15,
 			recOpts: [
-				{ name: "Shanghai · Studio session", rate: 50 },
-				{ name: "Shanghai · Direction (recording incl.)", rate: 75 },
 				{ name: "Seoul · Studio session", rate: 50, perk: true, lead: true },
 				{ name: "Seoul · Direction (recording incl.)", rate: 75, perk: true, lead: true },
 				{ name: "Seoul · On-location", rate: 35, perk: true, travel: true }
@@ -2284,24 +2267,6 @@ var I18N = {
 			{
 				id: "recording", type: "recording", step: "Step 01", title: "Recording", groupHead: "Core Process",
 				locations: [
-					{
-						city: "Shanghai", engineer: "Engineer: Tior",
-						rates: [
-							{ label: "Studio session", price: "$50/hr" },
-							{ label: "Direction · remote (recording incl.)", price: "$75/hr" },
-							{ label: "Direction · in the room (recording incl.)", price: "$75/hr" }
-						],
-						ratesNote: "Direction by ChefDao or Tior, either one. Both modes are the same rate.",
-						packHead: "3H SESSION",
-						packs: [
-							{ label: "Studio session · 3H", was: "$150", price: "$130" },
-							{ label: "Direction · 3H", was: "$225", price: "$200" }
-						],
-						overtime: "<strong>Overtime</strong>: anything past 3H bills at the standard rate in half-hour steps — studio $25 / 30 min, direction $38 / 30 min. Part of a half-hour counts as a full one. We confirm on the spot before continuing, and the room has to be free.",
-						packNote: "Paid in full up front, used in one continuous session. Not splittable or carried to another day.",
-						venue: "Bimental Studio", address: "4F, Bldg 61, Hongcao Garden, 443 Hongcao Rd", mapUrl: "https://surl.amap.com/pptXUKJfY5",
-						gear: ["U87", "HA73", "1176", "Genelec 8030"]
-					},
 					{
 						city: "Seoul", engineer: "Engineer: ChefDao",
 						rates: [
@@ -2593,7 +2558,7 @@ var I18N = {
 				a: "Quality, yes — I deliver to my own aesthetic and standard, and revise until the track stands on its own. But nobody can guarantee a \"hit\": that depends on the song itself, the release, promotion, and luck — not the mix. Anyone promising you a viral hit is lying. What I can guarantee is that the record holds up sonically."
 			},
 			{
-				q: "I'm not in Shanghai / Seoul — can we work remotely?",
+				q: "I'm not in Seoul — can we work remotely?",
 				a: "Yes — most projects are remote. Send me the vocals, instrumental, and references, we communicate throughout on WeChat, and I deliver the final. For directed recording sessions, I can guide you live online too — being in a different city makes no difference."
 			},
 			{
@@ -2821,8 +2786,6 @@ var I18N = {
 			pbNoSub: "이번에 {save} 절약 · 혜택은 평생 · 탭하여 가입 ›",
 			recLabel: "녹음이 필요하신가요?", recNone: "아니요, 바로 믹스", recNeed: "녹음 + 믹스", recOnly: "녹음만", modeRec: "녹음만", recOnlyWhen: "녹음 일정", recOnlyWhenV: "위챗으로 확정", recDepLabel: "계약금 (일정 확정)", recBalLabel: "잔금 (녹음 후 정산)", recPlace: "장소 선택", recHrUnit: "시간", recHrUnitShort: "시간", recLine: "녹음", recPerk: 20000,
 			recOpts: [
-				{ name: "상하이 · 스튜디오 녹음", rate: 60000 },
-				{ name: "상하이 · 디렉팅 (녹음 포함)", rate: 90000 },
 				{ name: "서울 · 스튜디오 녹음", rate: 60000, perk: true, lead: true },
 				{ name: "서울 · 디렉팅 (녹음 포함)", rate: 90000, perk: true, lead: true },
 				{ name: "서울 · 출장 녹음", rate: 40000, perk: true, travel: true }
@@ -2885,24 +2848,6 @@ var I18N = {
 			{
 				id: "recording", type: "recording", step: "Step 01", title: "레코딩 Recording", groupHead: "핵심 프로세스 Core",
 				locations: [
-					{
-						city: "상하이 Shanghai", engineer: "엔지니어: Tior",
-						rates: [
-							{ label: "스튜디오 녹음", price: "₩60,000/hr" },
-							{ label: "디렉팅 · 온라인 (녹음 포함)", price: "₩90,000/hr" },
-							{ label: "디렉팅 · 현장 (녹음 포함)", price: "₩90,000/hr" }
-						],
-						ratesNote: "디렉터는 ChefDao 또는 Tior 중 선택, 두 방식 모두 같은 요금입니다.",
-						packHead: "3H SESSION",
-						packs: [
-							{ label: "스튜디오 녹음 · 3H", was: "₩180,000", price: "₩160,000" },
-							{ label: "디렉팅 · 3H", was: "₩270,000", price: "₩240,000" }
-						],
-						overtime: "<strong>초과 시간</strong>: 3H를 넘는 부분은 정가 기준 30분 단위로 계산합니다 — 스튜디오 ₩30,000 / 30분, 디렉팅 ₩45,000 / 30분. 30분 미만도 30분으로 계산하며, 현장에서 확인 후 진행합니다. 스튜디오 예약 상황에 따라 연장이 불가할 수 있습니다.",
-						packNote: "일시불 결제, 당일 연속 사용 기준. 분할 사용이나 다른 날로 이월은 불가합니다.",
-						venue: "Bimental Studio", address: "훙차오로 443, 훙차오위안 61동 4층", mapUrl: "https://surl.amap.com/pptXUKJfY5",
-						gear: ["U87", "HA73", "1176", "Genelec 8030"]
-					},
 					{
 						city: "서울 Seoul", engineer: "엔지니어: ChefDao",
 						rates: [
@@ -3194,7 +3139,7 @@ var I18N = {
 				a: "퀄리티는 보장합니다 — 제 미학과 기준으로 작품이 스스로 설 때까지 다듬어 드립니다. 하지만 '흥행'은 누구도 보장할 수 없습니다: 그건 곡 자체, 발매, 프로모션, 운에 달렸지 믹스가 결정하지 않습니다. 대박을 보장한다는 사람은 거짓말하는 겁니다. 제가 보장하는 건 작품이 사운드적으로 설득력 있게 선다는 것입니다."
 			},
 			{
-				q: "상하이 / 서울에 없는데, 원격 협업이 되나요?",
+				q: "서울에 없는데, 원격 협업이 되나요?",
 				a: "됩니다 — 대부분의 프로젝트가 원격입니다. 보컬·반주·레퍼런스를 보내주시면 위챗으로 계속 소통하며 완성본을 납품합니다. 디렉팅 녹음이 필요하면 온라인으로 실시간 가이드도 가능합니다 — 다른 도시라도 전혀 문제없습니다."
 			},
 			{
@@ -3284,6 +3229,49 @@ var QBT_TASTE = {
 	ko: { desc: "고르기 어려우신가요? 곡을 듣고 제가 구성합니다. {fee} 선결제, 진행 시 착수 계약금에 포함.", note: "Chef's Taste · 청취 선결제 {fee}, 진행 시 착수 계약금에 포함. 곡을 들은 뒤 구성과 최종 가격을 확정합니다.", fee: "청취 선결제 (먼저)" }
 };
 var QB_TASTE_FEE = { zh: 99, en: 15, ko: 20000 };
+// 报价器第一屏的两个快捷入口（2026-11-17，依据价格问卷：预算多在 ¥300–500、绝大多数做说唱、嫌套餐复杂）
+// rap：说唱单曲一口价——基础混音 + 执行向人声制作 + 编辑二选一（节奏 / 音准），1 位主唱
+// trial：¥99 试混——用客户自己的干声混 30–60 秒副歌，审听页干声 / 混音对比，不开放下载；正式下单抵定金，不下单不退
+var QB_SETS = {
+	zh: { rapName: "说唱单曲套餐", rapPrice: 400, rapTag: "一口价", rapDesc: "基础混音 + 执行向人声制作 + 编辑二选一 · 1 位主唱", rapPick: ["节奏编辑版", "音准编辑版"], rapAdj: "说唱单曲套餐 · 一口价",
+		trialName: "试混", trialPrice: 99, trialDesc: "用你自己的干声先混 30–60 秒副歌，干声和混音两个版本来回对比。正式下单 ¥99 抵定金，不下单不退。", trialCta: "下单试混", trialPlan: "试混 ¥99" },
+	en: { rapName: "Rap Single Package", rapPrice: 60, rapTag: "Flat price", rapDesc: "Basic mix + execution vocal production + one editing type · 1 vocalist", rapPick: ["With timing edit", "With pitch edit"], rapAdj: "Rap Single Package · flat price",
+		trialName: "Trial mix", trialPrice: 15, trialDesc: "I mix 30–60 seconds of your hook from your own vocals; compare dry and mixed side by side. Book the full mix and the $15 counts toward your deposit; non-refundable otherwise.", trialCta: "Order a trial mix", trialPlan: "试混 ¥99" },
+	ko: { rapName: "랩 싱글 패키지", rapPrice: 80000, rapTag: "고정가", rapDesc: "베이직 믹스 + 실행형 보컬 프로덕션 + 편집 택1 · 보컬 1인", rapPick: ["타이밍 편집", "음정 편집"], rapAdj: "랩 싱글 패키지 · 고정가",
+		trialName: "트라이얼 믹스", trialPrice: 20000, trialDesc: "직접 녹음한 보컬로 훅 30–60초를 먼저 믹스하고, 드라이와 믹스 버전을 비교해 들을 수 있습니다. 정식 주문 시 계약금에 포함되며, 주문하지 않으면 환불되지 않습니다.", trialCta: "트라이얼 믹스 주문", trialPlan: "试混 ¥99" }
+};
+function qbSetsT() { return QB_SETS[currentLang] || QB_SETS.zh; }
+// 一口价只在配置和套餐完全一致时生效；客户往下改了任何一项，就自动回到逐项计价
+function qbRapSetOn() {
+	var s = qbState;
+	return !!s.rapSet && s.mode === "vocal" && s.count === 1 && s.prods[0] === 1 && (s.edits[0] === 1 || s.edits[0] === 2) && s.harmony === 0 && !s.producer;
+}
+function qbPickRapSet(ei) {
+	qbState.rapSet = true; qbState.mode = "vocal"; qbState.count = 1; qbState.prods = [1]; qbState.edits = [ei]; qbState.harmony = 0;
+	qbState.producer = false; qbState.preset = null; qbState.mem = [qbState.mem && qbState.mem[0] || 0];
+	if (qbFocusOn) { qbFocusGo("summary"); return; }
+	renderQuoteBuilder();
+	requestAnimationFrame(function () { requestAnimationFrame(function () { qbScrollStep("summary"); }); });
+}
+function qbTrialOrder() {
+	var q = I18N[currentLang].quote, t = qbSetsT();
+	qbMO = { total: t.trialPrice, label: t.trialName + " · " + qbFmt(q, t.trialPrice), plan: QB_SETS.zh.trialPlan, detail: QB_SETS.zh.trialPlan + "\n" + QB_SETS.zh.trialDesc, kind: "trial" };
+	qbOrderOpen();
+}
+function qbTopSetsHtml(q) {
+	var t = qbSetsT(), on = qbRapSetOn();
+	return '<div class="qb-sets">'
+		+ '<div class="qb-preset-card qb-set' + (on ? " active" : "") + '"><span class="qb-preset-name">' + t.rapName + qbBadge(t.rapTag) + '</span>'
+		+ '<span class="qb-preset-price">' + qbFmt(q, t.rapPrice) + '</span>'
+		+ '<span class="qb-preset-desc">' + t.rapDesc + '</span>'
+		+ '<span class="qb-set-btns"><button type="button" class="qb-chip' + (on && qbState.edits[0] === 1 ? " active" : "") + '" onclick="qbPickRapSet(1)">' + t.rapPick[0] + '</button>'
+		+ '<button type="button" class="qb-chip' + (on && qbState.edits[0] === 2 ? " active" : "") + '" onclick="qbPickRapSet(2)">' + t.rapPick[1] + '</button></span></div>'
+		+ '<div class="qb-preset-card qb-set"><span class="qb-preset-name">' + t.trialName + '</span>'
+		+ '<span class="qb-preset-price">' + qbFmt(q, t.trialPrice) + '</span>'
+		+ '<span class="qb-preset-desc">' + t.trialDesc + '</span>'
+		+ '<span class="qb-set-btns"><button type="button" class="qb-chip" onclick="qbTrialOrder()">' + t.trialCta + '</button></span></div>'
+		+ '</div>';
+}
 function qbTasteFee() { return QB_TASTE_FEE[currentLang] || QB_TASTE_FEE.zh; }
 function qbTasteText(k, q) { return ((QBT_TASTE[currentLang] || QBT_TASTE.zh)[k]).replace("{fee}", qbFmt(q, qbTasteFee())); }
 // 进页面即是一份完整配置：贴唱 · 标准套餐 · 1 位主唱 · 标准交付。
@@ -3292,7 +3280,7 @@ function qbDefaultState() {
 	var p = QB_PRESETS[QB_PRESET_DEFAULT];
 	return { mode: "vocal", stems: 1, preset: QB_PRESET_DEFAULT, prods: [p.prod], harmony: p.harmony,
 		count: 1, edits: [p.edit], mem: [0], producer: false, lane: 0, targetDate: null,
-		rec: null, taste: false, moreCount: false, aaOpen: false, fineOpen: false, aaCopy: true, newbie: false, help: {} };
+		rec: null, recV: 2, rapSet: false, taste: false, moreCount: false, aaOpen: false, fineOpen: false, aaCopy: true, newbie: false, help: {} };
 }
 var qbState = qbDefaultState();
 // 制作人附加服务：按混音/制作小计加收的百分比（改这一个数就调价）
@@ -3383,6 +3371,7 @@ function qbDecodeState(str) {
 		var o = JSON.parse(decodeURIComponent(escape(atob(pad))));
 		if (!o || o.v !== 1 || !o.s) return false;
 		for (var k in qbState) if (o.s.hasOwnProperty(k) && o.s[k] !== null) qbState[k] = o.s[k];
+		qbMigrateRec(o.s);
 		qbState.help = {};
 		qbNormalizeState();
 		return true;
@@ -3399,6 +3388,14 @@ function qbShareLink() {
 	};
 	qbStatHit("share");
 	navigator.clipboard.writeText(url).then(done).catch(done);
+}
+// 2026-11-17 上海录音下线：recOpts 只剩首尔三项。recV = 2 之前的存档里 rec.o 是旧索引
+// （0/1 上海棚内/监制，2/3/4 首尔棚内/监制/外派），映射到新索引，上海的换成首尔同类
+function qbMigrateRec(src) {
+	if (src && src.recV !== 2 && qbState.rec && typeof qbState.rec.o === "number") {
+		qbState.rec.o = [0, 1, 0, 1, 2][qbState.rec.o] || 0;
+	}
+	qbState.recV = 2;
 }
 function qbNormalizeState() {
 	qbState.taste = false; // Chef's Taste 已下线：旧存档 / 旧分享链接里的 taste 一律清掉
@@ -3439,6 +3436,7 @@ function qbRestoreState() {
 		if (!o || o.v !== 1 || !o.s || Date.now() - o.t > LS_MAX_AGE) return false;
 		var k, src = o.s;
 		for (k in qbState) if (src.hasOwnProperty(k) && src[k] !== null) qbState[k] = src[k];
+		qbMigrateRec(src);
 		qbState.help = {};
 		qbNormalizeState();
 		return true;
@@ -3701,8 +3699,8 @@ function qbSetRec(o) {
 }
 // 只录音 / 录音 + 混音：on = true 进只录音（没选场地就先用默认场地），false 回到录音 + 混音
 function qbSetRecOnly(on) {
-	if (on) { qbState.mode = "rec"; if (!qbState.rec) qbState.rec = { o: 2, h: 2 }; }
-	else { if (qbState.mode === "rec") qbState.mode = "vocal"; if (!qbState.rec) qbState.rec = { o: 2, h: 2 }; }
+	if (on) { qbState.mode = "rec"; if (!qbState.rec) qbState.rec = { o: 0, h: 2 }; }
+	else { if (qbState.mode === "rec") qbState.mode = "vocal"; if (!qbState.rec) qbState.rec = { o: 0, h: 2 }; }
 	renderQuoteBuilder();
 }
 function qbRecHours(d) {
@@ -3810,6 +3808,7 @@ function qbSetTaste() {
 }
 // 选套餐 = 一次填满全部档位。新手点一下就有完整报价，不用再往下答。
 function qbSetPreset(i) {
+	qbState.rapSet = false;
 	var p = QB_PRESETS[i];
 	qbState.taste = false;
 	qbState.preset = i;
@@ -3875,6 +3874,9 @@ function qbCompute(q) {
 		editTotal += q.edits[idx].price;
 	}
 	var gross = base + prodTotal + harmony.price + mixExtra + editTotal;
+	// 说唱单曲套餐一口价：覆盖逐项小计，差额单列一行（会员折扣 / 加急都按一口价算）
+	var setAdj = 0;
+	if (qbRapSetOn()) { var setP = qbSetsT().rapPrice; setAdj = setP - gross; gross = setP; }
 	// 制作人费：混音/制作小计 ×PRODUCER_RATE，先入账——它和混音一样是创作工作，
 	// 所以既参与会员折扣，也计入加急基数（赶工压缩的是全部创作时间，不只是混音）
 	var producer = qbState.producer ? Math.round(gross * PRODUCER_RATE) : 0;
@@ -3882,6 +3884,7 @@ function qbCompute(q) {
 	var workBase = gross + producer;
 	// 刀门会员：逐位判定，只有会员（或本单加入）的那份享 8 折——多人合作里非会员不蹭折扣
 	var gShares = qbGrossShares(q, count, base, mixExtra, harmony.price);
+	if (setAdj && count === 1) gShares[0] = gross;
 	var discount = 0, memCount = 0, joinCount = 0, memDisc = [];
 	for (var mi = 0; mi < count; mi++) {
 		var mst = qbMemState(mi);
@@ -3940,7 +3943,7 @@ function qbCompute(q) {
 	if (mixDep > mixTotal) mixDep = mixTotal;
 	var deposit = recDeposit + mixDep;
 	var balance = total - deposit;
-	return { base: base, baseItem: baseItem, from: (stems && baseItem.from) || !!qbState.taste, tasteFee: qbState.taste ? Math.min(deposit, qbTasteFee()) : 0, harmony: harmony, count: count,
+	return { setAdj: setAdj, base: base, baseItem: baseItem, from: (stems && baseItem.from) || !!qbState.taste, tasteFee: qbState.taste ? Math.min(deposit, qbTasteFee()) : 0, harmony: harmony, count: count,
 		mixExtra: mixExtra, prodTotal: prodTotal, prodCounts: prodCounts, maxProd: maxProd,
 		editTotal: editTotal, editCounts: editCounts,
 		gross: gross, gShares: gShares, workBase: workBase, discount: discount, capped: capped, memDisc: memDisc, newbie: newbie,
@@ -4110,7 +4113,7 @@ function renderQuoteBuilder() {
 			recNote += (recNote ? "<br>" : "") + q.recDepNote.replace("{d}", qbFmt(q, Math.round(rOpt.rate * 2))) + (qbState.mode === "rec" ? "" : "<br>" + q.recPackNote);
 		}
 		if (recChip) recBody += '<div class="qb-chipline' + (rc && rc.memBeatsPerk ? ' dim' : '') + '">' + (rc && rc.memBeatsPerk ? '' : '\u2713 ') + recChip + '</div>';
-		html += qbRow("rec", idx.rec, q.recLabel, recBody, recNote, q.hints.rec.replace("{off}", qbFmt(q, q.recPerk)));
+		html += qbRow("rec", idx.rec, q.recLabel, recBody, recNote, q.hints.rec.replace("{off}", qbFmt(q, q.recPerk))).replace(/^(<div[^>]*>)/, "$1" + qbTopSetsHtml(q));
 	}
 
 	// 混音类型
@@ -4516,6 +4519,7 @@ function renderQuoteBuilder() {
 				lines += '<div class="qb-bd-line"><span>' + q.edits[e3].name + ' × ' + c.editCounts[e3] + '</span><span class="qb-bd-val">+' + qbFmt(q, q.edits[e3].price * c.editCounts[e3]) + '</span></div>';
 			}
 		}
+		if (c.setAdj) lines += '<div class="qb-bd-line"><span>' + qbSetsT().rapAdj + '</span><span class="qb-bd-val">' + (c.setAdj > 0 ? "+" : "\u2212") + qbFmt(q, Math.abs(c.setAdj)) + '</span></div>';
 		if (c.rush > 0) {
 			lines += '<div class="qb-bd-line rush"><span>' + q.rushName + ' +' + Math.round(c.rushRate * 100) + '%</span><span class="qb-bd-val">+' + qbFmt(q, c.rush) + '</span></div>';
 		}
@@ -4601,7 +4605,7 @@ function renderQuoteBuilder() {
 		+ '<span class="qb-sched-item">' + tt.schedRush.replace("{r}", rushRange) + '</span></div>';
 
 	// 常驻价格条：滚到哪里，当前配置与总价都跟着。价格离开视野是最大的犹豫来源。
-	var barName = (qbState.preset === null ? q.presetCustom : q.presets[qbState.preset].name);
+	var barName = qbRapSetOn() ? qbSetsT().rapName : (qbState.preset === null ? q.presetCustom : q.presets[qbState.preset].name);
 	var barTxt = qbState.mode === "rec" && qbState.rec ? q.modeRec + " · " + qbState.rec.h + q.recHrUnit : (stems ? q.modeStems : q.modeVocal) + " · " + barName + " · " + qbState.count + q.countUnit;
 	var barVal = done ? qbFmt(q, c.total) + (c.from ? "+" : "") : "—";
 	var progHtml = '<div class="qb-prog live' + (done ? " done" : "") + '">'
@@ -4820,6 +4824,7 @@ function qbQuoteText() {
 		if (c.editCounts[e] > 0 && q.edits[e].price > 0)
 			item("+" + qbFmt(q, q.edits[e].price * c.editCounts[e]), q.catEdit + " · " + q.edits[e].name, per(q.edits[e].price, c.editCounts[e]));
 	}
+	if (c.setAdj) item((c.setAdj > 0 ? "+" : "\u2212") + qbFmt(q, Math.abs(c.setAdj)), qbSetsT().rapAdj);
 	if (c.harmony.price > 0) item("+" + qbFmt(q, c.harmony.price), q.harmonyBd + " · " + c.harmony.name);
 	if (c.count > 1) item("+" + qbFmt(q, c.mixExtra), q.bdExtra.replace("{n}", c.count - 1),
 		qbFmt(q, q.perHead) + " × " + (c.count - 1) + q.countUnit);
@@ -5050,7 +5055,7 @@ function renderMixIntro(svc) {
 // 从介绍区 / 开屏进入预约：先把第 01 步（录音）定好，再带到对应位置
 function bookGo(kind, instant) {
 	// 「预约录音」默认只录音，要混音在录音这一步点「录音 + 混音」；「预约混音」回到混音流程
-	if (kind === "rec") { if (!qbState.rec) qbState.rec = { o: 2, h: 2 }; qbState.mode = "rec"; }
+	if (kind === "rec") { if (!qbState.rec) qbState.rec = { o: 0, h: 2 }; qbState.mode = "rec"; }
 	else { qbState.rec = null; if (qbState.mode === "rec") qbState.mode = "vocal"; }
 	if (qbFocusOn) { qbFocus = kind === "rec" ? "rec" : "mode"; qbFocusShown = null; qbFocusDir = 1; }
 	renderQuoteBuilder();
@@ -5377,7 +5382,7 @@ function qbStatPicks() {
 function qbStatPlan() {
 	var z = I18N.zh.quote, s = qbState;
 	if (s.mode === "rec" && s.rec) return z.modeRec + " · " + z.recOpts[s.rec.o].name + " · " + s.rec.h + z.recHrUnit;
-	var name = s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
+	var name = qbRapSetOn() ? (QB_SETS[z === I18N.zh.quote ? "zh" : currentLang] || QB_SETS.zh).rapName : s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
 	return (s.mode === "stems" ? z.modeStems : z.modeVocal) + " · " + name + " · " + s.count + z.countUnit;
 }
 function qbStatTotal() {
@@ -5554,7 +5559,7 @@ function qbOrderOpen() {
 	requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("on"); }); });
 	qbOrderOpened = Date.now();
 	var cc = null; if (!qbMO) { try { cc = qbCompute(q); } catch (e) {} }
-	qbOrderLast = { plan: qbMO ? qbMO.plan : qbStatPlan(), total: total, sch: qbMO ? { edit: false } : qbOrderSchedule(), kind: qbMO ? "master" : "",
+	qbOrderLast = { plan: qbMO ? qbMO.plan : qbStatPlan(), total: total, sch: qbMO ? { edit: false } : qbOrderSchedule(), kind: qbMO ? (qbMO.kind || "master") : "",
 		mem: cc ? cc.memCount : 0, old: cc ? cc.memCount - cc.joinCount : 0, nb: cc && currentLang === "zh" ? cc.newbie : 0, pre: cc ? cc.total + cc.discount : total }; // pre = 会员 8 折之前的价，问卷码的满额按它算
 	qbPromo = null;
 	if (qbMO) { var pf = document.getElementById("qbo-promo"); if (pf && pf.closest(".qbo-f")) pf.closest(".qbo-f").remove(); }
@@ -5569,7 +5574,7 @@ function qbOrderOpen() {
 function qbStatPlanLocal() {
 	var z = I18N[currentLang].quote, s = qbState;
 	if (s.mode === "rec" && s.rec) return z.modeRec + " · " + z.recOpts[s.rec.o].name + " · " + s.rec.h + z.recHrUnit;
-	var name = s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
+	var name = qbRapSetOn() ? (QB_SETS[z === I18N.zh.quote ? "zh" : currentLang] || QB_SETS.zh).rapName : s.taste ? "Chef's Taste" : s.preset === null ? z.presetCustom : z.presets[s.preset].name;
 	return (s.mode === "stems" ? z.modeStems : z.modeVocal) + " · " + name + " · " + s.count + z.countUnit;
 }
 // 优惠码：?code=XXX 打开价格页会记下，下单表单自动带入；折扣由服务端算，这里只是预览
