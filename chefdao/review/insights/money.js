@@ -7,6 +7,14 @@
 .mn-top{background:var(--fill);border-radius:18px;padding:16px 18px;margin-bottom:14px}.mn-top .k{font-size:13px;color:var(--text-2)}
 .mn-top .n{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.25}.mn-top .d{font-size:13.5px;color:var(--text-3);font-variant-numeric:tabular-nums}
 .mn-top .d b{color:var(--text-2);font-weight:500}.mn-top .d b.ok{color:#7fb894}.mn-top .d b.warn{color:var(--red)}
+.mn-top .n small{font-size:15px;font-weight:500;color:var(--text-3);letter-spacing:0}
+.mn-bar{position:relative;height:6px;border-radius:3px;background:var(--fill-3);margin:10px 0 8px}.mn-bar i{display:block;height:100%;border-radius:3px;background:#7fb894}
+.mn-bar em{position:absolute;top:-4px;width:2px;height:14px;margin-left:-1px;background:var(--pearl);border-radius:1px}
+.mn-sp{display:block;width:100%;height:56px;margin:10px 0 4px;overflow:visible}.mn-sp polyline{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.mn-sp .sv{stroke:#7fb894;stroke-width:2}.mn-sp .pl{stroke:var(--text-3);stroke-width:1;stroke-dasharray:3 4}
+.mn-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 8px}.mn-st>div{background:var(--fill);border-radius:12px;padding:8px 10px;min-width:0}
+.mn-st span{display:block;font-size:12px;color:var(--text-3)}.mn-st b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}.mn-st b.ok{color:#7fb894}.mn-st b.warn{color:var(--red)}
+.mn-last{font-size:13.5px;color:var(--text-3);margin:-4px 2px 4px;font-variant-numeric:tabular-nums}.mn-last b.ok{color:#7fb894;font-weight:500}.mn-last b.warn{color:var(--red);font-weight:500}
 .mn-h{font-size:13px;color:var(--text-3);margin:16px 2px 4px;letter-spacing:.03em}
 .mn-row{display:grid;grid-template-columns:1fr minmax(0,150px);align-items:center;gap:2px 12px;padding:6px 2px;border-top:.5px solid var(--hair)}.mn-list .mn-row:first-child{border-top:0}
 .mn-row label{font-size:16px;color:var(--text)}.mn-row small{grid-column:1/-1;text-align:right;font-size:12.5px;color:var(--text-3);font-variant-numeric:tabular-nums;margin-top:-2px}
@@ -49,6 +57,25 @@
     return `<div class="mn-row${grp === 'bal' && k in D.bal && d ? ' chg' : ''}"><label for="mn-${grp}-${k}">${lb}</label><input id="mn-${grp}-${k}" data-mg="${grp}" data-mk="${k}" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${has ? G.esc(String(v)) : ''}" placeholder="${grp === 'flow' ? '0' : '—'}">${grp === 'bal' && k in D.bal && d ? `<small class="${d > 0 ? 'up' : 'dn'}">${d > 0 ? '+' : ''}${fmt(d)}</small>` : ''}</div>`;
   };
 
+  // 存钱进度：已存 / 目标、和计划线比领先还是落后、每月要存 vs 近 30 天实际
+  function progCard(p) {
+    if (!p) return '';
+    const pct = Math.min(100, p.saved / p.goal * 100), pp = Math.min(100, p.plan / p.goal * 100), ahead = p.saved - p.plan, md = p.asOf.slice(5).replace('-', '/');
+    const ser = p.ser || [], W = 300, H = 56;
+    let spark = '';
+    if (ser.length > 1) {
+      const t0 = Date.parse(ser[0].d), t1 = Date.parse(ser[ser.length - 1].d) || t0 + 1, lo = Math.min(...ser.map(x => x.s)) * .97, hi = Math.max(...ser.map(x => x.s), p.plan) * 1.01;
+      const X = d => (Date.parse(d) - t0) / (t1 - t0 || 1) * W, Yv = v => H - (v - lo) / (hi - lo || 1) * H;
+      const p0 = Date.parse('2026-10-23'), pv = d => 11070 + (p.goal - 11070) * Math.max(0, (Date.parse(d) - p0) / (Date.parse('2027-02-28') - p0));
+      spark = `<svg class="mn-sp" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline class="pl" points="${X(ser[0].d)},${Yv(pv(ser[0].d))} ${W},${Yv(pv(ser[ser.length - 1].d))}"/><polyline class="sv" points="${ser.map(x => X(x.d).toFixed(1) + ',' + Yv(x.s).toFixed(1)).join(' ')}"/></svg>`;
+    }
+    const need = p.monthly - p.surplus;
+    return `<div class="mn-top mn-prog"><div class="k">已存 · 截至 ${md}</div><div class="n">${yen(p.saved)}<small> / ${yen(p.goal)}</small></div>
+      <div class="mn-bar"><i style="width:${pct}%"></i><em style="left:${pp}%" title="计划线"></em></div>
+      <div class="d">按计划 ${md} 应到 ${yen(p.plan)} · <b class="${ahead >= 0 ? 'ok' : 'warn'}">${ahead >= 0 ? '领先 ' : '落后 '}${yen(Math.abs(ahead))}</b></div>${spark}
+      <div class="mn-st"><div><span>每月要存</span><b>${yen(p.monthly)}</b></div><div><span>实际每月</span><b class="${need > 0 ? 'warn' : 'ok'}">${yen(p.surplus)}</b></div><div><span>剩</span><b>${p.daysLeft} 天</b></div></div>
+      <div class="d">照近 30 天的速度，2/28 能到 ${yen(p.projected)}${p.projected >= p.goal ? '，够了' : '，还差 ' + yen(p.goal - p.projected)} · 1/15 决策线 ${yen(p.decide[1])}</div></div>`;
+  }
   window.renderMoney = () => {
     if (!asked) load();
     if (!MD) {
@@ -57,8 +84,7 @@
     }
     const L = MD.last, chg = BAL.filter(([k]) => k in D.bal && Number(D.bal[k]) !== base(k)).length, fl = FLOW.filter(([k]) => D.flow[k] !== undefined && D.flow[k] !== '').length;
     const diff = L && Number.isFinite(L.diff) ? L.diff : null;
-    const top = `<div class="mn-top"><div class="k">上一条 · ${G.esc(L ? L.date + (L.note ? ' · ' + L.note : '') : '还没有记录')}</div><div class="n">${L && Number.isFinite(L.total) ? yen(L.total) : '—'}</div>
-      <div class="d">总资产${diff != null ? ` · 对账差额 <b class="${Math.abs(diff) < 50 ? 'ok' : 'warn'}">${diff > 0 ? '+' : ''}${fmt(diff)}</b>` : ''}${loading ? ' · 刷新中…' : ''}</div></div>`;
+    const top = progCard(MD.prog) + `<div class="mn-last">上一条 ${G.esc(L ? L.date.slice(5).replace('-', '/') + (L.note ? ' · ' + L.note : '') : '还没有记录')} · 总资产 ${L && Number.isFinite(L.total) ? yen(L.total) : '—'}${diff != null ? ` · 对账差额 <b class="${Math.abs(diff) < 50 ? 'ok' : 'warn'}">${diff > 0 ? '+' : ''}${fmt(diff)}</b>` : ''}${loading ? ' · 刷新中…' : ''}</div>`;
     const hist = (MD.recent || []).slice(0, 4).map(r => `<div class="wk-row"><b>${G.esc(r.date)}${r.note ? ' · ' + G.esc(r.note) : ''}</b><em>${Number.isFinite(r.total) ? yen(r.total) : '—'}</em>${Number.isFinite(r.diff) ? `<small>对账差额 ${r.diff > 0 ? '+' : ''}${fmt(r.diff)}</small>` : ''}</div>`).join('');
     return top + `<div class="mn-h">余额 · 改变了的才改</div><div class="mn-list">${BAL.map(([k, lb]) => inp('bal', k, lb, val(k), base(k))).join('')}</div>
       <details class="mn-fold" id="mnFlow"${fl || ls.get('insights:mnflow') === '1' ? ' open' : ''}><summary>收支（选填）<span>${fl ? '填了 ' + fl + ' 项' : '上一条之后的'}</span></summary><div class="mn-list">${FLOW.map(([k, lb]) => inp('flow', k, lb, D.flow[k], null)).join('')}</div></details>
