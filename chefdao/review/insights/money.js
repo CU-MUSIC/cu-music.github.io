@@ -14,6 +14,7 @@
 .mn-sp .sv{stroke:#7fb894;stroke-width:2}.mn-sp .pl{stroke:var(--text-3);stroke-width:1;stroke-dasharray:3 4}
 .mn-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 8px}.mn-st>div{background:var(--fill);border-radius:12px;padding:8px 10px;min-width:0}
 .mn-st span{display:block;font-size:12px;color:var(--text-3)}.mn-st b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}.mn-st b.ok{color:#7fb894}.mn-st b.warn{color:var(--red)}
+.mn-cmp .mn-h b{font-weight:600}.mn-cmp .mn-h b.ok{color:#7fb894}.mn-cmp .mn-h b.warn{color:var(--red)}
 .mn-dv{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}.mn-dv.ok{color:#7fb894}.mn-dv.warn{color:var(--red)}
 .mn-cmp{background:var(--fill);border-radius:14px;padding:12px 14px;margin:12px 0 4px}.mn-mv{display:flex;justify-content:space-between;font-size:15px;padding:3px 0;font-variant-numeric:tabular-nums}
 .mn-mv span{color:var(--text-2)}.mn-mv b{font-weight:600}.mn-mv b.ok{color:#7fb894}.mn-mv b.warn{color:var(--red)}
@@ -61,6 +62,8 @@
     return `<div class="mn-row${grp === 'bal' && k in D.bal && d ? ' chg' : ''}"><label for="mn-${grp}-${k}">${lb}</label><input id="mn-${grp}-${k}" data-mg="${grp}" data-mk="${k}" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${has ? G.esc(String(v)) : ''}" placeholder="${grp === 'flow' ? '0' : '—'}">${grp === 'bal' && k in D.bal && d ? `<small class="${d > 0 ? 'mn-up' : 'mn-dn'}">${d > 0 ? '+' : ''}${fmt(d)}</small>` : ''}</div>`;
   };
 
+  // 记录的时间：日期 + 创建时刻（本机时区），同一天两条能分开
+  const stamp = r => { const t = r.le || r.ct ? new Date(r.le || r.ct) : null; return r.date.slice(5).replace('-', '/') + (t && !isNaN(t) ? ' ' + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0') : ''); };
   // 存钱进度：已存 / 目标、和计划线比领先还是落后、每月要存 vs 近 30 天实际
   function progCard(p) {
     if (!p) return '';
@@ -73,9 +76,11 @@
       const p0 = Date.parse('2026-10-23'), pv = d => 11070 + (p.goal - 11070) * Math.max(0, (Date.parse(d) - p0) / (Date.parse('2027-02-28') - p0));
       spark = `<svg class="mn-sp" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline class="pl" points="${X(ser[0].d)},${Yv(pv(ser[0].d))} ${W},${Yv(pv(ser[ser.length - 1].d))}"/><polyline class="sv" points="${ser.map(x => X(x.d).toFixed(1) + ',' + Yv(x.s).toFixed(1)).join(' ')}"/></svg>`;
     }
-    const need = p.monthly - p.surplus, prev = ser.length > 1 ? ser[ser.length - 2] : null, dv = prev ? p.saved - prev.s : null;
-    return `<div class="mn-top mn-prog"><div class="k">已存 · 截至 ${md}</div><div class="n">${yen(p.saved)}<small> / ${yen(p.goal)}</small></div>
-      ${prev ? `<div class="mn-dv ${dv >= 0 ? 'ok' : 'warn'}">比上一条（${prev.d.slice(5).replace('-', '/')}）${dv >= 0 ? '+' : '−'}${yen(Math.abs(dv))}</div>` : ''}
+    const need = p.monthly - p.surplus;
+    // 比上一条：直接拿最近两条有余额的记录比（同一天记两次也能看出差多少），不按天
+    const R = (MD && MD.recent) || [], a = R[0], b = R[1], dv = a && b && a.saved != null && b.saved != null ? a.saved - b.saved : null;
+    return `<div class="mn-top mn-prog"><div class="k">已存 · 截至 ${a ? stamp(a) : md}</div><div class="n">${yen(p.saved)}<small> / ${yen(p.goal)}</small></div>
+      ${dv != null ? `<div class="mn-dv ${dv >= 0 ? 'ok' : 'warn'}">比上一条（${stamp(b)}）${dv >= 0 ? '+' : '−'}¥${fmt(Math.abs(dv))}</div>` : ''}
       <div class="mn-bar"><i style="width:${pct}%"></i><em style="left:${pp}%" title="计划线"></em></div>
       <div class="d">按计划 ${md} 应到 ${yen(p.plan)} · <b class="${ahead >= 0 ? 'ok' : 'warn'}">${ahead >= 0 ? '领先 ' : '落后 '}${yen(Math.abs(ahead))}</b></div>${spark}
       <div class="mn-st"><div><span>每月要存</span><b>${yen(p.monthly)}</b></div><div><span>实际每月</span><b class="${need > 0 ? 'warn' : 'ok'}">${yen(p.surplus)}</b></div><div><span>剩</span><b>${p.daysLeft} 天</b></div></div>
@@ -93,7 +98,7 @@
     // 上一条和再上一条：哪几个账户变了
     const R = MD.recent || [], a = R[0], b = R[1], lbOf = k => (BAL.find(x => x[0] === k) || [k, k])[1];
     const moved = a && b ? BAL.map(([k]) => [k, (a.bal[k] || 0) - (b.bal[k] || 0)]).filter(([, d]) => Math.abs(d) >= 0.01) : [];
-    const cmp = a && b ? `<div class="mn-cmp"><div class="mn-h" style="margin-top:0">上一条比再上一条 · ${G.esc(b.date.slice(5).replace('-', '/'))} → ${G.esc(a.date.slice(5).replace('-', '/'))}</div>${moved.length ? moved.map(([k, d]) => `<div class="mn-mv"><span>${lbOf(k)}</span><b class="${(d > 0) !== (k === '负债') ? 'ok' : 'warn'}">${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}${k === '韩元' ? ' ₩' : ''}</b></div>`).join('') : '<div class="mn-mv"><span>余额都没变</span></div>'}</div>` : '';
+    const cmp = a && b ? `<div class="mn-cmp"><div class="mn-h" style="margin-top:0">最近两条 · ${G.esc(stamp(b))} → ${G.esc(stamp(a))}${a.saved != null && b.saved != null ? ` · 已存 <b class="${a.saved >= b.saved ? 'ok' : 'warn'}">${a.saved >= b.saved ? '+' : '−'}¥${fmt(Math.abs(a.saved - b.saved))}</b>` : ''}</div>${moved.length ? moved.map(([k, d]) => `<div class="mn-mv"><span>${lbOf(k)}</span><b class="${(d > 0) !== (k === '负债') ? 'ok' : 'warn'}">${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}${k === '韩元' ? ' ₩' : ''}</b></div>`).join('') : '<div class="mn-mv"><span>余额都没变</span></div>'}</div>` : '';
     // 最近几天的已存和每天的变化（从存钱进度的序列来）
     const S = ((MD.prog && MD.prog.ser) || []).slice(-8).reverse();
     const hist = S.slice(0, 7).map((x, i) => { const pv = S[i + 1], d = pv ? x.s - pv.s : null; return `<div class="wk-row"><b>${x.d.slice(5).replace('-', '/')}</b><em>${yen(x.s)}${d != null ? ` <i class="${d >= 0 ? 'mn-up' : 'mn-dn'}">${d >= 0 ? '+' : '−'}${yen(Math.abs(d))}</i>` : ''}</em></div>`; }).join('');
