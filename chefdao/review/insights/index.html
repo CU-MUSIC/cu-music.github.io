@@ -475,10 +475,11 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261109b"></script>
 <script src="../reflib.js?v=20261109p"></script>
 <script src="work.js?v=261115c"></script>
+<script src="money.js?v=261118a"></script>
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261118.1000';
+const BUILD = '261118.2300';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -503,6 +504,7 @@ const m = /[#&]k=([\w-]+)/.exec(location.hash);
 if (m) { store.set('insights:key', m[1]); history.replaceState(null, '', location.pathname); }
 if (/orders/.test(location.hash)) store.set('insights:tab', 'orders');
 if (/rlib/.test(location.hash)) { store.set('insights:tab', 'rlib'); history.replaceState(null, '', location.pathname); }
+else if (/#money/.test(location.hash)) { store.set('insights:tab', 'money'); history.replaceState(null, '', location.pathname); }   // 主屏幕「记账」快捷方式
 else if (/#work/.test(location.hash)) { store.set('insights:tab', 'work'); history.replaceState(null, '', location.pathname); }   // 日报 / 周报推送点开直接到工作页
 let KEY = store.get('insights:key');
 let days = +store.get('insights:days') || 30, song = '', proj = '', ver = '', lis = '', data = null, pdata = null;
@@ -511,12 +513,12 @@ let oedit = 0, pmOpen = false; const odraft = {};   // 改单表单的草稿；�
 let NOPEN = false;   // 通知设置收在铃铛里
 // 手机底部标签栏的图标（电脑上不显示）
 const TI = d => `<svg class="ti" viewBox="0 0 24 24">${d}</svg>`;
-const TICON = { work: TI('<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3.5v3M15 3.5v3"/><path d="M8.5 15l2.3 2.2 4.7-4.6"/>'), lib: TI('<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>'),
+const TICON = { money: TI('<rect x="3.5" y="6" width="17" height="13" rx="3"/><path d="M3.5 10h17"/><path d="M15.5 14.5h2"/>'), work: TI('<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3.5v3M15 3.5v3"/><path d="M8.5 15l2.3 2.2 4.7-4.6"/>'), lib: TI('<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>'),
   listen: TI('<path d="M4.5 15v-3a7.5 7.5 0 0 1 15 0v3"/><rect x="3.5" y="14" width="4" height="6" rx="1.6"/><rect x="16.5" y="14" width="4" height="6" rx="1.6"/>'),
   rlib: TI('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2"/>'),
   home: TI('<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.4 2.3 3.5 5 3.5 8s-1.1 5.7-3.5 8c-2.4-2.3-3.5-5-3.5-8s1.1-5.7 3.5-8"/>'),
   orders: TI('<path d="M6.5 3.5h11v17l-2.75-1.6L12 20.5l-2.75-1.6L6.5 20.5z"/><path d="M9.5 8.5h5M9.5 12h5"/>') };
-const TABS = [['work', '工作'], ['listen', '审听'], ['lib', 'Library'], ['orders', '订单'], ['rlib', '参考库'], ['home', '主页'], ['beat', '伴奏'], ['price', '价格页'], ['survey', '问卷']];   // 后三个在标签栏里合成一个「网站」，进去再用上面的小切换
+const TABS = [['work', '工作'], ['money', '记账'], ['listen', '审听'], ['lib', 'Library'], ['orders', '订单'], ['rlib', '参考库'], ['home', '主页'], ['beat', '伴奏'], ['price', '价格页'], ['survey', '问卷']];   // 后三个在标签栏里合成一个「网站」，进去再用上面的小切换
 // 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
 const SNAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
 // 推进按钮上写的是「进入这一步」的动作
@@ -830,10 +832,10 @@ function render() {
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
   const SITE = ['home', 'price', 'beat', 'survey'], TTL = Object.fromEntries(TABS);
   const head = `<div class="top"><div class="ttl"><div class="eyebrow">Insights <span class="bv" title="页面版本号">v${BUILD}</span></div><h1>${TTL[tab] || 'Insights'}</h1></div><button class="rfb nfb${NOPEN ? ' on' : ''}" id="nfb" aria-label="通知设置" title="通知设置"><svg viewBox="0 0 24 24"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i></i></button><button class="rfb ofb${OFF ? ' on' : ''}" id="ofb" aria-label="离线保存" title="${OFF ? '已离线保存在这台设备' : '离线保存：数据和封面存在这台设备，打开秒开'}"><svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M5 17.5c0 1.4 1.1 2.5 2.5 2.5h9c1.4 0 2.5-1.1 2.5-2.5"/></svg></button><button class="rfb" id="rfb" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></button>
-    ${tab === 'orders' || tab === 'lib' || tab === 'rlib' || tab === 'work' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
+    ${tab === 'orders' || tab === 'lib' || tab === 'rlib' || tab === 'work' || tab === 'money' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="nbar${NOPEN ? ' open' : ''}" id="nbar" hidden></div><div class="missed" id="missed" hidden></div>
     <nav class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}${k === 'home' && SITE.includes(tab) ? ' son' : ''}">${TICON[k] || ''}<span class="tl">${t}</span>${k === 'home' ? '<span class="tm">网站</span>' : ''}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</nav>${SITE.includes(tab) ? `<div class="seg subseg">${SITE.map(k => `<button data-t2="${k}" class="${tab === k ? 'on' : ''}">${TTL[k]}</button>`).join('')}</div>` : ''}`;
-  root.innerHTML = head + (tab === 'work' ? renderWork() : tab === 'lib' ? renderLib() : tab === 'rlib' ? renderRlib() : tab === 'beat' ? renderBeat() : tab === 'survey' ? renderSurvey() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
+  root.innerHTML = head + (tab === 'money' ? renderMoney() : tab === 'work' ? renderWork() : tab === 'lib' ? renderLib() : tab === 'rlib' ? renderRlib() : tab === 'beat' ? renderBeat() : tab === 'survey' ? renderSurvey() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   if (window.__pushDraw) window.__pushDraw();
   drawMissed();
@@ -913,6 +915,7 @@ function render() {
   });
   if (tab === 'rlib') bindRlib();
   if (tab === 'work') bindWork();
+  if (tab === 'money') bindMoney();
 }
 
 function renderListen() {
