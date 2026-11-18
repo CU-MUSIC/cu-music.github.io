@@ -340,7 +340,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .tabs button{flex:1;font-size:15px;padding:8px 6px;border-radius:9px;color:var(--text-2);position:relative}
 .tabs button.on{background:var(--fill-3);color:var(--text);font-weight:600}
 .tabs .dot{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--red);color:var(--ink);font-size:12px;font-weight:700;padding:0 5px;margin-left:5px;vertical-align:1px}
-.tabs .ti{display:none}.tabs button[data-t=price],.tabs button[data-t=beat],.tabs button[data-t=survey],.tabs button[data-t=home] .tl{display:none}.tabs .tm{display:inline}.tabs button.son{background:var(--fill-3);color:var(--text);font-weight:600}
+.tabs .ti{display:none}
 .subseg{display:flex;width:max-content;margin:-8px 0 20px}.subseg button{padding:5px 16px}
 /* ── 像 App：铃铛收通知设置、大标题、手机底部标签栏 ── */
 .ttl{flex:1 1 0;min-width:0}.ttl h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ttl .eyebrow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ttl .bv{text-transform:none;margin-left:4px}
@@ -483,7 +483,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261119.1600';
+const BUILD = '261119.1700';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -522,7 +522,10 @@ const TICON = { money: TI('<rect x="3.5" y="6" width="17" height="13" rx="3"/><p
   rlib: TI('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2"/>'),
   home: TI('<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.4 2.3 3.5 5 3.5 8s-1.1 5.7-3.5 8c-2.4-2.3-3.5-5-3.5-8s1.1-5.7 3.5-8"/>'),
   orders: TI('<path d="M6.5 3.5h11v17l-2.75-1.6L12 20.5l-2.75-1.6L6.5 20.5z"/><path d="M9.5 8.5h5M9.5 12h5"/>') };
-const TABS = [['work', '工作'], ['money', '记账'], ['listen', '审听'], ['lib', 'Library'], ['orders', '订单'], ['rlib', '参考库'], ['home', '主页'], ['beat', '伴奏'], ['price', '价格页'], ['survey', '问卷']];   // 后三个在标签栏里合成一个「网站」，进去再用上面的小切换
+const TABS = [['work', '工作'], ['money', '记账'], ['lib', 'Library'], ['listen', '审听'], ['rlib', '参考库'], ['orders', '订单'], ['home', '主页'], ['price', '价格页'], ['beat', '伴奏'], ['survey', '问卷']];
+// 底部只放 5 个：工作 · 记账 · 项目 · 订单 · 网站；项目和网站点进去再用上面的小切换（记住上次停在哪个）
+const GROUPS = { lib: ['lib', 'listen', 'rlib'], home: ['home', 'price', 'beat', 'survey'] }, GNAME = { lib: '项目', home: '网站' };
+const groupOf = t => Object.keys(GROUPS).find(g => GROUPS[g].includes(t)) || '';   // 后三个在标签栏里合成一个「网站」，进去再用上面的小切换
 // 订单阶段（和客户进度页 cumusic.work/p/ 一致）：每单自己的 steps，选了音频编辑才有「音频编辑」
 const SNAME = { pay: '待付款', prep: '准备中', edit: '音频编辑', mix: '混音中', review: '待审听', done: '已交付' };
 // 推进按钮上写的是「进入这一步」的动作
@@ -834,20 +837,20 @@ function render() {
   // 每分钟自动刷新时，保留展开着的报价单
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
-  const SITE = ['home', 'price', 'beat', 'survey'], TTL = Object.fromEntries(TABS);
+  const TTL = Object.fromEntries(TABS), GR = groupOf(tab);
   const head = `<div class="top"><div class="ttl"><div class="eyebrow">Insights <span class="bv" title="页面版本号">v${BUILD}</span></div><h1>${TTL[tab] || 'Insights'}</h1></div><button class="rfb nfb${NOPEN ? ' on' : ''}" id="nfb" aria-label="通知设置" title="通知设置"><svg viewBox="0 0 24 24"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i></i></button><button class="rfb ofb${OFF ? ' on' : ''}" id="ofb" aria-label="离线保存" title="${OFF ? '已离线保存在这台设备' : '离线保存：数据和封面存在这台设备，打开秒开'}"><svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M5 17.5c0 1.4 1.1 2.5 2.5 2.5h9c1.4 0 2.5-1.1 2.5-2.5"/></svg></button><button class="rfb" id="rfb" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></button>
     ${tab === 'orders' || tab === 'lib' || tab === 'rlib' || tab === 'work' || tab === 'money' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="nbar${NOPEN ? ' open' : ''}" id="nbar" hidden></div><div class="missed" id="missed" hidden></div>
-    <nav class="tabs" id="tabs">${TABS.map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}${k === 'home' && SITE.includes(tab) ? ' son' : ''}">${TICON[k] || ''}<span class="tl">${t}</span>${k === 'home' ? '<span class="tm">网站</span>' : ''}${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</nav>${SITE.includes(tab) ? `<div class="seg subseg">${SITE.map(k => `<button data-t2="${k}" class="${tab === k ? 'on' : ''}">${TTL[k]}</button>`).join('')}</div>` : ''}`;
+    <nav class="tabs" id="tabs">${TABS.filter(([k]) => !groupOf(k) || GROUPS[k]).map(([k, t]) => `<button data-t="${k}" class="${GROUPS[k] ? (GR === k ? 'on' : '') : tab === k ? 'on' : ''}">${TICON[k] || ''}<span class="tl">${GNAME[k] || t}</span>${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</nav>${GR ? `<div class="seg subseg">${GROUPS[GR].map(k => `<button data-t2="${k}" class="${tab === k ? 'on' : ''}">${TTL[k]}</button>`).join('')}</div>` : ''}`;
   root.innerHTML = head + (tab === 'money' ? renderMoney() : tab === 'work' ? renderWork() : tab === 'lib' ? renderLib() : tab === 'rlib' ? renderRlib() : tab === 'beat' ? renderBeat() : tab === 'survey' ? renderSurvey() : tab === 'price' ? renderPrice() : tab === 'home' ? renderHome() : tab === 'orders' ? renderOrders() : renderSongs() + '<button class="upbtn" id="upOpen">＋ 上传审听版本</button>' + renderListen());
   const uo = document.getElementById('upOpen'); if (uo) uo.onclick = openUpload;
   if (window.__pushDraw) window.__pushDraw();
   drawMissed();
   opened.forEach(id => { const d = root.querySelector('details[data-id="' + id + '"]'); if (d) d.open = true; });
   const pmb = root.querySelector('.pmbox'); if (pmb) pmb.ontoggle = () => { pmOpen = pmb.open; };
-  root.querySelectorAll('[data-t2]').forEach(b => b.onclick = () => { tab = b.dataset.t2; store.set('insights:tab', tab); render(); scrollTo(0, 0); });
+  root.querySelectorAll('[data-t2]').forEach(b => b.onclick = () => { tab = b.dataset.t2; store.set('insights:tab', tab); if (groupOf(tab)) store.set('insights:g:' + groupOf(tab), tab); render(); scrollTo(0, 0); });
   document.getElementById('nfb').onclick = () => { NOPEN = !NOPEN; document.getElementById('nfb').classList.toggle('on', NOPEN); const nb = document.getElementById('nbar'); nb.classList.toggle('open', NOPEN); if (NOPEN) nb.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
-  document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { tab = b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
+  document.getElementById('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) { const g = GROUPS[b.dataset.t]; tab = g ? (g.includes(store.get('insights:g:' + b.dataset.t)) ? store.get('insights:g:' + b.dataset.t) : b.dataset.t) : b.dataset.t; store.set('insights:tab', tab); render(); scrollTo(0, 0); } };
   const sg = document.getElementById('seg');
   if (sg) sg.onclick = e => { const d = +e.target.dataset.d; if (d) { days = d; store.set('insights:days', d); render(); } };
   const c = document.getElementById('chips');
