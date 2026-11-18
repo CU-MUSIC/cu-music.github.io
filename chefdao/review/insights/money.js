@@ -18,7 +18,7 @@
 .mn-h{font-size:13px;color:var(--text-3);margin:16px 2px 4px;letter-spacing:.03em}
 .mn-row{display:grid;grid-template-columns:1fr minmax(0,150px);align-items:center;gap:2px 12px;padding:6px 2px;border-top:.5px solid var(--hair)}.mn-list .mn-row:first-child{border-top:0}
 .mn-row label{font-size:16px;color:var(--text)}.mn-row small{grid-column:1/-1;text-align:right;font-size:12.5px;color:var(--text-3);font-variant-numeric:tabular-nums;margin-top:-2px}
-.mn-row small.up{color:#7fb894}.mn-row small.dn{color:var(--red)}
+.mn-row small.mn-up{color:#7fb894}.mn-row small.mn-dn{color:var(--red)}
 .mn-row input{width:100%;font:inherit;font-size:18px;text-align:right;font-variant-numeric:tabular-nums;background:var(--fill);border:0;border-radius:10px;padding:9px 12px;color:var(--text);outline:none;-webkit-appearance:none}
 .mn-row input:focus{background:var(--fill-3)}.mn-row.chg input{box-shadow:0 0 0 1.5px #7fb894 inset}
 .mn-note{width:100%;font:inherit;font-size:16px;background:var(--fill);border:0;border-radius:10px;padding:11px 12px;color:var(--text);outline:none;margin-top:4px}
@@ -54,7 +54,7 @@
   }
   const inp = (grp, k, lb, v, b) => {
     const has = v !== undefined && v !== null && v !== '', d = grp === 'bal' && has && b != null ? Number(v) - b : 0;
-    return `<div class="mn-row${grp === 'bal' && k in D.bal && d ? ' chg' : ''}"><label for="mn-${grp}-${k}">${lb}</label><input id="mn-${grp}-${k}" data-mg="${grp}" data-mk="${k}" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${has ? G.esc(String(v)) : ''}" placeholder="${grp === 'flow' ? '0' : '—'}">${grp === 'bal' && k in D.bal && d ? `<small class="${d > 0 ? 'up' : 'dn'}">${d > 0 ? '+' : ''}${fmt(d)}</small>` : ''}</div>`;
+    return `<div class="mn-row${grp === 'bal' && k in D.bal && d ? ' chg' : ''}"><label for="mn-${grp}-${k}">${lb}</label><input id="mn-${grp}-${k}" data-mg="${grp}" data-mk="${k}" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${has ? G.esc(String(v)) : ''}" placeholder="${grp === 'flow' ? '0' : '—'}">${grp === 'bal' && k in D.bal && d ? `<small class="${d > 0 ? 'mn-up' : 'mn-dn'}">${d > 0 ? '+' : ''}${fmt(d)}</small>` : ''}</div>`;
   };
 
   // 存钱进度：已存 / 目标、和计划线比领先还是落后、每月要存 vs 近 30 天实际
@@ -101,7 +101,7 @@
         if (g === 'bal') {   // 原地更新 +/-，不重画（重画会把手机键盘收起来）
           const row = el.closest('.mn-row'), b0 = base(k), d = k in D.bal && b0 != null ? Number(v) - b0 : 0; let sm = row.querySelector('small');
           row.classList.toggle('chg', !!d); if (d && !sm) { sm = document.createElement('small'); row.appendChild(sm); }
-          if (sm) { sm.textContent = d ? (d > 0 ? '+' : '') + fmt(d) : ''; sm.className = d > 0 ? 'up' : 'dn'; }
+          if (sm) { sm.textContent = d ? (d > 0 ? '+' : '') + fmt(d) : ''; sm.className = d > 0 ? 'mn-up' : 'mn-dn'; }
         }
         saveDraft(); const b = q('#mnSave'); if (b && !saving) { const n = Object.keys(D.bal).length + Object.keys(D.flow).length; b.textContent = '＋ 记一条' + (n ? '（改了 ' + n + ' 项）' : ''); } };
       el.onfocus = () => { try { el.select(); } catch (e) {} };
