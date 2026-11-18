@@ -357,7 +357,7 @@ async function open(pw, key) {
     document.getElementById('list').appendChild(ad);
     dropAdd();
     progPanel(); payPanel();
-    const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261029k';
+    const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261119a';
     sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), tracks: P.tracks.map(t => ({ slug: t.slug, artist: t.artist })), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
     document.head.appendChild(sc); }
 }

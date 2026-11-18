@@ -9,6 +9,7 @@
       + '.ols .sum{font-size:13px;color:var(--text-2,#b8b6b2);margin-bottom:8px}'
       + '.ols .r{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:.5px solid var(--hair,rgba(255,255,255,.1));font-size:13.5px}'
       + '.ols .r b{font-weight:600}.ols .r small{display:block;margin-top:2px;font-size:12px;color:var(--text-3,#8a8886)}.ols .r em{font-style:normal;white-space:nowrap;font-size:12px;color:var(--text-3,#8a8886)}'
+      + '.ols .rf{margin-left:10px;border:0;border-radius:99px;padding:3px 10px;background:var(--fill-2,rgba(255,255,255,.1));color:var(--text-2,#b8b6b2);font:inherit;font-size:12px;font-weight:400;cursor:pointer}.ols .rf:disabled{opacity:.6}'
       + '.ols .e{padding:10px 0;font-size:13px;color:var(--text-3,#8a8886)}'
       + '.ols .hd{cursor:pointer;user-select:none}.ols .hd b{font-weight:400;color:var(--text-3,#8a8886);margin-left:8px;font-size:12px}.ols .chips{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 8px}.ols .chips button{padding:4px 11px;border-radius:99px;background:var(--fill-2,rgba(255,255,255,.08));color:var(--text-2,#b8b6b2);font-size:12.5px}.ols .chips button.on{background:var(--pearl,#ebe9e5);color:var(--ink,#121213)}.ols.fold>:not(.hd){display:none}.ols .vs{margin:2px 0 10px}.ols .heat{display:flex;align-items:flex-end;gap:1px;height:46px}.ols .heat i{flex:1;min-width:0;background:var(--pearl,#ebe9e5);border-radius:1px 1px 0 0}.ols .ax{display:flex;justify-content:space-between;margin:3px 0 8px;font-size:11px;color:var(--text-3,#8a8886)}.ols .vs .sum b{color:var(--text,#e8e6e2);font-weight:600}@media(min-width:1180px){.ols.side{position:fixed;top:120px;right:calc(50% + 350px);width:270px;max-height:calc(100vh - 160px);overflow:auto;margin:0;z-index:20;box-shadow:0 12px 40px -16px rgba(0,0,0,.6)}}';
     document.head.appendChild(st);
@@ -56,10 +57,11 @@
     const vers = o.vers || [], vnm = v => (vers.find(x => x.ver === v) || {}).name || v;
     let vsel = o.ver ? o.ver() : 'all';   // 歌曲页默认看正在放的这个版本；页面上换版本，这里跟着换（选了「全部版本」就不跟）
     if (o.ver) addEventListener('cu-ver', () => { if (vsel !== 'all') { vsel = o.ver(); draw(); } });
-    async function load() {
+    async function load(manual) {
       let j; try { j = await (await fetch(o.api + '/q?days=365', { headers: { Authorization: 'Bearer ' + o.key }, cache: 'no-store' })).json(); } catch (e) { return; }
       if (!j || !j.ok) return;
       await Promise.all(o.slugs.map(partsOf)); last = j; draw();
+      if (manual) { const b = el.querySelector('.hd .rf'); if (b) { b.textContent = '✓ 已更新'; setTimeout(() => { const c = el.querySelector('.hd .rf'); if (c) c.textContent = '↻ 刷新'; }, 1500); } }
     }
     function draw() {
       const j = last; if (!j) return; set = scope === 'track' ? new Set([o.current]) : pick ? slugsOf(pick) : new Set(o.slugs);
@@ -96,7 +98,7 @@
       const devTxt = a => (a.devs && a.devs.size ? ' · ' + esc([...a.devs].join(' / ')) : '') + geoTxt(a);
       const list = scope === 'track' && pickL ? list0.filter(a => pickL === '未识别' ? !a.g && !nm(a.lids[0]) : (a.g && a.g.name === pickL) || nm(a.lids[0]) === pickL) : list0;
       const totalSec = list.reduce((s, a) => s + a.sec, 0), totalPlays = list.reduce((s, a) => s + a.plays, 0);
-      el.innerHTML = '<div class="hd"><span>聆听情况<b>' + (fold ? '展开' : '收起') + '</b></span><i>仅你可见 · ' + esc(scope === 'track' ? (vOn ? vnm(vsel) : '这首歌') : pick || o.title || '当前项目') + ' · ' + list.length + ' 人</i></div>'
+      el.innerHTML = '<div class="hd"><span>聆听情况<b>' + (fold ? '展开' : '收起') + '</b><button type="button" class="rf">↻ 刷新</button></span><i>仅你可见 · ' + esc(scope === 'track' ? (vOn ? vnm(vsel) : '这首歌') : pick || o.title || '当前项目') + ' · ' + list.length + ' 人</i></div>'
         + (o.current && o.slugs.length > 1 ? '<div class="chips"><button data-sc="track" class="' + (scope === 'track' ? 'on' : '') + '">本曲</button><button data-sc="all" class="' + (scope === 'all' ? 'on' : '') + '">整个项目</button></div>' : '')
         + (scope === 'track' && vers.length > 1 ? '<div class="chips"><button data-v="all" class="' + (vOn ? '' : 'on') + '">全部版本</button>' + vers.map(v => { const c = new Set(trows.filter(r => r.ver === v.ver).map(r => r.lid)).size; return '<button data-v="' + esc(v.ver) + '" class="' + (vsel === v.ver ? 'on' : '') + '">' + esc(v.name) + (c ? ' · ' + c + ' 人' : '') + '</button>'; }).join('') + '</div>' : '')
         + (vOn ? (() => { const in_ = new Set(list.flatMap(a => a.lids)); return vsum(rows.filter(r => in_.has(r.lid))); })() : '')
@@ -118,11 +120,13 @@
         }
         draw();
       });
+      el.querySelector('.hd .rf').onclick = async e => { e.stopPropagation(); const b = e.currentTarget; b.disabled = true; b.textContent = '刷新中…'; await load(true); };   // 原地重新拉客户的聆听数据，不用刷新整页
       el.querySelector('.hd').onclick = () => { fold = !fold; store.set(fk, fold ? '1' : '0'); el.classList.toggle('fold', fold); el.querySelector('.hd b').textContent = fold ? '展开' : '收起'; };
       el.querySelectorAll('.chips button').forEach(b => b.onclick = () => { if (b.dataset.v) vsel = b.dataset.v; else if (b.dataset.sc) { scope = b.dataset.sc; pick = ''; pickL = ''; } else if (b.dataset.l !== undefined) pickL = b.dataset.l; else pick = b.dataset.s; draw(); });
     }
     await load();
     let act = Date.now(); ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(e => addEventListener(e, () => { act = Date.now(); }, { passive: true }));
-    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - act < 6e5) load(); }, 300000);   // 最近 10 分钟没人动就不刷，省 D1 读取额度
+    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - act < 6e5) load(); }, 300000);
+    let lastVis = Date.now(); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - lastVis > 30000) { lastVis = Date.now(); load(); } });   // 从别的 App 切回来自动拉一次   // 最近 10 分钟没人动就不刷，省 D1 读取额度
   };
 })();
