@@ -1051,3 +1051,6 @@ body.rlp-on .rlp-tab{display:none}
 #paySheet .rs button.on{color:#e2c07a}#paySheet .rs.nps{gap:3px}#paySheet .rs.nps button{font-size:14px;color:#9a968e;min-height:36px;padding:0}#paySheet .rs.nps button.on{background:#e2c07a;color:#1a1c20;font-weight:600}
 #paySheet textarea{font:15px/1.5 inherit;font-family:inherit;color:#d6d3cd;background:rgba(236,234,230,.05);border:1px solid rgba(236,234,230,.1);border-radius:12px;padding:10px 12px;resize:vertical}
 #paySheet .rerr{color:#e9a19a;font-size:14px;min-height:0}#paySheet .rerr:empty{display:none}
+.ovsend{display:block;width:100%;margin-top:10px;min-height:48px;border:1px solid rgba(143,199,162,.5);border-radius:16px;background:rgba(143,199,162,.08);color:#9fd2b0;font:inherit;font-size:16px;font-weight:700}
+.ovsend:active{transform:scale(.985)}
+.ovsend.done{border-color:var(--hair);background:transparent;color:var(--text-3);font-weight:500}

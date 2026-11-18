@@ -216,6 +216,7 @@ document.body.innerHTML = `
 
   <div class="sect">整体感觉</div>
   <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
+  <button type="button" class="ovsend" id="ovsend" hidden></button>
 </main>
 
 <div class="dock">
@@ -1050,6 +1051,7 @@ function render(newId) {
 }
 // 整体评论下面：你的回复 / 已读 / 对话（键 = 版本 + 时间 0 + 「整体：」前 120 字）
 function drawOverall() {
+  try { ovUi(); } catch (e) {}
   const ta = $('#overall'), v = ta.value.trim(); let w = document.getElementById('ovthr'); if (w) w.remove();
   if (!v) return;
   const m = '整体：' + v.slice(0, 120), r = REPLIES.get(rk(cur.ver, 0, m)), has = !!(r && (r.reply || r.read || r.done)) || MSGS.some(x => x.ver === cur.ver && x.t === 0 && x.m === m);
@@ -1058,7 +1060,22 @@ function drawOverall() {
   decorate(w, r); w.dataset.k = rk(cur.ver, 0, m); if (NEWK.has(w.dataset.k)) w.querySelector('.m').insertAdjacentHTML('afterbegin', '<span class="nwd"></span>');
   thread(w, cur.ver, 0, m, !!(r && r.reply)); ta.after(w);
 }
-$('#overall').addEventListener('input', () => { save(); updateCta(); grow($('#overall')); });
+// 整体感觉的「发送」：点了才提醒你；发过的原文记在本机，改了字按钮又亮起来
+function ovKey() { return 'ovs:' + dataKey(vi); }
+function ovUi() {
+  const b = $('#ovsend'); if (!b) return; const v = $('#overall').value.trim();
+  if (!v || ME || IS_OWNER || !WK) { b.hidden = true; return; }
+  const sent = store.get(ovKey()) === v; b.hidden = false; b.disabled = sent || b.dataset.busy === '1';
+  b.classList.toggle('done', sent); b.textContent = b.dataset.busy === '1' ? '发送中…' : sent ? '✓ 已发送，刀大厨能看到' : '发送给刀大厨';
+}
+$('#ovsend').onclick = async () => {
+  const b = $('#ovsend'), v = $('#overall').value.trim(); if (!v || b.dataset.busy === '1') return;
+  save(); b.dataset.busy = '1'; ovUi();
+  try { const j = await track(vi, true, false, true); if (!j || !j.ok) throw 0; store.set(ovKey(), v); hud('已发送，刀大厨会收到提醒'); }
+  catch (e) { hud('没发送成功，检查网络再试'); }
+  b.dataset.busy = ''; ovUi();
+};
+$('#overall').addEventListener('input', () => { save(); updateCta(); grow($('#overall')); ovUi(); });
 $('#overall').addEventListener('change', () => drawOverall());
 
 /* ───────── 发送 ───────── */
@@ -2649,15 +2666,17 @@ const accessPing = state => {
 };
 accessPing(0);
 // force：评论有变化时也要同步；sent：点了「发送给刀大厨」
-function track(i, force, sent) {
+function track(i, force, sent, ovs) {
   i = +i; const s = stats[i] || (i === vi ? st() : null), v = V[i]; if (!WK || ME || !s) return;
   if (!force && s.saved >= 0 && s.sec - s.saved < 1) return;
+  if (ovs) clearTimeout(syncT);
   s.saved = s.sec;
   let d = {}; try { d = JSON.parse(store.get(dataKey(i)) || '{}'); } catch (e) {}
   const cm = (d.notes || []).map(o => ({ t: Math.round(o.t * 10) / 10, m: String(o.m || '').slice(0, 500) }));
   const body = JSON.stringify({ k: WK, slug: S.slug, title: S.title, sid, ver: v.ver, lid, device, visit: visits,
     sec: Math.round(s.sec * 10) / 10, dur: v.duration, ends: s.ends, bins: s.bins.map(x => Math.round(x * 10) / 10), notes: cm.length,
-    cm, ov: String(d.overall || '').slice(0, 1000), sent: !!sent });
+    cm, ov: String(d.overall || '').slice(0, 1000), sent: !!sent, ovs: !!ovs });
+  if (ovs) return fetch(STATS, { method: 'POST', body, headers: { 'Content-Type': 'text/plain' } }).then(r => r.json());
   fetch(STATS, { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'text/plain' } }).catch(() => {});
 }
 let lastPos = null;
