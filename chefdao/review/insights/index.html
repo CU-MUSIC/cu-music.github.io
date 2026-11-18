@@ -332,6 +332,10 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .up .done{background:var(--fill);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:15px}
 .up .done code{font-size:13px;overflow-wrap:anywhere;color:var(--text)}
 .up .done button{align-self:flex-start;background:var(--fill-2);border-radius:999px;padding:6px 14px;font-size:14px}
+.hsum{font-size:16px;line-height:1.7;color:var(--text-2);margin:-6px 2px 14px}.hsum b{color:var(--text);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.vsu,.vsd{display:inline-block;font-size:12px;margin-left:4px}.vsu{color:#7fb894}.vsd{color:var(--red)}
+.hl{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 2px;border-top:.5px solid var(--hair);font-size:15px}.sect+.hl{border-top:0}
+.hl>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hl>span{font-size:13px;color:var(--text-3);text-align:right;flex-shrink:0;max-width:60%}.hl i.hot{font-style:normal;color:#e0b46c}
 .tabs{display:flex;gap:4px;background:var(--fill);border-radius:12px;padding:3px;margin-bottom:22px}
 .tabs button{flex:1;font-size:15px;padding:8px 6px;border-radius:9px;color:var(--text-2);position:relative}
 .tabs button.on{background:var(--fill-3);color:var(--text);font-weight:600}
@@ -475,11 +479,11 @@ button.av{cursor:pointer;padding:0}
 <script src="../upload.js?v=20261109b"></script>
 <script src="../reflib.js?v=20261109p"></script>
 <script src="work.js?v=261115c"></script>
-<script src="money.js?v=261119b"></script>
+<script src="money.js?v=261119c"></script>
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261119.1320';
+const BUILD = '261119.1500';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -915,6 +919,7 @@ function render() {
   });
   if (tab === 'rlib') bindRlib();
   if (tab === 'work') bindWork();
+  root.querySelectorAll('details[data-hf]').forEach(d => d.ontoggle = () => store.set('insights:hf:' + d.dataset.hf, d.open ? '1' : '0'));
   if (tab === 'money') bindMoney();
 }
 
@@ -1131,28 +1136,40 @@ function renderHome() {
   const srcs = new Map(); rows.forEach(x => { const k = srcOf(x); const v = srcs.get(k) || { k, n: 0, act: 0 }; v.n++; if (act(x)) v.act++; srcs.set(k, v); });
   const srcList = [...srcs.values()].sort((a, b) => b.n - a.n).map(v => ({ k: v.k, n: v.n, right: v.n + ' 次' + (v.act ? ' · ' + v.act + ' 次联系/看价格' : '') }));
   const recent = rows.slice().sort((a, b) => b.updated - a.updated).slice(0, 40);
+  // 2026-11-19 简化：上面只放一句话 + 两个数（和上一段时间比）+ 值得跟进的人，其余全部收进折叠
+  const prevRows = pdata.events.filter(x => x.page === 'home' && x.started >= since - days * 864e5 && x.started < since);
+  const nAct = rows.filter(act).length, pN = prevRows.length, pAct = prevRows.filter(act).length;
+  const vs = (a, b) => b ? `<span class="${a >= b ? 'vsu' : 'vsd'}">${a >= b ? '↑' : '↓'} 上个 ${days} 天 ${b}</span>` : '';
+  const per = v => Math.round(v / n * 100);
+  const leads = new Map();
+  rows.forEach(x => { const g = leads.get(x.lid) || { lid: x.lid, n: 0, price: 0, wx: 0, last: 0 }; g.n++; if (x.contact > 0) g.price = 1; if (x.copy > 0) g.wx = 1; g.last = Math.max(g.last, x.updated); leads.set(x.lid, g); });
+  const hot = [...leads.values()].filter(g => g.wx || g.price || g.n >= 3).sort((a, b) => (b.wx * 100 + b.price * 50 + Math.min(b.n, 20)) - (a.wx * 100 + a.price * 50 + Math.min(a.n, 20)) || b.last - a.last);
+  const hotHtml = hot.slice(0, 6).map(g => `<div class="hl"><div>${who(g.lid, '访客')}</div><span>${[g.wx ? '<i class="hot">复制了微信</i>' : '', g.price ? '看了价格' : '', g.n > 1 ? '打开 ' + g.n + ' 次' : '', when(g.last, now)].filter(Boolean).join(' · ')}</span></div>`).join('');
+  const hf = (id, title, right, body) => `<details class="wk-fold" data-hf="${id}"${store.get('insights:hf:' + id) === '1' ? ' open' : ''}><summary><i>${title}</i><span>${right}</span></summary><div class="wk-in">${body}</div></details>`;
+  const topSrc = srcList[0], topAlb = albList[0];
   return `
+  <div class="hsum">每 100 人打开主页：<b>${per(nIn)}</b> 人进站 → <b>${per(nPrice)}</b> 人看价格 → <b>${per(nWx)}</b> 人复制微信</div>
   <div class="cards">
-    <div class="card"><div class="lb">打开次数</div><div class="n">${n}</div><div class="d">${visitors} 位访客 · 停留中位 ${mins(med)}</div>${spark(opens)}</div>
-    <div class="card"><div class="lb">看价格 / 加微信</div><div class="n">${rows.filter(act).length}</div><div class="d">转化 ${pct(rows.filter(act).length, n)}% · 点 PRICING ${nPrice} · 复制微信 ${nWx}</div>${spark(acts)}</div>
+    <div class="card"><div class="lb">打开次数</div><div class="n">${n}</div><div class="d">${visitors} 位访客 ${vs(n, pN)}</div>${spark(opens)}</div>
+    <div class="card"><div class="lb">看价格 / 加微信</div><div class="n">${nAct}</div><div class="d">转化 ${pct(nAct, n)}% ${vs(nAct, pAct)}</div>${spark(acts)}</div>
   </div>
-  <div class="blk"><div class="sect">漏斗<span>近 ${days} 天</span></div><div class="funnel">
+  <div class="blk"><div class="sect">值得跟进<span>${hot.length ? hot.length + ' 人 · 看过价格、复制微信或反复来' : ''}</span></div>${hotHtml || '<div class="empty">这段时间没有特别积极的访客</div>'}</div>
+  ${hf('funnel', '漏斗', '进站 ' + pct(nIn, n) + '% · 看价格 ' + pct(nPrice, n) + '%', `<div class="funnel">
     ${step('打开主页', n)}
     ${step('进入站点', nIn, '点 ENTER 或回访直接进')}
     ${step('看了 ABOUT', nAbout)}
     ${step('点了专辑', nAlb)}
     ${step('点 PRICING', nPrice, '去了价格页')}
     ${step('复制微信号', nWx, '点 Playlist ' + nSp)}
-  </div></div>
-  ${pdata.trace && pdata.trace.length ? renderTrace(rows) : ''}
-  <div class="blk"><div class="sect">最多人点的专辑</div><div class="rank">${albList.length ? rank(albList, 10) : '<div class="empty">还没人点专辑</div>'}</div></div>
-  <div class="blk"><div class="sect">来源</div><div class="rank">${rank(srcList, 8)}</div></div>
-  <div class="sect">最近访问<span>${recent.length} 条</span></div>
-  <div class="feed">${recent.map(x => `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
+  </div>`)}
+  ${pdata.trace && pdata.trace.length ? hf('trace', '停留和离开', '在哪看得久、在哪走掉', renderTrace(rows)) : ''}
+  ${hf('src', '来源和专辑', topSrc ? topSrc.k + ' 最多' + (topAlb ? ' · ' + esc(topAlb.k) : '') : '', `<div class="blk"><div class="sect">来源</div><div class="rank">${rank(srcList, 8)}</div></div>
+  <div class="blk"><div class="sect">最多人点的专辑</div><div class="rank">${albList.length ? rank(albList, 10) : '<div class="empty">还没人点专辑</div>'}</div></div>`)}
+  ${hf('recent', '最近访问', recent.length + ' 条', `<div class="feed">${recent.map(x => `<div class="item"><button class="av" data-ln="${esc(x.lid)}" title="写备注">${esc(x.lid)}</button><div class="body">
     <div class="who">${who(x.lid, '访客')}<time>${when(x.updated, now)}</time></div>
     <div class="dev">${esc(x.device || '设备')}${x.visit > 1 ? ' · 第 ' + x.visit + ' 次打开' : ''} · 停留 ${mins(x.dur)} · ${esc(srcOf(x))}${place(x.sid, x.country) ? ' · ' + esc(place(x.sid, x.country)) : ''}</div>
     <div>${x.picked ? '<span class="tag">进入站点</span>' : '<span class="tag">只看了开场页</span>'}${x.quoted ? '<span class="tag">看了 ABOUT</span>' : ''}${x.form ? '<span class="tag">点专辑' + (x.form > 1 ? ' ×' + x.form : '') + '</span>' : ''}${x.contact ? '<span class="tag hot">点 PRICING</span>' : ''}${x.copy ? '<span class="tag hot">复制微信</span>' : ''}${x.share ? '<span class="tag">点 Playlist</span>' : ''}</div>
-  </div></div>`).join('')}</div>`;
+  </div></div>`).join('')}</div>`)}`;
 }
 
 // ── 订单 ────────────────────────────────────────────────
