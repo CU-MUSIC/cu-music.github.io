@@ -15,6 +15,7 @@
 .mn-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 8px}.mn-st>div{background:var(--fill);border-radius:12px;padding:8px 10px;min-width:0}
 .mn-st span{display:block;font-size:12px;color:var(--text-3)}.mn-st b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}.mn-st b.ok{color:#7fb894}.mn-st b.warn{color:var(--red)}
 .mn-cmp .mn-h b{font-weight:600}.mn-cmp .mn-h b.ok{color:#7fb894}.mn-cmp .mn-h b.warn{color:var(--red)}
+.mn-mon .n.neg{color:var(--red)}.mn-mon .d b{font-weight:600}.mn-mon .d b.ok{color:#7fb894}.mn-mon .d b.warn{color:var(--red)}
 .mn-dv{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}.mn-dv.ok{color:#7fb894}.mn-dv.warn{color:var(--red)}
 .mn-cmp{background:var(--fill);border-radius:14px;padding:12px 14px;margin:12px 0 4px}.mn-mv{display:flex;justify-content:space-between;font-size:15px;padding:3px 0;font-variant-numeric:tabular-nums}
 .mn-mv span{color:var(--text-2)}.mn-mv b{font-weight:600}.mn-mv b.ok{color:#7fb894}.mn-mv b.warn{color:var(--red)}
@@ -79,7 +80,16 @@
     const need = p.monthly - p.surplus;
     // 比上一条：直接拿最近两条有余额的记录比（同一天记两次也能看出差多少），不按天
     const R = (MD && MD.recent) || [], a = R[0], b = R[1], dv = a && b && a.saved != null && b.saved != null ? a.saved - b.saved : null;
-    return `<div class="mn-top mn-prog"><div class="k">已存 · 截至 ${a ? stamp(a) : md}</div><div class="n">${yen(p.saved)}<small> / ${yen(p.goal)}</small></div>
+    // 本月已攒 = 最新已存 − 上个月最后一条的已存；本月目标按月初那一刻的缺口摊到剩下的月份（月中不会跟着变）
+    const ym = p.asOf.slice(0, 7), mStart = ym + '-01', base = [...ser].reverse().find(x => x.d < mStart) || ser[0];
+    const dd = (x, y) => Math.round((Date.parse(y) - Date.parse(x)) / 864e5), mSaved = base ? p.saved - base.s : 0;
+    const mTarget = base ? Math.round(Math.max(0, p.goal - base.s) / Math.max(1, dd(base.d, '2027-02-28') / 30.4) / 10) * 10 : p.monthly;
+    const y0 = +ym.slice(0, 4), m0 = +ym.slice(5, 7), mEnd = new Date(Date.UTC(y0, m0, 0)).toISOString().slice(0, 10), mLeft = Math.max(0, dd(p.asOf, mEnd));
+    const mPct = Math.max(0, Math.min(100, mTarget ? mSaved / mTarget * 100 : 0)), mGap = mTarget - mSaved;
+    const month = `<div class="mn-top mn-mon"><div class="k">${m0} 月已攒</div><div class="n ${mSaved >= 0 ? '' : 'neg'}">${mSaved >= 0 ? '' : '−'}${yen(Math.abs(mSaved))}<small> / 本月目标 ${yen(mTarget)}</small></div>
+      <div class="mn-bar"><i style="width:${mPct}%"></i></div>
+      <div class="d">${mGap > 0 ? `还差 <b class="warn">${yen(mGap)}</b> · 离月底 ${mLeft} 天${mLeft ? '，平均每天 ' + yen(mGap / mLeft) : ''}` : `<b class="ok">本月目标已达成，多攒了 ${yen(-mGap)}</b>`} · 从 ${base ? base.d.slice(5).replace('-', '/') : '月初'} 的 ${base ? yen(base.s) : '—'} 算起</div></div>`;
+    return month + `<div class="mn-top mn-prog"><div class="k">已存 · 截至 ${a ? stamp(a) : md}</div><div class="n">${yen(p.saved)}<small> / ${yen(p.goal)}</small></div>
       ${dv != null ? `<div class="mn-dv ${dv >= 0 ? 'ok' : 'warn'}">比上一条（${stamp(b)}）${dv >= 0 ? '+' : '−'}¥${fmt(Math.abs(dv))}</div>` : ''}
       <div class="mn-bar"><i style="width:${pct}%"></i><em style="left:${pp}%" title="计划线"></em></div>
       <div class="d">按计划 ${md} 应到 ${yen(p.plan)} · <b class="${ahead >= 0 ? 'ok' : 'warn'}">${ahead >= 0 ? '领先 ' : '落后 '}${yen(Math.abs(ahead))}</b></div>${spark}
