@@ -483,7 +483,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261119.1800';
+const BUILD = '261119.1900';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1922,7 +1922,7 @@ function openProject(slug) {
   $p('pjSave').onclick = async () => {
     if (!/^(\d{4})?$/.test($p('pjP').value)) return msg('密码要 4 位数字，或者留空不设密码', true);
     try { const pw = $p('pjP').value, sec = pw !== p.pass ? await sealPass(pw) : {};
-      await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.replace(/[\s,，、]+$/, '').trim(), kind: $p('pjK').value, mode: $p('pjM').value, ...sec }); msg('已保存'); await libReload(slug); }
+      const j = await lib('/lib/save', { slug, title: $p('pjT').value.trim(), artist: $p('pjA').value.replace(/[\s,，、]+$/, '').trim(), kind: $p('pjK').value, mode: $p('pjM').value, ...sec }); msg(j.synced ? '已保存，歌手已同步到 ' + j.synced + ' 首歌' : '已保存'); await libReload(slug); }
     catch (e) { msg('没保存上，检查网络再试', true); }
   };
   $p('pjArch').onclick = async () => {
