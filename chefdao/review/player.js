@@ -334,6 +334,7 @@ async function tryUnlock(pw, typed) {
     document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
+    try { ovUi(); } catch (e) {}   // 钥匙解出来了：「发送给刀大厨」现在才知道能不能显示
     if (WK && apAdopted && myName) { apAdopted = false; fetch(API_BASE + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, lid, name: myName }) }).catch(() => {}); }
     if (QUICK) { enterApp(true); loadAudio(key); clientFb(); ownerTools(); loadReplies(); lyrInit(key); quickRestore(); return; }
     splash();
