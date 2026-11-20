@@ -818,22 +818,52 @@ function quickMark() {
 
 /* ───────── 评论 ───────── */
 const txt = $('#txt');
-// 整体方向：四行五档（默认正好），动过的才写进整体感觉；文字框另写「其他」
-const OVT = [['人声大小', '人声', ['小很多', '小一点', '正好', '大一点', '大很多']],
-  ['整体亮度', '亮度', ['暗很多', '暗一点', '正好', '亮一点', '亮很多']],
-  ['混响空间', '混响', ['少很多', '少一点', '正好', '多一点', '多很多']],
-  ['低频', '低频', ['薄很多', '薄一点', '正好', '厚一点', '厚很多']]];
+// 整体方向：四行五档（默认正好），可点可拖、吸附到档位；动过的才写进整体感觉，文字框另写「其他」
+const OVT = [['人声大小', '人声', 'VOCAL', ['小很多', '小一点', '正好', '大一点', '大很多']],
+  ['整体亮度', '亮度', 'BRIGHTNESS', ['暗很多', '暗一点', '正好', '亮一点', '亮很多']],
+  ['混响空间', '混响', 'SPACE', ['少很多', '少一点', '正好', '多一点', '多很多']],
+  ['低频', '低频', 'LOW END', ['薄很多', '薄一点', '正好', '厚一点', '厚很多']]];
 let ovTags = [0, 0, 0, 0];
-const ovLine = () => OVT.map((d, i) => ovTags[i] ? d[1] + '：' + d[2][ovTags[i] + 2] : '').filter(Boolean).join(' · ');
+const ovLine = () => OVT.map((d, i) => ovTags[i] ? d[1] + '：' + d[3][ovTags[i] + 2] : '').filter(Boolean).join(' · ');
 const ovFull = () => { const l = ovLine(), t = ($('#overall') ? $('#overall').value : '').trim(); return l && t ? l + '\n' + t : l || t; };
+function ovPaint(i, v, drag) {
+  const r = document.querySelector('#ovtags .ovr[data-i="' + i + '"]'); if (!r) return;
+  const pct = 50 + v * 20;
+  r.querySelector('.ovth').style.left = pct + '%';
+  const f = r.querySelector('.ovfill'); f.style.left = Math.min(50, pct) + '%'; f.style.width = Math.abs(pct - 50) + '%';
+  r.classList.toggle('drag', !!drag); r.classList.toggle('set', !!ovTags[i]);
+  r.querySelector('.ovh b').textContent = OVT[i][3][ovTags[i] + 2];
+  r.querySelector('.ovtr').setAttribute('aria-valuenow', ovTags[i]); r.querySelector('.ovtr').setAttribute('aria-valuetext', OVT[i][3][ovTags[i] + 2]);
+}
+function ovSum() {
+  const s = document.querySelector('#ovtags .ovsum'); if (!s) return; const l = ovLine(); s.hidden = !l;
+  s.firstChild.textContent = l ? '你想要 ' + l.replace(/：/g, '') : '';
+}
 function ovDraw() {
   const box = $('#ovtags'); if (!box) return;
-  box.innerHTML = OVT.map((d, i) => { const v = ovTags[i];
-    return '<div class="ovr' + (v ? ' set' : '') + '"><div class="ovh"><span>' + d[0] + '</span><b>' + d[2][v + 2] + '</b></div>'
-      + '<div class="ovk"><i class="ovs">−</i><div class="ovd">' + [-2, -1, 0, 1, 2].map(n => '<button type="button" class="ovp' + (n === v ? ' on' : '') + '" data-i="' + i + '" data-v="' + n + '" aria-label="' + d[0] + d[2][n + 2] + '"></button>').join('') + '</div><i class="ovs">+</i></div></div>'; }).join('');
+  if (!box.firstChild) box.innerHTML = OVT.map((d, i) => '<div class="ovr" data-i="' + i + '"><div class="ovh"><span>' + d[0] + '<small>' + d[2] + '</small></span><b></b></div>'
+    + '<div class="ovk"><i class="ovs">−</i><div class="ovtr" role="slider" tabindex="0" aria-label="' + d[0] + '" aria-valuemin="-2" aria-valuemax="2"><div class="ovfill"></div><i class="ovmid"></i>'
+    + [10, 30, 70, 90].map(p => '<i class="ovdot" style="left:' + p + '%"></i>').join('') + '<div class="ovth"></div></div><i class="ovs">+</i></div></div>').join('')
+    + '<div class="ovsum" hidden><span></span><button type="button" class="ovrst">全部归位</button></div>';
+  OVT.forEach((_, i) => ovPaint(i, ovTags[i])); ovSum();
 }
-$('#ovtags').addEventListener('click', e => { const b = e.target.closest('.ovp'); if (!b) return;
-  ovTags[+b.dataset.i] = +b.dataset.v; ovDraw(); save(); updateCta(); drawOverall(); });
+(function () {
+  const box = $('#ovtags'); let cur = null;
+  const commit = () => { ovSum(); save(); updateCta(); drawOverall(); };
+  const move = e => {
+    if (!cur) return; const b = cur.tr.getBoundingClientRect();
+    const v = Math.max(-2, Math.min(2, ((e.clientX - b.left) / b.width * 100 - 50) / 20)), n = Math.round(v);
+    if (n !== ovTags[cur.i]) { ovTags[cur.i] = n; try { navigator.vibrate && navigator.vibrate(6); } catch (_) {} }
+    ovPaint(cur.i, v, true);
+  };
+  const end = () => { if (!cur) return; const i = cur.i; cur = null; ovPaint(i, ovTags[i], false); commit(); };
+  box.addEventListener('pointerdown', e => { const tr = e.target.closest('.ovtr'); if (!tr) return;
+    cur = { i: +tr.closest('.ovr').dataset.i, tr }; try { tr.setPointerCapture(e.pointerId); } catch (_) {} move(e); });
+  box.addEventListener('pointermove', move); box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+  box.addEventListener('keydown', e => { const tr = e.target.closest('.ovtr'); if (!tr || !/^Arrow(Left|Right)$/.test(e.key)) return; e.preventDefault();
+    const i = +tr.closest('.ovr').dataset.i; ovTags[i] = Math.max(-2, Math.min(2, ovTags[i] + (e.key === 'ArrowRight' ? 1 : -1))); ovPaint(i, ovTags[i]); commit(); });
+  box.addEventListener('click', e => { if (!e.target.closest('.ovrst')) return; ovTags = [0, 0, 0, 0]; ovDraw(); commit(); });
+})();
 function loadNotes() {
   notes = []; $('#overall').value = ''; ovTags = [0, 0, 0, 0];
   try { const s = JSON.parse(store.get(dataKey(vi)) || '{}'); notes = s.notes || []; $('#overall').value = s.ovt !== undefined ? s.ovt : (s.overall || '');
