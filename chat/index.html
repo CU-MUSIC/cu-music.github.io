@@ -4,25 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="dark light">
 <title>匿名咨询 · CU MUSIC</title>
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
 <link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
 <style>
 :root{
-  --bg:#000;--other:#262629;--me-1:#38b36a;--me-2:#2b9a57;--me:#2fa35e;--text:#f2f1ee;--dim:#8e8e93;--dim-2:#636366;
-  --hair:rgba(255,255,255,.1);--field:rgba(255,255,255,.22);--red:#ff5f57;--accent:#4fd185;
+  /* 绿色：照 iMessage 蓝的做法，上浅下深、差很小，干净不发灰 */
+  --me-1:#36c472;--me-2:#24ad5e;--me:#26b061;--red:#ff453a;--accent:#30c56a;
+  --bg:#000;--other:#26252a;--text:#fff;--text2:#c7c7cc;--dim:#8e8e93;--dim-2:#636366;
+  --hair:rgba(255,255,255,.1);--field:rgba(255,255,255,.22);--field2:rgba(255,255,255,.34);--head:rgba(28,28,30,.86);
+  --sheet:#1c1c1e;--grp:#2c2c2e;--grab:#48484a;--ring:rgba(255,255,255,.18);--plus:#26252a;
+  --menu:rgba(44,44,46,.96);--tb-dim:rgba(0,0,0,.38);--rx-their:#3a3a3c;
   --spring:cubic-bezier(.22,1.18,.36,1);--out:cubic-bezier(.2,.8,.2,1)
 }
+/* 浅色模式：跟着手机系统自动切换 */
+@media (prefers-color-scheme: light){:root{
+  --bg:#fff;--other:#e9e9eb;--text:#000;--text2:#3c3c43;--dim:#8a8a8e;--dim-2:#a2a2a7;
+  --hair:rgba(0,0,0,.1);--field:rgba(0,0,0,.18);--field2:rgba(0,0,0,.3);--head:rgba(249,249,249,.88);
+  --sheet:#f2f2f7;--grp:#fff;--grab:#c7c7cc;--ring:rgba(0,0,0,.1);--plus:#e9e9eb;
+  --menu:rgba(255,255,255,.97);--tb-dim:rgba(255,255,255,.35);--rx-their:#e9e9eb;
+}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{margin:0;height:100dvh;background:var(--bg);color:var(--text);font:18px/1.3 system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Helvetica Neue",sans-serif;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;display:flex;flex-direction:column;overflow:hidden}
 
 /* 顶栏：像 iMessage 的联系人头像 + 名字，毛玻璃 */
-header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-inset-top)) 16px 8px;text-align:center;background:rgba(30,30,32,.86);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--hair)}
+header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-inset-top)) 16px 8px;text-align:center;background:var(--head);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--hair)}
 .who{display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer}
-.av{width:48px;height:48px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px rgba(255,255,255,.18)}
+.av{width:48px;height:48px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px var(--ring)}
 .nm{display:flex;align-items:center;gap:2px;font-size:12.5px;line-height:15px;font-weight:400;letter-spacing:.006em;color:var(--text)}
 .nm svg{opacity:.45}
 .nm i{font-style:normal;color:var(--dim);margin-left:4px}
@@ -32,7 +45,7 @@ header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-i
 #log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 0 8px}
 #log>*{max-width:720px;margin-left:auto;margin-right:auto}
 .intro{padding:34px 24px 14px;text-align:center}
-.intro .pic{width:84px;height:84px;margin:0 auto 12px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px rgba(255,255,255,.18)}
+.intro .pic{width:84px;height:84px;margin:0 auto 12px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px var(--ring)}
 .intro h2{margin:0;font-size:22px;line-height:28px;font-weight:600;letter-spacing:-.022em;color:var(--text)}
 .intro .role{margin-top:4px;font-size:13px;line-height:18px;color:var(--dim)}
 .sep{padding:14px 0 6px;text-align:center;font-size:12.5px;line-height:15px;font-weight:400;letter-spacing:.006em;color:var(--dim)}
@@ -42,11 +55,11 @@ header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-i
 .m.tail{margin-bottom:8px}
 .b{position:relative;max-width:75%;padding:7px 13px 8px;border-radius:19px;background:var(--other);white-space:pre-wrap;overflow-wrap:anywhere;font-size:18px;line-height:24px;letter-spacing:-.024em;font-weight:400}
 .m.me .b{background:linear-gradient(180deg,var(--me-1),var(--me-2) calc(100% - 20px));color:#fff}
-.m.tail .b::after{content:'';position:absolute;bottom:0;width:17px;height:20px;background:no-repeat 0 0/100% 100%;pointer-events:none}
+.m.tail .b::after{content:'';position:absolute;bottom:0;width:17px;height:20px;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 20'%3E%3Cpath d='M0 0H8c0 9 3 15 9 20-6 1.2-12 .6-17-1.5z'/%3E%3C/svg%3E") no-repeat 0 0/100% 100%;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 20'%3E%3Cpath d='M0 0H8c0 9 3 15 9 20-6 1.2-12 .6-17-1.5z'/%3E%3C/svg%3E") no-repeat 0 0/100% 100%;pointer-events:none}
 .m.me.tail .b{border-bottom-right-radius:8px}
-.m.me.tail .b::after{right:-9px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 20'%3E%3Cpath fill='%232b9a57' d='M0 0H8c0 9 3 15 9 20-6 1.2-12 .6-17-1.5z'/%3E%3C/svg%3E")}
+.m.me.tail .b::after{right:-9px;background:var(--me-2)}
 .m.o.tail .b{border-bottom-left-radius:8px}
-.m.o.tail .b::after{left:-9px;transform:scaleX(-1);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 20'%3E%3Cpath fill='%23262629' d='M0 0H8c0 9 3 15 9 20-6 1.2-12 .6-17-1.5z'/%3E%3C/svg%3E")}
+.m.o.tail .b::after{left:-9px;transform:scaleX(-1);background:var(--other)}
 .m.pend .b{opacity:.75}
 .m.fail .b{opacity:.85}
 .m .x{flex:none;width:22px;height:22px;margin:0 0 4px 8px;border-radius:50%;background:var(--red);color:#fff;font-size:14px;font-weight:700;line-height:22px;text-align:center;order:2}
@@ -58,10 +71,10 @@ header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-i
 /* 输入栏 */
 form{flex:none;padding:6px 12px calc(8px + env(safe-area-inset-bottom));background:var(--bg)}
 .row{max-width:720px;margin:0 auto;display:flex;align-items:flex-end;gap:10px}
-.plus{flex:none;width:36px;height:36px;margin-bottom:1px;padding:0;border:0;border-radius:50%;background:#262629;color:#c7c7cc;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s var(--spring)}
+.plus{flex:none;width:36px;height:36px;margin-bottom:1px;padding:0;border:0;border-radius:50%;background:var(--plus);color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s var(--spring)}
 .plus:active{transform:scale(.9)}
 .bar{flex:1;min-width:0;display:flex;align-items:flex-end;border:1px solid var(--field);border-radius:19px;padding:0 3px 0 13px;min-height:38px;transition:border-color .2s}
-.bar:focus-within{border-color:rgba(255,255,255,.32)}
+.bar:focus-within{border-color:var(--field2)}
 textarea{flex:1;min-width:0;resize:none;max-height:132px;height:38px;padding:7px 0;border:0;background:transparent;color:var(--text);font:inherit;font-size:18px;line-height:24px;letter-spacing:-.024em;outline:none;caret-color:var(--accent)}
 textarea::placeholder{color:var(--dim-2)}
 button.send{flex:none;width:29px;height:29px;margin:3px 0 3px 6px;padding:0;border:0;border-radius:50%;background:var(--me);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:scale(0);opacity:0;transition:transform .32s var(--spring),opacity .15s}
@@ -74,15 +87,15 @@ button.send:active{transform:scale(.88)}
 #sheet.on{visibility:visible}
 .dim{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s var(--out)}
 #sheet.on .dim{opacity:1}
-.card{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;padding:10px 20px calc(22px + env(safe-area-inset-bottom));background:#1c1c1e;border-radius:14px 14px 0 0;transform:translateY(100%);transition:transform .42s var(--spring)}
+.card{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;padding:10px 20px calc(22px + env(safe-area-inset-bottom));background:var(--sheet);border-radius:14px 14px 0 0;transform:translateY(100%);transition:transform .42s var(--spring)}
 #sheet.on .card{transform:none}
-.grab{width:36px;height:5px;margin:0 auto 16px;border-radius:3px;background:#48484a}
+.grab{width:36px;height:5px;margin:0 auto 16px;border-radius:3px;background:var(--grab)}
 .card h2{margin:0 0 6px;font-size:20px;font-weight:600;text-align:center}
-.card p{margin:0 0 18px;font-size:16.5px;line-height:1.65;color:#c7c7cc;text-align:center}
+.card p{margin:0 0 18px;font-size:16.5px;line-height:1.65;color:var(--text2);text-align:center}
 .card label{display:block;margin:0 4px 6px;font-size:14px;color:var(--dim)}
-.grp{border-radius:12px;background:#2c2c2e;overflow:hidden}
+.grp{border-radius:12px;background:var(--grp);overflow:hidden}
 .grp input{display:block;width:100%;padding:12px 14px;border:0;background:transparent;color:var(--text);font:inherit;font-size:17px;outline:none}
-.grp input+input{border-top:.5px solid rgba(255,255,255,.12)}
+.grp input+input{border-top:.5px solid var(--hair)}
 .grp input::placeholder{color:var(--dim-2)}
 .done{display:block;width:100%;margin-top:16px;padding:13px;border:0;border-radius:12px;background:var(--me);color:#fff;font:inherit;font-size:17px;font-weight:600;cursor:pointer}
 .done:active{opacity:.85}
@@ -132,6 +145,7 @@ button.send:active{transform:scale(.88)}
   </div>
 </div>
 
+<script src="/chat/tapback.js?v=1"></script>
 <script>
 (function () {
   var API = 'https://stats.cumusic.work', $ = function (i) { return document.getElementById(i); };
@@ -152,6 +166,9 @@ button.send:active{transform:scale(.88)}
   $('dim').onclick = $('done').onclick = function () { sheet(false); };
 
   var last = 0, seen = {}, busy = false, oseen = 0, lastTs = 0;
+  // 长按刀大厨的消息可以点表情回应
+  var tb = window.Tapback ? Tapback({ log: log, canReact: function (row) { return row.classList.contains('o'); },
+    send: function (id, rx) { return fetch(API + '/chat/react', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, id: +id, rx: rx }) }).then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw 0; }); } }) : null;
   var p2 = function (n) { return (n < 10 ? '0' : '') + n; };
   function hm(ts) { var d = new Date(ts); return p2(d.getHours()) + ':' + p2(d.getMinutes()); }
   function day(ts) { var d = new Date(ts), n = new Date(), y = new Date(n - 864e5); return d.toDateString() === n.toDateString() ? '今天' : d.toDateString() === y.toDateString() ? '昨天' : (d.getMonth() + 1) + '月' + d.getDate() + '日'; }
@@ -221,6 +238,7 @@ button.send:active{transform:scale(.88)}
         var el = add(m, null, m.who === 'o' ? log.querySelector('.m.me:not([data-id])') : null); el.dataset.id = m.id; el.dataset.ts = m.ts; fresh.push(el);
       });
       status();
+      if (tb) tb.apply(j.rxs);
       if (fresh.length && stick) { bottom(!first); if (!first) fresh.forEach(popIn); }
     }).catch(function () {});
   }
