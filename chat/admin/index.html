@@ -16,7 +16,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{margin:0;height:100dvh;background:var(--bg);color:var(--text);font:17px/1.3 system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Helvetica Neue",sans-serif;font-synthesis:none;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;display:flex;overflow:hidden}
+body{margin:0;height:100dvh;background:var(--bg);color:var(--text);font:18px/1.3 system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Helvetica Neue",sans-serif;font-synthesis:none;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;display:flex;overflow:hidden}
 button{font:inherit;color:inherit}
 
 /* 会话列表：iOS「信息」首页 */
@@ -30,10 +30,10 @@ button{font:inherit;color:inherit}
 .av{flex:none;width:44px;height:44px;border-radius:50%;background:linear-gradient(180deg,#a2a7b2,#7d828d);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:#fff}
 .tx{flex:1;min-width:0;padding-bottom:10px;border-bottom:.5px solid var(--hair)}
 .l1{display:flex;align-items:baseline;gap:8px}
-.l1 b{flex:1;min-width:0;font-size:17px;line-height:22px;font-weight:600;letter-spacing:-.024em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.l1 em{flex:none;font-style:normal;font-size:15px;color:var(--dim)}
+.l1 b{flex:1;min-width:0;font-size:18px;line-height:24px;font-weight:600;letter-spacing:-.024em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.l1 em{flex:none;font-style:normal;font-size:16px;color:var(--dim)}
 .l1 em::after{content:'›';margin-left:6px;color:var(--dim-2)}
-.pv{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:1px;font-size:15px;line-height:20px;letter-spacing:-.016em;color:var(--dim)}
+.pv{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:1px;font-size:16px;line-height:22px;letter-spacing:-.016em;color:var(--dim)}
 .empty{padding:40px 24px;text-align:center;font-size:15px;line-height:1.6;color:var(--dim)}
 
 /* 对话 */
@@ -42,16 +42,16 @@ header{position:relative;flex:none;padding:calc(8px + env(safe-area-inset-top)) 
 #back{position:absolute;left:6px;top:calc(18px + env(safe-area-inset-top));display:none;padding:6px 10px;border:0;background:none;color:var(--accent);font-size:28px;line-height:1;cursor:pointer}
 #del{position:absolute;right:10px;top:calc(22px + env(safe-area-inset-top));padding:6px 8px;border:0;background:none;color:var(--dim);font-size:15px;cursor:pointer;display:none}
 .hav{width:44px;height:44px;margin:0 auto 3px;font-size:17px}
-#ttl{font-size:11px;line-height:13px;letter-spacing:.006em}
-#sub{font-size:11px;line-height:13px;color:var(--dim);margin-top:2px;min-height:13px}
+#ttl{font-size:12.5px;line-height:15px;letter-spacing:.006em}
+#sub{font-size:12.5px;line-height:15px;color:var(--dim);margin-top:2px;min-height:15px}
 #log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 0 8px}
 .ph{margin-top:30vh;text-align:center;font-size:15px;color:var(--dim)}
-.sep{padding:14px 0 6px;text-align:center;font-size:11px;line-height:13px;color:var(--dim)}
+.sep{padding:14px 0 6px;text-align:center;font-size:12.5px;line-height:15px;color:var(--dim)}
 .sep b{font-weight:600}
 .m{display:flex;align-items:flex-end;padding:0 16px;margin-bottom:2px}
 .m.o{justify-content:flex-end}
 .m.tail{margin-bottom:8px}
-.b{position:relative;max-width:75%;padding:7px 13px 8px;border-radius:19px;background:var(--other);white-space:pre-wrap;overflow-wrap:anywhere;font-size:17px;line-height:22px;letter-spacing:-.024em}
+.b{position:relative;max-width:75%;padding:7px 13px 8px;border-radius:19px;background:var(--other);white-space:pre-wrap;overflow-wrap:anywhere;font-size:18px;line-height:24px;letter-spacing:-.024em}
 .m.o .b{background:linear-gradient(180deg,var(--me-1),var(--me-2) calc(100% - 20px));color:#fff}
 .m.tail .b::after{content:'';position:absolute;bottom:0;width:17px;height:20px;background:no-repeat 0 0/100% 100%;pointer-events:none}
 .m.o.tail .b{border-bottom-right-radius:8px}
@@ -59,15 +59,15 @@ header{position:relative;flex:none;padding:calc(8px + env(safe-area-inset-top)) 
 .m.v.tail .b{border-bottom-left-radius:8px}
 .m.v.tail .b::after{left:-9px;transform:scaleX(-1);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 20'%3E%3Cpath fill='%23262629' d='M0 0H8c0 9 3 15 9 20-6 1.2-12 .6-17-1.5z'/%3E%3C/svg%3E")}
 .m.pend .b{opacity:.75}
-.st{padding:0 18px;margin:-5px 0 8px;text-align:right;font-size:11px;line-height:13px;font-weight:600;color:var(--dim);animation:fade .3s var(--out) both}
+.st{padding:0 18px;margin:-5px 0 8px;text-align:right;font-size:12.5px;line-height:15px;font-weight:600;color:var(--dim);animation:fade .3s var(--out) both}
 .st.red{color:var(--red)}
 @keyframes fade{from{opacity:0;transform:translateY(-3px)}}
 
 form{flex:none;display:none;padding:6px 12px calc(8px + env(safe-area-inset-bottom))}
 form.on{display:block}
-.bar{display:flex;align-items:flex-end;border:1px solid var(--field);border-radius:19px;padding:0 3px 0 13px;min-height:38px}
+.bar{display:flex;align-items:flex-end;border:1px solid var(--field);border-radius:19px;padding:0 3px 0 13px;min-height:40px}
 .bar:focus-within{border-color:rgba(255,255,255,.32)}
-textarea{flex:1;min-width:0;resize:none;max-height:160px;height:36px;padding:7px 0;border:0;background:transparent;color:var(--text);font:inherit;font-size:17px;line-height:22px;letter-spacing:-.024em;outline:none;caret-color:var(--accent)}
+textarea{flex:1;min-width:0;resize:none;max-height:160px;height:38px;padding:7px 0;border:0;background:transparent;color:var(--text);font:inherit;font-size:18px;line-height:24px;letter-spacing:-.024em;outline:none;caret-color:var(--accent)}
 textarea::placeholder{color:var(--dim-2)}
 button.send{flex:none;width:29px;height:29px;margin:3px 0 3px 6px;padding:0;border:0;border-radius:50%;background:var(--me);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:scale(0);opacity:0;transition:transform .32s var(--spring),opacity .15s}
 button.send.on{transform:scale(1);opacity:1}
@@ -213,7 +213,7 @@ button.send:active{transform:scale(.88)}
     });
   };
 
-  function fit() { tx.style.height = '36px'; tx.style.height = Math.min(Math.max(tx.scrollHeight, 36), 160) + 'px'; go.classList.toggle('on', !!tx.value.trim()); }
+  function fit() { tx.style.height = '38px'; tx.style.height = Math.min(Math.max(tx.scrollHeight, 38), 160) + 'px'; go.classList.toggle('on', !!tx.value.trim()); }
   tx.addEventListener('input', fit);
   tx.addEventListener('keydown', function (e) {
     var touch = matchMedia('(pointer: coarse)').matches;
