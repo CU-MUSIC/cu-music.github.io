@@ -1054,3 +1054,21 @@ body.rlp-on .rlp-tab{display:none}
 .ovsend{display:block;width:100%;margin-top:10px;min-height:48px;border:1px solid rgba(143,199,162,.5);border-radius:16px;background:rgba(143,199,162,.08);color:#9fd2b0;font:inherit;font-size:16px;font-weight:700}
 .ovsend:active{transform:scale(.985)}
 .ovsend.done{border-color:var(--hair);background:transparent;color:var(--text-3);font-weight:500}
+
+/* 整体方向：四行五档 */
+.ovt{display:grid;gap:4px;margin:0 0 10px}
+.ovr{background:var(--fill);border:.5px solid var(--hair);border-radius:16px;padding:10px 14px 4px}
+.ovr.set{border-color:rgba(143,199,162,.45)}
+.ovh{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;color:var(--text-2)}
+.ovh b{font-weight:600;color:var(--text-3)}
+.ovr.set .ovh b{color:#9fd2b0}
+.ovk{display:flex;align-items:center;gap:10px}
+.ovs{font-style:normal;color:var(--text-3);font-size:18px;width:14px;text-align:center}
+.ovd{flex:1;display:grid;grid-template-columns:repeat(5,1fr);position:relative}
+.ovd::before{content:"";position:absolute;left:10%;right:10%;top:50%;height:2px;margin-top:-1px;background:var(--fill-3);border-radius:1px}
+.ovp{position:relative;height:44px;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ovp::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--fill-3);transition:transform .15s,background-color .15s}
+.ovp:nth-child(3)::after{background:var(--text-3)}
+.ovp.on::after{width:22px;height:22px;margin:-11px 0 0 -11px;background:var(--text);box-shadow:0 0 0 4px var(--fill-2)}
+.ovr.set .ovp.on::after{background:#9fd2b0;box-shadow:0 0 0 4px rgba(143,199,162,.18)}
+.ovp:active::after{transform:scale(.9)}

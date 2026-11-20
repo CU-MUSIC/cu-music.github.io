@@ -215,7 +215,8 @@ document.body.innerHTML = `
   <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><button class="cgrp press" id="cas">助理链接</button><button class="cgrp press" id="call" hidden>全部已读</button><span class="r" id="cfn"></span></div><div class="cfcat" id="cfcat" hidden></div><div class="group" id="cfl"></div></section>
 
   <div class="sect">整体感觉</div>
-  <textarea class="overall" id="overall" rows="3" placeholder="可选。例如：整体再亮一点，鼓再有力一点"></textarea>
+  <div class="ovt" id="ovtags"></div>
+  <textarea class="overall" id="overall" rows="3" placeholder="其他想说的（可选），例如：鼓再有力一点"></textarea>
   <button type="button" class="ovsend" id="ovsend" hidden></button>
 </main>
 
@@ -817,13 +818,31 @@ function quickMark() {
 
 /* ───────── 评论 ───────── */
 const txt = $('#txt');
+// 整体方向：四行五档（默认正好），动过的才写进整体感觉；文字框另写「其他」
+const OVT = [['人声大小', '人声', ['小很多', '小一点', '正好', '大一点', '大很多']],
+  ['整体亮度', '亮度', ['暗很多', '暗一点', '正好', '亮一点', '亮很多']],
+  ['混响空间', '混响', ['少很多', '少一点', '正好', '多一点', '多很多']],
+  ['低频', '低频', ['薄很多', '薄一点', '正好', '厚一点', '厚很多']]];
+let ovTags = [0, 0, 0, 0];
+const ovLine = () => OVT.map((d, i) => ovTags[i] ? d[1] + '：' + d[2][ovTags[i] + 2] : '').filter(Boolean).join(' · ');
+const ovFull = () => { const l = ovLine(), t = ($('#overall') ? $('#overall').value : '').trim(); return l && t ? l + '\n' + t : l || t; };
+function ovDraw() {
+  const box = $('#ovtags'); if (!box) return;
+  box.innerHTML = OVT.map((d, i) => { const v = ovTags[i];
+    return '<div class="ovr' + (v ? ' set' : '') + '"><div class="ovh"><span>' + d[0] + '</span><b>' + d[2][v + 2] + '</b></div>'
+      + '<div class="ovk"><i class="ovs">−</i><div class="ovd">' + [-2, -1, 0, 1, 2].map(n => '<button type="button" class="ovp' + (n === v ? ' on' : '') + '" data-i="' + i + '" data-v="' + n + '" aria-label="' + d[0] + d[2][n + 2] + '"></button>').join('') + '</div><i class="ovs">+</i></div></div>'; }).join('');
+}
+$('#ovtags').addEventListener('click', e => { const b = e.target.closest('.ovp'); if (!b) return;
+  ovTags[+b.dataset.i] = +b.dataset.v; ovDraw(); save(); updateCta(); drawOverall(); });
 function loadNotes() {
-  notes = []; $('#overall').value = '';
-  try { const s = JSON.parse(store.get(dataKey(vi)) || '{}'); notes = s.notes || []; $('#overall').value = s.overall || ''; } catch (e) {}
+  notes = []; $('#overall').value = ''; ovTags = [0, 0, 0, 0];
+  try { const s = JSON.parse(store.get(dataKey(vi)) || '{}'); notes = s.notes || []; $('#overall').value = s.ovt !== undefined ? s.ovt : (s.overall || '');
+    if (Array.isArray(s.tags)) ovTags = OVT.map((_, i) => Math.max(-2, Math.min(2, +s.tags[i] || 0))); } catch (e) {}
+  try { ovDraw(); } catch (e) {}
 }
 loadNotes();
 let syncT = 0;
-const save = () => { store.set(dataKey(vi), JSON.stringify({ notes, overall: $('#overall').value })); markSeg();
+const save = () => { store.set(dataKey(vi), JSON.stringify({ notes, overall: ovFull(), ovt: $('#overall').value, tags: ovTags })); markSeg();
   clearTimeout(syncT); syncT = setTimeout(() => track(vi, true), 1500); ownerPush(vi); };
 // 你自己的评论默认同步给歌手：每次改动后把这个版本的评论整批发到服务端（歌手输对密码后在评论区看到「刀大厨」）
 let ownT = {};
@@ -1052,7 +1071,7 @@ function render(newId) {
 // 整体评论下面：你的回复 / 已读 / 对话（键 = 版本 + 时间 0 + 「整体：」前 120 字）
 function drawOverall() {
   try { ovUi(); } catch (e) {}
-  const ta = $('#overall'), v = ta.value.trim(); let w = document.getElementById('ovthr'); if (w) w.remove();
+  const ta = $('#overall'), v = ovFull(); let w = document.getElementById('ovthr'); if (w) w.remove();
   if (!v) return;
   const m = '整体：' + v.slice(0, 120), r = REPLIES.get(rk(cur.ver, 0, m)), has = !!(r && (r.reply || r.read || r.done)) || MSGS.some(x => x.ver === cur.ver && x.t === 0 && x.m === m);
   if (!has) return;
@@ -1063,13 +1082,13 @@ function drawOverall() {
 // 整体感觉的「发送」：点了才提醒你；发过的原文记在本机，改了字按钮又亮起来
 function ovKey() { return 'ovs:' + dataKey(vi); }
 function ovUi() {
-  const b = $('#ovsend'); if (!b) return; const v = $('#overall').value.trim();
+  const b = $('#ovsend'); if (!b) return; const v = ovFull();
   if (!v || ME || IS_OWNER || !WK) { b.hidden = true; return; }
   const sent = store.get(ovKey()) === v; b.hidden = false; b.disabled = sent || b.dataset.busy === '1';
   b.classList.toggle('done', sent); b.textContent = b.dataset.busy === '1' ? '发送中…' : sent ? '✓ 已发送，刀大厨能看到' : '发送给刀大厨';
 }
 $('#ovsend').onclick = async () => {
-  const b = $('#ovsend'), v = $('#overall').value.trim(); if (!v || b.dataset.busy === '1') return;
+  const b = $('#ovsend'), v = ovFull(); if (!v || b.dataset.busy === '1') return;
   save(); b.dataset.busy = '1'; ovUi();
   try { const j = await track(vi, true, false, true); if (!j || !j.ok) throw 0; store.set(ovKey(), v); hud('已发送，刀大厨会收到提醒'); }
   catch (e) { hud('没发送成功，检查网络再试'); }
@@ -1136,8 +1155,8 @@ async function renderOk() {
   const pg = S.prog, rn = pg && pg.s === 4 ? (pg.r || 0) + 1 : 0, hint = rn >= 4 ? '第 ' + rn + ' 轮 · 反馈时限 24 小时' : '';
   const latest = cur === V[V.length - 1], fbOn = !!OKS['fb:' + cur.ver], showOk = !!OKS[cur.ver] || !!(S.prog && S.prog.okb && S.prog.s !== 7 && !fbOn);   // 「没有问题了」要你手动打开才对客户显示；修改中 / 已点反馈完毕时不显示（意见还没改完，不能同时“没问题”）
   const canFb = latest && S.prog && ([4, 7].includes(S.prog.s) || fbOn) &&   // 每位歌手各点各的：别人点过转成修改中，你这边照样能点
-    (fbOn || notes.length || $('#overall').value.trim());
-  const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !$('#overall').value.trim() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
+    (fbOn || notes.length || ovFull());
+  const v = cur.ver, on = !!OKS[v], ai = !on && !notes.length && !ovFull() ? autoInfo(!!OKS['ext:' + v]) : null, auto = ai && ai.left <= 0;
   bar.hidden = false; bar.className = 'okbar' + (on || auto ? ' done' : '');
   bar.innerHTML = on ? '<span>✓ 你已确认 ' + esc(v) + ' 没有问题' + (OKN.need > 1 ? '，等其他歌手也确认后进入交付结算' : '，可以准备交付') + '</span><button type="button" class="okundo">撤回</button>'
     : auto ? '<span>✓ 超过反馈时限无意见，已视为没有意见，进入母带交付流程。有想法随时写在下面，会作为交付后微调处理</span>'
@@ -1166,7 +1185,7 @@ async function renderOk() {
 setInterval(() => { if (!document.hidden) renderOk(); }, 60000);
 function updateCta() {
   renderOk();
-  const has = notes.length || $('#overall').value.trim();
+  const has = notes.length || ovFull();
   $('#cta').classList.toggle('show', false);   // 取消「发送给刀大厨」：评论写完自动同步，你那边直接收到通知
   $('#cta').classList.toggle('compact', $('#mini').classList.contains('show'));
   $('#badge').textContent = notes.length;
@@ -1174,7 +1193,7 @@ function updateCta() {
 }
 function plainText() {
   const L = ['《' + S.title + '》' + vname(cur) + ' 反馈', ...notes.map(o => fmt(o.t) + ' ' + o.m)];
-  const ov = $('#overall').value.trim(); if (ov) L.push('整体：' + ov);
+  const ov = ovFull(); if (ov) L.push('整体：' + ov);
   return L.join('\n');
 }
 async function copy(text) {
@@ -1191,7 +1210,7 @@ $('#cta').onclick = async () => {
   if (busy) return;
   if (!PUSH) { await copy(plainText()); done('已复制'); hud('已复制，去微信粘贴发给我'); return; }
   busy = true; $('#ctaT').textContent = '发送中…';
-  const ov = $('#overall').value.trim();
+  const ov = ovFull();
   const html = '<p><b>《' + esc(S.title) + '》' + esc(cur.ver) + '</b> · ' + notes.length + ' 条</p>'
     + notes.map(o => '<p><b>' + fmt(o.t) + '</b>　' + esc(o.m) + '</p>').join('')
     + (ov ? '<p><b>整体：</b>' + esc(ov) + '</p>' : '')
@@ -1269,7 +1288,7 @@ addEventListener('resize', () => { if (!$('#vlist').hidden) redrawList(); });
 function markSeg() {
   document.querySelectorAll('#seg .vrow').forEach(b => {
     const i = +b.dataset.i; let has = false;
-    try { const d = JSON.parse(store.get(dataKey(i)) || '{}'); has = (d.notes || []).length > 0 || !!(d.overall || '').trim(); } catch (e) {}
+    try { const d = JSON.parse(store.get(dataKey(i)) || '{}'); has = (d.notes || []).length > 0 || !!(d.overall || '').trim() || (d.tags || []).some(x => x); } catch (e) {}
     b.classList.toggle('has', has); b.classList.toggle('on', i === vi); b.setAttribute('aria-current', i === vi);
   });
   document.querySelectorAll('#seg .vg.old').forEach(g => {
