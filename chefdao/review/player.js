@@ -59,7 +59,10 @@ function progHtml(g) {   // 进度：项目页里改的阶段，这里只显示
     const BAR = [0, 1, 2, 3, 4, 5, 3, 4, 5], cur = BAR[g.s] ?? 0;   // 人声制作并入混音、修改中并入审听：来回修改进度条不后退
     const ST = ['待付款', '准备中', '编辑中', g.s === 6 ? '人声制作中' : '混音中', g.s === 7 ? '修改中 · 第 ' + (g.r || 1) + ' 轮' : g.s === 4 && g.r ? '待审听 · 第 ' + (g.r + 1) + ' 轮' : '待审听', g.s === 8 ? '交付结算' : '已交付'];
     const W = [3.4, 1, .7, .55];   // 当前阶段占最宽，离得越远越窄（透视感）
-    return `<div class="sprog${g.s === 8 ? ' settle' : ''}"><div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
+    // 外卖进度单：先一行大字说此刻在哪，再一行说明（几点进入这一步），下面才是细进度条；在做的阶段轻轻呼吸，已交付 / 待付款不动
+    const live = g.s > 0 && g.s !== 5, SUB = ['付款后安排排期', '已收款，正在检查素材', '正在进行音频编辑', '正在混音', '新一版已完成，请审听', '最终文件已交付', '正在做人声制作', '正在按意见修改', '已确认没有问题，结清尾款后交付'], at = g.at && g.at[g.s];
+    const head = `<div class="sphead"><b>${live ? '<i class="spdot"></i>' : ''}${ST[cur]}</b><span>${SUB[g.s] || ''}${at ? ' · ' + relTime(at) : ''}</span></div>`;
+    return `<div class="sprog${g.s === 8 ? ' settle' : ''}${live ? ' live' : ''}">${head}<div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
       + etaBlock(g) + '</div>';
 }
 function etaBlock(g) {
@@ -998,6 +1001,10 @@ async function liveCheck() {
     const tok = store.get('review:tok') || '', hp = store.get('review:hp') || '';
     const j = await (await fetch(SONG_LIVE.api + '/rs?s=' + S.slug + (tok ? '&tok=' + tok : '') + (/^[0-9a-f]{24}$/.test(hp) ? '&hp=' + hp : ''), { cache: 'no-store' })).json();
     if (!j.ok || !j.song) return;
+    try {   // 进度有变化（刀大厨改了阶段 / 预计时间）：当场换掉进度条，客户不用刷新
+      const np = j.song.prog;
+      if (np && S.prog && JSON.stringify(np) !== JSON.stringify(S.prog)) { S.prog = np; const sp = document.querySelector('.sprog'); if (sp) sp.outerHTML = progHtml(S.prog); try { renderOk(); renderFee(); } catch (e) {} }
+    } catch (e) {}
     const nv = (j.song.versions || []).filter(v => v.ver !== 'REF'), fresh = nv.filter(v => !V.some(x => x.ver === v.ver) && !liveSeen.has(v.ver));
     if (fresh.length && !$('#newsb')) {
       const v = fresh[fresh.length - 1];
