@@ -835,16 +835,12 @@ function ovPaint(i, v, drag) {
   r.querySelector('.ovh b').textContent = OVT[i][3][ovTags[i] + 2];
   r.querySelector('.ovtr').setAttribute('aria-valuenow', ovTags[i]); r.querySelector('.ovtr').setAttribute('aria-valuetext', OVT[i][3][ovTags[i] + 2]);
 }
-function ovSum() {
-  const s = document.querySelector('#ovtags .ovsum'); if (!s) return; const l = ovLine(); s.hidden = !l;
-  s.firstChild.textContent = l ? '你想要 ' + l.replace(/：/g, '') : '';
-}
+const ovSum = () => {};
 function ovDraw() {
   const box = $('#ovtags'); if (!box) return;
-  if (!box.firstChild) box.innerHTML = OVT.map((d, i) => '<div class="ovr" data-i="' + i + '"><div class="ovh"><span>' + d[0] + '<small>' + d[2] + '</small></span><b></b></div>'
+  if (!box.firstChild) box.innerHTML = OVT.map((d, i) => '<div class="ovr" data-i="' + i + '"><div class="ovh"><span>' + d[0] + '</span><b></b></div>'
     + '<div class="ovk"><i class="ovs">−</i><div class="ovtr" role="slider" tabindex="0" aria-label="' + d[0] + '" aria-valuemin="-2" aria-valuemax="2"><div class="ovfill"></div><i class="ovmid"></i>'
-    + [10, 30, 70, 90].map(p => '<i class="ovdot" style="left:' + p + '%"></i>').join('') + '<div class="ovth"></div></div><i class="ovs">+</i></div></div>').join('')
-    + '<div class="ovsum" hidden><span></span><button type="button" class="ovrst">全部归位</button></div>';
+     + '<div class="ovth"></div></div><i class="ovs">+</i></div></div>').join('');
   OVT.forEach((_, i) => ovPaint(i, ovTags[i])); ovSum();
 }
 (function () {
@@ -862,7 +858,6 @@ function ovDraw() {
   box.addEventListener('pointermove', move); box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
   box.addEventListener('keydown', e => { const tr = e.target.closest('.ovtr'); if (!tr || !/^Arrow(Left|Right)$/.test(e.key)) return; e.preventDefault();
     const i = +tr.closest('.ovr').dataset.i; ovTags[i] = Math.max(-2, Math.min(2, ovTags[i] + (e.key === 'ArrowRight' ? 1 : -1))); ovPaint(i, ovTags[i]); commit(); });
-  box.addEventListener('click', e => { if (!e.target.closest('.ovrst')) return; ovTags = [0, 0, 0, 0]; ovDraw(); commit(); });
 })();
 function loadNotes() {
   notes = []; $('#overall').value = ''; ovTags = [0, 0, 0, 0];
