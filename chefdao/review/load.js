@@ -2,7 +2,8 @@
 (() => { try {
   if (new URLSearchParams(location.search).get('cv') === '1') sessionStorage.setItem('review:cv', '1');
   if (sessionStorage.getItem('review:cv') !== '1') return;
-  const g = Storage.prototype.getItem; Storage.prototype.getItem = function (k) { return this === window.localStorage && (k === 'insights:key' || k === 'review:me') ? null : g.call(this, k); };
+  const g = Storage.prototype.getItem; window.__cuCV = 1; window.__cuKey = g.call(window.localStorage, 'insights:key');   // 钥匙只留给读 /rs（放行申请制），别处一律藏起来
+  Storage.prototype.getItem = function (k) { return this === window.localStorage && (k === 'insights:key' || k === 'review:me') ? null : g.call(this, k); };
   const F = window.fetch.bind(window);
   window.fetch = (u, o) => { const m = String((o && o.method) || (u && u.method) || 'GET').toUpperCase(), s = typeof u === 'string' ? u : (u && u.url) || '';
     return m !== 'GET' && m !== 'HEAD' && s.startsWith('https://stats.cumusic.work') ? Promise.resolve(new Response('{"ok":true}', { status: 200, headers: { 'Content-Type': 'application/json' } })) : F(u, o); };
@@ -62,7 +63,8 @@
     let owner = null; try { owner = localStorage.getItem('insights:key'); } catch (e) {}   // 你自己的设备带着看板钥匙，归档的项目也能看
     let tok = ''; try { tok = localStorage.getItem('review:tok') || ''; } catch (e) {}
     let hp = ''; try { hp = localStorage.getItem('review:hp') || ''; } catch (e) {}   // 助理设备：带上助理钥匙，共享给他的歌直接解锁
-    const r = await fetch(API + '/rs?s=' + slug + (tok ? '&tok=' + tok : '') + (/^[0-9a-f]{24}$/.test(hp) && !owner ? '&hp=' + hp : ''), { cache: 'no-store', headers: owner ? { Authorization: 'Bearer ' + owner } : {} });
+    const cvk = window.__cuCV && window.__cuKey ? window.__cuKey : '';   // 客户视角：带钥匙但加 cv=1，服务端按客户看到的给数据
+    const r = await fetch(API + '/rs?s=' + slug + (tok ? '&tok=' + tok : '') + (cvk ? '&cv=1' : '') + (/^[0-9a-f]{24}$/.test(hp) && !owner ? '&hp=' + hp : ''), { cache: 'no-store', headers: owner || cvk ? { Authorization: 'Bearer ' + (owner || cvk) } : {} });
     const j = await r.json();
     if (!j.ok && j.e === 'archived') return fail('archived');
     if (!j.ok && j.e === 'approval') return fail(j.state === 'locked' ? 'locked' : 'approval', j.project && j.project.url);
