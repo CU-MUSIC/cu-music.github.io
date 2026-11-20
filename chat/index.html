@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a1c20">
+<title>一对一咨询 · CU MUSIC</title>
+<link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
+<link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
+<style>
+:root{--bg:#1a1c20;--card:#23262b;--line:rgba(214,211,205,.1);--text:#d6d3cd;--dim:#9a978f;--dim-2:#74726c;--me:#3b4b44;--me-text:#e6e3dc;--accent:#b9c9bb}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.7 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;-webkit-text-size-adjust:100%;display:flex;flex-direction:column}
+header{flex:none;max-width:720px;width:100%;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 18px 12px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12.5px;letter-spacing:.22em;color:var(--dim-2)}
+h1{margin:2px 0 0;font-size:22px;font-weight:600;letter-spacing:-.01em;color:#ebe8e1}
+.sub{margin:2px 0 0;font-size:15px;color:var(--dim)}
+#log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-width:720px;width:100%;margin:0 auto;padding:18px 18px 8px}
+.m{display:flex;margin:0 0 12px}
+.m.me{justify-content:flex-end}
+.b{max-width:84%;padding:9px 14px;border-radius:18px;background:var(--card);white-space:pre-wrap;overflow-wrap:anywhere;font-size:17px;line-height:1.65}
+.m.me .b{background:var(--me);color:var(--me-text);border-bottom-right-radius:6px}
+.m.o .b{border-bottom-left-radius:6px}
+.t{display:block;margin-top:2px;font-size:12px;color:var(--dim-2)}
+.m.me .t{text-align:right}
+.m.pend .b{opacity:.55}
+.m.fail .b{outline:1px solid #b07a6a}
+.sys{margin:6px 0 14px;text-align:center;font-size:14px;color:var(--dim-2)}
+form{flex:none;max-width:720px;width:100%;margin:0 auto;padding:8px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg)}
+.row{display:flex;gap:10px;align-items:flex-end}
+textarea{flex:1;min-width:0;resize:none;max-height:150px;min-height:46px;padding:10px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:17px;line-height:1.55;outline:none}
+textarea:focus,.more input:focus{border-color:rgba(185,201,187,.5)}
+button.send{flex:none;height:46px;padding:0 20px;border:0;border-radius:23px;background:var(--accent);color:#1a1c20;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+button.send:disabled{opacity:.35;cursor:default}
+button.send:active:not(:disabled){transform:scale(.97)}
+.tog{display:inline-block;margin:0 0 6px 4px;padding:2px 0;background:none;border:0;color:var(--dim);font:inherit;font-size:14px;cursor:pointer}
+.more{display:none;gap:8px;margin:0 0 8px}
+.more.on{display:flex}
+.more input{flex:1;min-width:0;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:16px;outline:none}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">CU MUSIC</div>
+  <h1>一对一咨询</h1>
+  <p class="sub">直接问，匿名也可以。只有刀大厨本人会看到。</p>
+</header>
+<div id="log" aria-live="polite"></div>
+<form id="f" autocomplete="off">
+  <button type="button" class="tog" id="tog">留个称呼 / 联系方式（可不填）</button>
+  <div class="more" id="more">
+    <input id="nm" maxlength="20" placeholder="称呼" aria-label="称呼">
+    <input id="ct" maxlength="60" placeholder="微信 / 邮箱 / 其他" aria-label="联系方式">
+  </div>
+  <input class="hp" id="hp" tabindex="-1" aria-hidden="true">
+  <div class="row">
+    <textarea id="tx" rows="1" maxlength="1500" placeholder="想聊什么？" aria-label="消息"></textarea>
+    <button class="send" id="go" type="submit" disabled>发送</button>
+  </div>
+</form>
+<script>
+(function () {
+  var API = 'https://stats.cumusic.work', $ = function (i) { return document.getElementById(i); };
+  var log = $('log'), tx = $('tx'), go = $('go'), f = $('f');
+  var LS = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  var tid = LS.get('chat:tid');
+  if (!tid || !/^[a-z0-9]{12,40}$/.test(tid)) {
+    var a = new Uint8Array(12); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function (_, i) { a[i] = Math.random() * 256; });
+    tid = Array.prototype.map.call(a, function (x) { return (x % 36).toString(36); }).join('') + Date.now().toString(36);
+    LS.set('chat:tid', tid);
+  }
+  $('nm').value = LS.get('chat:name') || ''; $('ct').value = LS.get('chat:contact') || '';
+  if ($('nm').value || $('ct').value) $('more').classList.add('on');
+  $('tog').onclick = function () { $('more').classList.toggle('on'); };
+
+  var last = 0, seen = {}, busy = false;
+  function hm(ts) { var d = new Date(ts), p = function (n) { return (n < 10 ? '0' : '') + n; }, n = new Date(); return (d.toDateString() === n.toDateString() ? '' : (d.getMonth() + 1) + '/' + d.getDate() + ' ') + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function near() { return log.scrollHeight - log.scrollTop - log.clientHeight < 120; }
+  function add(m, cls) {
+    var row = document.createElement('div'), b = document.createElement('div'), t = document.createElement('span');
+    row.className = 'm ' + (m.who === 'v' ? 'me' : 'o') + (cls ? ' ' + cls : '');
+    b.className = 'b'; b.textContent = m.text; t.className = 't'; t.textContent = m.ts ? hm(m.ts) : '';
+    b.appendChild(t); row.appendChild(b); log.appendChild(row); return row;
+  }
+  function greet() {
+    var s = document.createElement('div'); s.className = 'm o'; s.id = 'greet';
+    s.innerHTML = '<div class="b"></div>'; s.firstChild.textContent = '你好，我是刀大厨。混音、制作、编曲，或者别的想法，直接说就行，不用报姓名。看到后我会在这里回你，之后用同一台设备打开本页就能接着聊。';
+    log.appendChild(s);
+  }
+  function pull(first) {
+    return fetch(API + '/chat/get?tid=' + tid + '&after=' + last).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || !j.ok) return;
+      var stick = near() || first, added = false;
+      j.list.forEach(function (m) {
+        if (m.id > last) last = m.id;
+        if (seen[m.id]) return; seen[m.id] = 1;
+        var g = $('greet'); if (g && first) g.style.display = 'none';
+        if (m.who === 'v') {   // 轮询赶在发送回调前拿到自己的消息：认领本地那个气泡，不重复画
+          var mine = [].slice.call(log.querySelectorAll('.m.me:not([data-id])')).filter(function (x) { return x.firstChild.firstChild.textContent === m.text; })[0];
+          if (mine) { mine.dataset.id = m.id; mine.classList.remove('pend'); return; }
+        }
+        var el = add(m); el.dataset.id = m.id; added = true;
+      });
+      if (added && stick) log.scrollTop = log.scrollHeight;
+    }).catch(function () {});
+  }
+  function fit() { tx.style.height = 'auto'; tx.style.height = Math.min(tx.scrollHeight, 150) + 'px'; go.disabled = !tx.value.trim() || busy; }
+  tx.addEventListener('input', fit);
+  tx.addEventListener('keydown', function (e) {
+    var touch = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !touch) { e.preventDefault(); f.requestSubmit(); }
+  });
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = tx.value.trim(); if (!text || busy) return;
+    busy = true; go.disabled = true;
+    var name = $('nm').value.trim(), contact = $('ct').value.trim();
+    LS.set('chat:name', name); LS.set('chat:contact', contact);
+    var g = $('greet'); if (g) g.style.display = 'none';
+    var el = add({ who: 'v', text: text, ts: Date.now() }, 'pend'); log.scrollTop = log.scrollHeight;
+    tx.value = ''; fit();
+    fetch(API + '/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, text: text, name: name, contact: contact, hp: $('hp').value }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (j) {
+        busy = false;
+        if (j && j.ok) { el.classList.remove('pend'); if (j.id) { el.dataset.id = j.id; seen[j.id] = 1; if (j.id > last) last = j.id; } }
+        else { el.classList.remove('pend'); el.classList.add('fail'); el.querySelector('.t').textContent = j && j.e === 'rate' ? '发得太快了，稍后再试' : '没发出去，点这里重试'; el.onclick = function () { tx.value = text; fit(); el.remove(); tx.focus(); }; }
+        fit();
+      }).catch(function () { busy = false; el.classList.remove('pend'); el.classList.add('fail'); el.querySelector('.t').textContent = '网络不通，点这里重试'; el.onclick = function () { tx.value = text; fit(); el.remove(); tx.focus(); }; fit(); });
+  });
+  greet();
+  pull(true).then(function () { log.scrollTop = log.scrollHeight; });
+  var timer = setInterval(function () { if (!document.hidden) pull(false); }, 5000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) pull(false); });
+  window.addEventListener('focus', function () { pull(false); });
+})();
+</script>
+</body>
+</html>
