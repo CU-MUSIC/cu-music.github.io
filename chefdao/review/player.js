@@ -3039,6 +3039,7 @@ let tries = [...new Set([S.auto, saved, PJ_KEY && store.get(PJ_KEY), PJ_KEY && s
 if (S.open || (S.project && S.project.open && S.project.wrap && !saved)) tryUnlock('', false);   // 不设密码：直接进
 else if (tries.length) tryUnlock(tries.shift(), false);
 else { noQuick(); setTimeout(focusPin, 300); }
+try { ovUi(); } catch (e) {}   // 进页面就把「发送给刀大厨」画出来（没内容时灰着），不用等客户先打字
 // 客户视角：右上角一个小按钮，点一下整页按客户看到的样子重载（看不到你的控制、隐藏的版本和待确认的版本；不记收听、不发提醒）；再点退出
 try {
   if (IS_OWNER || CV) {
