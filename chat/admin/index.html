@@ -41,7 +41,9 @@ button{font:inherit;color:inherit}
 header{position:relative;flex:none;padding:calc(8px + env(safe-area-inset-top)) 16px 8px;text-align:center;background:rgba(30,30,32,.86);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--hair)}
 #back{position:absolute;left:6px;top:calc(18px + env(safe-area-inset-top));display:none;padding:6px 10px;border:0;background:none;color:var(--accent);font-size:28px;line-height:1;cursor:pointer}
 #del{position:absolute;right:10px;top:calc(22px + env(safe-area-inset-top));padding:6px 8px;border:0;background:none;color:var(--dim);font-size:15px;cursor:pointer;display:none}
-.hav{width:44px;height:44px;margin:0 auto 3px;font-size:17px}
+.hav{width:48px;height:48px;margin:0 auto 3px}
+.av.emo{background:linear-gradient(180deg,#3a3a3e,#2a2a2d);font-size:26px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.hav.emo{font-size:29px}
 #ttl{font-size:12.5px;line-height:15px;letter-spacing:.006em}
 #sub{font-size:12.5px;line-height:15px;color:var(--dim);margin-top:2px;min-height:15px}
 #log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 0 8px}
@@ -131,9 +133,9 @@ button.send:active{transform:scale(.88)}
       j.list.forEach(function (t) {
         var b = el('button', 'th' + (t.tid === cur ? ' on' : '')); b.type = 'button';
         if (t.last_who === 'v' && t.last > t.o_seen && t.tid !== cur) b.appendChild(el('i', 'dot'));
-        b.appendChild(el('span', 'av', initial(t.name)));
+        b.appendChild(el('span', 'av emo', t.emo || '👤'));
         var x = el('span', 'tx'), l1 = el('span', 'l1');
-        l1.appendChild(el('b', '', t.name || '匿名访客')); l1.appendChild(el('em', '', listTime(t.last)));
+        l1.appendChild(el('b', '', t.name || t.alias || '匿名访客')); l1.appendChild(el('em', '', listTime(t.last)));
         x.appendChild(l1); x.appendChild(el('span', 'pv', (t.last_who === 'o' ? '我：' : '') + (t.lt || '')));
         b.appendChild(x);
         b.onclick = function () { open(t.tid); };
@@ -178,7 +180,7 @@ button.send:active{transform:scale(.88)}
       var th = j.th || {};
       if (first) {
         log.textContent = '';
-        $('ttl').textContent = (th.name || '匿名访客') + ' ›'; $('hav').textContent = initial(th.name);
+        $('ttl').textContent = (th.name || th.alias || '匿名访客') + ' ›'; $('hav').textContent = th.emo || '👤'; $('hav').classList.add('emo');
         $('sub').textContent = th.contact || '';
       }
       vseen = th.v_seen || 0;
@@ -208,7 +210,7 @@ button.send:active{transform:scale(.88)}
     if (!cur || !confirm('删除整个会话？删除后无法恢复。')) return;
     api('/chat/del', { method: 'POST', body: JSON.stringify({ tid: cur }) }).then(function () {
       cur = ''; log.innerHTML = '<div class="ph">已删除</div>'; $('f').classList.remove('on'); $('del').style.display = 'none';
-      $('ttl').textContent = '选择一个会话'; $('sub').textContent = ''; $('hav').textContent = '匿';
+      $('ttl').textContent = '选择一个会话'; $('sub').textContent = ''; $('hav').textContent = '匿'; $('hav').classList.remove('emo');
       document.body.classList.remove('open'); loadList();
     });
   };
