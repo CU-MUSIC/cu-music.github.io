@@ -5769,6 +5769,7 @@ function svRender(dir, mine) {
 			+ '<h2 class="sv-h">还有想说的吗？</h2>'
 			+ '<p class="sv-p">选填。价格、交付、沟通方式，或者希望我增加的服务，都可以写。</p>'
 			+ '<textarea class="sv-note" id="sv-note" maxlength="500" rows="5" placeholder="比如：希望有学生价、想要分轨导出、想周末也能交付…" oninput="svNote=this.value"></textarea>'
+			+ '<label class="qbo-f" style="margin-top:14px"><span>想收到回复，留个微信号（选填）</span><input id="sv-wx" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="微信号" oninput="svA.q38=this.value"></label>'
 			+ '<label class="qbo-hp" aria-hidden="true">Website<input id="sv-hp" tabindex="-1" autocomplete="off"></label>'
 			+ '<div class="sv-err" id="sv-err" role="alert"></div></div>';
 		foot = '<button type="button" class="sv-back" onclick="svGo(' + (SV_SUBMIT - 1) + ')">上一步</button>'
@@ -5799,7 +5800,7 @@ function svRender(dir, mine) {
 		+ '<div class="sv-bar"><b style="width:' + pct + '%"></b></div></div>'
 		+ '<div class="sv-body" id="sv-body">' + body + '</div>'
 		+ '<div class="sv-foot">' + foot + '</div>';
-	if (pg === SV_SUBMIT) { var ta = document.getElementById("sv-note"); if (ta) ta.value = svNote; }
+	if (pg === SV_SUBMIT) { var ta = document.getElementById("sv-note"); if (ta) ta.value = svNote; var wx = document.getElementById("sv-wx"); if (wx) wx.value = svA.q38 || ""; }
 	var t37 = document.getElementById("sv-q37"); if (t37) t37.value = svA.q37 || "";
 	svNextState();
 }
@@ -5879,8 +5880,9 @@ function svSend() {
 	var err = document.getElementById("sv-err"), btn = document.getElementById("sv-send");
 	svBusy = true; btn.disabled = true; btn.textContent = "提交中…";
 	var hp = document.getElementById("sv-hp");
-	var sa = {}; for (var kk in svA) if (svIsClient() || !/^q3\d$/.test(kk)) sa[kk] = svA[kk];
+	var sa = {}; for (var kk in svA) if (svIsClient() || !/^q3[1-7]$/.test(kk)) sa[kk] = svA[kk];
 	if (sa.q37) sa.q37 = String(sa.q37).trim();
+	if (sa.q38) sa.q38 = String(sa.q38).trim(); if (!sa.q38) delete sa.q38;
 	var body = JSON.stringify({ a: sa, note: (svNote || "").trim(), website: hp ? hp.value : "", lid: qbs.lid, sid: qbs.sid, device: qbs.device });
 	var fail = function (msg) { svBusy = false; btn.disabled = false; btn.textContent = "提交，领取 ¥" + svVal + " 券"; err.textContent = msg; };
 	fetch(QBS_API + "/survey", { method: "POST", body: body, headers: { "Content-Type": "text/plain" } })

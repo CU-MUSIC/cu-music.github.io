@@ -158,6 +158,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .sva span{color:var(--text-3)}.sva b{font-weight:500;color:var(--text);word-break:break-word}
 @media (max-width:520px){.svb{padding-left:0}.sva{grid-template-columns:7em minmax(0,1fr)}}
 .crs{color:var(--text);letter-spacing:2px}.crs .crs-off{color:var(--text-3)}
+.svwx{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.svwx[data-ok]::after{content:' 已复制';color:var(--text-3);font-size:12px}
 .svnote{padding:12px 0;border-top:.5px solid var(--hair);font-size:15px;line-height:1.7}
 .svnote div{font-size:13px;color:var(--text-3);margin-top:2px}
 .empty,.msg{color:var(--text-3);font-size:15px;padding:24px 0;text-align:center}
@@ -483,7 +484,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261119.1900';
+const BUILD = '261120.1314';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1315,6 +1316,7 @@ function svCard(r, now) {
       ${rows}
       ${r.a.q31 ? CRQ.map(([k, t]) => `<div class="sva"><span>评分 · ${esc(t)}</span><b>${esc(r.a[k] || '—')} 星</b></div>`).join('') + (r.a.q37 ? `<div class="sva"><span>希望改进</span><b>${esc(r.a.q37)}</b></div>` : '') : ''}
       ${r.note ? `<div class="sva"><span>补充</span><b>${esc(r.note)}</b></div>` : ''}
+      ${r.a.q38 ? `<div class="sva"><span>微信</span><b><span class="svwx" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.textContent).then(()=>{this.dataset.ok=1;setTimeout(()=>delete this.dataset.ok,1500)}).catch(()=>{})" title="点一下复制">${esc(r.a.q38)}</span></b></div>` : ''}
     </div></details>`;
 }
 function renderSurvey() {
