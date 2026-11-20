@@ -31,15 +31,10 @@ header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-i
 /* 对话 */
 #log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 0 8px}
 #log>*{max-width:720px;margin-left:auto;margin-right:auto}
-.intro{padding:22px 24px 6px;text-align:center}
-.intro .pic{width:76px;height:76px;margin:0 auto 10px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px rgba(255,255,255,.18)}
-.intro h2{margin:0;font-size:20px;line-height:25px;font-weight:600;letter-spacing:-.02em;color:var(--text)}
-.intro .role{margin-top:3px;font-size:14px;line-height:19px;color:var(--dim)}
-.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px}
-.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;background:#1c1c1e;font-size:13px;line-height:17px;color:#c7c7cc}
-.chip svg{flex:none;opacity:.75}
-.chip.avg{display:none}
-.chip.avg.on{display:inline-flex}
+.intro{padding:34px 24px 14px;text-align:center}
+.intro .pic{width:84px;height:84px;margin:0 auto 12px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px rgba(255,255,255,.18)}
+.intro h2{margin:0;font-size:22px;line-height:28px;font-weight:600;letter-spacing:-.022em;color:var(--text)}
+.intro .role{margin-top:4px;font-size:13px;line-height:18px;color:var(--dim)}
 .sep{padding:14px 0 6px;text-align:center;font-size:12.5px;line-height:15px;font-weight:400;letter-spacing:.006em;color:var(--dim)}
 .sep b{font-weight:600}
 .m{display:flex;align-items:flex-end;padding:0 16px;margin-bottom:2px}
@@ -107,11 +102,7 @@ button.send:active{transform:scale(.88)}
   <div class="intro">
     <div class="pic" role="img" aria-label="刀大厨头像"></div>
     <h2>刀大厨 ChefDao</h2>
-    <div class="role">混音工程师 · 人声制作 · CU MUSIC</div>
-    <div class="chips">
-      <span class="chip"><svg width="11" height="13" viewBox="0 0 11 13" fill="currentColor"><path d="M2.5 5V3.6a3 3 0 0 1 6 0V5h.4c.6 0 1.1.5 1.1 1.1v5.3c0 .6-.5 1.1-1.1 1.1H2.1c-.6 0-1.1-.5-1.1-1.1V6.1C1 5.5 1.5 5 2.1 5h.4zm1.3 0h3.4V3.6a1.7 1.7 0 0 0-3.4 0V5z"/></svg>匿名咨询 · 不显示身份信息</span>
-      <span class="chip avg" id="avg"></span>
-    </div>
+    <div class="role">匿名咨询<span id="avg"></span></div>
   </div>
 </div>
 
@@ -276,7 +267,7 @@ button.send:active{transform:scale(.88)}
   fetch(API + '/chat/stat').then(function (r) { return r.json(); }).then(function (j) {
     if (!j || !j.ok || !j.n) return;
     var m = j.avg / 60000, t = m < 1 ? '1 分钟内' : m < 60 ? '约 ' + Math.round(m) + ' 分钟' : m < 1440 ? '约 ' + Math.round(m / 60) + ' 小时' : '约 ' + Math.round(m / 1440) + ' 天';
-    $('avg').textContent = '平均回复 ' + t; $('avg').classList.add('on');
+    $('avg').textContent = ' · 平均回复' + t.replace('约 ', '约');
   }).catch(function () {});
   pull(true).then(function () { bottom(false); });
   setInterval(function () { if (!document.hidden) pull(false); }, 5000);
