@@ -169,7 +169,7 @@ document.body.innerHTML = `
     const RK = { '': 0, demo: 1, edit: 2, mix: 3, master: 4 }, top = Math.max(...groups.map(g => RK[g.st]));
     return groups.map(g => { const old = STAGE[g.st] && RK[g.st] < top;
       return `<div class="vg${old ? ' old' : ''}">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${old ? `<button class="vsum press" aria-expanded="false">${g.items.length} 版<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}${g.items.map(i =>
-      `<button class="vrow press" data-i="${i}"><span class="vn">${esc(vlab(V[i]))}</span><span class="hasdot"></span></button>`).join('')}</div>`; }).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
+      `<button class="vrow press${V[i].hide ? ' hid' : ''}" data-i="${i}"><span class="vn">${esc(vlab(V[i]))}</span><span class="hasdot"></span></button>`).join('')}</div>`; }).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
   })()}</section>
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
@@ -1294,7 +1294,7 @@ function buildList() {
   const el = $('#vlist'); if (!el) return;
   const groups = []; V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
   el.innerHTML = '<div class="vscroll">' + groups.map(g => (STAGE[g.st] ? `<div class="vlh">${STAGE[g.st]}</div>` : '')
-    + g.items.map(i => `<div class="vli press" role="button" tabindex="0" data-i="${i}"><span class="vlt"><b>${esc(vlab(V[i]))}</b><i>${esc(relTime(V[i].ts, V[i].date))} · ${fmt(V[i].duration)}</i></span><canvas></canvas><button class="vcmp" aria-label="拿这一版和当前版本对比">对比</button><em class="vab"></em></div>`).join('')).join('') + '</div>';
+    + g.items.map(i => `<div class="vli press${V[i].hide ? ' hid' : ''}" role="button" tabindex="0" data-i="${i}"><span class="vlt"><b>${esc(vlab(V[i]))}</b><i>${esc(relTime(V[i].ts, V[i].date))} · ${fmt(V[i].duration)}${V[i].hide ? ' · 已隐藏' : ''}</i></span><canvas></canvas><button class="vcmp" aria-label="拿这一版和当前版本对比">对比</button><em class="vab"></em></div>`).join('')).join('') + '</div>';
   vlistBuilt = true; redrawList();
 }
 function redrawList() { document.querySelectorAll('#vlist .vli').forEach(b => drawPeaks(b.querySelector('canvas'), V[+b.dataset.i].peaks || [], +b.dataset.i === vi)); }
@@ -1665,6 +1665,19 @@ function ownerTools() {
     ed.className = 'vdel vedit'; ed.setAttribute('role', 'button'); ed.setAttribute('aria-label', '改类别和序号 ' + v.ver); ed.textContent = '✎';
     ed.onclick = e => { e.stopPropagation(); editVer(v); };
     row.insertBefore(ed, x);
+    // 对客户隐藏这一版：客户那边直接没有它（想让客户只对比两版时用）；你这边变淡，眼睛划线 = 已隐藏，再点一下恢复
+    const hd = document.createElement('span'), eye = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>' + (v.hide ? '<path d="M4 4l16 16"/>' : '') + '</svg>';
+    hd.className = 'vdel vhide' + (v.hide ? ' on' : ''); hd.setAttribute('role', 'button'); hd.setAttribute('aria-label', (v.hide ? '恢复显示 ' : '对客户隐藏 ') + v.ver);
+    hd.title = v.hide ? '客户现在看不到这一版，点一下恢复' : '对客户隐藏这一版'; hd.innerHTML = eye;
+    hd.onclick = async e => { e.stopPropagation(); try { busy(v.hide ? '正在恢复…' : '正在隐藏…'); await post('/radm/ver', { slug: S.slug, set: [{ ver: v.ver, hide: !v.hide }] }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } };
+    row.insertBefore(hd, ed);
+  });
+  // 点阶段名（编辑 / 混音…）：整个阶段对客户隐藏或恢复
+  document.querySelectorAll('#seg .vg').forEach(g => {
+    const l = g.querySelector('.vgl'), vs = [...g.querySelectorAll('.vrow')].map(r => V[+r.dataset.i]).filter(Boolean); if (!l || !vs.length) return;
+    const all = vs.every(x => x.hide); l.classList.add('qh'); l.classList.toggle('hidall', all); l.title = all ? '这个阶段已对客户隐藏，点一下恢复' : '点一下：整个阶段对客户隐藏';
+    l.onclick = async () => { if (!all && !confirm('把「' + l.textContent + '」阶段的 ' + vs.length + ' 个版本都对客户隐藏？之后可以再点一下恢复')) return;
+      try { busy(all ? '正在恢复…' : '正在隐藏…'); await post('/radm/ver', { slug: S.slug, set: vs.map(x => ({ ver: x.ver, hide: !all })) }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } };
   });
   // 改类别和序号：类别 1 编辑 2 混音 3 母带 0 无；序号 = 在这个类别里排第几（别的版本自动顺延）
   const editVer = async v => {
