@@ -7,7 +7,11 @@
 <meta name="theme-color" content="#000000">
 <title>私信</title>
 <link rel="icon" href="/chefdao/assets/cu.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
+<link rel="apple-touch-icon" href="/chat/admin/icon-180.png">
+<link rel="manifest" href="/chat/admin/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="私信">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
 :root{
   --bg:#000;--other:#262629;--me-1:#38b36a;--me-2:#2b9a57;--me:#2fa35e;--text:#f2f1ee;--dim:#8e8e93;--dim-2:#636366;
@@ -22,7 +26,12 @@ button{font:inherit;color:inherit}
 /* 会话列表：iOS「信息」首页 */
 #side{width:360px;flex:none;display:flex;flex-direction:column;border-right:.5px solid var(--hair)}
 .top{flex:none;padding:calc(14px + env(safe-area-inset-top)) 16px 8px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
 .top h1{margin:0;font-size:34px;line-height:41px;font-weight:700;letter-spacing:.011em}
+#nb{margin-bottom:6px;padding:6px 12px;border:0;border-radius:999px;background:#1c1c1e;color:var(--accent);font-size:15px;cursor:pointer;white-space:nowrap}
+#nb.on{background:none;color:var(--dim);font-size:13px;padding:6px 0}
+#nh{display:none;margin:0 16px 8px;padding:10px 14px;border-radius:12px;background:#1c1c1e;font-size:14px;line-height:1.55;color:#c7c7cc}
+#nh.on{display:block}
 #ls{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .th{position:relative;display:flex;align-items:flex-start;gap:12px;width:100%;padding:10px 16px 0 26px;border:0;background:none;text-align:left;cursor:pointer}
 .th:active,.th.on{background:#1c1c1e}
@@ -87,7 +96,8 @@ button.send:active{transform:scale(.88)}
 </head>
 <body>
 <aside id="side">
-  <div class="top"><h1>私信</h1></div>
+  <div class="top"><h1>私信</h1><button id="nb" type="button" hidden>开启通知</button></div>
+  <div id="nh"></div>
   <div id="ls"></div>
 </aside>
 <section id="main">
@@ -238,6 +248,31 @@ button.send:active{transform:scale(.88)}
     });
   });
 
+  // ── 通知：存到主屏幕后点「开启通知」，只收私信这一类 ──
+  var VAPID = 'BO3vEYEyLagnI1Ts843KbJhNsQKh-cRRAze32JEsaqwWFlqnfgDMoi2l6OyJGgG1bjbCyJfzPNGRCDn4XtSbEgc';
+  var ONLY_CHAT = { types: { order: 0, apply: 0, fb: 0, reply: 0, listen: 0, promo: 0, report: 0, chat: 1 }, dnd: { on: 0 }, tz: -new Date().getTimezoneOffset() };
+  (function push() {
+    var nb = $('nb'), nh = $('nh'), iOS = /iPhone|iPad/.test(navigator.userAgent), app = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    var ok = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    function hint(t) { nh.textContent = t; nh.classList.toggle('on', !!t); }
+    function sync(sub) { return api('/pushsub', { method: 'POST', body: JSON.stringify({ endpoint: sub.endpoint, prefs: ONLY_CHAT }) }); }
+    nb.hidden = false;
+    if (!ok || (iOS && !app)) { nb.onclick = function () { hint(iOS ? 'Safari 底部点分享 → 添加到主屏幕，再从主屏幕的「私信」图标打开，回到这里点「开启通知」。' : '这个浏览器不支持网页通知。'); }; return; }
+    navigator.serviceWorker.register('/chat/admin/sw.js', { scope: '/chat/admin/' }).then(function (reg) {
+      return reg.pushManager.getSubscription().then(function (sub) {
+        function on() { nb.textContent = '通知已开启'; nb.classList.add('on'); nb.onclick = function () { api('/push/test', { method: 'POST' }).then(function () { hint('已发送一条测试通知（会弹到所有已开启通知的设备）。'); setTimeout(function () { hint(''); }, 5000); }); }; }
+        if (sub && Notification.permission === 'granted') { sync(sub).catch(function () {}); on(); return; }
+        nb.onclick = function () {
+          Notification.requestPermission().then(function (p) {
+            if (p !== 'granted') { hint('通知权限被拒绝：到 设置 → 通知 → 私信 里打开。'); return; }
+            var u8 = Uint8Array.from(atob(VAPID.replace(/-/g, '+').replace(/_/g, '/')), function (c) { return c.charCodeAt(0); });
+            return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8 }).then(function (s) { return sync(s).then(function () { on(); hint('已开启。有人发私信会弹通知，点开直接进那个会话。'); setTimeout(function () { hint(''); }, 6000); }); });
+          }).catch(function (e) { hint('开启失败：' + (e && e.message || e)); });
+        };
+      });
+    }).catch(function () { nb.hidden = true; });
+  })();
+  window.addEventListener('hashchange', function () { var h = (location.hash || '').slice(1); if (/^[a-z0-9]{12,40}$/.test(h) && h !== cur) open(h); });
   loadList().then(function () { var h = (location.hash || '').slice(1); if (/^[a-z0-9]{12,40}$/.test(h)) open(h); });
   setInterval(function () { if (document.hidden) return; pull(false); loadList(); }, 5000);
   window.addEventListener('focus', function () { pull(false); loadList(); });
