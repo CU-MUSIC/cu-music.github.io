@@ -63,7 +63,7 @@ function progHtml(g) {   // 进度：项目页里改的阶段，这里只显示
     // 外卖进度单：先一行大字说此刻在哪，再一行说明（几点进入这一步），下面才是细进度条；在做的阶段轻轻呼吸，已交付 / 待付款不动
     const live = g.s > 0 && g.s !== 5, SUB = ['付款后安排排期', '已收款，正在检查素材', '正在进行音频编辑', '正在混音', '新一版已完成，请审听', '最终文件已交付', '正在做人声制作', '正在按意见修改', '已确认没有问题，结清尾款后交付'], at = g.at && g.at[g.s];
     const head = `<div class="sphead"><b>${live ? '<i class="spdot"></i>' : ''}${ST[cur]}</b><span>${SUB[g.s] || ''}${at ? ' · ' + relTime(at) : ''}</span></div>`;
-    return `<div class="sprog${g.s === 8 ? ' settle' : ''}${live ? ' live' : ''}">${head}<div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i>${n}</span>`).join('')}</div>`
+    return `<div class="sprog${g.s === 8 ? ' settle' : ''}${live ? ' live' : ''}">${head}<div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i></span>`).join('')}</div>`
       + etaBlock(g) + '</div>';
 }
 function etaBlock(g) {
@@ -80,11 +80,12 @@ function etaBlock(g) {
     if (next && ymdEnd(next) < now) next = '';
   }
   const ed = store.get('insights:key') ? `<label class="etaed" title="改下一版预计日期（清空 = 自动按 2 个工作日）">改<input type="date" value="${eta.next || ''}"></label>` : '';
-  const big = next ? `<div class="etan"><span>${lab}预计</span><b>${wdate(next)}</b><i>20:00 前</i>${ed}</div>`
-    : g.s === 4 ? `<div class="etan wait"><span>下一版</span><b>意见发送后 2 个工作日内</b>${ed}</div>` : '';
+  const due = g.due && g.s !== 8 ? `<span class="etd">交付<b>${cdate(g.due)}</b></span>` : '';
+  const big = next ? `<div class="etan"><span>${lab}预计</span><b>${wdate(next)}</b>${due}${ed}</div>`
+    : g.s === 4 ? `<div class="etan wait"><span>下一版</span><b>意见发送后 2 个工作日内</b>${due}${ed}</div>` : due ? `<div class="etan">${due}${ed}</div>` : '';
   const row = ETA_K.filter(([k]) => eta[k]).map(([k, n]) => `<span class="${rank[k] < curR ? 'd' : k === curK && g.s !== 4 ? 'c' : ''}">${n}<b>${cdate(eta[k])}</b></span>`)
     .concat(g.due && g.s !== 8 ? [`<span class="etd">交付<b>${cdate(g.due)}</b></span>`] : []);
-  return big || row.length ? `<div class="eta">${big}${row.length ? '<div class="etar">' + row.join('') + '</div>' : ''}</div>` : '';
+  return big ? `<div class="eta">${big}</div>` : '';
 }
 const stageOf = v => { if (v.stage) return v.stage === 'none' ? '' : v.stage;   // 手动改过类别的优先
   const f = String(v.file || '').replace(/@ChefDao.*$/i, '').replace(/_/g, ' ');
@@ -94,7 +95,7 @@ const stageOf = v => { if (v.stage) return v.stage === 'none' ? '' : v.stage;   
 // 按阶段排：编辑在前、混音、母带在后；同阶段保持上传先后（排序稳定）。这样同阶段的版本总是连在一起分组
 { const rank = { '': 0, demo: 1, edit: 2, mix: 3, master: 4 }, at = new Map(V.map((v, i) => [v, i]));
   V.sort((x, y) => rank[stageOf(x)] - rank[stageOf(y)] || (x.ord || 1e3 + at.get(x)) - (y.ord || 1e3 + at.get(y))); }
-const vlab = v => { const st = stageOf(v); return STAGE[st] ? String(V.filter(x => stageOf(x) === st).indexOf(v) + 1) : v.ver; };
+const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || String(V.filter(x => stageOf(x) === st).indexOf(v) + 1); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
 const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);
 const multiStage = new Set(V.map(stageOf)).size > 1;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
@@ -832,9 +833,9 @@ const ovLine = () => OVT.map((d, i) => ovTags[i] ? d[1] + '：' + d[3][ovTags[i]
 const ovFull = () => { const l = ovLine(), t = ($('#overall') ? $('#overall').value : '').trim(); return l && t ? l + '\n' + t : l || t; };
 function ovPaint(i, v, drag) {
   const r = document.querySelector('#ovtags .ovr[data-i="' + i + '"]'); if (!r) return;
-  const pct = 50 + v * 20;
-  r.querySelector('.ovth').style.left = pct + '%';
-  const f = r.querySelector('.ovfill'); f.style.left = Math.min(50, pct) + '%'; f.style.width = Math.abs(pct - 50) + '%';
+  const fr = (v + 2) / 4, pos = x => 'calc(10px + (100% - 20px) * ' + x + ')';   // 两头各让出圆头半径，拖到底圆头正好贴边
+  r.querySelector('.ovth').style.left = pos(fr);
+  const f = r.querySelector('.ovfill'); f.style.left = pos(Math.min(.5, fr)); f.style.width = 'calc((100% - 20px) * ' + Math.abs(fr - .5) + ')';
   r.classList.toggle('drag', !!drag); r.classList.toggle('set', !!ovTags[i]);
   r.querySelector('.ovh b').textContent = OVT[i][3][ovTags[i] + 2];
   r.querySelector('.ovtr').setAttribute('aria-valuenow', ovTags[i]); r.querySelector('.ovtr').setAttribute('aria-valuetext', OVT[i][3][ovTags[i] + 2]);
@@ -852,7 +853,7 @@ function ovDraw() {
   const commit = () => { ovSum(); save(); updateCta(); drawOverall(); };
   const move = e => {
     if (!cur) return; const b = cur.tr.getBoundingClientRect();
-    const v = Math.max(-2, Math.min(2, ((e.clientX - b.left) / b.width * 100 - 50) / 20)), n = Math.round(v);
+    const v = Math.max(-2, Math.min(2, ((e.clientX - b.left - 10) / Math.max(1, b.width - 20)) * 4 - 2)), n = Math.round(v);
     if (n !== ovTags[cur.i]) { ovTags[cur.i] = n; try { navigator.vibrate && navigator.vibrate(6); } catch (_) {} }
     ovPaint(cur.i, v, true);
   };
@@ -1116,8 +1117,8 @@ function drawOverall() {
 function ovKey() { return 'ovs:' + dataKey(vi); }
 function ovUi() {
   const b = $('#ovsend'); if (!b) return; const v = ovFull();
-  if (!v || ME || IS_OWNER || !WK) { b.hidden = true; return; }
-  const sent = store.get(ovKey()) === v; b.hidden = false; b.disabled = sent || b.dataset.busy === '1';
+  if (ME || IS_OWNER || !WK) { b.hidden = true; return; }
+  const sent = !!v && store.get(ovKey()) === v; b.hidden = false; b.disabled = !v || sent || b.dataset.busy === '1';
   b.classList.toggle('done', sent); b.textContent = b.dataset.busy === '1' ? '发送中…' : sent ? '✓ 已发送，刀大厨能看到' : '发送给刀大厨';
 }
 $('#ovsend').onclick = async () => {

@@ -1096,3 +1096,8 @@ body.rlp-on .rlp-tab{display:none}
 #cvBtn{position:fixed;z-index:97;top:max(10px,env(safe-area-inset-top,0px));right:12px;height:30px;padding:0 12px;border:.5px solid var(--hair);border-radius:999px;background:rgba(40,42,48,.72);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:var(--text-2);font:500 12.5px/1 inherit;font-family:inherit;cursor:pointer}
 #cvBtn:active{transform:scale(.96)}
 #cvBtn.on{border-color:rgba(227,210,168,.5);background:rgba(227,210,168,.16);color:#e3d2a8}
+
+.ovsend:disabled:not(.done){opacity:.4}
+.etan .etd{font-size:13px;color:var(--text-3)}.etan .etd b{font-weight:500;margin-left:5px;color:#e3d2a8}
+/* 进度条只留线（阶段名已在上面的大字里） */
+.spbar span{height:3px;line-height:0;font-size:0}

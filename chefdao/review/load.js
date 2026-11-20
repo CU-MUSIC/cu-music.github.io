@@ -3,7 +3,10 @@
   if (new URLSearchParams(location.search).get('cv') === '1') sessionStorage.setItem('review:cv', '1');
   if (sessionStorage.getItem('review:cv') !== '1') return;
   const g = Storage.prototype.getItem; window.__cuCV = 1; window.__cuKey = g.call(window.localStorage, 'insights:key');   // 钥匙只留给读 /rs（放行申请制），别处一律藏起来
-  Storage.prototype.getItem = function (k) { return this === window.localStorage && (k === 'insights:key' || k === 'review:me') ? null : g.call(this, k); };
+  const ls = window.localStorage, OK = /^review:(pw:|pj:|tok$|hp$)/, sp = Storage.prototype, S0 = sp.setItem, D0 = sp.removeItem;   // 密码 / 项目令牌可读；其余本机数据都走这个标签页自己的一份（客户视角从空白开始，不带你写的评论）
+  sp.getItem = function (k) { if (this !== ls) return g.call(this, k); k = String(k); if (k === 'insights:key' || k === 'review:me') return null; const v = g.call(sessionStorage, 'cv:' + k); return v !== null ? v : OK.test(k) ? g.call(ls, k) : null; };
+  sp.setItem = function (k, v) { return this === ls ? S0.call(sessionStorage, 'cv:' + k, v) : S0.call(this, k, v); };
+  sp.removeItem = function (k) { return this === ls ? D0.call(sessionStorage, 'cv:' + k) : D0.call(this, k); };
   const F = window.fetch.bind(window);
   window.fetch = (u, o) => { const m = String((o && o.method) || (u && u.method) || 'GET').toUpperCase(), s = typeof u === 'string' ? u : (u && u.url) || '';
     return m !== 'GET' && m !== 'HEAD' && s.startsWith('https://stats.cumusic.work') ? Promise.resolve(new Response('{"ok":true}', { status: 200, headers: { 'Content-Type': 'application/json' } })) : F(u, o); };
