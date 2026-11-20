@@ -804,6 +804,8 @@
 		.faq-answer-inner li::before { content: "·"; color: var(--text-secondary); margin-right: 10px; font-weight: 700; }
 
 		/* ── Footer & floating CTA ─────────────────────────── */
+		.chat-entry { margin: 14px 0 0; font-size: 14px; letter-spacing: 0.04em; }
+		.chat-entry a { color: var(--text-dim); text-decoration: underline; text-underline-offset: 4px; padding: 8px 12px; display: inline-block; }
 		footer { text-align: center; color: var(--text-dim); font-size: 12px; letter-spacing: 0.06em; margin-top: 80px; padding-bottom: env(safe-area-inset-bottom); }
 		.floating-cta { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap; }
 		.floating-btn { display: flex; align-items: center; gap: 10px; background: var(--pill-bg); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 0.5px solid var(--border-hover); color: var(--text-primary); padding: 14px 28px; border-radius: 100px; font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s; min-height: 52px; }
@@ -1052,7 +1054,7 @@ html.qbo-lock, html.qbo-lock body { overflow: hidden; }
 	<nav class="sec-nav" id="sec-nav" aria-label="Sections"><div class="sec-nav-in" id="sec-nav-in"></div></nav>
 	<div id="services-container"></div>
 	<div id="faq-container"></div>
-	<footer><p id="footer-text"></p></footer>
+	<footer><p id="footer-text"></p><p class="chat-entry"><a id="chat-link" href="/chat/"></a></p></footer>
 </div>
 
 <div class="floating-cta">
@@ -5323,6 +5325,7 @@ function render(lang) {
 	document.getElementById("hero-title").innerHTML = t.heroTitle;
 	document.getElementById("hero-sub").innerHTML = t.heroSub;
 	document.getElementById("footer-text").textContent = t.footer;
+	document.getElementById("chat-link").textContent = /^ko/.test(t.lang) ? "익명 1:1 상담 →" : /^en/.test(t.lang) ? "Anonymous 1:1 chat →" : "匿名一对一咨询 →";
 	document.getElementById("cta-label").textContent = t.ctaLabel;
 	document.getElementById("back-link").textContent = t.back;
 	renderGate(t);
