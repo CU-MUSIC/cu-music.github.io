@@ -1091,3 +1091,8 @@ body.rlp-on .rlp-tab{display:none}
 .vhide:hover{color:var(--text)}.vhide.on{color:#e3d2a8}
 .vpick .vgl.qh{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
 .vpick .vgl.hidall{text-decoration:line-through;opacity:.55}
+
+/* 客户视角按钮：右上角小胶囊，预览中变琥珀色 */
+#cvBtn{position:fixed;z-index:97;top:max(10px,env(safe-area-inset-top,0px));right:12px;height:30px;padding:0 12px;border:.5px solid var(--hair);border-radius:999px;background:rgba(40,42,48,.72);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:var(--text-2);font:500 12.5px/1 inherit;font-family:inherit;cursor:pointer}
+#cvBtn:active{transform:scale(.96)}
+#cvBtn.on{border-color:rgba(227,210,168,.5);background:rgba(227,210,168,.16);color:#e3d2a8}

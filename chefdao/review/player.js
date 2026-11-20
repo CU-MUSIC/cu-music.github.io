@@ -11,6 +11,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k) } catch (e) {} },
 };
 const PW_KEY = 'review:pw:' + S.slug;
+const CV = (() => { try { return sessionStorage.getItem('review:cv') === '1'; } catch (e) { return false; } })();   // 客户视角预览中：不记收听、不发提醒
 // 软刷新：上传 / 删除 / 调序之后不再露出解锁页和进场动画——淡出 → 重载 → 直接回到刚才的版本、播放位置和滚动位置，再淡入
 function softReload(ver) {
   try { sessionStorage.setItem('review:quick', JSON.stringify({ s: S.slug, play: !a.paused, ver: ver || (cur && cur.ver), t: ver ? 0 : curTime(), y: scrollY })); } catch (e) {}
@@ -2713,7 +2714,7 @@ const BINS = 60, stats = {};
 const st = () => stats[vi] || (stats[vi] = { sec: 0, sent: 0, saved: -1, ends: 0, bins: new Array(BINS).fill(0), pinged: false, seen: 0 });
 const clock = () => new Date().toTimeString().slice(0, 5);
 function beacon(title, html) {
-  if (!PUSH || ME || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;   // 本地预览不推微信
+  if (!PUSH || ME || CV || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;   // 本地预览不推微信
   const q = new URLSearchParams({ token: PUSH, title, content: html, template: 'html' });
   fetch('https://www.pushplus.plus/send?' + q, { mode: 'no-cors', keepalive: true }).catch(() => {});
 }
@@ -2724,14 +2725,14 @@ const sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 const PRE_PINGS = [];
 const accessPing = state => {
   if (PRE) { PRE_PINGS.push(state); return; }
-  if (ME || store.get('insights:key') || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  if (ME || CV || store.get('insights:key') || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
   fetch(API_BASE + '/v', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
     body: JSON.stringify({ sid, lid, kind: 'song', slug: S.slug, state, device, visit: visits }) }).catch(() => {});
 };
 accessPing(0);
 // force：评论有变化时也要同步；sent：点了「发送给刀大厨」
 function track(i, force, sent, ovs) {
-  i = +i; const s = stats[i] || (i === vi ? st() : null), v = V[i]; if (!WK || ME || !s) return;
+  i = +i; const s = stats[i] || (i === vi ? st() : null), v = V[i]; if (!WK || ME || CV || !s) return;
   if (!force && s.saved >= 0 && s.sec - s.saved < 1) return;
   if (ovs) clearTimeout(syncT);
   s.saved = s.sec;
@@ -3037,4 +3038,13 @@ let tries = [...new Set([S.auto, saved, PJ_KEY && store.get(PJ_KEY), PJ_KEY && s
 if (S.open || (S.project && S.project.open && S.project.wrap && !saved)) tryUnlock('', false);   // 不设密码：直接进
 else if (tries.length) tryUnlock(tries.shift(), false);
 else { noQuick(); setTimeout(focusPin, 300); }
+// 客户视角：右上角一个小按钮，点一下整页按客户看到的样子重载（看不到你的控制、隐藏的版本和待确认的版本；不记收听、不发提醒）；再点退出
+try {
+  if (IS_OWNER || CV) {
+    const b = document.createElement('button'); b.type = 'button'; b.id = 'cvBtn'; b.className = CV ? 'on' : '';
+    b.textContent = CV ? '客户视角中 · 点此退出' : '客户视角'; b.title = CV ? '退出，回到你自己的视图' : '看看客户打开这个页面是什么样（不会留下记录）';
+    b.onclick = () => { try { CV ? sessionStorage.removeItem('review:cv') : sessionStorage.setItem('review:cv', '1'); } catch (e) {} try { window.top.location.reload(); } catch (e) { location.reload(); } };
+    document.documentElement.appendChild(b);
+  }
+} catch (e) {}
 })();

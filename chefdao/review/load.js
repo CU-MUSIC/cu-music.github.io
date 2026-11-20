@@ -1,3 +1,13 @@
+// 客户视角（审听页右上角的小按钮）：这个标签页里把你的看板钥匙和「我的设备」标记藏起来，页面就按客户看到的样子加载；所有写入（收听记录、反馈、提醒）一律拦掉
+(() => { try {
+  if (new URLSearchParams(location.search).get('cv') === '1') sessionStorage.setItem('review:cv', '1');
+  if (sessionStorage.getItem('review:cv') !== '1') return;
+  const g = Storage.prototype.getItem; Storage.prototype.getItem = function (k) { return this === window.localStorage && (k === 'insights:key' || k === 'review:me') ? null : g.call(this, k); };
+  const F = window.fetch.bind(window);
+  window.fetch = (u, o) => { const m = String((o && o.method) || (u && u.method) || 'GET').toUpperCase(), s = typeof u === 'string' ? u : (u && u.url) || '';
+    return m !== 'GET' && m !== 'HEAD' && s.startsWith('https://stats.cumusic.work') ? Promise.resolve(new Response('{"ok":true}', { status: 200, headers: { 'Content-Type': 'application/json' } })) : F(u, o); };
+  navigator.sendBeacon = () => true;
+} catch (e) {} })();
 // 网络兜底 + 走 Bunny CDN：Cloudflare 免费版把韩国、国内分到洛杉矶（音频几十 KB/s，国内接口平均 4 秒、常失败），Bunny 有首尔 / 东京 / 香港节点
 // ① 音频（/ra/…）先从 Bunny 下（可缓存）；② 不带管理钥匙的 GET 接口也经 Bunny 转发（加时间戳，不让 CDN 缓存）；8 秒没响应或出错就退回 stats
 // ③ 直连 stats 的 GET：10 秒没回就换带 cookie 的那组连接重发一次（Chrome 睡眠 / 换网后偶尔卡死一条连接）
