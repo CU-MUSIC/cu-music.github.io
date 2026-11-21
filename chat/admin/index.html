@@ -82,6 +82,11 @@ header{position:relative;flex:none;padding:calc(8px + env(safe-area-inset-top)) 
 .m.o.tail .b::after{right:-9px;background:var(--me-2)}
 .m.v.tail .b{border-bottom-left-radius:8px}
 .m.v.tail .b::after{left:-9px;transform:scaleX(-1);background:var(--other)}
+.b a{color:inherit;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.m.a{justify-content:flex-end}
+.m.a .b{background:transparent;color:var(--text);box-shadow:inset 0 0 0 1px var(--field)}
+.m.a.tail .b{border-bottom-right-radius:8px}
+.m.a .b::before{content:'自动回复';display:block;margin-bottom:2px;font-size:12px;line-height:15px;font-weight:600;color:var(--dim);letter-spacing:0}
 .m.pend .b{opacity:.75}
 .st{padding:0 18px;margin:-5px 0 8px;text-align:right;font-size:12.5px;line-height:15px;font-weight:600;color:var(--dim);animation:fade .3s var(--out) both}
 .st.red{color:var(--red)}
@@ -95,6 +100,16 @@ textarea{flex:1;min-width:0;resize:none;max-height:160px;height:38px;padding:7px
 textarea::placeholder{color:var(--dim-2)}
 button.send{flex:none;width:29px;height:29px;margin:3px 0 3px 6px;padding:0;border:0;border-radius:50%;background:var(--me);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:scale(0);opacity:0;transition:transform .32s var(--spring),opacity .15s}
 button.send.on{transform:scale(1);opacity:1}
+/* 快捷回复：输入框左边的按钮，点开选一条常用回答填进输入框，改两个字再发 */
+.qr{flex:none;width:29px;height:29px;margin:3px 8px 3px -6px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.qr:active{transform:scale(.9)}
+#qm{display:none;max-height:46vh;overflow-y:auto;margin:0 0 8px;border-radius:14px;background:var(--other)}
+#qm.on{display:block}
+#qm button{display:block;width:100%;padding:10px 14px;border:0;border-bottom:.5px solid var(--hair);background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+#qm button:last-child{border-bottom:0}
+#qm b{display:flex;justify-content:space-between;gap:10px;font-size:15px;line-height:20px;font-weight:600}
+#qm b i{font-style:normal;font-weight:400;color:var(--dim)}
+#qm span{display:block;margin-top:2px;font-size:13px;line-height:18px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 button.send:active{transform:scale(.88)}
 
 @media (max-width:760px){
@@ -123,7 +138,9 @@ button.send:active{transform:scale(.88)}
   </header>
   <div id="log"><div class="ph">选择左侧会话</div></div>
   <form id="f" autocomplete="off">
+    <div id="qm" role="menu" aria-label="快捷回复"></div>
     <div class="bar">
+      <button class="qr" id="qr" type="button" aria-label="快捷回复"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1.8 3.5 10H9l-1 6.2L14.5 8H9z"/></svg></button>
       <textarea id="tx" rows="1" maxlength="1500" placeholder="回复" aria-label="回复"></textarea>
       <button class="send" id="go" type="submit" aria-label="发送"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12V2.5M2.8 6.6 7 2.4l4.2 4.2"/></svg></button>
     </div>
@@ -180,6 +197,16 @@ button.send:active{transform:scale(.88)}
     if (!r || !r.classList.contains('o') || r.classList.contains('pend') || !r.dataset.ts) return;
     r.after(el('div', 'st', vseen && +r.dataset.ts <= vseen ? hm(vseen) + '已读' : '已送达'));
   }
+  // 消息里的网址变成可点的链接（只认 https 开头，其余原样当文字）
+  function fill(b, text) {
+    var re = /https:\/\/[^\s，。、）)]+/g, i = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > i) b.appendChild(document.createTextNode(text.slice(i, m.index)));
+      var a = document.createElement('a'); a.href = m[0]; a.textContent = m[0]; a.target = '_blank'; a.rel = 'noopener'; b.appendChild(a);
+      i = m.index + m[0].length;
+    }
+    if (i < text.length) b.appendChild(document.createTextNode(text.slice(i)));
+  }
   function add(m, cls) {
     var st = log.querySelector('.st'); if (st) st.remove();
     var prev = log.lastElementChild;
@@ -188,7 +215,7 @@ button.send:active{transform:scale(.88)}
     }
     lastTs = m.ts;
     if (prev && prev.classList.contains('m') && prev.classList.contains(m.who)) prev.classList.remove('tail');
-    var row = el('div', 'm ' + m.who + ' tail' + (cls ? ' ' + cls : '')); row.appendChild(el('div', 'b', m.text)); log.appendChild(row);
+    var row = el('div', 'm ' + m.who + ' tail' + (cls ? ' ' + cls : '')), bb = el('div', 'b'); fill(bb, m.text); row.appendChild(bb); log.appendChild(row);
     return row;
   }
   function popIn(row) {
@@ -274,6 +301,21 @@ button.send:active{transform:scale(.88)}
       r.onclick = function () { s.remove(); r.remove(); tx.value = text; fit(); tx.focus(); };
     });
   });
+
+  // ── 快捷回复：常见问题的标准回答（和访客页按钮同一份，Worker 里改），后面数字 = 访客点过几次 ──
+  function loadQr() {
+    api('/chat/faq').then(function (j) {
+      var qm = $('qm'); qm.textContent = '';
+      (j.list || []).forEach(function (q) {
+        var b = el('button'); b.type = 'button';
+        var t = el('b', '', q.q); t.appendChild(el('i', '', q.n ? '点过 ' + q.n + ' 次' : '')); b.appendChild(t); b.appendChild(el('span', '', q.a.replace(/\n/g, ' ')));
+        b.onclick = function () { qm.classList.remove('on'); tx.value = q.a; fit(); tx.focus(); };
+        qm.appendChild(b);
+      });
+    }).catch(function () {});
+  }
+  $('qr').onclick = function () { var qm = $('qm'); if (!qm.classList.contains('on')) loadQr(); qm.classList.toggle('on'); };
+  loadQr();
 
   // ── 通知：存到主屏幕后点「开启通知」，只收私信这一类 ──
   var VAPID = 'BO3vEYEyLagnI1Ts843KbJhNsQKh-cRRAze32JEsaqwWFlqnfgDMoi2l6OyJGgG1bjbCyJfzPNGRCDn4XtSbEgc';

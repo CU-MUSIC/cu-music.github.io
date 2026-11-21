@@ -61,6 +61,7 @@ header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-i
 .m.me.tail .b::after{right:-9px;background:var(--me-2)}
 .m.o.tail .b{border-bottom-left-radius:8px}
 .m.o.tail .b::after{left:-9px;transform:scaleX(-1);background:var(--other)}
+.b a{color:inherit;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
 .m.pend .b{opacity:.75}
 .m.fail .b{opacity:.85}
 .m .x{flex:none;width:22px;height:22px;margin:0 0 4px 8px;border-radius:50%;background:var(--red);color:#fff;font-size:14px;font-weight:700;line-height:22px;text-align:center;order:2}
@@ -68,6 +69,13 @@ header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-i
 .st.red{color:var(--red)}
 @keyframes fade{from{opacity:0;transform:translateY(-3px)}}
 @keyframes popin{from{opacity:0;transform:scale(.6)}}
+
+/* 常见问题：输入框上方一排胶囊，点了立刻自动回复；打字时收起 */
+.faq{display:flex;gap:8px;max-width:720px;margin:0 auto;padding:2px 12px 8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.faq::-webkit-scrollbar{display:none}
+.faq:empty,.faq.off{display:none}
+.faq button{flex:none;height:34px;padding:0 14px;border:1px solid var(--field);border-radius:17px;background:transparent;color:var(--accent);font:inherit;font-size:15px;line-height:32px;letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:transform .2s var(--spring),opacity .2s}
+.faq button:active{transform:scale(.94);opacity:.7}
 
 /* 输入栏 */
 form{flex:none;padding:6px 12px calc(8px + env(safe-area-inset-bottom));background:var(--bg)}
@@ -118,6 +126,7 @@ button.send:active{transform:scale(.88)}
 
 <form id="f" autocomplete="off">
   <input class="hp" id="hp" tabindex="-1" aria-hidden="true">
+  <div class="faq" id="faq" aria-label="常见问题"></div>
   <div class="row">
   <button class="plus" id="plus" type="button" aria-label="留联系方式（可选）"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2.5v11M2.5 8h11"/></svg></button>
   <div class="bar">
@@ -183,12 +192,22 @@ button.send:active{transform:scale(.88)}
     s.textContent = oseen && +el.dataset.ts <= oseen ? hm(oseen) + '已读' : '已送达';
     el.after(s);
   }
+  // 消息里的网址变成可点的链接（只认 https 开头，其余原样当文字）
+  function fill(b, text) {
+    var re = /https:\/\/[^\s，。、）)]+/g, i = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > i) b.appendChild(document.createTextNode(text.slice(i, m.index)));
+      var a = document.createElement('a'); a.href = m[0]; a.textContent = m[0]; a.target = '_blank'; a.rel = 'noopener'; b.appendChild(a);
+      i = m.index + m[0].length;
+    }
+    if (i < text.length) b.appendChild(document.createTextNode(text.slice(i)));
+  }
   function add(m, cls, before) {
     var st = log.querySelector('.st'); if (st) st.remove();
     var side = m.who === 'v' ? 'me' : 'o', prev = before ? before.previousElementSibling : log.lastElementChild;
     if (before) {   // 插到你刚发、还在路上的那条前面：时间顺序不乱
       var r0 = document.createElement('div'), b0 = document.createElement('div');
-      r0.className = 'm ' + side + ' tail'; b0.className = 'b'; b0.textContent = m.text; r0.appendChild(b0);
+      r0.className = 'm ' + side + ' tail'; b0.className = 'b'; fill(b0, m.text); r0.appendChild(b0);
       if (prev && prev.classList.contains('m')) prev.classList.toggle('tail', !prev.classList.contains(side));
       log.insertBefore(r0, before); return r0;
     }
@@ -201,7 +220,7 @@ button.send:active{transform:scale(.88)}
     if (prev && prev.classList.contains('m') && prev.classList.contains(side)) prev.classList.remove('tail');
     var row = document.createElement('div'), b = document.createElement('div');
     row.className = 'm ' + side + ' tail' + (cls ? ' ' + cls : '');
-    b.className = 'b'; b.textContent = m.text; row.appendChild(b); log.appendChild(row);
+    b.className = 'b'; fill(b, m.text); row.appendChild(b); log.appendChild(row);
     return row;
   }
   // 收到的消息：从左下角弹出来
@@ -248,6 +267,7 @@ button.send:active{transform:scale(.88)}
   function fit() {
     tx.style.height = '38px'; tx.style.height = Math.min(Math.max(tx.scrollHeight, 38), 132) + 'px';
     go.classList.toggle('on', !!tx.value.trim());
+    $('faq').classList.toggle('off', !!tx.value);
   }
   tx.addEventListener('input', fit);
   tx.addEventListener('focus', function () { setTimeout(function () { bottom(true); }, 300); });
@@ -261,7 +281,7 @@ button.send:active{transform:scale(.88)}
     var s = document.createElement('div'); s.className = 'st red'; s.textContent = '未送达，轻点重试'; el.after(s);
     el.onclick = function () { s.remove(); el.remove(); send(text); };
   }
-  function send(text) {
+  function send(text, faq) {
     busy = true;
     var r = tx.getBoundingClientRect(), from = { left: r.left, top: r.top - 1 };
     tx.value = ''; fit();
@@ -270,15 +290,37 @@ button.send:active{transform:scale(.88)}
       var el = add({ who: 'v', text: text, ts: Date.now() }, 'pend');
       if (ty) ty.reattach();
       bottom(false); flyFrom(el, from);
-      fetch(API + '/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, text: text, name: LS.get('chat:name') || '', contact: LS.get('chat:contact') || '', hp: $('hp').value }) })
+      fetch(API + '/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, text: text, faq: faq || '', name: LS.get('chat:name') || '', contact: LS.get('chat:contact') || '', hp: $('hp').value }) })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
         .then(function (j) {
           busy = false;
-          if (j && j.ok) { el.classList.remove('pend'); if (j.id) { el.dataset.id = j.id; el.dataset.ts = j.ts; seen[j.id] = 1; } setTimeout(status, 250); }
+          if (j && j.ok) { el.classList.remove('pend'); if (j.id) { el.dataset.id = j.id; el.dataset.ts = j.ts; seen[j.id] = 1; } setTimeout(status, 250); if (j.auto) autoReply(j.auto); }
           else fail(el, text);
         }).catch(function () { busy = false; fail(el, text); });
     })();
   }
+  // 常见问题的自动回复：先冒「输入中」一会儿再弹出来，像真人回
+  function autoReply(a) {
+    if (!a.id) return;
+    seen[a.id] = 1; if (a.id > last) last = a.id;
+    if (ty) ty.set(true);
+    setTimeout(function () {
+      if (ty) { ty.set(false); ty.detach(); }
+      if (!log.querySelector('[data-id="' + a.id + '"]')) {
+        var stick = near(), el = add({ who: 'a', text: a.text, ts: a.ts }); el.dataset.id = a.id; el.dataset.ts = a.ts;
+        if (stick) bottom(true); popIn(el);
+      }
+      if (ty) ty.reattach();
+    }, still ? 300 : 1100);
+  }
+  fetch(API + '/chat/faq').then(function (r) { return r.json(); }).then(function (j) {
+    if (!j || !j.ok) return;
+    j.list.forEach(function (q) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = q.q;
+      b.onclick = function () { if (busy) return; b.remove(); send(q.q, q.k); };
+      $('faq').appendChild(b);
+    });
+  }).catch(function () {});
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     var text = tx.value.trim(); if (!text || busy) return;
