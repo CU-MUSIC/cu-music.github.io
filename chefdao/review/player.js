@@ -2833,12 +2833,18 @@ async function lyrInit(key) {
 // 段落（Verse / Hook / 歌手名）插在歌词里：每段标在它开始后的第一句前面，点段名 = 跳到这一段
 // 歌词里自己写了「削面」「Cam」这种歌手 / 段落名的一行：和上面的段名重复，藏起来
 const lyrSame = (n, x) => { const f = v => String(v || '').toLowerCase().replace(/[\s\[\]【】()（）:：]/g, ''); const a = f(n), b = f(x); return !!b && a.includes(b); };
+// 逐字歌词：x.w = [[字/词, 距这句开头的秒, 唱多久]]（本机对齐服务 DTW 给的）。唱得特别长的字标 em：亮起来时放大 + 发光（Apple Music 那样）
+function lyrEmThr(L) { const d = []; L.forEach(x => x.w && x.w.forEach(u => d.push(u[2]))); d.sort((a, b) => a - b); return Math.max(.8, (d[d.length >> 1] || .3) * 2.5); }
+function lyrWordsHtml(x, thr) {
+  if (!x.w || x.t == null || x.w.map(u => u[0]).join('') !== x.x) return esc(x.x);   // 没有逐字时间 / 歌词改过：整句显示
+  return x.w.map(u => `<span class="wd${u[2] >= thr && /[\w\u4e00-\u9fff]/.test(u[0]) ? ' em' : ''}">${esc(u[0])}</span>`).join('');
+}
 function lyrRows(L) {
-  const head = {}, off = lyrOff();
+  const head = {}, off = lyrOff(), thr = lyrEmThr(L);
   (typeof PARTS !== 'undefined' ? PARTS : []).forEach((p, pi) => { const k = L.findIndex(x => x.t != null && x.t + off >= p.t - .4); if (k >= 0) head[k] = pi; });
   return L.map((x, i) => (head[i] != null ? (() => { const p = PARTS[head[i]], c = colorOf(p.n);
       return `<button class="lph press" data-p="${head[i]}"${c ? ` style="--pc:${c}"` : ''}>${esc(p.n)}</button>`; })() : '')
-    + `<div class="ln${x.t == null ? ' nt' : ''}${head[i] != null && lyrSame(PARTS[head[i]].n, x.x) ? ' dup' : ''}" data-i="${i}"><span>${esc(x.x)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('');
+    + `<div class="ln${x.t == null ? ' nt' : ''}${head[i] != null && lyrSame(PARTS[head[i]].n, x.x) ? ' dup' : ''}" data-i="${i}"><span>${lyrWordsHtml(x, thr)}</span>${x.t != null ? '<button class="lc" aria-label="评论这一句">评论</button>' : ''}</div>`).join('');
 }
 function lyrDraw() {
   const el = $('#lyr'); if (!el) return;
@@ -2887,7 +2893,21 @@ function lyrStep(force) {
     const d = dur() || 1, ct = curTime(); fs.querySelector('.fpb i').style.transform = 'scaleX(' + Math.min(1, ct / d) + ')';
     const tx = fmt(ct); if (fs._t !== tx) { fs._t = tx; fs.querySelector('.fcur').textContent = tx; }
     const pl = !a.paused; if (fs._p !== pl) { fs._p = pl; fs.classList.toggle('playing', pl); } }
-  if (i === lyrIdx && !force) return; lyrIdx = i; lyrSync(i); miniLine();
+  if (i !== lyrIdx || force) { lyrIdx = i; lyrSync(i); miniLine(); }
+  lyrFill(t, i);
+}
+// 当前句一个字一个字亮起来：--q 是这个字的填充进度（-8 全暗 … 100 全亮），长字（.em）唱着的时候放大发光
+function lyrFill(t, i) {
+  const L = LYR && LYR.lines, x = L && L[i]; if (!x || !x.w || x.t == null) return;
+  const fs = $('#lyfs');
+  (fs ? fs.querySelectorAll('.lyrs') : document.querySelectorAll('.lyrs')).forEach(box => {
+    const els = box._wd; if (!els || els.length !== x.w.length) return;
+    for (let k = 0; k < els.length; k++) {
+      const el = els[k], s = x.t + x.w[k][1], p = Math.max(0, Math.min(1, (t - s) / Math.max(.08, x.w[k][2]))), q = Math.round(-8 + p * 108);
+      if (el._q !== q) { el._q = q; el.style.setProperty('--q', q); }
+      const sung = p > 0 && p < 1; if (el._s !== sung) { el._s = sung; el.classList.toggle('sung', sung); }
+    }
+  });
 }
 // 自动跟唱：框本身不滚（overflow hidden），整层歌词 .lyin 用 transform 平移到「当前句在中间」——纯合成层动画，手机上也不会跳帧。
 // 只有真的拖动（手指移动超过 6px）或滚轮才算「自己在看」：拖动直接改位移（不切换系统滚动，不跳），松手 2 秒后再滑回正在唱的那句。轻点一句不算
@@ -2919,6 +2939,7 @@ function lyrSync(i) {
     lyrHold(box);
     box.querySelectorAll('.ln').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); d.classList.toggle('near', k === i + 1); });
     const on = box.querySelector('.ln.on');
+    box._wd = on ? [...on.querySelectorAll('.wd')] : [];   // 当前句的逐字元素：每帧只动它们
     const y = on ? on.offsetTop + (on.offsetParent !== box && on.offsetParent ? on.offsetParent.offsetTop : 0) : 0;   // 套了 .lyin（会变成 offsetParent），要加上它在框里的位置
     if (on && !(box._hold > performance.now())) lyrScroll(box, y - box.clientHeight / 2 + on.offsetHeight / 2);
   });
@@ -2973,7 +2994,7 @@ function lyrEdit() {
     .filter(r => r && !/^(hook|verse|chorus|bridge|intro|outro|pre-?hook|副歌|主歌|桥段|前奏|尾奏)\s*\d*\s*[:：]?\s*$/i.test(r) && !/^\d+\s*min\s*\d*\s*s?$/i.test(r)).join('\n');
   tx.addEventListener('paste', () => setTimeout(() => { const c = clean(tx.value); if (c !== tx.value) { tx.value = c; tx.oninput(); hint('已去掉括号里的制作备注和段落标记'); } }, 0));
   const parse = () => { const rows = tx.value.split('\n').map(s => s.trim()).filter(Boolean);
-    lines = rows.map((x, i) => ({ x, t: lines[i] && lines[i].x === x ? lines[i].t : (lines[i] ? lines[i].t : null) })); draw(); };
+    lines = rows.map((x, i) => ({ x, t: lines[i] && lines[i].x === x ? lines[i].t : (lines[i] ? lines[i].t : null), ...(lines[i] && lines[i].x === x && lines[i].w ? { w: lines[i].w } : {}) })); draw(); };
   const draw = () => { list.innerHTML = lines.map((x, i) => `<div class="lr${tap && i === ptr ? ' cur' : ''}" data-i="${i}"><button class="lt press" title="设成现在的播放位置">${x.t == null ? '—' : fmt(x.t) + '.' + (Math.round(x.t * 10) % 10)}</button><button class="lm press" data-d="-0.1">−</button><button class="lm press" data-d="0.1">＋</button><span>${esc(x.x)}</span></div>`).join('');
     list.querySelectorAll('.lr').forEach(r => { const i = +r.dataset.i;
       r.querySelector('.lt').onclick = () => { lines[i].t = Math.round(curTime() * 10) / 10; draw(); };
@@ -3007,7 +3028,9 @@ function lyrEdit() {
       const r = await fetch(AL + '/align?l=' + encodeURIComponent(lines.map(x => x.x).join('\n')), { method: 'POST', headers: { 'X-Ext': (f.name.split('.').pop() || 'wav').toLowerCase() }, body: f });
       const j = await r.json(); if (!j.ok) throw new Error(j.e || '没对齐成功');
       tx.value = j.lrc; tx.oninput();
-      hint('对上 ' + Math.round(j.rate * 100) + '% 的字' + (j.weak.length ? '，第 ' + j.weak.join('、') + ' 句没怎么对上，重点检查' : '，边听边检查一遍再保存'));
+      // 逐字时间：转成「距这句开头」存（之后微调这句的时间，字跟着一起动）
+      if (j.words) { lines.forEach((x, i) => { const w = j.words[i]; if (w && x.t != null) x.w = w.map(u => [u[0], Math.max(0, Math.round((u[1] - x.t) * 100) / 100), Math.round((u[2] - u[1]) * 100) / 100]); else delete x.w; }); preview(); }
+      hint((j.words ? '已带逐字时间。' : '这首没算出逐字时间，只有整句。') + '对上 ' + Math.round(j.rate * 100) + '% 的字' + (j.weak.length ? '，第 ' + j.weak.join('、') + ' 句没怎么对上，重点检查' : '，边听边检查一遍再保存'));
     } catch (e) { hint('自动对齐没成：' + (e.message || '本机服务没开')); }
     b.disabled = false; b.textContent = '自动对齐…'; };
   $('#lyAuto').onclick = () => $('#lyFile').click();

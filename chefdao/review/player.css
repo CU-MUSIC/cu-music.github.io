@@ -1101,3 +1101,11 @@ body.rlp-on .rlp-tab{display:none}
 .etan .etd{font-size:13px;color:var(--text-3)}.etan .etd b{font-weight:500;margin-left:5px;color:#e3d2a8}
 /* 进度条只留线（阶段名已在上面的大字里） */
 .spbar span{height:3px;line-height:0;font-size:0}
+
+/* 逐字歌词：当前句一个字一个字亮起来（--q 由 player.js 每帧写），唱得特别长的字（.em）放大 + 发光 */
+.lyr .ln .wd,.lyfs .ln .wd{white-space:pre-wrap}
+.lyr .ln.on .wd,.lyfs .ln.on .wd{--q:-8;background-image:linear-gradient(90deg,currentColor calc(var(--q)*1%),color-mix(in srgb,currentColor 36%,transparent) calc(var(--q)*1% + 8%));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lyr .ln .wd.em,.lyfs .ln .wd.em{display:inline-block;transform-origin:50% 85%;transition:transform .55s cubic-bezier(.2,.8,.2,1),filter .55s}
+.lyr .ln.on .wd.em,.lyfs .ln.on .wd.em{transform:none}
+.lyr .ln.on .wd.em.sung,.lyfs .ln.on .wd.em.sung{transform:translateY(-2px) scale(1.14);filter:drop-shadow(0 0 9px currentColor)}
+@media (prefers-reduced-motion:reduce){.lyr .ln.on .wd.em.sung,.lyfs .ln.on .wd.em.sung{transform:none;filter:none}}
