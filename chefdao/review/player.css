@@ -176,6 +176,8 @@ svg{display:block}
 .stamp svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
 .stamp.locked{background:var(--accent);color:var(--ink)}
 .stamp{cursor:pointer}
+.stamp.off{background:var(--fill-2);color:var(--text-3)}
+.stamp.off #stampT{display:none}
 .stamp #stampT b{font-weight:600}
 .stamp #stampT i{font-style:normal;font-weight:500;opacity:.6}
 /* 段落评论：波形上框出这一段 */

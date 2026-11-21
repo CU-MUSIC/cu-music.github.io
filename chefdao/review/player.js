@@ -727,14 +727,14 @@ function draw(now) {
   PARTS.forEach(p => { if (p.t > .5) { const c = colorOf(p.n); ctx.fillStyle = c ? c + 'aa' : 'rgba(236,234,230,.22)'; ctx.fillRect(Math.round(p.t / dur() * w), 0, 1.5, h); } });
   // 评论标记
   ctx.fillStyle = 'rgba(236,234,230,.95)';
-  notes.forEach(o => { const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 2.5, 0, 7); ctx.fill(); });
+  notes.forEach(o => { if (o.nt) return; const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 2.5, 0, 7); ctx.fill(); });
   if (!IS_OWNER && ONOTES.length) { ctx.fillStyle = '#3f8a68'; ONOTES.forEach(o => { if (o.ver !== cur.ver) return; const x = o.t / dur() * w; ctx.beginPath(); ctx.arc(x, h - 2.5, 3, 0, 7); ctx.fill(); }); }
   // 播放头
   if (tt > 0 || !a.paused) { ctx.fillStyle = '#ebe9e5'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - 1, 2, 2, h - 10, 1) : ctx.rect(px - 1, 2, 2, h - 10); ctx.fill(); }
 
   const pk = partAt(tt); if (pk !== partNow) { partNow = pk; $('#pnow').textContent = pk >= 0 ? PARTS[pk].n : ''; $('#parts').querySelectorAll('.pt').forEach((b, i) => b.classList.toggle('on', i === pk)); }
   $('#cur').textContent = fmt(tt); $('#mfill').style.transform = 'scaleX(' + (tt / dur()) + ')'; $('#mtime').textContent = fmt(tt); $('#rem').textContent = '-' + fmt(dur() - tt);
-  if (locked === null) $('#stampT').textContent = fmt(tt);
+  if (locked === null && !noTime) $('#stampT').textContent = fmt(tt);
   document.body.classList.toggle('playing', !a.paused);
   requestAnimationFrame(draw);
 }
@@ -777,7 +777,7 @@ cv.addEventListener('pointerdown', e => { drag = true; cv.setPointerCapture(e.po
 box.addEventListener('pointermove', e => {
   hover = frac(e); box.classList.add('hov');
   const tip = box.querySelector('.tip'), w = cv.clientWidth;
-  const near = notes.find(o => Math.abs(o.t / dur() * w - hover * w) < 7);
+  const near = notes.find(o => !o.nt && Math.abs(o.t / dur() * w - hover * w) < 7);
   tip.textContent = near ? fmt(near.t) + ' · ' + (near.m.length > 16 ? near.m.slice(0, 16) + '…' : near.m) : fmt(hover * dur()) + (BPM ? ' · 第 ' + barNo(hover * dur()) + ' 小节' : '');
   tip.classList.toggle('note', !!near);
   tip.style.left = Math.min(w - tip.offsetWidth / 2, Math.max(tip.offsetWidth / 2, hover * w)) + 'px';
@@ -891,7 +891,7 @@ const grow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight
 //   一开始打字：自动变成一段，开始点锁在开始打字那一刻，结束点继续跟着播放头（暂停着就是同一个点 = 单个时间点）
 //   点时间数字：一段 ↔ 单点（单点也跟着播放头走；切回一段时从现在重新起算）；点时钟图标：开始点改成现在
 //   开着 A–B 循环时开始打字：直接用循环这一段，结束点不跟播放头
-let lockedE = null, ePin = false;
+let lockedE = null, ePin = false, noTime = false;   // noTime：点时钟图标关掉时间点 = 不带时间点的评论（照 Samply）
 const endUi = () => {
   const s = $('#stampT'), rg = $('#rng');
   if (locked === null) { rg.hidden = true; return; }
@@ -905,9 +905,9 @@ setInterval(() => {
   if (lockedE === null) { if (now !== locked) { locked = now; endUi(); } }
   else if (!ePin) { const t = Math.max(locked, now); if (t !== lockedE) { lockedE = t; endUi(); } }
 }, 200);
-const fmtR = o => fmt(o.t) + (o.e > o.t ? '–' + fmt(o.e) : '');
+const fmtR = o => o.nt ? '整体' : fmt(o.t) + (o.e > o.t ? '–' + fmt(o.e) : '');
 txt.addEventListener('input', () => {
-  if (txt.value && locked === null) {
+  if (txt.value && locked === null && !noTime) {
     const lp = LOOP.a !== null && LOOP.b !== null && LOOP.b - LOOP.a >= 1;
     locked = Math.floor(lp ? LOOP.a : curTime()); lockedE = lp ? Math.floor(LOOP.b) : locked; ePin = lp;
     $('#stamp').classList.add('locked'); endUi(); }
@@ -917,8 +917,12 @@ txt.addEventListener('input', () => {
 });
 $('#stamp').onclick = e => {
   const now = Math.floor(curTime()); ePin = false;
-  if (locked === null) { locked = now; lockedE = now; $('#stamp').classList.add('locked'); }
-  else if (!e.target.closest('#stampT')) { locked = now; if (lockedE !== null) lockedE = now; }
+  if (!e.target.closest('#stampT') || noTime) {   // 时钟图标：开 / 关时间点
+    noTime = !noTime; $('#stamp').classList.toggle('off', noTime);
+    if (noTime) { locked = null; lockedE = null; $('#stamp').classList.remove('locked'); $('#stampT').textContent = ''; }
+    else { $('#stampT').textContent = fmt(now); if (txt.value) { locked = now; lockedE = now; $('#stamp').classList.add('locked'); } }
+  }
+  else if (locked === null) { locked = now; lockedE = now; $('#stamp').classList.add('locked'); }
   else if (lockedE === null) { locked = now; lockedE = now; }
   else { lockedE = null; locked = now; }
   endUi();
@@ -931,8 +935,9 @@ CHIPS.forEach(c => {
 });
 function add() {
   const v = txt.value.trim(); if (!v) { txt.focus(); return; }
-  const o = { t: locked === null ? Math.floor(curTime()) : locked, m: v, id: Date.now() };
-  if (lockedE !== null && lockedE > o.t) o.e = lockedE;
+  const o = noTime ? { t: 0, nt: 1, m: v, id: Date.now() } : { t: locked === null ? Math.floor(curTime()) : locked, m: v, id: Date.now() };
+  if (!noTime && lockedE !== null && lockedE > o.t) o.e = lockedE;
+  if (noTime) { noTime = false; $('#stamp').classList.remove('off'); }   // 发完恢复带时间点
   notes.push(o); notes.sort((x, y) => x.t - y.t);
   txt.value = ''; locked = null; lockedE = null; ePin = false; endUi(); $('#stamp').classList.remove('locked'); $('#add').classList.remove('on'); grow(txt);
   render(o.id); save(); updateCta();
@@ -1096,7 +1101,7 @@ function render(newId) {
     const row = document.createElement('div'); row.className = 'row' + (o.id === newId ? ' new' : '');
     row.innerHTML = '<button class="t press"></button><div class="m"></div><button class="x" aria-label="删除"><svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2 2 10"/></svg></button>';
     const t = row.querySelector('.t'); t.textContent = fmtR(o);
-    t.onclick = () => { seek(o.t); if (a.paused && !$('#play').disabled) a.play(); };
+    t.onclick = () => { if (o.nt) return; seek(o.t); if (a.paused && !$('#play').disabled) a.play(); };
     row.querySelector('.m').textContent = o.m;
     if (o.id) { const ts = document.createElement('span'); ts.className = 'ts'; ts.textContent = tstr(o.id); row.querySelector('.m').appendChild(ts); }   // 评论发表时间
     decorate(row, REPLIES.get(rk(cur.ver, o.t, o.m)));
@@ -1258,7 +1263,7 @@ function updateCta() {
   if (!$('#cta').classList.contains('ok')) $('#ctaT').textContent = PUSH ? '发送给刀大厨' : '复制反馈';
 }
 function plainText() {
-  const L = ['《' + S.title + '》' + vname(cur) + ' 反馈', ...notes.map(o => fmt(o.t) + ' ' + o.m)];
+  const L = ['《' + S.title + '》' + vname(cur) + ' 反馈', ...notes.map(o => fmtR(o) + ' ' + o.m)];
   const ov = ovFull(); if (ov) L.push('整体：' + ov);
   return L.join('\n');
 }
@@ -1278,7 +1283,7 @@ $('#cta').onclick = async () => {
   busy = true; $('#ctaT').textContent = '发送中…';
   const ov = ovFull();
   const html = '<p><b>《' + esc(S.title) + '》' + esc(cur.ver) + '</b> · ' + notes.length + ' 条</p>'
-    + notes.map(o => '<p><b>' + fmt(o.t) + '</b>　' + esc(o.m) + '</p>').join('')
+    + notes.map(o => '<p><b>' + fmtR(o) + '</b>　' + esc(o.m) + '</p>').join('')
     + (ov ? '<p><b>整体：</b>' + esc(ov) + '</p>' : '')
     + '<p><a href="' + location.href.split('#')[0] + '">打开审听页</a></p>';
   try {
@@ -1801,7 +1806,7 @@ async function clientFb() {
     (j.feedback || []).filter(f => f.slug === S.slug).forEach(f => {
       let cm = []; try { cm = JSON.parse(f.comments || '[]'); } catch (e) {}
       const who = names.get(f.lid) || ('听众 ' + f.lid);
-      cm.forEach(c => items.push({ ver: f.ver, t: c.t, e: c.e, m: c.m, who, sent: f.sent, at: f.updated, del: !!c.del }));
+      cm.forEach(c => items.push({ ver: f.ver, t: c.nt ? null : c.t, mk: c.nt ? c.m : undefined, e: c.e, m: c.m, who, sent: f.sent, at: f.updated, del: !!c.del }));   // nt：不带时间点，显示「整体」
       if (f.overall) items.push({ ver: f.ver, t: null, m: '整体：' + f.overall, mk: '整体：' + String(f.overall).trim().slice(0, 120), who, sent: f.sent, at: f.updated });
     });
     if (!items.length) return;
@@ -2777,7 +2782,7 @@ function track(i, force, sent, ovs) {
   if (ovs) clearTimeout(syncT);
   s.saved = s.sec;
   let d = {}; try { d = JSON.parse(store.get(dataKey(i)) || '{}'); } catch (e) {}
-  const cm = (d.notes || []).map(o => ({ t: Math.round(o.t * 10) / 10, ...(o.e > o.t ? { e: Math.round(o.e * 10) / 10 } : {}), m: String(o.m || '').slice(0, 500) }));
+  const cm = (d.notes || []).map(o => ({ t: Math.round(o.t * 10) / 10, ...(o.e > o.t ? { e: Math.round(o.e * 10) / 10 } : {}), ...(o.nt ? { nt: 1 } : {}), m: String(o.m || '').slice(0, 500) }));
   const body = JSON.stringify({ k: WK, slug: S.slug, title: S.title, sid, ver: v.ver, lid, device, visit: visits,
     sec: Math.round(s.sec * 10) / 10, dur: v.duration, ends: s.ends, bins: s.bins.map(x => Math.round(x * 10) / 10), notes: cm.length,
     cm, ov: String(d.overall || '').slice(0, 1000), sent: !!sent, ovs: !!ovs });
