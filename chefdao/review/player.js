@@ -178,7 +178,7 @@ document.body.innerHTML = `
 
   <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownTrust">自助领取</button><button class="press" id="ownFinal">最终文件</button><button class="press" id="ownLink">文件链接</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
-  <div class="wave" id="wave"><canvas></canvas><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
+  <div class="wave" id="wave"><canvas></canvas><div class="rng" id="rng" hidden><span></span></div><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
   <button class="plyr press" id="plyr" hidden aria-label="打开全屏歌词"><span id="plyrT"></span></button>
   <div class="transport">
@@ -208,8 +208,7 @@ document.body.innerHTML = `
   <div class="sect">评论<button class="mename press" id="meName"></button><span class="r" id="tipline">听到想改的地方，直接写</span></div>
   <div class="vfocus" id="vfocus" hidden></div>
   <div class="composer">
-    <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT">0:00</span></span>
-    <button class="stamp end press" id="stampE" type="button" hidden aria-label="设段落结束点">至 …</button>
+    <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT" role="button" aria-label="点一下改成一段">0:00</span></span>
     <textarea id="txt" rows="1" placeholder="留下评论…"></textarea>
     <button class="send" id="add" aria-label="添加评论"><svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
   </div>
@@ -887,26 +886,35 @@ function ownerPush(i, now) {
 }
 const grow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
 
-// 段落评论：开始点 = 开始打字那一刻（或 A–B 循环的起点），播到段落结尾点「至 …」记结束点；再点一次 = 改成现在的位置
+// 段落评论（照 Samply）：点时间数字 → 变成一段，开始点固定，结束点跟着播放头走（播放 / 点波形都会更新，不会早于开始点）；再点一次回到单个时间点
+// 开着 A–B 循环时开始打字，直接用循环这一段
 let lockedE = null;
-const endUi = () => { const b = $('#stampE'); b.hidden = locked === null; b.classList.toggle('locked', lockedE !== null); b.textContent = lockedE !== null ? '至 ' + fmt(lockedE) : '至 …'; };
-$('#stampE').onclick = () => {
-  const t = Math.floor(curTime());
-  if (locked === null) return;
-  if (t <= locked) { hud('先播到这段的结尾，再点「至」记下结束点'); return; }
-  lockedE = t; endUi();
+const endUi = () => {
+  const s = $('#stampT'), rg = $('#rng');
+  if (locked === null) { rg.hidden = true; return; }
+  if (lockedE === null) { s.textContent = fmt(locked); rg.hidden = true; return; }
+  s.innerHTML = '<b>' + fmt(locked) + '</b><i> – ' + fmt(lockedE) + '</i>';
+  const d = dur() || 1; rg.hidden = false; rg.style.left = (locked / d * 100) + '%'; rg.style.width = Math.max(0, (lockedE - locked) / d * 100) + '%';
+  rg.firstChild.textContent = fmt(locked) + ' — ' + fmt(lockedE);
 };
+setInterval(() => { if (locked === null || lockedE === null) return; const t = Math.max(locked, Math.floor(curTime())); if (t !== lockedE) { lockedE = t; endUi(); } }, 200);
 const fmtR = o => fmt(o.t) + (o.e > o.t ? '–' + fmt(o.e) : '');
 txt.addEventListener('input', () => {
   if (txt.value && locked === null) {
     const lp = LOOP.a !== null && LOOP.b !== null && LOOP.b - LOOP.a >= 1;   // 开着 A–B 循环：直接用循环这一段
     locked = Math.floor(lp ? LOOP.a : curTime()); lockedE = lp ? Math.floor(LOOP.b) : null;
-    $('#stampT').textContent = fmt(locked); $('#stamp').classList.add('locked'); endUi(); }
+    $('#stamp').classList.add('locked'); endUi(); }
   if (!txt.value) { locked = null; lockedE = null; $('#stamp').classList.remove('locked'); endUi(); }
   $('#add').classList.toggle('on', !!txt.value.trim());
   grow(txt);
 });
-$('#stamp').onclick = () => { if (locked !== null) { locked = Math.floor(curTime()); $('#stampT').textContent = fmt(locked); } };
+// 点时钟图标：开始点改成现在；点时间数字：单点 ↔ 一段
+$('#stamp').onclick = e => {
+  if (locked === null) { locked = Math.floor(curTime()); $('#stamp').classList.add('locked'); }
+  else if (!e.target.closest('#stampT')) { locked = Math.floor(curTime()); if (lockedE !== null) lockedE = locked; }
+  else lockedE = lockedE === null ? Math.max(locked, Math.floor(curTime())) : null;
+  endUi();
+};
 const CHIPS = ['人声偏大', '人声偏小', '人声太亮', '太闷', '低频太多', '低频不够', '鼓不够力', '音高修正', '太吵', '想要更多空间感'];
 CHIPS.forEach(c => {
   const b = document.createElement('button'); b.textContent = c;
