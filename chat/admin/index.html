@@ -129,6 +129,7 @@ button.send:active{transform:scale(.88)}
     </div>
   </form>
 </section>
+<script src="/chat/typing.js?v=1"></script>
 <script src="/chat/tapback.js?v=1"></script>
 <script>
 (function () {
@@ -172,6 +173,7 @@ button.send:active{transform:scale(.88)}
   }
 
   // 你最后一条：访客没看过显示「已送达」，看过显示「19:03已读」
+  var ty = window.Typing ? Typing({ log: log, input: tx, active: function () { return !!cur; }, ping: function () { api('/chat/typing', { method: 'POST', body: JSON.stringify({ tid: cur }) }).catch(function () {}); } }) : null, fastT = 0;
   function status() {
     var old = log.querySelector('.st'); if (old) old.remove();
     var r = log.lastElementChild;
@@ -212,6 +214,7 @@ button.send:active{transform:scale(.88)}
       }
       vseen = th.v_seen || 0;
       var stick = first || near(), fresh = [];
+      if (ty) ty.detach();
       j.list.forEach(function (m) {
         if (m.id > last) last = m.id;
         if (seen[m.id]) return; seen[m.id] = 1;
@@ -223,12 +226,15 @@ button.send:active{transform:scale(.88)}
       });
       status();
       if (tb) tb.apply(j.rxs);
+      if (ty) { ty.reattach(); ty.set(j.typ); }
+      if (j.typ && !fastT) fastT = setTimeout(function () { fastT = 0; if (!document.hidden) pull(false); }, 1800);
       if (first) bottom(false);
       else if (fresh.length && stick) { bottom(true); fresh.forEach(popIn); }
     }).catch(function () {});
   }
   function open(tid) {
     cur = tid; last = 0; seen = {}; lastTs = 0; location.hash = tid;
+    if (ty) ty.set(false);
     document.body.classList.add('open'); $('f').classList.add('on'); $('del').style.display = 'block';
     log.innerHTML = '';
     pull(true).then(loadList);
@@ -254,7 +260,10 @@ button.send:active{transform:scale(.88)}
     busy = true;
     var rc = tx.getBoundingClientRect(), from = { left: rc.left, top: rc.top - 1 };
     tx.value = ''; fit(); tx.focus();
-    var r = add({ who: 'o', text: text, ts: Date.now() }, 'pend'); bottom(false); flyFrom(r, from);
+    if (ty) { ty.detach(); ty.sent(); }
+    var r = add({ who: 'o', text: text, ts: Date.now() }, 'pend');
+    if (ty) ty.reattach();
+    bottom(false); flyFrom(r, from);
     api('/chat/send', { method: 'POST', body: JSON.stringify({ tid: cur, text: text }) }).then(function (j) {
       busy = false;
       if (j && j.ok) { r.classList.remove('pend'); r.dataset.id = j.id; r.dataset.ts = j.ts; seen[j.id] = 1; setTimeout(status, 250); loadList(); }

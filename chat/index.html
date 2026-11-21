@@ -143,6 +143,7 @@ button.send:active{transform:scale(.88)}
 </div>
 
 <script src="/chat/tapback.js?v=1"></script>
+<script src="/chat/typing.js?v=1"></script>
 <script>
 (function () {
   var API = 'https://stats.cumusic.work', $ = function (i) { return document.getElementById(i); };
@@ -166,6 +167,7 @@ button.send:active{transform:scale(.88)}
   // 长按刀大厨的消息可以点表情回应
   var tb = window.Tapback ? Tapback({ log: log, canReact: function (row) { return row.classList.contains('o'); },
     send: function (id, rx) { return fetch(API + '/chat/react', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, id: +id, rx: rx }) }).then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw 0; }); } }) : null;
+  var ty = window.Typing ? Typing({ log: log, input: tx, ping: function () { fetch(API + '/chat/typing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid }) }).catch(function () {}); } }) : null, fastT = 0;
   var p2 = function (n) { return (n < 10 ? '0' : '') + n; };
   function hm(ts) { var d = new Date(ts); return p2(d.getHours()) + ':' + p2(d.getMinutes()); }
   function day(ts) { var d = new Date(ts), n = new Date(), y = new Date(n - 864e5); return d.toDateString() === n.toDateString() ? '今天' : d.toDateString() === y.toDateString() ? '昨天' : (d.getMonth() + 1) + '月' + d.getDate() + '日'; }
@@ -225,6 +227,7 @@ button.send:active{transform:scale(.88)}
       if (!j || !j.ok) return;
       var stick = near() || first, fresh = [];
       oseen = j.oseen || 0;
+      if (ty) ty.detach();
       j.list.forEach(function (m) {
         if (m.id > last) last = m.id;
         if (seen[m.id]) return; seen[m.id] = 1;
@@ -236,7 +239,9 @@ button.send:active{transform:scale(.88)}
       });
       status();
       if (tb) tb.apply(j.rxs);
+      if (ty) { ty.reattach(); ty.set(j.typ); }
       if (fresh.length && stick) { bottom(!first); if (!first) fresh.forEach(popIn); }
+      if (j.typ && !fastT) fastT = setTimeout(function () { fastT = 0; if (!document.hidden) pull(false); }, 1800);   // 对方在打字：轮询加快，回复一到马上出现
     }).catch(function () {});
   }
 
@@ -261,7 +266,9 @@ button.send:active{transform:scale(.88)}
     var r = tx.getBoundingClientRect(), from = { left: r.left, top: r.top - 1 };
     tx.value = ''; fit();
     (function () {   // 立刻画出来（不等网络）；你同时间回的消息会被插到它前面
+      if (ty) { ty.detach(); ty.sent(); }
       var el = add({ who: 'v', text: text, ts: Date.now() }, 'pend');
+      if (ty) ty.reattach();
       bottom(false); flyFrom(el, from);
       fetch(API + '/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, text: text, name: LS.get('chat:name') || '', contact: LS.get('chat:contact') || '', hp: $('hp').value }) })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
