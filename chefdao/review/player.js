@@ -1704,7 +1704,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261121a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
@@ -1722,7 +1722,7 @@ function ownerTools() {
       if (existing && !confirm('「' + lab + '」已经有了，要覆盖吗？')) return;
       if (!confirm('把「' + file.name + '」上传为《' + S.title + '》' + (existing ? lab : (STAGE[st] ? STAGE[st] + ' ' + (V.filter(v => stageOf(v) === st).length + 1) : ver)) + '？')) return;
       own.classList.add('busy');
-      const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, date: n.date, step: busy,
+      const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, overwrite: !!existing, date: n.date, step: busy,
         bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
       busy('《' + S.title + '》' + r.ver + ' 已上线');
       setTimeout(() => softReload(r.ver), 300);
@@ -2145,7 +2145,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261109b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261121a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }

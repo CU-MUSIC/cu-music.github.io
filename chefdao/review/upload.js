@@ -137,8 +137,10 @@ async function cuUpload(o) {
   if (nParts > 8) throw new Error('文件太大（' + Math.round(blob.length / 1048576) + 'MB），超过 190MB 的上限');
   let ver = (String(o.ver || '').trim().toUpperCase().replace(/^(\d)/, 'V$1')) || prep.next;
   // 和已有版本同号、但阶段不同（Mix V1 撞上 Edit V1）：不覆盖，顺延成下一个空号
-  const clash = (prep.vers || []).find(x => x.ver === ver);
-  if (clash && cuStage(clash.file) !== cuStage(cuNameInfo(file.name).raw)) ver = prep.next;
+  // 文件名里的 _V10_ 是这个阶段的第 10 个，不是页面里的 V10：新版本一律接在最后（下一个空号），不按文件名编号填空位，也不覆盖。
+  // 只有歌曲页里你确认过「覆盖」（overwrite）或助理重交自己的待确认版本才用指定的号。
+  // 2026-11-21：看板上传 Mix V10 填进了删掉的旧空号 V10，排在混音 4 和混音 6 中间，后面版本的编号全错开一位
+  if (ver !== 'REF' && !o.overwrite && !String(o.key || '').startsWith('hp_')) ver = prep.next;
   if (!/^(V\d{1,3}|REF)$/.test(ver)) throw new Error('版本要写成 V1、V2 这样');
   const fname = ver.toLowerCase() + '-' + [...crypto.getRandomValues(new Uint8Array(8))].map(b => 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 55]).join('') + '.bin';
   step(nParts > 1 ? '上传（' + Math.round(blob.length / 1048576) + 'MB，分 ' + nParts + ' 块）…' : '上传…'); bar(.7);
