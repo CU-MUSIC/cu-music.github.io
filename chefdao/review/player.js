@@ -95,7 +95,10 @@ const stageOf = v => { if (v.stage) return v.stage === 'none' ? '' : v.stage;   
 // 按阶段排：编辑在前、混音、母带在后；同阶段保持上传先后（排序稳定）。这样同阶段的版本总是连在一起分组
 { const rank = { '': 0, demo: 1, edit: 2, mix: 3, master: 4 }, at = new Map(V.map((v, i) => [v, i]));
   V.sort((x, y) => rank[stageOf(x)] - rank[stageOf(y)] || (x.ord || 1e3 + at.get(x)) - (y.ord || 1e3 + at.get(y))); }
-const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || String(V.filter(x => stageOf(x) === st).indexOf(v) + 1); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
+// 小版本（混音 2.1、2.2）：文件名里 _V2.1_ 或在 ✎ 里填 2.1；不占大版本号。和服务端 verNum 同一套
+const isMinor = v => v.minor !== undefined ? !!v.minor : /_V\d+\.\d+_/i.test(String(v.file || ''));
+const vnum = v => { const st = stageOf(v); let M = 0, k = 0; for (const x of V.filter(x => stageOf(x) === st)) { if (isMinor(x) && M) k++; else { M++; k = 0; } if (x === v) return k ? M + '.' + k : String(M); } return ''; };
+const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || vnum(v); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
 const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);
 const multiStage = new Set(V.map(stageOf)).size > 1;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
@@ -1725,10 +1728,15 @@ function ownerTools() {
     const st = { 0: 'none', 1: 'edit', 2: 'mix', 3: 'master', 4: 'demo' }[a.trim()]; if (!st) { busy('类别只能填 0 到 4'); return; }
     const inStage = V.filter(x => x !== v && stageOf(x) === (st === 'none' ? '' : st));
     const cur = cs === (st === 'none' ? '' : st) ? V.filter(x => stageOf(x) === cs).indexOf(v) + 1 : inStage.length + 1;
-    const b = prompt('在「' + (st === 'none' ? '不分类' : STAGE[st]) + '」里排第几（1 = 最前，现有 ' + inStage.length + ' 个其他版本）', String(cur)); if (b === null) return;
-    const pos = Math.max(1, Math.min(inStage.length + 1, Math.round(+b) || cur));
+    const b = prompt('在「' + (st === 'none' ? '不分类' : STAGE[st]) + '」里的序号\n填 3 = 第 3 个大版本；填 2.1 = 第 2 个的小版本（接在 2 和它已有的小版本后面）', cs === (st === 'none' ? '' : st) ? vlab(v) : String(cur)); if (b === null) return;
+    const mm = /^\s*(\d+)\.\d+\s*$/.exec(b), minor = !!mm;
+    let pos;
+    if (mm) {   // 小版本：插在第 M 个大版本那一组的最后
+      let M = 0, end = -1; inStage.forEach((x, i) => { if (!(isMinor(x) && M)) M++; if (M === +mm[1]) end = i; });
+      if (end < 0) { busy('「' + STAGE[st] + ' ' + mm[1] + '」不存在'); return; } pos = end + 2;
+    } else pos = Math.max(1, Math.min(inStage.length + 1, Math.round(+b) || cur));
     inStage.splice(pos - 1, 0, v);
-    try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: inStage.map((x, i) => ({ ver: x.ver, stage: x === v ? st : undefined, ord: i + 1 })) }); softReload(); }
+    try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: inStage.map((x, i) => ({ ver: x.ver, stage: x === v ? st : undefined, minor: x === v ? minor : undefined, ord: i + 1 })) }); softReload(); }
     catch (err) { busy('没保存上，检查网络再试'); }
   };
   if (V.length < 2) $('#seg').hidden = true;   // 只剩一版时列表本来就不显示，删除按钮放到上传条里
@@ -1740,7 +1748,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261121a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
@@ -1751,12 +1759,14 @@ function ownerTools() {
       // 文件名里的编号按阶段数：Mix V2 = 第 2 个混音，不一定等于页面里的 V2（Demo 占了 V1，第 1 个混音其实是 V2）
       const st = cuStage(n.raw), num = parseInt((n.ver || '').slice(1)) || 0, sv = STAGE[st] ? V.filter(v => stageOf(v) === st) : [];
       const same = V.find(v => v.ver === n.ver);
+      // 按显示序号找同一个版本：Mix V2 = 混音 2，Mix V2.1 = 混音 2.1（小版本）；有了才问覆盖，没有就接在最后
+      const want = STAGE[st] && num ? num + (n.sub ? '.' + n.sub : '') : '';
       let ver, existing;
-      if (STAGE[st] && num) { existing = sv[num - 1]; ver = existing ? existing.ver : (same || !n.ver ? next : n.ver); }
+      if (want) { existing = sv.find(v => vnum(v) === want); ver = existing ? existing.ver : next; }
       else { ver = n.ver && !(same && stageOf(same) !== st) ? n.ver : next; existing = V.find(v => v.ver === ver); }
-      const lab = (STAGE[st] ? STAGE[st] + ' ' : '') + (existing ? vlab(existing) : String(V.filter(v => stageOf(v) === st).length + 1));
+      const lab = (STAGE[st] ? STAGE[st] + ' ' : '') + (existing ? vlab(existing) : want || String(V.filter(v => stageOf(v) === st).length + 1));
       if (existing && !confirm('「' + lab + '」已经有了，要覆盖吗？')) return;
-      if (!confirm('把「' + file.name + '」上传为《' + S.title + '》' + (existing ? lab : (STAGE[st] ? STAGE[st] + ' ' + (V.filter(v => stageOf(v) === st).length + 1) : ver)) + '？')) return;
+      if (!confirm('把「' + file.name + '」上传为《' + S.title + '》' + (STAGE[st] ? lab : ver) + '？')) return;
       own.classList.add('busy');
       const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, overwrite: !!existing, date: n.date, step: busy,
         bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
@@ -2181,7 +2191,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261121a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }

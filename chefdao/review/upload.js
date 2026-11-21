@@ -9,11 +9,11 @@ const here = (document.currentScript && document.currentScript.src) || location.
 // 舞步 Mix @ChefDao_V3_1022.m4a → 歌名 / 版本 / 日期；Edit / Mix / Master 不算歌名
 function cuNameInfo(fn) {
   const raw = fn.replace(/\.[^.]+$/, '');
-  const m = raw.match(/_V(\d+)_(\d{2})(\d{2})$/);
+  const m = raw.match(/_V(\d+)(?:\.(\d+))?_(\d{2})(\d{2})$/);   // _V2.1_ = 混音 2 的小版本 2.1
   // 歌名去掉流程后缀：_premaster / _master / _mix / _edit / _bip / _bounce / _final / _demo 这类，以及结尾的 _2 编号
-  const title = raw.replace(/_V\d+_\d{4}$/, '').replace(/@ChefDao.*$/i, '').trim().replace(/[_ ]\d+$/, '')
+  const title = raw.replace(/_V\d+(?:\.\d+)?_\d{4}$/, '').replace(/@ChefDao.*$/i, '').trim().replace(/[_ ]\d+$/, '')
     .replace(/([_\s-]+(pre-?master|master(ed)?|mix(down)?|edit|demo|bip|bounce|final|print|stem[s]?|ref)\d*)+$/i, '').trim();
-  return { raw, title, ver: m ? 'V' + (+m[1]) : '', date: m ? `${new Date().getFullYear()}-${m[2]}-${m[3]}` : '' };
+  return { raw, title, ver: m ? 'V' + (+m[1]) : '', sub: m && m[2] ? +m[2] : 0, date: m ? `${new Date().getFullYear()}-${m[3]}-${m[4]}` : '' };
 }
 // 文件名里的阶段：Edit / Mix / Master（premaster 算混音）。编号 V1、V2 是每个阶段各自从 1 数的，所以 Edit V1 和 Mix V1 同名不是同一个版本
 function cuStage(file) {
