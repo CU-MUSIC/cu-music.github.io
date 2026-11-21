@@ -35,14 +35,15 @@ body{margin:0;height:100dvh;background:var(--bg);color:var(--text);font:18px/1.3
 /* 顶栏：像 iMessage 的联系人头像 + 名字，毛玻璃 */
 header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-inset-top)) 16px 8px;text-align:center;background:var(--head);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--hair)}
 .who{display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer}
-.av{width:48px;height:48px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px var(--ring)}
-.nm{display:flex;align-items:center;gap:2px;font-size:12.5px;line-height:15px;font-weight:400;letter-spacing:.006em;color:var(--text)}
+.av{width:44px;height:44px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px var(--ring)}
+.nm{display:flex;align-items:center;gap:3px;margin-top:2px;font-size:14px;line-height:18px;font-weight:600;letter-spacing:.006em;color:var(--text)}
 .nm svg{opacity:.45}
 .nm i{font-style:normal;color:var(--dim);margin-left:4px}
+.who .role{font-size:12px;line-height:15px;color:var(--dim)}
 .who:active .av{transform:scale(.95)}
 
 /* 对话 */
-#log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 0 8px}
+#log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:6px 0 8px}
 #log>*{max-width:720px;margin-left:auto;margin-right:auto}
 .intro{padding:34px 24px 14px;text-align:center}
 .intro .pic{width:84px;height:84px;margin:0 auto 12px;border-radius:50%;background:#fff center/cover no-repeat url(/chat/avatar.png?v=2);box-shadow:0 0 0 .5px var(--ring)}
@@ -108,15 +109,11 @@ button.send:active{transform:scale(.88)}
   <button class="who" id="who" type="button" aria-label="关于匿名咨询">
     <span class="av" role="img" aria-label="刀大厨头像"></span>
     <span class="nm">刀大厨 ChefDao<svg width="7" height="11" viewBox="0 0 7 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5 5.5 5.5 1.5 9.5"/></svg></span>
+    <span class="role">匿名咨询<span id="avg"></span></span>
   </button>
 </header>
 
 <div id="log" aria-live="polite">
-  <div class="intro">
-    <div class="pic" role="img" aria-label="刀大厨头像"></div>
-    <h2>刀大厨 ChefDao</h2>
-    <div class="role">匿名咨询<span id="avg"></span></div>
-  </div>
 </div>
 
 <form id="f" autocomplete="off">
@@ -284,8 +281,8 @@ button.send:active{transform:scale(.88)}
   // 平均回复时间（服务端按最近 60 天真实对话算；还没有数据就不显示）
   fetch(API + '/chat/stat').then(function (r) { return r.json(); }).then(function (j) {
     if (!j || !j.ok || !j.n) return;
-    var m = j.avg / 60000, t = m < 1 ? '1 分钟内' : m < 60 ? '约 ' + Math.round(m) + ' 分钟' : m < 1440 ? '约 ' + Math.round(m / 60) + ' 小时' : '约 ' + Math.round(m / 1440) + ' 天';
-    $('avg').textContent = ' · 平均回复' + t.replace('约 ', '约');
+    var m = j.avg / 60000, t = m < 1 ? '1分钟内' : m < 60 ? '约' + Math.round(m) + '分钟' : m < 1440 ? '约' + Math.round(m / 60) + '小时' : '约' + Math.round(m / 1440) + '天';
+    $('avg').textContent = ' · 平均回复' + t;
   }).catch(function () {});
   pull(true).then(function () { bottom(false); });
   setInterval(function () { if (!document.hidden) pull(false); }, 5000);
