@@ -886,33 +886,41 @@ function ownerPush(i, now) {
 }
 const grow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
 
-// 段落评论（照 Samply）：点时间数字 → 变成一段，开始点固定，结束点跟着播放头走（播放 / 点波形都会更新，不会早于开始点）；再点一次回到单个时间点
-// 开着 A–B 循环时开始打字，直接用循环这一段
-let lockedE = null;
+// 段落评论（照 Samply 实测）：
+//   没打字时：时间跟着播放头走
+//   一开始打字：自动变成一段，开始点锁在开始打字那一刻，结束点继续跟着播放头（暂停着就是同一个点 = 单个时间点）
+//   点时间数字：一段 ↔ 单点（单点也跟着播放头走；切回一段时从现在重新起算）；点时钟图标：开始点改成现在
+//   开着 A–B 循环时开始打字：直接用循环这一段，结束点不跟播放头
+let lockedE = null, ePin = false;
 const endUi = () => {
   const s = $('#stampT'), rg = $('#rng');
   if (locked === null) { rg.hidden = true; return; }
   if (lockedE === null) { s.textContent = fmt(locked); rg.hidden = true; return; }
   s.innerHTML = '<b>' + fmt(locked) + '</b><i> – ' + fmt(lockedE) + '</i>';
-  const d = dur() || 1; rg.hidden = false; rg.style.left = (locked / d * 100) + '%'; rg.style.width = Math.max(0, (lockedE - locked) / d * 100) + '%';
+  const d = dur() || 1; rg.hidden = lockedE <= locked; rg.style.left = (locked / d * 100) + '%'; rg.style.width = Math.max(0, (lockedE - locked) / d * 100) + '%';
   rg.firstChild.textContent = fmt(locked) + ' — ' + fmt(lockedE);
 };
-setInterval(() => { if (locked === null || lockedE === null) return; const t = Math.max(locked, Math.floor(curTime())); if (t !== lockedE) { lockedE = t; endUi(); } }, 200);
+setInterval(() => {
+  if (locked === null) return; const now = Math.floor(curTime());
+  if (lockedE === null) { if (now !== locked) { locked = now; endUi(); } }
+  else if (!ePin) { const t = Math.max(locked, now); if (t !== lockedE) { lockedE = t; endUi(); } }
+}, 200);
 const fmtR = o => fmt(o.t) + (o.e > o.t ? '–' + fmt(o.e) : '');
 txt.addEventListener('input', () => {
   if (txt.value && locked === null) {
-    const lp = LOOP.a !== null && LOOP.b !== null && LOOP.b - LOOP.a >= 1;   // 开着 A–B 循环：直接用循环这一段
-    locked = Math.floor(lp ? LOOP.a : curTime()); lockedE = lp ? Math.floor(LOOP.b) : null;
+    const lp = LOOP.a !== null && LOOP.b !== null && LOOP.b - LOOP.a >= 1;
+    locked = Math.floor(lp ? LOOP.a : curTime()); lockedE = lp ? Math.floor(LOOP.b) : locked; ePin = lp;
     $('#stamp').classList.add('locked'); endUi(); }
-  if (!txt.value) { locked = null; lockedE = null; $('#stamp').classList.remove('locked'); endUi(); }
+  if (!txt.value) { locked = null; lockedE = null; ePin = false; $('#stamp').classList.remove('locked'); endUi(); }
   $('#add').classList.toggle('on', !!txt.value.trim());
   grow(txt);
 });
-// 点时钟图标：开始点改成现在；点时间数字：单点 ↔ 一段
 $('#stamp').onclick = e => {
-  if (locked === null) { locked = Math.floor(curTime()); $('#stamp').classList.add('locked'); }
-  else if (!e.target.closest('#stampT')) { locked = Math.floor(curTime()); if (lockedE !== null) lockedE = locked; }
-  else lockedE = lockedE === null ? Math.max(locked, Math.floor(curTime())) : null;
+  const now = Math.floor(curTime()); ePin = false;
+  if (locked === null) { locked = now; lockedE = now; $('#stamp').classList.add('locked'); }
+  else if (!e.target.closest('#stampT')) { locked = now; if (lockedE !== null) lockedE = now; }
+  else if (lockedE === null) { locked = now; lockedE = now; }
+  else { lockedE = null; locked = now; }
   endUi();
 };
 const CHIPS = ['人声偏大', '人声偏小', '人声太亮', '太闷', '低频太多', '低频不够', '鼓不够力', '音高修正', '太吵', '想要更多空间感'];
@@ -926,7 +934,7 @@ function add() {
   const o = { t: locked === null ? Math.floor(curTime()) : locked, m: v, id: Date.now() };
   if (lockedE !== null && lockedE > o.t) o.e = lockedE;
   notes.push(o); notes.sort((x, y) => x.t - y.t);
-  txt.value = ''; locked = null; lockedE = null; endUi(); $('#stamp').classList.remove('locked'); $('#add').classList.remove('on'); grow(txt);
+  txt.value = ''; locked = null; lockedE = null; ePin = false; endUi(); $('#stamp').classList.remove('locked'); $('#add').classList.remove('on'); grow(txt);
   render(o.id); save(); updateCta();
   clearTimeout(syncT); track(vi, true);   // 点发送（回车）就立刻同步给你，不等防抖
 }
@@ -2905,7 +2913,7 @@ function lyrBind(el, L) {
   el.querySelectorAll('.ln').forEach(d => d.onclick = e => {
     const x = L[+d.dataset.i]; if (x.t == null) return; const t = Math.max(0, x.t + lyrOff());
     if (e.target.closest('.lc')) {   // 对这一句写评论：时间点锁在这句开头，引用这句歌词
-      lyrFullClose(); seek(t); locked = Math.floor(t); $('#stampT').textContent = fmt(locked); $('#stamp').classList.add('locked');
+      lyrFullClose(); seek(t); locked = Math.floor(t); lockedE = locked; ePin = false; $('#stamp').classList.add('locked'); endUi();
       const q = '「' + x.x.slice(0, 30) + '」'; if (!txt.value.startsWith(q)) txt.value = q + ' ' + txt.value; txt.focus(); txt.setSelectionRange(txt.value.length, txt.value.length); grow(txt);
       txt.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     seek(t); if (a.paused && !$('#play').disabled) a.play();
