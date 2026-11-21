@@ -217,7 +217,7 @@ document.body.innerHTML = `
   <div class="sect">我的评论<span class="n" id="n">0</span></div>
   <div class="group" id="list"></div>
   <div class="empty" id="empty">还没有评论，播放时随时写下来</div>
-  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><button class="cgrp press" id="cas">助理链接</button><button class="cgrp press" id="call" hidden>全部已读</button><span class="r" id="cfn"></span></div><div class="cfcat" id="cfcat" hidden></div><div class="group" id="cfl"></div></section>
+  <section id="cfb" hidden><div class="sect">客户评论<button class="cgrp press" id="cgrp" aria-pressed="false">按歌手</button><button class="cgrp press" id="cas">助理链接</button><button class="cgrp press" id="call" hidden>全部已读</button><button class="cgrp press" id="chd" hidden></button><span class="r" id="cfn"></span></div><div class="cfcat" id="cfcat" hidden></div><div class="group" id="cfl"></div></section>
 
   <div class="sect">整体感觉</div>
   <div class="ovt" id="ovtags"></div>
@@ -1794,6 +1794,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
       box.querySelectorAll('.donesep').forEach(x => x.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 120, fill: 'backwards' })); };
     let catF = '';   // 当前按哪个分类筛选
     const stPrev = new Map();   // 每条评论上一次的状态圈，用来做过渡动画
+    const justDone = new Set();   // 这次刚点完成的评论：隐藏已完成时先留着，点错了能撤回；换个视图 / 点按钮才消失
     cfbRender = () => {
     const box = $('#cfl'); box.innerHTML = '';
     const done = o => { const r = mine.get(rk(o.ver, o.t, o.m)); return !!(r && r.done); };
@@ -1805,8 +1806,14 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
       cb.innerHTML = ['', ...CATS, '未分类'].filter(c => c === '' || cnt(c)).map(c => '<button class="press' + (catF === c ? ' on' : '') + '" data-c="' + c + '">' + (c || '全部') + ' ' + cnt(c) + '</button>').join('');
       cb.querySelectorAll('button').forEach(b => b.onclick = () => { catF = b.dataset.c; cfbRender(); }); }
     const grp = store.get('review:cfbgroup') === '1', all = ver.filter(o => !catF || (catF === '未分类' ? !catOf(o) : catOf(o) === catF));
-    const here = grp ? [...all].sort((x, y) => x.who.localeCompare(y.who, 'zh') || done(x) - done(y) || (x.t ?? 1e9) - (y.t ?? 1e9))
+    let here = grp ? [...all].sort((x, y) => x.who.localeCompare(y.who, 'zh') || done(x) - done(y) || (x.t ?? 1e9) - (y.t ?? 1e9))
       : all.filter(o => !o.del && !done(o)).concat(all.filter(o => !o.del && done(o)), all.filter(o => o.del));
+    // 隐藏已完成：已处理的和客户删掉的评论默认收起来，点按钮再展开（默认收起）
+    const hideDone = store.get('review:cfbhide') !== '0', kOf = o => rk(o.ver, o.t == null ? 0 : o.t, o.mk || o.m);
+    const nHid = all.filter(o => o.del || done(o)).length;
+    if (hideDone) here = here.filter(o => !(o.del || done(o)) || justDone.has(kOf(o)));
+    { const hb = $('#chd'); hb.hidden = !nHid; hb.textContent = hideDone ? '显示已完成 · ' + nHid : '隐藏已完成'; hb.setAttribute('aria-pressed', !hideDone);
+      hb.onclick = ev => { ev.stopPropagation(); store.set('review:cfbhide', hideDone ? '0' : '1'); justDone.clear(); cfbRender(); }; }
     box.classList.toggle('grouped', grp); $('#cgrp').classList.toggle('on', grp); $('#cgrp').setAttribute('aria-pressed', grp);
     const rows = [], unread = []; let sep = false, lastWho = null;
     // 顶部「全部已读」：这一版还没看过的评论一次标成已读
@@ -1840,7 +1847,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
         const save = async (body, lazy) => {
           const before = mine.get(k);
           const moved = lazy && body.done !== undefined && !!body.done !== !!(before && before.done);   // 完成 / 取消完成：要换位置（沉底 / 回来），滑过去
-          if (lazy) { mine.set(k, { ...(before || {}), ...body }); if (moved) cfbFlip(); else { sync(); updAll(); } }
+          if (lazy) { mine.set(k, { ...(before || {}), ...body }); if (body.done) justDone.add(k); else if (body.done === false) justDone.delete(k); if (moved) cfbFlip(); else { sync(); updAll(); } }
           try {
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ...body }) });
@@ -1872,7 +1879,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
       box.appendChild(row);
     });
     rows.forEach(f => f()); updAll();
-    { const lv = here.filter(x => !x.del); $('#cfn').textContent = lv.length ? lv.length + ' 条 · ' + [...new Set(lv.map(x => x.who))].join('、') : '这一版还没有'; }
+    { const lv = here.filter(x => !x.del); $('#cfn').textContent = lv.length ? lv.length + ' 条 · ' + [...new Set(lv.map(x => x.who))].join('、') : nHid ? '都已处理' : '这一版还没有'; }
     $('#cfb').hidden = false;
     };
     { const hd = $('#cfb .sect'); if (store.get('review:fold:cfb') === '1') $('#cfb').classList.add('fold');
