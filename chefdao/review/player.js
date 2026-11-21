@@ -209,6 +209,7 @@ document.body.innerHTML = `
   <div class="vfocus" id="vfocus" hidden></div>
   <div class="composer">
     <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT">0:00</span></span>
+    <button class="stamp end press" id="stampE" type="button" hidden aria-label="设段落结束点">至 …</button>
     <textarea id="txt" rows="1" placeholder="留下评论…"></textarea>
     <button class="send" id="add" aria-label="添加评论"><svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
   </div>
@@ -886,9 +887,22 @@ function ownerPush(i, now) {
 }
 const grow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
 
+// 段落评论：开始点 = 开始打字那一刻（或 A–B 循环的起点），播到段落结尾点「至 …」记结束点；再点一次 = 改成现在的位置
+let lockedE = null;
+const endUi = () => { const b = $('#stampE'); b.hidden = locked === null; b.classList.toggle('locked', lockedE !== null); b.textContent = lockedE !== null ? '至 ' + fmt(lockedE) : '至 …'; };
+$('#stampE').onclick = () => {
+  const t = Math.floor(curTime());
+  if (locked === null) return;
+  if (t <= locked) { hud('先播到这段的结尾，再点「至」记下结束点'); return; }
+  lockedE = t; endUi();
+};
+const fmtR = o => fmt(o.t) + (o.e > o.t ? '–' + fmt(o.e) : '');
 txt.addEventListener('input', () => {
-  if (txt.value && locked === null) { locked = Math.floor(curTime()); $('#stampT').textContent = fmt(locked); $('#stamp').classList.add('locked'); }
-  if (!txt.value) { locked = null; $('#stamp').classList.remove('locked'); }
+  if (txt.value && locked === null) {
+    const lp = LOOP.a !== null && LOOP.b !== null && LOOP.b - LOOP.a >= 1;   // 开着 A–B 循环：直接用循环这一段
+    locked = Math.floor(lp ? LOOP.a : curTime()); lockedE = lp ? Math.floor(LOOP.b) : null;
+    $('#stampT').textContent = fmt(locked); $('#stamp').classList.add('locked'); endUi(); }
+  if (!txt.value) { locked = null; lockedE = null; $('#stamp').classList.remove('locked'); endUi(); }
   $('#add').classList.toggle('on', !!txt.value.trim());
   grow(txt);
 });
@@ -902,8 +916,9 @@ CHIPS.forEach(c => {
 function add() {
   const v = txt.value.trim(); if (!v) { txt.focus(); return; }
   const o = { t: locked === null ? Math.floor(curTime()) : locked, m: v, id: Date.now() };
+  if (lockedE !== null && lockedE > o.t) o.e = lockedE;
   notes.push(o); notes.sort((x, y) => x.t - y.t);
-  txt.value = ''; locked = null; $('#stamp').classList.remove('locked'); $('#add').classList.remove('on'); grow(txt);
+  txt.value = ''; locked = null; lockedE = null; endUi(); $('#stamp').classList.remove('locked'); $('#add').classList.remove('on'); grow(txt);
   render(o.id); save(); updateCta();
   clearTimeout(syncT); track(vi, true);   // 点发送（回车）就立刻同步给你，不等防抖
 }
@@ -1064,7 +1079,7 @@ function render(newId) {
     if (!sep && isDone(o)) { sep = true; list.appendChild(doneSep()); }
     const row = document.createElement('div'); row.className = 'row' + (o.id === newId ? ' new' : '');
     row.innerHTML = '<button class="t press"></button><div class="m"></div><button class="x" aria-label="删除"><svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2 2 10"/></svg></button>';
-    const t = row.querySelector('.t'); t.textContent = fmt(o.t);
+    const t = row.querySelector('.t'); t.textContent = fmtR(o);
     t.onclick = () => { seek(o.t); if (a.paused && !$('#play').disabled) a.play(); };
     row.querySelector('.m').textContent = o.m;
     if (o.id) { const ts = document.createElement('span'); ts.className = 'ts'; ts.textContent = tstr(o.id); row.querySelector('.m').appendChild(ts); }   // 评论发表时间
@@ -1770,7 +1785,7 @@ async function clientFb() {
     (j.feedback || []).filter(f => f.slug === S.slug).forEach(f => {
       let cm = []; try { cm = JSON.parse(f.comments || '[]'); } catch (e) {}
       const who = names.get(f.lid) || ('听众 ' + f.lid);
-      cm.forEach(c => items.push({ ver: f.ver, t: c.t, m: c.m, who, sent: f.sent, at: f.updated, del: !!c.del }));
+      cm.forEach(c => items.push({ ver: f.ver, t: c.t, e: c.e, m: c.m, who, sent: f.sent, at: f.updated, del: !!c.del }));
       if (f.overall) items.push({ ver: f.ver, t: null, m: '整体：' + f.overall, mk: '整体：' + String(f.overall).trim().slice(0, 120), who, sent: f.sent, at: f.updated });
     });
     if (!items.length) return;
@@ -1826,7 +1841,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
       const row = document.createElement('div'); row.className = 'row'; row.dataset.k = rk(o.ver, o.t == null ? 0 : o.t, o.mk || o.m);
       row.innerHTML = '<button class="t press"></button><div class="m"></div>';
       const tb = row.querySelector('.t');
-      tb.textContent = o.t == null ? '整体' : fmt(o.t);
+      tb.textContent = o.t == null ? '整体' : fmtR(o);
       if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
       row.querySelector('.m').textContent = o.m;
       const wb = document.createElement('div'); wb.className = 'cwho'; wb.textContent = o.who + (o.at ? ' · ' + tstr(o.at) : ''); row.querySelector('.m').prepend(wb);   // 谁写的 · 什么时候
@@ -2746,7 +2761,7 @@ function track(i, force, sent, ovs) {
   if (ovs) clearTimeout(syncT);
   s.saved = s.sec;
   let d = {}; try { d = JSON.parse(store.get(dataKey(i)) || '{}'); } catch (e) {}
-  const cm = (d.notes || []).map(o => ({ t: Math.round(o.t * 10) / 10, m: String(o.m || '').slice(0, 500) }));
+  const cm = (d.notes || []).map(o => ({ t: Math.round(o.t * 10) / 10, ...(o.e > o.t ? { e: Math.round(o.e * 10) / 10 } : {}), m: String(o.m || '').slice(0, 500) }));
   const body = JSON.stringify({ k: WK, slug: S.slug, title: S.title, sid, ver: v.ver, lid, device, visit: visits,
     sec: Math.round(s.sec * 10) / 10, dur: v.duration, ends: s.ends, bins: s.bins.map(x => Math.round(x * 10) / 10), notes: cm.length,
     cm, ov: String(d.overall || '').slice(0, 1000), sent: !!sent, ovs: !!ovs });

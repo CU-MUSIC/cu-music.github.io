@@ -175,6 +175,9 @@ svg{display:block}
   background:var(--accent-tint);color:var(--accent-2);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;transition:background-color .2s}
 .stamp svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
 .stamp.locked{background:var(--accent);color:var(--ink)}
+.stamp.end{margin-left:-6px;border:0;font:inherit;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;background:var(--fill-2);color:var(--text-2);cursor:pointer}
+.stamp.end.locked{background:var(--accent);color:var(--ink)}
+.stamp.end[hidden]{display:none}
 .composer textarea{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font:inherit;line-height:1.45;resize:none;
   padding:4px 2px;max-height:160px;min-height:32px}
 .composer textarea::placeholder{color:var(--text-3)}
