@@ -218,8 +218,11 @@ document.body.innerHTML = `
   <div class="composer">
     <span class="stamp" id="stamp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="stampT" role="button" aria-label="点一下改成一段">0:00</span></span>
     <textarea id="txt" rows="1" placeholder="留下评论…"></textarea>
+    <button class="clipb press" id="clipB" type="button" aria-label="附录屏" title="附录屏"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3z"/></svg><span class="cliptip" id="clipTip" hidden>可附录屏说明</span></button>
+    <input type="file" id="clipF" accept="video/*,.mp4,.mov,.m4v,.webm" hidden>
     <button class="send" id="add" aria-label="添加评论"><svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
   </div>
+  <div class="clipchip" id="clipChip" hidden></div>
   <div class="chips" id="chips"></div>
 
   <div class="sect">我的评论<span class="n" id="n">0</span></div>
@@ -914,13 +917,25 @@ setInterval(() => {
   else if (!ePin) { const t = Math.max(locked, now); if (t !== lockedE) { lockedE = t; endUi(); } }
 }, 200);
 const fmtR = o => o.nt ? '整体' : fmt(o.t) + (o.e > o.t ? '–' + fmt(o.e) : '');
+// 评论里的录屏：先是一个「▶ 录屏」小按钮，点了在评论下面展开播放（播放时暂停歌曲，录屏里一般带着声音）
+function clipView(id) {
+  const w = document.createElement('div'); w.className = 'clipv';
+  w.innerHTML = '<button class="press" type="button"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>录屏</button>';
+  w.querySelector('button').onclick = ev => { ev.stopPropagation();
+    if (w.querySelector('video')) { w.querySelector('video').remove(); w.classList.remove('open'); return; }
+    const vd = document.createElement('video'); vd.controls = true; vd.playsInline = true; vd.preload = 'metadata'; vd.src = API_BASE + '/clip?id=' + id;
+    vd.onplay = () => { try { if (!a.paused) a.pause(); } catch (e) {} };
+    vd.onerror = () => { w.querySelector('button').lastChild.textContent = '录屏已过期'; vd.remove(); };
+    w.appendChild(vd); w.classList.add('open'); vd.play().catch(() => {}); };
+  return w;
+}
 txt.addEventListener('input', () => {
   if (txt.value && locked === null && !noTime) {
     const lp = LOOP.a !== null && LOOP.b !== null && LOOP.b - LOOP.a >= 1;
     locked = Math.floor(lp ? LOOP.a : curTime()); lockedE = lp ? Math.floor(LOOP.b) : locked; ePin = lp;
     $('#stamp').classList.add('locked'); endUi(); }
   if (!txt.value) { locked = null; lockedE = null; ePin = false; $('#stamp').classList.remove('locked'); endUi(); }
-  $('#add').classList.toggle('on', !!txt.value.trim());
+  $('#add').classList.toggle('on', !!txt.value.trim() || !!(CLIP && CLIP.id));
   grow(txt);
 });
 $('#stamp').onclick = e => {
@@ -941,9 +956,50 @@ CHIPS.forEach(c => {
   b.onclick = () => { txt.value = txt.value ? txt.value + '，' + c : c; txt.dispatchEvent(new Event('input')); txt.focus(); };
   $('#chips').appendChild(b);
 });
+// 评论附录屏：选视频 → 分块传到 R2（每块 ≤ 50MB）→ 评论里存录屏 id。传的时候可以接着写字，传完才能发
+let CLIP = null;   // { name, size, pct, id }
+const clipMB = n => n >= 1e9 ? (n / 1e9).toFixed(1) + 'GB' : Math.max(1, Math.round(n / 1048576)) + 'MB';
+function clipUi() {
+  const c = $('#clipChip'); c.hidden = !CLIP; $('#clipB').classList.toggle('on', !!CLIP);
+  $('#add').classList.toggle('on', !!txt.value.trim() || !!(CLIP && CLIP.id));
+  if (!CLIP) { c.innerHTML = ''; return; }
+  c.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3z"/></svg><span class="cn"></span><span class="cp"></span><button class="cx press" type="button" aria-label="去掉录屏">×</button><i style="width:' + (CLIP.id ? 100 : CLIP.pct) + '%"></i>';
+  c.querySelector('.cn').textContent = CLIP.name; c.querySelector('.cp').textContent = CLIP.id ? '录屏 · ' + clipMB(CLIP.size) : '上传中 ' + CLIP.pct + '%';
+  c.querySelector('.cx').onclick = () => { if (CLIP && CLIP.xhr) CLIP.xhr.abort(); CLIP = null; clipUi(); };
+}
+const putPart = (url, blob, onp) => new Promise((ok, no) => { const x = new XMLHttpRequest(); if (CLIP) CLIP.xhr = x; x.open('PUT', url); x.upload.onprogress = e => onp(e.loaded);
+  x.onload = () => { try { const j = JSON.parse(x.responseText); j.ok ? ok(j) : no(new Error('part')); } catch (e) { no(e); } }; x.onerror = x.onabort = () => no(new Error('net')); x.send(blob); });
+async function clipUp(file) {
+  if (!file) return; if (!WK) { alert('这个页面暂时传不了录屏'); return; }
+  if (file.size > 400 * 1048576) { alert('录屏超过 400MB，剪短一点或降低画质再传'); return; }
+  const me = CLIP = { name: file.name || '录屏', size: file.size, pct: 0 }; clipUi();
+  try {
+    const st = await (await fetch(API_BASE + '/clip/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, lid, size: file.size, mime: file.type || 'video/mp4' }) })).json();
+    if (!st.ok) throw new Error(st.e || 'start');
+    const parts = []; let sent = 0;
+    for (let n = 1, off = 0; off < file.size; n++, off += st.part) {
+      const blob = file.slice(off, off + st.part);
+      const j = await putPart(API_BASE + '/clip/part?id=' + st.id + '&u=' + encodeURIComponent(st.uploadId) + '&n=' + n + '&k=' + encodeURIComponent(WK), blob,
+        l => { if (CLIP === me) { me.pct = Math.min(99, Math.floor((sent + l) / file.size * 100)); clipUi(); } });
+      sent += blob.size; parts.push({ partNumber: n, etag: j.etag }); if (CLIP !== me) throw new Error('cancel');
+    }
+    const d = await (await fetch(API_BASE + '/clip/done', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, id: st.id, uploadId: st.uploadId, parts }) })).json();
+    if (!d.ok) throw new Error(d.e || 'done');
+    if (CLIP === me) { me.id = st.id; me.size = d.size; clipUi(); }
+  } catch (e) {
+    if (CLIP !== me || e.message === 'cancel') return;
+    CLIP = null; clipUi(); alert(e.message === 'big' ? '录屏超过 400MB，剪短一点再传' : e.message === 'full' ? '录屏空间暂时满了，可以先发到微信' : '录屏没传上，检查网络再试');
+  }
+}
+$('#clipB').onclick = () => { try { store.set('review:cliptip', '9'); } catch (e) {} $('#clipTip').hidden = true; $('#clipF').click(); };
+$('#clipF').onchange = e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; clipUp(f); };
+if (IS_OWNER) $('#clipB').hidden = true;   // 你自己的批注不走录屏
+else { const n = +(store.get('review:cliptip') || 0); if (n < 3) { $('#clipTip').hidden = false; try { store.set('review:cliptip', String(n + 1)); } catch (e) {} setTimeout(() => { $('#clipTip').hidden = true; }, 9000); } }   // 新功能提示：前 3 次打开显示一下
 function add() {
-  const v = txt.value.trim(); if (!v) { txt.focus(); return; }
+  if (CLIP && !CLIP.id) { alert('录屏还在上传，传完再发'); return; }
+  const v = txt.value.trim() || (CLIP ? '录屏说明' : ''); if (!v) { txt.focus(); return; }
   const o = noTime ? { t: 0, nt: 1, m: v, id: Date.now() } : { t: locked === null ? Math.floor(curTime()) : locked, m: v, id: Date.now() };
+  if (CLIP) { o.v = CLIP.id; CLIP = null; clipUi(); }
   if (!noTime && lockedE !== null && lockedE > o.t) o.e = lockedE;
   if (noTime) { noTime = false; $('#stamp').classList.remove('off'); }   // 发完恢复带时间点
   notes.push(o); notes.sort((x, y) => x.t - y.t);
@@ -1111,6 +1167,7 @@ function render(newId) {
     const t = row.querySelector('.t'); t.textContent = fmtR(o);
     t.onclick = () => { if (o.nt) return; seek(o.t); if (a.paused && !$('#play').disabled) a.play(); };
     row.querySelector('.m').textContent = o.m;
+    if (o.v) row.querySelector('.m').appendChild(clipView(o.v));
     if (o.id) { const ts = document.createElement('span'); ts.className = 'ts'; ts.textContent = tstr(o.id); row.querySelector('.m').appendChild(ts); }   // 评论发表时间
     decorate(row, REPLIES.get(rk(cur.ver, o.t, o.m)));
     row.dataset.k = rk(cur.ver, o.t, o.m); if (NEWK.has(row.dataset.k)) row.querySelector('.m').insertAdjacentHTML('afterbegin', '<span class="nwd" title="刀大厨有新动态"></span>');
@@ -1756,7 +1813,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122c'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122d'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
@@ -1825,7 +1882,7 @@ async function clientFb() {
     (j.feedback || []).filter(f => f.slug === S.slug).forEach(f => {
       let cm = []; try { cm = JSON.parse(f.comments || '[]'); } catch (e) {}
       const who = names.get(f.lid) || ('听众 ' + f.lid);
-      cm.forEach(c => items.push({ ver: f.ver, t: c.nt ? null : c.t, mk: c.nt ? c.m : undefined, e: c.e, m: c.m, who, sent: f.sent, at: f.updated, del: !!c.del }));   // nt：不带时间点，显示「整体」
+      cm.forEach(c => items.push({ ver: f.ver, t: c.nt ? null : c.t, mk: c.nt ? c.m : undefined, e: c.e, v: c.v, m: c.m, who, sent: f.sent, at: f.updated, del: !!c.del }));   // nt：不带时间点，显示「整体」
       if (f.overall) items.push({ ver: f.ver, t: null, m: '整体：' + f.overall, mk: '整体：' + String(f.overall).trim().slice(0, 120), who, sent: f.sent, at: f.updated });
     });
     if (!items.length) return;
@@ -1890,6 +1947,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
       if (o.t == null) tb.disabled = true; else tb.onclick = () => jumpTo(o.ver, o.t);
       row.querySelector('.m').textContent = o.m;
       const wb = document.createElement('div'); wb.className = 'cwho'; wb.textContent = o.who + (o.at ? ' · ' + tstr(o.at) : ''); row.querySelector('.m').prepend(wb);   // 谁写的 · 什么时候
+      if (o.v && !o.del) row.querySelector('.m').appendChild(clipView(o.v));
       if (o.del) { row.classList.add('delc'); wb.textContent += ' · 客户已删除'; box.appendChild(row); return; }   // 客户删掉的评论：划线留底，不能再操作
       {
         const kt = o.t == null ? 0 : o.t, km = o.mk || o.m;   // 整体评论：时间记 0，文字取前 120 字做键
@@ -1940,7 +1998,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
           if (items && items.length) {
             const mt = row.querySelector('.m'); mt.classList.add('tdf'); mt.title = '点开看客户原话';
             { const tn = [...mt.childNodes].find(n => n.nodeType === 3); if (tn) { const sp = document.createElement('span'); sp.className = 'mtx'; sp.textContent = tn.textContent; tn.replaceWith(sp); } }
-            mt.onclick = ev => { if (ev.target.closest('button, .tdl, .thr')) return; mt.classList.toggle('open'); };
+            mt.onclick = ev => { if (ev.target.closest('button, .tdl, .thr, .clipv')) return; mt.classList.toggle('open'); };
             const ul = document.createElement('div'); ul.className = 'tdl';
             ul.innerHTML = items.map((it, i) => `<label class="${it.d ? 'tk' : ''}"><input type="checkbox" data-i="${i}"${it.d ? ' checked' : ''}><span>${esc(it.x)}</span></label>`).join('');
             ul.querySelectorAll('input').forEach(cb => cb.onchange = () => { const nx = items.map((it, i) => i === +cb.dataset.i ? { ...it, d: cb.checked ? 1 : 0 } : it);
@@ -2222,7 +2280,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122c'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122d'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
@@ -2823,7 +2881,7 @@ function track(i, force, sent, ovs) {
   if (ovs) clearTimeout(syncT);
   s.saved = s.sec;
   let d = {}; try { d = JSON.parse(store.get(dataKey(i)) || '{}'); } catch (e) {}
-  const cm = (d.notes || []).map(o => ({ t: Math.round(o.t * 10) / 10, ...(o.e > o.t ? { e: Math.round(o.e * 10) / 10 } : {}), ...(o.nt ? { nt: 1 } : {}), m: String(o.m || '').slice(0, 500) }));
+  const cm = (d.notes || []).map(o => ({ t: Math.round(o.t * 10) / 10, ...(o.e > o.t ? { e: Math.round(o.e * 10) / 10 } : {}), ...(o.nt ? { nt: 1 } : {}), ...(o.v ? { v: o.v } : {}), m: String(o.m || '').slice(0, 500) }));
   const body = JSON.stringify({ k: WK, slug: S.slug, title: S.title, sid, ver: v.ver, lid, device, visit: visits,
     sec: Math.round(s.sec * 10) / 10, dur: v.duration, ends: s.ends, bins: s.bins.map(x => Math.round(x * 10) / 10), notes: cm.length,
     cm, ov: String(d.overall || '').slice(0, 1000), sent: !!sent, ovs: !!ovs });
