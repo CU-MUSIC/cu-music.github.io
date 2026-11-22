@@ -96,8 +96,13 @@ const stageOf = v => { if (v.stage) return v.stage === 'none' ? '' : v.stage;   
 { const rank = { '': 0, demo: 1, edit: 2, mix: 3, master: 4 }, at = new Map(V.map((v, i) => [v, i]));
   V.sort((x, y) => rank[stageOf(x)] - rank[stageOf(y)] || (x.ord || 1e3 + at.get(x)) - (y.ord || 1e3 + at.get(y))); }
 // 小版本（混音 2.1、2.2）：文件名里 _V2.1_ 或在 ✎ 里填 2.1；不占大版本号。和服务端 verNum 同一套
-const isMinor = v => v.minor !== undefined ? !!v.minor : /_V\d+\.\d+_/i.test(String(v.file || ''));
-const vnum = v => { const st = stageOf(v); let M = 0, k = 0; for (const x of V.filter(x => stageOf(x) === st)) { if (isMinor(x) && M) k++; else { M++; k = 0; } if (x === v) return k ? M + '.' + k : String(M); } return ''; };
+// 0 = 大版本，1 = 小版本（_V2.1_ → 2.1），2 = 并列备选（_V2B_ → 2A、2B 给客户选）；和 worker verMinor/verLabels 同逻辑
+const vkind = v => { if (v.minor !== undefined) return +v.minor === 2 ? 2 : v.minor ? 1 : 0; const f = String(v.file || '');
+  return /_V\d+(?:\.\d+)?[B-Z]_/i.test(f) ? 2 : /_V\d+\.\d+A?_/i.test(f) ? 1 : 0; };
+const vlabs = list => { let M = 0, k = 0, L = 0, b = -1; const out = []; list.forEach((x, i) => { const t = vkind(x);
+  if (t === 2 && M) { if (!L) { L = 1; out[b] += 'A'; } L++; out[i] = out[b].slice(0, -1) + String.fromCharCode(64 + L); }
+  else { if (t === 1 && M) k++; else { M++; k = 0; } L = 0; b = i; out[i] = k ? M + '.' + k : String(M); } }); return out; };
+const vnum = v => { const st = stageOf(v), list = V.filter(x => stageOf(x) === st), i = list.indexOf(v); return i < 0 ? '' : vlabs(list)[i]; };
 const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || vnum(v); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
 const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);
 const multiStage = new Set(V.map(stageOf)).size > 1;
@@ -1728,13 +1733,16 @@ function ownerTools() {
     const st = { 0: 'none', 1: 'edit', 2: 'mix', 3: 'master', 4: 'demo' }[a.trim()]; if (!st) { busy('类别只能填 0 到 4'); return; }
     const inStage = V.filter(x => x !== v && stageOf(x) === (st === 'none' ? '' : st));
     const cur = cs === (st === 'none' ? '' : st) ? V.filter(x => stageOf(x) === cs).indexOf(v) + 1 : inStage.length + 1;
-    const b = prompt('在「' + (st === 'none' ? '不分类' : STAGE[st]) + '」里的序号\n填 3 = 第 3 个大版本；填 2.1 = 第 2 个的小版本（接在 2 和它已有的小版本后面）', cs === (st === 'none' ? '' : st) ? vlab(v) : String(cur)); if (b === null) return;
-    const mm = /^\s*(\d+)\.\d+\s*$/.exec(b), minor = !!mm;
+    const b = prompt('在「' + (st === 'none' ? '不分类' : STAGE[st]) + '」里的序号\n填 3 = 第 3 个大版本；填 2.1 = 第 2 个的小修（接在 2 后面）；填 2B = 和 2 并列给客户选（原来的 2 变 2A）', cs === (st === 'none' ? '' : st) ? vlab(v) : String(cur)); if (b === null) return;
+    const mm = /^\s*(\d+)(?:\.(\d+))?([a-z])?\s*$/i.exec(b); if (!mm) { busy('序号填 3、2.1 或 2B 这样的'); return; }
+    const alt = !!mm[3] && mm[3].toUpperCase() !== 'A', minor = alt ? 2 : mm[2] ? 1 : 0;
     let pos;
-    if (mm) {   // 小版本：插在第 M 个大版本那一组的最后
-      let M = 0, end = -1; inStage.forEach((x, i) => { if (!(isMinor(x) && M)) M++; if (M === +mm[1]) end = i; });
-      if (end < 0) { busy('「' + STAGE[st] + ' ' + mm[1] + '」不存在'); return; } pos = end + 2;
-    } else pos = Math.max(1, Math.min(inStage.length + 1, Math.round(+b) || cur));
+    if (minor) {   // 小修：插在第 M 个大版本那一组最后；备选：插在它要并列的那个版本（和已有备选）后面
+      const base = alt ? mm[1] + (mm[2] ? '.' + mm[2] : '') : mm[1], labs = vlabs(inStage);
+      const R = alt ? new RegExp('^' + base.replace('.', '\\.') + '[A-Z]?$') : new RegExp('^' + base + '(\\.\\d+)?[A-Z]?$');
+      let end = -1; labs.forEach((l, i) => { if (R.test(l)) end = i; });
+      if (end < 0) { busy('「' + STAGE[st] + ' ' + base + '」不存在'); return; } pos = end + 2;
+    } else pos = Math.max(1, Math.min(inStage.length + 1, Math.round(+mm[1]) || cur));
     inStage.splice(pos - 1, 0, v);
     try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: inStage.map((x, i) => ({ ver: x.ver, stage: x === v ? st : undefined, minor: x === v ? minor : undefined, ord: i + 1 })) }); softReload(); }
     catch (err) { busy('没保存上，检查网络再试'); }
@@ -1748,7 +1756,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
@@ -1760,9 +1768,10 @@ function ownerTools() {
       const st = cuStage(n.raw), num = parseInt((n.ver || '').slice(1)) || 0, sv = STAGE[st] ? V.filter(v => stageOf(v) === st) : [];
       const same = V.find(v => v.ver === n.ver);
       // 按显示序号找同一个版本：Mix V2 = 混音 2，Mix V2.1 = 混音 2.1（小版本）；有了才问覆盖，没有就接在最后
-      const want = STAGE[st] && num ? num + (n.sub ? '.' + n.sub : '') : '';
+      // Mix V2B = 混音 2B（并列备选）；V2A 和 V2 是同一个（有备选时 2 显示成 2A）
+      const base = STAGE[st] && num ? num + (n.sub ? '.' + n.sub : '') : '', lt = (n.alt || '').toUpperCase(), want = base && lt && lt !== 'A' ? base + lt : base;
       let ver, existing;
-      if (want) { existing = sv.find(v => vnum(v) === want); ver = existing ? existing.ver : next; }
+      if (want) { existing = sv.find(v => vnum(v) === want) || (want === base ? sv.find(v => vnum(v) === base + 'A') : null); ver = existing ? existing.ver : next; }
       else { ver = n.ver && !(same && stageOf(same) !== st) ? n.ver : next; existing = V.find(v => v.ver === ver); }
       const lab = (STAGE[st] ? STAGE[st] + ' ' : '') + (existing ? vlab(existing) : want || String(V.filter(v => stageOf(v) === st).length + 1));
       if (existing && !confirm('「' + lab + '」已经有了，要覆盖吗？')) return;
@@ -2191,7 +2200,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
