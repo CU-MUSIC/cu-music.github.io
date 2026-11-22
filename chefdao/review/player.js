@@ -103,7 +103,7 @@ const vlabs = list => { let M = 0, k = 0, L = 0, b = -1; const out = []; list.fo
   if (t === 2 && M) { if (!L) { L = 1; out[b] += 'A'; } L++; out[i] = out[b].slice(0, -1) + String.fromCharCode(64 + L); }
   else { if (t === 1 && M) k++; else { M++; k = 0; } L = 0; b = i; out[i] = k ? M + '.' + k : String(M); } }); return out; };
 const vnum = v => { const st = stageOf(v), list = V.filter(x => stageOf(x) === st), i = list.indexOf(v); return i < 0 ? '' : vlabs(list)[i]; };
-const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || vnum(v); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
+const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; if (v.fin) return 'Final'; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || vnum(v); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
 const vname = v => (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);
 const multiStage = new Set(V.map(stageOf)).size > 1;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
@@ -186,6 +186,11 @@ document.body.innerHTML = `
       return `<div class="vg${old ? ' old' : ''}">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${old ? `<button class="vsum press" aria-expanded="false">${g.items.length} 版<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}${rows(g.items)}</div>`; }).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
   })()}</section>
   <div class="vabp" id="vabp" hidden></div>
+  <details class="fnote" id="fnote" hidden><summary><b>Final · 定稿说明</b><span>定稿后修改与费用</span></summary>
+    <div class="fnb"><p><b>交付内容</b>混音定稿（Pre-Master）WAV 48kHz / 24bit，供母带制作使用。</p>
+    <p><b>定稿后修改</b></p><ul><li>整张专辑交付前，每首可免费微调 1 次（音量、个别字词、效果开关等细节）</li><li>之后的微调：¥200 / 次</li><li>重新混音：¥1,000 / 首</li><li>结构性修改（重新编辑、更换段落、大量编辑等）：¥150 / 小时</li></ul>
+    <p><b>工程保留</b>工程文件保留至专辑发行后 6 个月，之后不再保留，届时修改按重新混音计费。</p>
+    <p><b>额外导出</b>分轨、伴奏、Acapella、TV Mix 等其他版本：¥150 / 小时。</p></div></details>
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
@@ -1792,6 +1797,15 @@ function ownerTools() {
     hd.title = v.hide ? '客户现在看不到这一版，点一下恢复' : '对客户隐藏这一版'; hd.innerHTML = eye;
     hd.onclick = async e => { e.stopPropagation(); try { busy(v.hide ? '正在恢复…' : '正在隐藏…'); await post('/radm/ver', { slug: S.slug, set: [{ ver: v.ver, hide: !v.hide }] }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } };
     row.insertBefore(hd, ed);
+    // 定稿：设成 Final（显示名变 Final、客户页出定稿说明、专辑进度算一首），同时对客户隐藏其他版本，只留最初的混音 1 对比
+    const fn = document.createElement('span');
+    fn.className = 'vdel vfin' + (v.fin ? ' on' : ''); fn.setAttribute('role', 'button'); fn.textContent = '★'; fn.title = v.fin ? '已是 Final，点一下取消' : '设为 Final（定稿）';
+    fn.onclick = async e => { e.stopPropagation();
+      if (v.fin) { if (!confirm('取消「' + vname(v) + '」的 Final？其他版本的隐藏状态不变')) return; try { await post('/radm/ver', { slug: S.slug, set: [{ ver: v.ver, fin: 0 }] }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } return; }
+      const st = stageOf(v), first = V.find(x => stageOf(x) === st && x !== v);
+      if (!confirm('把「' + vname(v) + '」设为 Final（定稿）？\n\n· 客户页显示「' + (STAGE[st] || '') + ' Final」和定稿后的修改说明\n· 其他版本对客户隐藏' + (first ? '，只留「' + vname(first) + '」对比' : '') + '\n· 你这边照常都能看到')) return;
+      try { busy('正在设为 Final…'); await post('/radm/ver', { slug: S.slug, set: V.map(x => x === v ? { ver: x.ver, fin: 1, hide: false } : { ver: x.ver, fin: 0, hide: x !== first }) }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } };
+    row.insertBefore(fn, hd);
   });
   // 点阶段名（编辑 / 混音…）：整个阶段对客户隐藏或恢复
   document.querySelectorAll('#seg .vg').forEach(g => {
@@ -1830,7 +1844,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122q'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122r'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2311,7 +2325,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122q'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122r'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
@@ -2718,6 +2732,8 @@ function vabUi() { const el = $('#vabp'); if (!el) return;
     store.set(pk, cur.ver); vabUi(); };
 }
 addEventListener('cu-ver', vabUi); vabUi();
+const fnoteUi = () => { const el = $('#fnote'); if (el) el.hidden = !cur.fin; };   // Final 版本下面：定稿后修改与费用
+addEventListener('cu-ver', fnoteUi); fnoteUi();
 $('#mstBtn').onclick = () => { mstOpen = !mstOpen; $('#mst').hidden = !mstOpen; $('#mstBtn').classList.toggle('on', mstOpen); $('#mstBtn').setAttribute('aria-pressed', mstOpen); showStats(); };
 async function switchTo(i) {
   if (i === vi || !KEY) return;
