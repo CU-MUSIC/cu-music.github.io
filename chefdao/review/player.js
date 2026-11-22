@@ -1800,12 +1800,17 @@ function ownerTools() {
     row.insertBefore(hd, ed);
     // 定稿：设成 Final（显示名变 Final、客户页出定稿说明、专辑进度算一首），同时对客户隐藏其他版本，只留最初的混音 1 对比
     const fn = document.createElement('span');
-    fn.className = 'vdel vfin' + (v.fin ? ' on' : ''); fn.setAttribute('role', 'button'); fn.textContent = '★'; fn.title = v.fin ? '已是 Final，点一下取消' : '设为 Final（定稿）';
+    fn.className = 'vdel vfin' + (v.fin ? ' on' : ''); fn.setAttribute('role', 'button'); fn.textContent = '★'; fn.title = v.fin ? '已是 Final：点一下换对比版本或取消' : '设为 Final（定稿）';
     fn.onclick = async e => { e.stopPropagation();
-      if (v.fin) { if (!confirm('取消「' + vname(v) + '」的 Final？其他版本的隐藏状态不变')) return; try { await post('/radm/ver', { slug: S.slug, set: [{ ver: v.ver, fin: 0 }] }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } return; }
-      const st = stageOf(v), first = V.find(x => stageOf(x) === st && x !== v);
-      if (!confirm('把「' + vname(v) + '」设为 Final（定稿）？\n\n· 客户页显示「' + (STAGE[st] || '') + ' Final」和定稿后的修改说明\n· 其他版本对客户隐藏' + (first ? '，只留「' + vname(first) + '」对比' : '') + '\n· 你这边照常都能看到')) return;
-      try { busy('正在设为 Final…'); await post('/radm/ver', { slug: S.slug, set: V.map(x => x === v ? { ver: x.ver, fin: 1, hide: false } : { ver: x.ver, fin: 0, hide: x !== first }) }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } };
+      // 客户只看到 Final 和你选的一版（默认 Demo，没有 Demo 就默认第一个混音）；已是 Final 时点 ★ = 换对比的那一版，或填 x 取消 Final
+      const others = V.filter(x => x !== v), st = stageOf(v), cur0 = v.fin ? others.find(x => !x.hide) : (others.find(x => stageOf(x) === 'demo') || others.find(x => stageOf(x) === st));
+      const list = others.map((x, i) => (i + 1) + '　' + vname(x)).join('\n');
+      const ans = prompt((v.fin ? '「' + vname(v) + '」已是 Final。换一版留给客户对比，填编号；填 x 取消 Final' : '把「' + vname(v) + '」设为 Final（定稿）。\n客户只看到 Final 和下面选的一版，其他都隐藏（你这边照常都在）')
+        + '\n\n0　不留，只给 Final\n' + list, cur0 ? String(others.indexOf(cur0) + 1) : '0'); if (ans === null) return;
+      if (v.fin && /^\s*x\s*$/i.test(ans)) { try { await post('/radm/ver', { slug: S.slug, set: [{ ver: v.ver, fin: 0 }] }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } return; }
+      const k = parseInt(ans, 10); if (!(k >= 0 && k <= others.length)) { busy('填 0 到 ' + others.length + ' 的编号'); return; }
+      const keep = k ? others[k - 1] : null;
+      try { busy('正在设为 Final…'); await post('/radm/ver', { slug: S.slug, set: V.map(x => x === v ? { ver: x.ver, fin: 1, hide: false } : { ver: x.ver, fin: 0, hide: x !== keep }) }); softReload(); } catch (err) { busy('没保存上，检查网络再试'); } };
     row.insertBefore(fn, hd);
   });
   // 点阶段名（编辑 / 混音…）：整个阶段对客户隐藏或恢复
@@ -1845,7 +1850,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122s'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122t'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2326,7 +2331,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122s'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122t'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
