@@ -184,7 +184,7 @@ document.body.innerHTML = `
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
-  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownTrust">自助领取</button><button class="press" id="ownFinal">最终文件</button><button class="press" id="ownLink">文件链接</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownTrust">自助领取</button><button class="press" id="ownFinal">最终文件</button><button class="press" id="ownLink">文件链接</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" multiple accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="rng" id="rng" hidden><span></span></div><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -1813,8 +1813,17 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122d'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
-  async function up(file) {
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122e'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
+  async function upMany(list) {
+    const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
+    if (fs.length < 2) return up(fs[0] || (list || [])[0]);
+    if (own.classList.contains('busy') || !confirm('依次上传这 ' + fs.length + ' 个文件到《' + S.title + '》？\n' + fs.map(f => '· ' + f.name).join('\n'))) return;
+    let last = null;
+    for (const f of fs) { const r = await up(f, true); if (!r) break; last = r.ver; }
+    if (last) setTimeout(() => softReload(last), 300);
+  }
+  async function up(file, batch) {
     if (!file || own.classList.contains('busy')) return;
     try {
       await lib();
@@ -1832,11 +1841,12 @@ function ownerTools() {
       else { ver = n.ver && !(same && stageOf(same) !== st) ? n.ver : next; existing = V.find(v => v.ver === ver); }
       const lab = (STAGE[st] ? STAGE[st] + ' ' : '') + (existing ? vlab(existing) : want || String(V.filter(v => stageOf(v) === st).length + 1));
       if (existing && !confirm('「' + lab + '」已经有了，要覆盖吗？')) return;
-      if (!confirm('把「' + file.name + '」上传为《' + S.title + '》' + (STAGE[st] ? lab : ver) + '？')) return;
+      if (!batch && !confirm('把「' + file.name + '」上传为《' + S.title + '》' + (STAGE[st] ? lab : ver) + '？')) return;
       own.classList.add('busy');
-      const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, overwrite: !!existing, date: n.date, step: busy,
+      const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, overwrite: !!existing, date: n.date, step: t => busy(batch ? file.name.replace(/\.[^.]+$/, '') + '：' + t : t),
         bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
       busy('《' + S.title + '》' + r.ver + ' 已上线');
+      if (batch) { own.classList.remove('busy'); if (!existing) V.push({ ver: r.ver, file: file.name }); return r; }   // 先记进列表，下一个文件才能认出 2A / 算出下一个 V 号
       setTimeout(() => softReload(r.ver), 300);
     } catch (e) { own.classList.remove('busy'); busy(/HTTP|^[a-z]+$/.test(e.message) ? '没传成功（' + e.message + '），再试一次' : e.message); }
   }
@@ -1860,12 +1870,12 @@ function ownerTools() {
   }
   iconize(); new MutationObserver(() => iconize()).observe(own, { childList: true });   // 后加进来的按钮（费用、REF、删除）也换成图标
   $('#ownPick').onclick = () => $('#ownFile').click();
-  $('#ownFile').onchange = () => up($('#ownFile').files[0]);
+  $('#ownFile').onchange = () => { upMany($('#ownFile').files); $('#ownFile').value = ''; };
   let depth = 0;
   addEventListener('dragenter', e => { if ([...(e.dataTransfer.types || [])].includes('Files')) { depth++; document.body.classList.add('dropping'); } });
   addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; document.body.classList.remove('dropping'); } });
   addEventListener('dragover', e => e.preventDefault());
-  addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dropping'); up(e.dataTransfer.files[0]); });
+  addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dropping'); upMany(e.dataTransfer.files); });
 }
 let cfbRender = null;
 async function clientFb() {
@@ -2280,7 +2290,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122d'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122e'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
