@@ -1388,7 +1388,7 @@ const miniHasLyr = () => !!(LYR && LYR.lines && LYR.lines.some(x => x.t != null)
 function miniUi() { const L = miniHasLyr(), hint = L && !store.get('review:lyfsSeen'); $('#mini').classList.toggle('show', $('#app').classList.contains('in') && waveOut); $('#mini').classList.toggle('lyrm', L); $('#mini').classList.toggle('hint', hint); $('#plyr').hidden = !L; $('#plyr').classList.toggle('hint', hint); updateCta(); }   // 悬浮条只在波形滚出屏幕后出现（不挡播放键）；波形下面那行歌词一直在   // hint：没点开过全屏歌词前，悬浮条隔一会儿扫一道光
 new IntersectionObserver(([en]) => { waveOut = !en.isIntersecting && en.boundingClientRect.top < 0; miniUi(); }, { threshold: 0, rootMargin: '-40px 0px 0px 0px' }).observe($('#wave'));
 $('#plyr').onclick = () => lyrFull();
-$('#mini').addEventListener('click', e => { if (e.target.closest('#mpp, #mbar')) return; if (miniHasLyr()) lyrFull(); else playFull(); });   // 有歌词进全屏歌词，没歌词进全屏播放
+$('#mini').addEventListener('click', e => { if (e.target.closest('#mpp, #mbar')) return; playFull(); });   // 全屏播放（有歌词时里面带歌词）
 if (S.cover) { const c = document.createElement('span'); c.className = 'mcv'; c.style.backgroundImage = "url('" + API_BASE + S.cover + "')"; $('#mini').prepend(c); }   // 悬浮条左边放封面（和你设备上的底部播放条一致）
 
 /* ───────── 版本切换 ───────── */
@@ -1830,7 +1830,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122m'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122n'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2311,7 +2311,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122m'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122n'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
@@ -3064,7 +3064,7 @@ function lyrBind(el, L) {
   el.querySelectorAll('.ln').forEach(d => d.onclick = e => {
     const x = L[+d.dataset.i]; if (x.t == null) return; const t = Math.max(0, x.t + lyrOff());
     if (e.target.closest('.lc')) {   // 对这一句写评论：时间点锁在这句开头，引用这句歌词
-      lyrFullClose(); seek(t); locked = Math.floor(t); lockedE = locked; ePin = false; $('#stamp').classList.add('locked'); endUi();
+      lyrFullClose(); { const pf = $('#plfs'); if (pf && pf._close) { if (!a.paused) a.pause(); pf._close(); } } seek(t); locked = Math.floor(t); lockedE = locked; ePin = false; $('#stamp').classList.add('locked'); endUi();
       const q = '「' + x.x.slice(0, 30) + '」'; if (!txt.value.startsWith(q)) txt.value = q + ' ' + txt.value; txt.focus(); txt.setSelectionRange(txt.value.length, txt.value.length); grow(txt);
       txt.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     seek(t); if (a.paused && !$('#play').disabled) a.play();
@@ -3160,17 +3160,25 @@ function playFull() {
   if ($('#plfs') || $('#lyfs')) return;
   const f = document.createElement('div'); f.className = 'lyfs plfs'; f.id = 'plfs';
   const cvu = S.cover ? API_BASE + S.cover : '';
+  // 有带时间的歌词：宽屏放在右边一栏；手机上和封面二选一（右上角「歌词 / 封面」切换，默认歌词，记在本机）
+  const LL = miniHasLyr() ? LYR.lines : null;
+  // 引导：前 3 次打开，波形上提示「左右拖动」，版本行下面一行说明；拖过一次就不再提示
+  const tipN = +(store.get('review:plfsTip') || 0), tip = tipN < 3; store.set('review:plfsTip', String(tipN + 1));
+  if (LL) f.classList.add('hasly'); if (LL && store.get('review:plly') !== '0') f.classList.add('showly');
   f.innerHTML = `<div class="fbg"${cvu ? ` style="background-image:url('${cvu}')"` : ''}></div>
-    <div class="fhd"><button class="fx press" aria-label="收起"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}</span></div></div>
-    <div class="pbody"><div class="pcv"${cvu ? ` style="background-image:url('${cvu}')"` : ''}></div>
-    <div class="pvs" id="pvs"></div>
-    <div class="pwv"><canvas></canvas></div>
+    <div class="fhd"><button class="fx press" aria-label="收起"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}</span></div>${LL ? '<button class="ply press" id="ply"></button>' : ''}</div>
+    <div class="pbody"><div class="pcol"><div class="pcv"${cvu ? ` style="background-image:url('${cvu}')"` : ''}></div>
+    ${LL ? `<div class="lyrs plyrs"><div class="lyin">${lyrRows(LL)}</div></div>` : ''}
+    <div class="pvs" id="pvs"></div>${tip && V.length > 1 ? '<div class="phint">点版本切换，接着当前位置播放</div>' : ''}
+    <div class="pwv"><canvas></canvas>${tip ? '<div class="pdrag"><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>左右拖动波形找位置</div>' : ''}</div>
     <div class="ptm"><span class="pc">0:00</span><span class="pm"></span><span class="pr"></span></div>
     <div class="pct"><button class="pbk press" aria-label="后退 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">5</text></svg></button>
       <button class="fpl press" aria-label="播放 / 暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg><svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg></button>
       <button class="pfw press" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4.5h-4.5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">5</text></svg></button></div>
-    <button class="pcm press" id="pcm">写评论</button></div>`;
+    <button class="pcm press" id="pcm">写评论</button></div></div>`;
   document.body.appendChild(f); document.documentElement.classList.add('lyfs-on');
+  if (LL) { lyrBind(f, LL); const ply = $('#ply'), lyUi = () => { ply.textContent = f.classList.contains('showly') ? '封面' : '歌词'; };
+    lyUi(); ply.onclick = () => { f.classList.toggle('showly'); store.set('review:plly', f.classList.contains('showly') ? '1' : '0'); lyrIdx = -2; lyrStep(true); lyUi(); }; }
   // 版本：当前阶段的版本一排（并列备选显示成 12A 12B），点了直接切，接着原位置播
   const vers = () => { const st = stageOf(cur), list = V.map((v, i) => i).filter(i => stageOf(V[i]) === st).slice(-6);
     $('#pvs').innerHTML = (STAGE[st] ? '<span>' + STAGE[st] + '</span>' : '') + list.map(i => `<button class="press${i === vi ? ' on' : ''}" data-i="${i}">${esc(vlab(V[i]))}</button>`).join(''); };
@@ -3189,7 +3197,7 @@ function playFull() {
   const wv = f.querySelector('.pwv'), c = wv.querySelector('canvas'), g = c.getContext('2d'), PPS = 12;
   let dg = null;
   wv.addEventListener('pointerdown', e => { dg = { x: e.clientX, t: curTime(), moved: false }; wv.setPointerCapture(e.pointerId); });
-  wv.addEventListener('pointermove', e => { if (!dg) return; const dx = e.clientX - dg.x; if (Math.abs(dx) > 3) dg.moved = true; if (dg.moved) seek(dg.t - dx / PPS); });
+  wv.addEventListener('pointermove', e => { if (!dg) return; const dx = e.clientX - dg.x; if (Math.abs(dx) > 3) { dg.moved = true; const h = wv.querySelector('.pdrag'); if (h) { h.remove(); store.set('review:plfsTip', '9'); } } if (dg.moved) seek(dg.t - dx / PPS); });
   const up = () => { dg = null; }; wv.addEventListener('pointerup', up); wv.addEventListener('pointercancel', up);
   // 往下滑收起
   let sy = null; f.querySelector('.fhd').addEventListener('touchstart', e => { sy = e.touches[0].clientY; }, { passive: true });
@@ -3218,12 +3226,15 @@ function playFull() {
   };
   const close = () => { cancelAnimationFrame(raf); removeEventListener('cu-ver', onVer); document.removeEventListener('keydown', f._key);
     f.classList.remove('in'); document.documentElement.classList.remove('lyfs-on', 'lyfs-done'); setTimeout(() => f.remove(), 450); };
-  f.querySelector('.fx').onclick = close;
+  f.querySelector('.fx').onclick = close; f._close = close;
   f._key = e => { if (e.key === 'Escape') close(); }; document.addEventListener('keydown', f._key);
-  requestAnimationFrame(() => { f.classList.add('in'); frame(); });
+  requestAnimationFrame(() => { f.classList.add('in'); frame(); lyrIdx = -2; try { lyrStep(true); } catch (e) {} });
   setTimeout(() => { if ($('#plfs') === f && f.classList.contains('in')) document.documentElement.classList.add('lyfs-done'); }, 380);
 }
-{ const art = document.querySelector('#app .head .art'); if (art) { art.classList.add('canfs'); art.setAttribute('role', 'button'); art.setAttribute('aria-label', '全屏播放'); art.addEventListener('click', playFull); } }
+{ const art = document.querySelector('#app .head .art'); if (art) { art.classList.add('canfs'); art.setAttribute('role', 'button'); art.setAttribute('aria-label', '全屏播放'); art.addEventListener('click', playFull);
+  // 入口引导：前 3 次打开页面，封面旁边冒一个「点封面全屏播放」，8 秒后收起；点过一次全屏就不再出现
+  const n = +(store.get('review:fsEntry') || 0); if (n < 3 && !store.get('review:plfsTip')) { store.set('review:fsEntry', String(n + 1));
+    const t = document.createElement('span'); t.className = 'fstip'; t.textContent = '点封面全屏播放'; art.appendChild(t); setTimeout(() => t.remove(), 8000); } } }
 function lyrFullClose() {
   const f = $('#lyfs'); if (!f) return; document.removeEventListener('keydown', f._key);
   f.classList.remove('in'); document.documentElement.classList.remove('lyfs-on', 'lyfs-done'); setTimeout(() => { f.remove(); lyrIdx = -2; lyrStep(true); }, 500);   // 回到页面：外面那份歌词对齐到当前句

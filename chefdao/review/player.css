@@ -839,7 +839,28 @@ html.lyfs-on,html.lyfs-on body{overflow:hidden}
 /* 全屏播放（照 Samply）：复用全屏歌词的外壳 */
 .head .art.canfs{cursor:pointer;position:relative}
 .head .art.canfs::after{content:'';position:absolute;right:5px;bottom:5px;width:20px;height:20px;border-radius:6px;background:rgba(20,21,24,.62) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ecebe8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 4h6v6M10 20H4v-6M20 4l-6 6M4 20l6-6'/%3E%3C/svg%3E") center/12px no-repeat}
-.plfs .pbody{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:520px;margin:0 auto;padding:6px 24px max(22px,env(safe-area-inset-bottom));box-sizing:border-box;overflow-y:auto}
+.plfs .pbody{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;gap:56px;width:100%;max-width:1160px;margin:0 auto;padding:6px 24px max(22px,env(safe-area-inset-bottom));box-sizing:border-box;overflow-y:auto}
+.plfs .pcol{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:480px;min-width:0}
+.plfs .fhd .ply{margin-left:auto;height:34px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.12);color:#ecebe8;font-size:14px;font-weight:600}
+.plfs .plyrs{display:none;width:100%;height:min(46vh,400px);flex:none;max-width:none;margin:0;padding:16vh 4px;box-sizing:border-box}
+.plfs.showly .pcv{display:none}
+.plfs.showly .plyrs{display:block}
+.plfs .plyrs .ln{font-size:22px;padding:7px 0}
+.plfs .phint{margin-top:-8px;font-size:13px;color:rgba(236,235,232,.55)}
+.plfs .pwv{position:relative}
+.plfs .pdrag{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(20,21,24,.78);color:#ecebe8;font-size:14px;font-weight:600;white-space:nowrap;pointer-events:none;animation:pdrag 1.6s ease-in-out infinite}
+.plfs .pdrag svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes pdrag{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(calc(-50% - 10px),-50%)}}
+@media (prefers-reduced-motion:reduce){.plfs .pdrag{animation:none}}
+/* 宽屏：歌词放右边一栏，封面一直在 */
+@media (min-width:900px){
+  .plfs.hasly .fhd .ply{display:none}
+  .plfs.hasly .pbody{display:grid;grid-template-columns:minmax(0,460px) minmax(0,1fr)}
+  .plfs.hasly .pcol{grid-column:1;grid-row:1}
+  .plfs.hasly .pcv{display:block}
+  .plfs.hasly .plyrs{display:block;position:fixed;right:max(24px,calc((100vw - 1160px) / 2 + 24px));top:90px;bottom:40px;width:calc(min(100vw,1160px) - 48px - 460px - 56px);height:auto;padding:30vh 0}
+  .plfs.hasly .plyrs .ln{font-size:clamp(24px,2.4vw,34px)}
+}
 .plfs .pcv{width:min(100%,46vh,400px);aspect-ratio:1;flex:none;border-radius:14px;background:#0b0b0b url(cover.png) center/cover;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
 .plfs .pvs{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;min-height:36px}
 .plfs .pvs span{font-size:12px;color:rgba(236,235,232,.55);margin-right:4px;letter-spacing:.06em}
@@ -1184,3 +1205,7 @@ body.rlp-on .rlp-tab{display:none}
 .clipv button{display:inline-flex;align-items:center;gap:5px;padding:3px 11px 3px 8px;border-radius:99px;background:var(--fill-2);color:var(--text);font-size:12px;line-height:20px}
 .clipv button svg{width:12px;height:12px;fill:currentColor}
 .clipv video{display:block;width:100%;max-width:420px;max-height:70vh;margin-top:8px;border-radius:10px;background:#000}
+/* 封面入口引导气泡 */
+.head .art .fstip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);z-index:5;padding:6px 12px;border-radius:999px;background:var(--pearl);color:var(--ink);font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.35);animation:fstip .4s cubic-bezier(.2,.8,.2,1) both}
+.head .art .fstip::before{content:'';position:absolute;left:-5px;top:50%;margin-top:-5px;border:5px solid transparent;border-left:0;border-right-color:var(--pearl)}
+@keyframes fstip{from{opacity:0;transform:translate(-6px,-50%)}to{opacity:1;transform:translateY(-50%)}}
