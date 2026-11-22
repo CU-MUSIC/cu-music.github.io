@@ -225,6 +225,17 @@ button.send:active{transform:scale(.88)}
     if (i < text.length) b.appendChild(document.createTextNode(text.slice(i)));
   }
   var FAQ = [], HI = '', asked = {};
+  // 从哪进来的：链接里的 ?from= 优先；否则看上一页（本站哪一页 / 外站域名）；在微信里打开的加「微信」。服务端只记第一次的
+  var SRC = (function () {
+    var q = (location.search.match(/[?&]from=([^&#]+)/) || [])[1], ref = '', wx = /MicroMessenger/i.test(navigator.userAgent);
+    var PAGES = [[/^\/chefdao\/price/, '价目页'], [/^\/chefdao\/review/, '审听页'], [/^\/chefdao\/vp/, '人声制作页'], [/^\/chefdao\/promo/, '领券页'], [/^\/chefdao\/beat/, '伴奏页'], [/^\/chefdao\/?(index\.html)?$/, '刀大厨主页'], [/^\/(index\.html)?$/, '官网首页']];
+    var FROM = { moments: '朋友圈', wx: '微信', home: '官网首页', price: '价目页', dy: '抖音', xhs: '小红书', bili: 'B 站' };
+    try { if (document.referrer) { var u = new URL(document.referrer);
+      if (/(^|\.)cumusic\.work$/.test(u.hostname)) { ref = u.pathname; for (var i = 0; i < PAGES.length; i++) if (PAGES[i][0].test(u.pathname)) { ref = PAGES[i][1]; break; } }
+      else ref = /douyin/.test(u.hostname) ? '抖音' : /xiaohongshu|xhs/.test(u.hostname) ? '小红书' : /bilibili/.test(u.hostname) ? 'B 站' : /google|baidu|bing/.test(u.hostname) ? '搜索' : u.hostname; } } catch (e) {}
+    var from = q ? (FROM[decodeURIComponent(q)] || decodeURIComponent(q)) : '';
+    return [wx && from !== '微信' ? '微信' : '', from || ref || (wx ? '' : '直接打开')].filter(Boolean).join(' · ').slice(0, 40);
+  })();
   // 可点问题：放在对话最后（欢迎语 / 自动回答下面），只列还没问过的；有新消息进来就收掉
   function chips() {
     qkOff();
@@ -336,7 +347,7 @@ button.send:active{transform:scale(.88)}
       var el = add({ who: 'v', text: text, ts: Date.now() }, 'pend');
       if (ty) ty.reattach();
       bottom(false); flyFrom(el, from);
-      fetch(API + '/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, text: text, faq: faq || '', name: LS.get('chat:name') || '', contact: LS.get('chat:contact') || '', hp: $('hp').value }) })
+      fetch(API + '/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, text: text, faq: faq || '', name: LS.get('chat:name') || '', contact: LS.get('chat:contact') || '', src: SRC, hp: $('hp').value }) })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
         .then(function (j) {
           busy = false;
@@ -373,7 +384,7 @@ button.send:active{transform:scale(.88)}
       if (!log.querySelector('.m')) {
         var el = add({ who: 'a', text: HI, ts: Date.now() }); el.dataset.hi = '1'; popIn(el); chips(); bottom(true);
         // 打开就记一个会话（不推送、不标未读），后台能看到谁只打开了没留言
-        fetch(API + '/chat/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, name: LS.get('chat:name') || '', contact: LS.get('chat:contact') || '' }) })
+        fetch(API + '/chat/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, name: LS.get('chat:name') || '', contact: LS.get('chat:contact') || '', src: SRC }) })
           .then(function (r) { return r.json(); }).then(function (j) { if (j && j.hi && j.hi.id && !el.dataset.id) { seen[j.hi.id] = 1; if (j.hi.id > last) last = j.hi.id; el.dataset.id = j.hi.id; el.dataset.ts = j.hi.ts; } }).catch(function () {});
       }
       if (ty) ty.reattach();

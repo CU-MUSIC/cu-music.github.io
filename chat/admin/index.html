@@ -182,7 +182,7 @@ button.send:active{transform:scale(.88)}
         if (t.last_who === 'v' && t.last > t.o_seen && t.tid !== cur) b.appendChild(el('i', 'dot'));
         b.appendChild(el('span', 'av emo', t.emo || '👤'));
         var x = el('span', 'tx'), l1 = el('span', 'l1');
-        l1.appendChild(el('b', '', (t.name || t.alias || '匿名访客') + (t.geo ? ' · ' + t.geo : ''))); l1.appendChild(el('em', '', listTime(t.last)));   // 名字后面跟大致地区（只记城市，不存 IP）
+        l1.appendChild(el('b', '', (t.name || t.alias || '匿名访客') + (t.src ? ' · ' + t.src : '') + (t.geo ? ' · ' + t.geo : ''))); l1.appendChild(el('em', '', listTime(t.last)));   // 名字后面跟大致地区（只记城市，不存 IP）
         x.appendChild(l1); x.appendChild(el('span', 'pv', (t.last_who === 'o' ? '我：' : '') + (t.lt || '')));
         b.appendChild(x);
         b.onclick = function () { open(t.tid); };
@@ -250,7 +250,7 @@ button.send:active{transform:scale(.88)}
       if (first) {
         log.textContent = '';
         $('ttl').textContent = th.name || th.alias || '匿名访客'; $('ttl').insertAdjacentHTML('beforeend', '<svg width="7" height="11" viewBox="0 0 7 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5 5.5 5.5 1.5 9.5"/></svg>'); $('hav').textContent = th.emo || '👤'; $('hav').classList.add('emo');
-        $('sub').textContent = [th.geo, th.contact].filter(Boolean).join(' · ');
+        $('sub').textContent = [th.src && '来自 ' + th.src, th.geo, th.contact].filter(Boolean).join(' · ');
       }
       vseen = th.v_seen || 0;
       var stick = first || near(), fresh = [];
