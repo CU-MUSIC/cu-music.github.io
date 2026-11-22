@@ -353,7 +353,7 @@ async function open(pw, key) {
   document.getElementById('list').innerHTML = apg + (playable.length ? '<button class="pa" id="pa" type="button"><svg viewBox="0 0 16 16"><path d="M4.5 2.6v10.8c0 .6.7 1 1.2.7l8.3-5.4c.5-.3.5-1.1 0-1.4L5.7 1.9c-.5-.3-1.2.1-1.2.7z"/></svg>播放</button>' : '')
     + (P.tracks.length ? '<div class="list' + (P.tracks.some(t => t.cover) ? ' cvs' : '') + '">' + P.tracks.map((t, i) =>
     t.locked ? '<div class="tr lk" style="animation-delay:' + (i * 60) + 'ms" aria-label="未开放"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t"><b style="width:' + Math.min(14, 3 + (t.n || 6) * .7).toFixed(1) + 'em"></b><b class="b2" style="width:' + (2.5 + (i * 37 % 4)) + 'em"></b></span><span class="m"><em><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>未开放</em></span></div>' :
-    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '">' + (P.tracks.some(x => x.cover) ? '<span class="n tcv" style="background-image:url(' + API + (t.cover || P.cover || '') + ')"></span>' : '<span class="n">' + String(i + 1).padStart(2, '0') + '</span>') + '<span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
+    '<a class="tr" style="animation-delay:' + (i * 60) + 'ms" href="' + esc(t.url) + '">' + (P.tracks.some(x => x.cover) ? '<span class="n tcv" style="background-image:url(' + API + (t.cover || P.cover || '') + ')"></span>' : '<span class="n">' + String(i + 1).padStart(2, '0') + '</span>') + '<span class="t">' + esc(t.title) + (t.artist ? '<i>' + esc(t.artist) + '</i>' : '') + progTag(t.prog, t.fin) + '</span><span class="m">' + fmt(t.dur) + (t.upd ? '<i style="display:block;font-style:normal;font-size:11px;color:var(--text-3);margin-top:2px">更新 ' + relTime(t.updTs, t.upd) + '</i>' : '') + '</span></a>').join('') + '</div>'
     : '<div class="empty">曲目还在准备中</div>')
     + (FLOW[slug] ? '<a class="flowl" href="' + FLOW[slug] + '"><div><b>合作流程</b><span>每首怎么推进、怎么给反馈最快</span></div><i>›</i></a>' : '')
     // 已收款：整张收费的收款记录（Insights 项目里记的），合计 + 每一笔
@@ -397,10 +397,10 @@ const relTime = (ts, date) => {
   return (d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '年' : '') + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + hm;
 };
 const md = d => { const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || ''); return m ? (+m[1]) + '月' + (+m[2]) + '日' : ''; };
-function progTag(g) {
+function progTag(g, fin) {   // fin：这首设了混音 Final（母带另找人）：交付结算 → 混音定稿，已交付 → 已交母带
   if (!g) return '';
   return '<em class="pg"><span class="bar">' + [0, 1, 2, 3, 4, 5].map(i => '<s class="' + (i < BAR[g.s] ? 'd' : i === BAR[g.s] ? 'c' : '') + '"></s>').join('') + '</span>'
-    + stageText(g) + (g.s !== 5 && g.s !== 8 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
+    + (fin && (g.s === 8 || g.s === 5) ? (g.s === 8 ? '混音定稿' : '已交母带') : stageText(g)) + (g.s !== 5 && g.s !== 8 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
 }
 // 在项目页直接连播（不跳去曲目页）：每首用记下的密码解开最新一版；底部一条迷你播放条。听歌统计照常记
 // 无缝：5 分钟以内的歌解码成 AudioBuffer，用音频时钟把下一首排在上一首结束的那一刻（首尾 AAC 编码带的几十毫秒静音先切掉），专辑一首接一首没有缝
@@ -577,7 +577,7 @@ function progPanel() {
       t.prog = prog && { ...prog, at: { ...prog.at, [s]: (prog.at[s] || Date.now()) } };
       const rn = el.querySelector('input[data-r="' + i + '"]'); if (rn && prog) rn.value = prog.r;
       const row = document.querySelectorAll('.tr')[i], old = row && row.querySelector('.pg');
-      if (row) { if (old) old.remove(); row.querySelector('.t').insertAdjacentHTML('beforeend', progTag(t.prog)); }
+      if (row) { if (old) old.remove(); row.querySelector('.t').insertAdjacentHTML('beforeend', progTag(t.prog, t.fin)); }
     } catch (e) { alert('没改成，检查网络再试'); }
   };
   el.querySelectorAll('select[data-i]').forEach(x => x.onchange = () => save(+x.dataset.i, +x.value, el.querySelector('input[data-i="' + x.dataset.i + '"]').value));
