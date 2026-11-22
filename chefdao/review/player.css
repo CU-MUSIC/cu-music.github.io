@@ -402,12 +402,12 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .vpick .vrow .vdel{padding:0 0 0 2px;font-size:14px;line-height:1;color:inherit;opacity:.5;background:none}
 .vpick .vrow .vdel:hover{opacity:1;color:var(--red);background:none}
 /* A/B 方案：12 [A|B] 一颗胶囊 */
-.vab{display:inline-flex;flex:none;width:max-content;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--fill)}
-.vab > *{flex:none}
-.vab .vabn{padding:0 8px 0 12px;font-size:16px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums}
-.vpick .vab .vrow{min-width:44px;min-height:38px;padding:8px 14px;background:none}
-.vpick .vab .vrow.on{background:var(--pearl);color:var(--ink)}
-.vab:has(.vrow.on) .vabn{color:var(--text)}
+.vabx{display:inline-flex;flex:none;width:max-content;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--fill)}
+.vabx > *{flex:none}
+.vabx .vabn{padding:0 8px 0 12px;font-size:16px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums}
+.vpick .vabx .vrow{min-width:44px;min-height:38px;padding:8px 14px;background:none}
+.vpick .vabx .vrow.on{background:var(--pearl);color:var(--ink)}
+.vabx:has(.vrow.on) .vabn{color:var(--text)}
 .vabp{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 10px 10px 16px;border-radius:14px;background:var(--fill);font-size:15px;line-height:1.5;color:var(--text-2)}
 .vabp[hidden]{display:none}
 .vabp button{flex:none;padding:8px 16px;min-height:40px;border-radius:999px;background:var(--pearl);color:var(--ink);font-size:15px;font-weight:600}
