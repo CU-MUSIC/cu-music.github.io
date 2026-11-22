@@ -483,6 +483,7 @@ function fsNav() {   // 全屏里的切歌按钮和「下一首」提示（项�
   const f = $('#plfs') || $('#lyfs'); if (!f) return;
   const pv = trackAt(-1), nx = trackAt(1);
   f.querySelector('.fpv').disabled = !pv; f.querySelector('.fnx').disabled = !nx;
+  f.classList.toggle('notrk', !pv && !nx);   // 单曲：两个切歌键都不要；专辑第一 / 最后一首：留着变淡的那一个，播放键才在正中
   const up = f.querySelector('.fup'); up.hidden = !nx; if (nx) up.querySelector('b').textContent = nx.title || '';
 }
 async function loadPlaylist() {
@@ -1844,7 +1845,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122r'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122s'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2325,7 +2326,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122r'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122s'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
@@ -3176,7 +3177,7 @@ function lyrFullOld() {
 // 审听页里点封面或底部悬浮条进来；⌄ 或往下滑回到审听页，播放不中断
 function playFull() {
   if ($('#plfs') || $('#lyfs')) return;
-  const f = document.createElement('div'); f.className = 'lyfs plfs'; f.id = 'plfs';
+  const f = document.createElement('div'); f.className = 'lyfs plfs notrk'; f.id = 'plfs';
   const cvu = S.cover ? API_BASE + S.cover : '';
   // 有带时间的歌词：宽屏放在右边一栏；手机上和封面二选一（右上角「歌词 / 封面」切换，默认歌词，记在本机）
   const LL = miniHasLyr() ? LYR.lines : null;

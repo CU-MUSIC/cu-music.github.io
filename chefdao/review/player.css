@@ -1213,7 +1213,9 @@ body.rlp-on .rlp-tab{display:none}
 .plfs .pct{gap:22px}
 .plfs .fsk{width:40px;height:40px;display:grid;place-items:center;color:#ecebe8}
 .plfs .fsk svg{width:22px;height:22px;fill:currentColor}
-.plfs .fsk:disabled{visibility:hidden}
+.plfs .fsk:disabled{opacity:.22;cursor:default}
+.plfs.notrk .fsk{display:none}
+.plfs .pcol,.plfs .fhd{-webkit-user-select:none;user-select:none}
 .plfs .fhd .fup{margin-left:auto}
 .plfs .fhd .ply + .fup{margin-left:8px}
 /* Final 定稿 */
