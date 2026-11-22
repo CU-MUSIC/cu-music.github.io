@@ -836,6 +836,27 @@ html.lyfs-on,html.lyfs-on body{overflow:hidden}
 /* 全屏歌词省电：背景先缩成 1/4 再模糊、放大回来（看起来一样，开销约 1/16）；进度条用 transform；铺满后背后页面不画 */
 .lyfs .fbg{inset:auto;left:50%;top:50%;width:40vmax;height:40vmax;margin:-20vmax 0 0 -20vmax;filter:blur(14px) saturate(1.2) brightness(.45);transform:scale(3.2);transform-origin:center}
 .lyfs .fpb i{width:100%;transform:scaleX(0);transform-origin:left center;will-change:transform}
+/* 全屏播放（照 Samply）：复用全屏歌词的外壳 */
+.head .art.canfs{cursor:pointer;position:relative}
+.head .art.canfs::after{content:'';position:absolute;right:5px;bottom:5px;width:20px;height:20px;border-radius:6px;background:rgba(20,21,24,.62) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ecebe8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 4h6v6M10 20H4v-6M20 4l-6 6M4 20l6-6'/%3E%3C/svg%3E") center/12px no-repeat}
+.plfs .pbody{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:520px;margin:0 auto;padding:6px 24px max(22px,env(safe-area-inset-bottom));box-sizing:border-box;overflow-y:auto}
+.plfs .pcv{width:min(100%,46vh,400px);aspect-ratio:1;flex:none;border-radius:14px;background:#0b0b0b url(cover.png) center/cover;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+.plfs .pvs{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;min-height:36px}
+.plfs .pvs span{font-size:12px;color:rgba(236,235,232,.55);margin-right:4px;letter-spacing:.06em}
+.plfs .pvs button{min-width:40px;height:34px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.1);color:#ecebe8;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.plfs .pvs button.on{background:#ecebe8;color:#141518}
+.plfs .pwv{width:100%;height:84px;touch-action:none;cursor:grab;flex:none}
+.plfs .pwv canvas{width:100%;height:100%;display:block}
+.plfs .ptm{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:rgba(236,235,232,.6);font-variant-numeric:tabular-nums;margin-top:-6px}
+.plfs .ptm .pm{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden}
+.plfs .ptm .pm.ll{color:#ecebe8;font-size:15px;font-weight:600}
+.plfs .ptm .pm svg{width:18px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.plfs .ptm .pm i{font-style:normal;font-weight:500;font-size:12px;color:rgba(236,235,232,.55)}
+.plfs .pct{display:flex;align-items:center;justify-content:center;gap:40px}
+.plfs .pct .pbk,.plfs .pct .pfw{width:44px;height:44px;display:grid;place-items:center;color:#ecebe8}
+.plfs .pct .pbk svg,.plfs .pct .pfw svg{width:30px;height:30px}
+.plfs .fpl{width:68px;height:68px}.plfs .fpl svg{width:28px;height:28px}
+.plfs .pcm{min-height:48px;padding:0 26px;border-radius:999px;background:rgba(255,255,255,.14);color:#ecebe8;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
 html.lyfs-done #app,html.lyfs-done .mini,html.lyfs-done #mini{visibility:hidden}
 /* 「评论」不占排版：贴在每行右边，文字永远给它留同样的位置。出现 / 消失只改透明度，长句不会因为它换行跳动 */
 .lyr .ln,.lyfs .ln{position:relative;padding-right:58px}
