@@ -76,6 +76,11 @@ header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-i
 .faq:empty,.faq.off{display:none}
 .faq button{flex:none;height:34px;padding:0 14px;border:1px solid var(--field);border-radius:17px;background:transparent;color:var(--accent);font:inherit;font-size:15px;line-height:32px;letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:transform .2s var(--spring),opacity .2s}
 .faq button:active{transform:scale(.94);opacity:.7}
+/* 对话里的可点问题（欢迎语和每条自动回答下面）；它们在时输入框上方那排就收起 */
+.qk{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px 6px;max-width:720px;box-sizing:border-box}
+.qk button{height:36px;padding:0 15px;border:1px solid var(--field);border-radius:18px;background:transparent;color:var(--accent);font:inherit;font-size:15px;letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:transform .2s var(--spring),opacity .2s}
+.qk button:active{transform:scale(.94);opacity:.7}
+body.qkon .faq{display:none}
 
 /* 输入栏 */
 form{flex:none;padding:6px 12px calc(8px + env(safe-area-inset-bottom));background:var(--bg)}
@@ -202,7 +207,22 @@ button.send:active{transform:scale(.88)}
     }
     if (i < text.length) b.appendChild(document.createTextNode(text.slice(i)));
   }
+  var FAQ = [], HI = '', asked = {};
+  // 可点问题：放在对话最后（欢迎语 / 自动回答下面），只列还没问过的；有新消息进来就收掉
+  function chips() {
+    qkOff();
+    var left = FAQ.filter(function (q) { return !asked[q.k]; }); if (!left.length) return;
+    var w = document.createElement('div'); w.className = 'qk';
+    left.forEach(function (q) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = q.q;
+      b.onclick = function () { if (busy) return; asked[q.k] = 1; qkOff(); send(q.q, q.k); };
+      w.appendChild(b);
+    });
+    log.appendChild(w); document.body.classList.add('qkon');
+  }
+  function qkOff() { var q = log.querySelector('.qk'); if (q) q.remove(); document.body.classList.remove('qkon'); }
   function add(m, cls, before) {
+    if (!before) qkOff();
     var st = log.querySelector('.st'); if (st) st.remove();
     var side = m.who === 'v' ? 'me' : 'o', prev = before ? before.previousElementSibling : log.lastElementChild;
     if (before) {   // 插到你刚发、还在路上的那条前面：时间顺序不乱
@@ -250,6 +270,9 @@ button.send:active{transform:scale(.88)}
       j.list.forEach(function (m) {
         if (m.id > last) last = m.id;
         if (seen[m.id]) return; seen[m.id] = 1;
+        if (m.who === 'a' && HI && m.text === HI) {   // 页面先画的欢迎语：认领，不重复画
+          var lh = log.querySelector('.m[data-hi]:not([data-id])'); if (lh) { lh.dataset.id = m.id; lh.dataset.ts = m.ts; return; }
+        }
         if (m.who === 'v') {   // 轮询赶在发送回调前拿到自己的消息：认领本地那个气泡，不重复画
           var mine = [].slice.call(log.querySelectorAll('.m.me:not([data-id])')).filter(function (x) { return x.firstChild.textContent === m.text; })[0];
           if (mine) { mine.dataset.id = m.id; mine.dataset.ts = m.ts; mine.classList.remove('pend'); return; }
@@ -294,7 +317,9 @@ button.send:active{transform:scale(.88)}
         .then(function (r) { return r.json().catch(function () { return {}; }); })
         .then(function (j) {
           busy = false;
-          if (j && j.ok) { el.classList.remove('pend'); if (j.id) { el.dataset.id = j.id; el.dataset.ts = j.ts; seen[j.id] = 1; } setTimeout(status, 250); if (j.auto) autoReply(j.auto); }
+          if (j && j.ok) { el.classList.remove('pend'); if (j.id) { el.dataset.id = j.id; el.dataset.ts = j.ts; seen[j.id] = 1; } setTimeout(status, 250);
+            if (j.hi && j.hi.id) { seen[j.hi.id] = 1; var lh = log.querySelector('.m[data-hi]:not([data-id])'); if (lh) { lh.dataset.id = j.hi.id; lh.dataset.ts = j.hi.ts; } }
+            if (j.auto) autoReply(j.auto); }
           else fail(el, text);
         }).catch(function () { busy = false; fail(el, text); });
     })();
@@ -311,13 +336,25 @@ button.send:active{transform:scale(.88)}
         if (stick) bottom(true); popIn(el);
       }
       if (ty) ty.reattach();
+      chips(); if (near()) bottom(true);   // 回答下面接着列还没问的问题
     }, still ? 300 : 1100);
   }
-  fetch(API + '/chat/faq').then(function (r) { return r.json(); }).then(function (j) {
+  // 新访客：先冒「输入中」，再弹欢迎语 + 可点问题（只画在页面上；发第一条消息时服务端才把欢迎语存进记录）
+  function welcome() {
+    if (!HI || log.querySelector('.m')) return;
+    if (ty) ty.set(true);
+    setTimeout(function () {
+      if (ty) { ty.set(false); ty.detach(); }
+      if (!log.querySelector('.m')) { var el = add({ who: 'a', text: HI, ts: Date.now() }); el.dataset.hi = '1'; popIn(el); chips(); bottom(true); }
+      if (ty) ty.reattach();
+    }, still ? 200 : 900);
+  }
+  var faqP = fetch(API + '/chat/faq').then(function (r) { return r.json(); }).then(function (j) {
     if (!j || !j.ok) return;
+    FAQ = j.list; HI = j.hi || '';
     j.list.forEach(function (q) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = q.q;
-      b.onclick = function () { if (busy) return; b.remove(); send(q.q, q.k); };
+      b.onclick = function () { if (busy) return; b.remove(); asked[q.k] = 1; qkOff(); send(q.q, q.k); };
       $('faq').appendChild(b);
     });
   }).catch(function () {});
@@ -333,7 +370,8 @@ button.send:active{transform:scale(.88)}
     var m = j.avg / 60000, t = m < 1 ? '1分钟内' : m < 60 ? '约' + Math.round(m) + '分钟' : m < 1440 ? '约' + Math.round(m / 60) + '小时' : '约' + Math.round(m / 1440) + '天';
     $('avg').textContent = ' · 平均回复' + t;
   }).catch(function () {});
-  pull(true).then(function () { bottom(false); });
+  var pullP = pull(true).then(function () { bottom(false); });
+  Promise.all([faqP, pullP]).then(welcome);
   setInterval(function () { if (!document.hidden) pull(false); }, 5000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) pull(false); });
   window.addEventListener('focus', function () { pull(false); });
