@@ -1756,7 +1756,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122c'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   async function up(file) {
     if (!file || own.classList.contains('busy')) return;
     try {
@@ -1850,6 +1850,11 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
     let catF = '';   // 当前按哪个分类筛选
     const stPrev = new Map();   // 每条评论上一次的状态圈，用来做过渡动画
     const justDone = new Set();   // 这次刚点完成的评论：隐藏已完成时先留着，点错了能撤回；换个视图 / 点按钮才消失
+    const tidyBusy = new Set(), tidyTried = new Set();   // AI 整理中 / 这次打开已经试过（失败不反复调）
+    const runTidy = async (o, kt, km, k) => { if (tidyBusy.has(k)) return; tidyBusy.add(k); tidyTried.add(k); setTimeout(cfbRender);
+      try { const r = await fetch(API + '/cr/tidy', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, text: o.m }) });
+        const j = await r.json(); if (!j.ok) throw 0; mine.set(k, { ...(mine.get(k) || {}), tidy: JSON.stringify(j.items) }); } catch (e) {}
+      tidyBusy.delete(k); cfbRender(); };
     cfbRender = () => {
     const box = $('#cfl'); box.innerHTML = '';
     const done = o => { const r = mine.get(rk(o.ver, o.t, o.m)); return !!(r && r.done); };
@@ -1907,7 +1912,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
-            if (!j.reply && !j.done && !j.read && !j.quote && !j.cat) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read, quote: j.quote, cat: j.cat });
+            if (!j.reply && !j.done && !j.read && !j.quote && !j.cat && !j.tidy) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read, quote: j.quote, cat: j.cat, tidy: j.tidy });
             if (!lazy) cfbRender(); else if (row.isConnected) try { sync(); updAll(); } catch (x) {}   // 已经滑到新位置重画过的，旧行不用再更新
           } catch (e) { if (lazy) { if (before) mine.set(k, before); else mine.delete(k); if (moved) cfbFlip(); else { sync(); updAll(); } } alert('没存上，检查网络再试'); }
         };
@@ -1928,7 +1933,24 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
         if (th.length) { const tb = document.createElement('div'); tb.className = 'thr'; tb.innerHTML = th.map(x => `<div class="tm ${x.who === 'o' ? 'o' : 'c'}"><b>${x.who === 'o' ? '我' : esc(o.who)}</b>${esc(x.text)}${x.who === 'o' ? `<button class="mx" data-ts="${x.ts}" aria-label="删除">×</button>` : ''}<i>${tstr(x.ts)}</i></div>`).join('');
           tb.querySelectorAll('.mx').forEach(bx => bx.onclick = async () => { try { const r = await fetch(API + '/cm/del', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ts: +bx.dataset.ts }) });
             if (!(await r.json()).ok) throw 0; MSGS = MSGS.filter(y => !(y.ts === +bx.dataset.ts && y.who === 'o' && y.m === o.m)); cfbRender(); } catch (e) { alert('没删掉，检查网络再试'); } }); row.querySelector('.m').appendChild(tb); }
+        // AI 整理：长评论自动拆成待办清单（只有你看得到），一项一项勾；全勾完这条评论自动标完成。原文收成两行，点开看全文
+        { const r0 = mine.get(k), items = (() => { const tv = r0 && r0.tidy; if (Array.isArray(tv)) return [...tv]; try { return JSON.parse(tv || 'null'); } catch (e) { return null; } })();
+          const tbn = document.createElement('button'); tbn.className = 'press tdb'; tbn.textContent = tidyBusy.has(k) ? '整理中…' : items ? '重新整理' : '整理'; tbn.disabled = tidyBusy.has(k);
+          tbn.onclick = () => runTidy(o, kt, km, k); acts.querySelector('.asd').before(tbn);
+          if (items && items.length) {
+            const mt = row.querySelector('.m'); mt.classList.add('tdf'); mt.title = '点开看客户原话';
+            { const tn = [...mt.childNodes].find(n => n.nodeType === 3); if (tn) { const sp = document.createElement('span'); sp.className = 'mtx'; sp.textContent = tn.textContent; tn.replaceWith(sp); } }
+            mt.onclick = ev => { if (ev.target.closest('button, .tdl, .thr')) return; mt.classList.toggle('open'); };
+            const ul = document.createElement('div'); ul.className = 'tdl';
+            ul.innerHTML = items.map((it, i) => `<label class="${it.d ? 'tk' : ''}"><input type="checkbox" data-i="${i}"${it.d ? ' checked' : ''}><span>${esc(it.x)}</span></label>`).join('');
+            ul.querySelectorAll('input').forEach(cb => cb.onchange = () => { const nx = items.map((it, i) => i === +cb.dataset.i ? { ...it, d: cb.checked ? 1 : 0 } : it);
+              cb.parentNode.classList.toggle('tk', cb.checked); const allD = nx.every(x => x.d), r = mine.get(k) || {};
+              save({ tidy: nx, ...(allD && !r.done ? { read: true, done: true } : !allD && r.done ? { done: false } : {}) }, true); items.splice(0, items.length, ...nx); });
+            mt.after(ul);
+          } else if (!items && !tidyTried.has(k) && o.m.length >= 50 && !done(o)) runTidy(o, kt, km, k);   // 长评论第一次出现：自动整理
+        }
         row.querySelector('.m').after(acts);
+        if (row.querySelector('.tdl')) row.querySelector('.tdl').after(acts);
         rows.push(sync);
       }
       box.appendChild(row);
@@ -2200,7 +2222,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122c'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }

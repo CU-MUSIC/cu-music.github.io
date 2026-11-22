@@ -1114,3 +1114,14 @@ body.rlp-on .rlp-tab{display:none}
 /* 逐字歌词：当前句一个字一个字亮起来（--q 由 player.js 每帧写） */
 .lyr .ln .wd,.lyfs .ln .wd{white-space:pre-wrap}
 .lyr .ln.on .wd,.lyfs .ln.on .wd{--q:-40;background-image:linear-gradient(90deg,currentColor calc(var(--q)*1%),color-mix(in srgb,currentColor 36%,transparent) calc(var(--q)*1% + 40%));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+/* AI 整理：原话收成两行（点开看全文），下面是一项一项可以勾的待办 */
+#cfl .row .m.tdf{cursor:pointer}
+#cfl .row .m.tdf .mtx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text-3);font-size:13px;line-height:1.6}
+#cfl .row .m.tdf.open .mtx{display:block;-webkit-line-clamp:unset}
+#cfl .tdl{flex:1 1 100%;padding-left:64px;margin:6px 0 2px;display:flex;flex-direction:column;gap:2px;max-width:calc(62ch + 64px)}
+#cfl .tdl label{display:flex;gap:10px;align-items:flex-start;padding:5px 8px;border-radius:8px;font-size:15px;line-height:1.6;color:var(--text);cursor:pointer}
+#cfl .tdl label:hover{background:var(--fill-1,rgba(236,234,230,.04))}
+#cfl .tdl input{flex:none;width:16px;height:16px;margin-top:4px;accent-color:#5fae84;cursor:pointer}
+#cfl .tdl label.tk span{color:var(--text-3);text-decoration:line-through}
+#cfl .acts .tdb{color:#e8c98a}
+@media (max-width:480px){#cfl .tdl{padding-left:0}}
