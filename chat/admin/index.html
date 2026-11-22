@@ -94,14 +94,14 @@ header{position:relative;flex:none;padding:calc(8px + env(safe-area-inset-top)) 
 
 form{flex:none;display:none;padding:6px 12px calc(8px + env(safe-area-inset-bottom))}
 form.on{display:block}
-.bar{display:flex;align-items:flex-end;border:1px solid var(--field);border-radius:19px;padding:0 3px 0 13px;min-height:40px}
+.bar{display:flex;align-items:flex-end;border:1px solid var(--field);border-radius:19px;padding:0 4.5px 0 13px;min-height:40px}
 .bar:focus-within{border-color:var(--field2)}
 textarea{flex:1;min-width:0;resize:none;max-height:160px;height:38px;padding:7px 0;border:0;background:transparent;color:var(--text);font:inherit;font-size:18px;line-height:24px;letter-spacing:-.024em;outline:none;caret-color:var(--accent)}
 textarea::placeholder{color:var(--dim-2)}
-button.send{flex:none;width:29px;height:29px;margin:3px 0 3px 6px;padding:0;border:0;border-radius:50%;background:var(--me);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:scale(0);opacity:0;transition:transform .32s var(--spring),opacity .15s}
+button.send{flex:none;width:29px;height:29px;margin:4.5px 0 4.5px 6px;padding:0;border:0;border-radius:50%;background:var(--me);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:scale(0);opacity:0;transition:transform .32s var(--spring),opacity .15s}
 button.send.on{transform:scale(1);opacity:1}
 /* 快捷回复：输入框左边的按钮，点开选一条常用回答填进输入框，改两个字再发 */
-.qr{flex:none;width:29px;height:29px;margin:3px 8px 3px -6px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.qr{flex:none;width:29px;height:29px;margin:4.5px 8px 4.5px -6px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .qr:active{transform:scale(.9)}
 #qm{display:none;max-height:46vh;overflow-y:auto;margin:0 0 8px;border-radius:14px;background:var(--other)}
 #qm.on{display:block}
