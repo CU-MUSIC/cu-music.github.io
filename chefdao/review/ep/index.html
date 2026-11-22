@@ -347,9 +347,9 @@ async function open(pw, key) {
   document.getElementById('gate').remove();
   const playable = P.tracks.filter(t => t.dur > 0 && !t.locked);
   // 专辑进度条：几首定稿（设了 Final 或进了交付结算 / 已交付）· 客户总聆听分钟 · 总版本数
-  const vis = P.tracks.filter(t => !t.locked), nDone = vis.filter(t => t.fin || (t.prog && (t.prog.s === 8 || t.prog.s === 5))).length, nVer = vis.reduce((s, t) => s + (t.versions || 0), 0);
+  const vis = P.tracks.filter(t => !t.locked), nDone = vis.filter(t => t.fin || (t.prog && (t.prog.s === 8 || t.prog.s === 5))).length, nVer = vis.filter(t => t.fin || (t.prog && (t.prog.s === 8 || t.prog.s === 5))).reduce((s, t) => s + (t.versions || 0), 0);   // 版本数只算已定稿的歌
   const apg = vis.length > 1 ? '<div class="apg"><div class="apn"><b>' + nDone + '<i> / ' + vis.length + '</i></b><span>首定稿</span></div><div class="apb"><i style="width:' + (nDone / vis.length * 100).toFixed(1) + '%"></i></div>'
-    + '<div class="aps"><span><b>' + Math.round((P.lsec || 0) / 60).toLocaleString('zh-CN') + '</b> 分钟总聆听</span><span><b>' + nVer + '</b> 个版本</span></div></div>' : '';
+    + '<div class="aps"><span><b>' + Math.round((P.lsec || 0) / 60).toLocaleString('zh-CN') + '</b> 分钟总聆听</span>' + (nDone ? '<span><b>' + nVer + '</b> 版打磨到定稿</span>' : '') + '</div></div>' : '';
   document.getElementById('list').innerHTML = apg + (playable.length ? '<button class="pa" id="pa" type="button"><svg viewBox="0 0 16 16"><path d="M4.5 2.6v10.8c0 .6.7 1 1.2.7l8.3-5.4c.5-.3.5-1.1 0-1.4L5.7 1.9c-.5-.3-1.2.1-1.2.7z"/></svg>播放</button>' : '')
     + (P.tracks.length ? '<div class="list' + (P.tracks.some(t => t.cover) ? ' cvs' : '') + '">' + P.tracks.map((t, i) =>
     t.locked ? '<div class="tr lk" style="animation-delay:' + (i * 60) + 'ms" aria-label="未开放"><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span class="t"><b style="width:' + Math.min(14, 3 + (t.n || 6) * .7).toFixed(1) + 'em"></b><b class="b2" style="width:' + (2.5 + (i * 37 % 4)) + 'em"></b></span><span class="m"><em><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>未开放</em></span></div>' :
