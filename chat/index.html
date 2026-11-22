@@ -378,6 +378,9 @@ button.send:active{transform:scale(.88)}
       $('faq').appendChild(b);
     });
   }).catch(function () {});
+  // 发送键：按下时不抢走输入框焦点（iPhone 上先收键盘、布局一跳，点击落空要点两次）
+  document.getElementById('go').addEventListener('pointerdown', function (e) { e.preventDefault(); });
+  document.getElementById('go').addEventListener('mousedown', function (e) { e.preventDefault(); });
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     var text = tx.value.trim(); if (!text || busy) return;
