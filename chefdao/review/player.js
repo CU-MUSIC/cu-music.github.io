@@ -1825,7 +1825,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122i'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122j'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2306,7 +2306,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122i'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122j'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
@@ -2840,8 +2840,9 @@ $('#dlBtn').onclick = async () => {
   }
   b.dataset.busy = '1'; b.classList.add('busy');
   try {
-    const i = vi, raw = new Uint8Array(await plainOf(i)), u = URL.createObjectURL(new Blob([raw], { type: 'audio/mp4' })), el = document.createElement('a');
-    el.href = u; el.download = dlName(V[i]) + '.m4a'; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);
+    const i = vi, mt = V[i].mime || 'audio/mp4', ex = /wav/.test(mt) ? '.wav' : /mpeg/.test(mt) ? '.mp3' : '.m4a';   // 无损 WAV 下载出来也是 .wav
+    const raw = new Uint8Array(await plainOf(i)), u = URL.createObjectURL(new Blob([raw], { type: mt })), el = document.createElement('a');
+    el.href = u; el.download = dlName(V[i]) + ex; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);
     fetch(API_BASE + '/dlreq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, k: WK, lid, got: 1, ver: V[i].ver }) }).catch(() => {});
   } catch (e) { hud('下载没成功，再试一次'); }
   delete b.dataset.busy; b.classList.remove('busy'); dlUi();
