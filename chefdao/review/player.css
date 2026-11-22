@@ -417,6 +417,11 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .head .meta .ftag{display:inline-block;margin-left:8px;padding:0 7px;border:.5px solid var(--fill-3);border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:18px;color:var(--text-2);vertical-align:1px}
 .head .meta .ftag.ll{display:inline-flex;align-items:center;gap:5px;color:var(--ink);background:var(--pearl);border-color:var(--pearl);padding:0 8px}
 .head .meta .ftag.ll svg{width:14px;height:11px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.times .llx{display:none}
+.times.isll .pnow{display:none}
+.times.isll .llx{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--text);font-size:14px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+.times .llx svg{width:18px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.times .llx i{font-style:normal;font-weight:500;color:var(--text-3);font-size:12px;margin-left:2px}
 .head .meta .ftag.ll i{font-style:normal;font-weight:500;opacity:.65;letter-spacing:0}
 
 /* 属于某个 EP / 专辑时，标题上方一行返回项目 */

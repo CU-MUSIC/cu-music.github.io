@@ -479,14 +479,14 @@ button.av{cursor:pointer;padding:0}
     if (p.startsWith('/ra/')) return go(CDN + p, 'omit', 8000).catch(direct);
     // 接口不走 Bunny：Bunny 会忽略 ?s= 把不同歌的回复当成同一份缓存（2026-11-10 出过事），只有 /ra/ 音频走 Bunny
     return direct(); }; })();</script>
-<script src="../upload.js?v=20261122j"></script>
+<script src="../upload.js?v=20261122k"></script>
 <script src="../reflib.js?v=20261109p"></script>
 <script src="work.js?v=261115c"></script>
 <script src="money.js?v=261119f"></script>
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261122.2125';
+const BUILD = '261122.2135';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
