@@ -397,10 +397,10 @@ const relTime = (ts, date) => {
   return (d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '年' : '') + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + hm;
 };
 const md = d => { const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || ''); return m ? (+m[1]) + '月' + (+m[2]) + '日' : ''; };
-function progTag(g, fin) {   // fin：这首设了混音 Final（母带另找人）：交付结算 → 混音定稿，已交付 → 已交母带
+function progTag(g, fin) {   // fin：这首设了混音 Final（母带另找人）：交付结算 / 已交付都显示混音定稿（随专辑一起交母带）
   if (!g) return '';
   return '<em class="pg"><span class="bar">' + [0, 1, 2, 3, 4, 5].map(i => '<s class="' + (i < BAR[g.s] ? 'd' : i === BAR[g.s] ? 'c' : '') + '"></s>').join('') + '</span>'
-    + (fin && (g.s === 8 || g.s === 5) ? (g.s === 8 ? '混音定稿' : '已交母带') : stageText(g)) + (g.s !== 5 && g.s !== 8 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
+    + (fin && (g.s === 8 || g.s === 5) ? '混音定稿' : stageText(g)) + (g.s !== 5 && g.s !== 8 && g.due ? ' · 预计 ' + md(g.due) + ' 交付' : '') + '</em>';
 }
 // 在项目页直接连播（不跳去曲目页）：每首用记下的密码解开最新一版；底部一条迷你播放条。听歌统计照常记
 // 无缝：5 分钟以内的歌解码成 AudioBuffer，用音频时钟把下一首排在上一首结束的那一刻（首尾 AAC 编码带的几十毫秒静音先切掉），专辑一首接一首没有缝

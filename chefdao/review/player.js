@@ -62,8 +62,8 @@ function progHtml(g) {   // 进度：项目页里改的阶段，这里只显示
     const W = [3.4, 1, .7, .55];   // 当前阶段占最宽，离得越远越窄（透视感）
     // 外卖进度单：先一行大字说此刻在哪，再一行说明（几点进入这一步），下面才是细进度条；在做的阶段轻轻呼吸，已交付 / 待付款不动
     const live = g.s > 0 && g.s !== 5, SUB = ['付款后安排排期', '已收款，正在检查素材', '正在进行音频编辑', '正在混音', '新一版已完成，请审听', '最终文件已交付', '正在做人声制作', '正在按意见修改', '已确认没有问题，结清尾款后交付'], at = g.at && g.at[g.s];
-    // 只做混音、母带另找人（设了 Final）：交付结算 → 混音定稿，已交付 → 已交母带
-    if (typeof V !== 'undefined' && V.some(v => v.fin)) { ST[5] = g.s === 8 ? '混音定稿' : '已交母带'; SUB[8] = '混音已定稿，结清尾款后交给母带工程师'; SUB[5] = '混音文件已交给母带工程师'; }
+    // 只做混音、母带另找人（设了 Final）：交付结算 / 已交付都显示「混音定稿」；文件等整张专辑整理好再一起交母带，不按单曲算已交
+    if (typeof V !== 'undefined' && V.some(v => v.fin)) { ST[5] = '混音定稿'; SUB[8] = '结清尾款后，随专辑一起交给母带工程师'; SUB[5] = '尾款已结清，随专辑一起交给母带工程师'; }
     const head = `<div class="sphead"><b>${live ? '<i class="spdot"></i>' : ''}${ST[cur]}</b><span>${SUB[g.s] || ''}${at ? ' · ' + relTime(at) : ''}</span></div>`;
     return `<div class="sprog${g.s === 8 ? ' settle' : ''}${live ? ' live' : ''}">${head}<div class="spbar" style="grid-template-columns:${ST.map((n, i) => W[Math.min(3, Math.abs(i - cur))] + 'fr').join(' ')}">${ST.map((n, i) => `<span class="k${Math.min(3, Math.abs(i - cur))} ${i < cur ? 'd' : i === cur ? 'c' : ''}"><i></i></span>`).join('')}</div>`
       + etaBlock(g) + '</div>';
@@ -1852,7 +1852,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122u'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122v'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2333,7 +2333,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122u'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122v'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
