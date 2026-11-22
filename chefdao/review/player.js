@@ -474,8 +474,8 @@ function preloadNext() {
   const t = trackAt(1) || (RPT === 'all' && PL && PL[0] && PL[0].slug !== S.slug ? PL[0] : null);
   if (t) try { SHELL.cuPreload(new URL(t.url, location.href).href); } catch (e) {}
 }
-function fsNav() {   // 全屏歌词里的切歌按钮和「下一首」提示
-  const f = $('#lyfs'); if (!f) return;
+function fsNav() {   // 全屏里的切歌按钮和「下一首」提示（项目里有多首歌时）
+  const f = $('#plfs') || $('#lyfs'); if (!f) return;
   const pv = trackAt(-1), nx = trackAt(1);
   f.querySelector('.fpv').disabled = !pv; f.querySelector('.fnx').disabled = !nx;
   const up = f.querySelector('.fup'); up.hidden = !nx; if (nx) up.querySelector('b').textContent = nx.title || '';
@@ -819,11 +819,11 @@ function activate(o) {
   o = o || {}; if (!PRE) return;
   PRE = false; try { history.replaceState(null, '', location.pathname + location.search.replace(/[?&]pre=1\b/, '').replace(/^&/, '?') + location.hash); } catch (e) {}
   PRE_PINGS.splice(0).forEach(accessPing);
-  if (o.fs) { if (LYR && LYR.lines && LYR.lines.length) lyrFull(); else FS_BACK = true; }
+  if (o.fs) { if (S.lyrics && !LYR) FS_BACK = true; else playFull(); }   // 歌词还在解密：等它好了再开全屏（带歌词）
   if (o.play) { if (!$('#play').disabled) a.play().catch(() => {}); else QUICK_PLAY = true; }
   setTimeout(preloadNext, 2500);
 }
-window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled, activate, pre: () => PRE, line: () => { try { return curLine(); } catch (e) { return ''; } }, hasLyr: () => { try { return miniHasLyr(); } catch (e) { return false; } }, full: () => { try { if (miniHasLyr()) { lyrFull(); return true; } } catch (e) {} return false; } };
+window.cuP = { a, song: S, ver: () => { try { return vname(cur); } catch (e) { return cur.ver; } }, peaks: () => cur.peaks || [], dur, time: () => curTime(), seek, toggle, ready: () => !$('#play').disabled, activate, pre: () => PRE, line: () => { try { return curLine(); } catch (e) { return ''; } }, hasLyr: () => { try { return miniHasLyr(); } catch (e) { return false; } }, full: () => { try { playFull(); return true; } catch (e) {} return false; } };
 if (SHELL && SHELL.__cuShellBar) document.documentElement.classList.add('inshell');
 if (PRE && window.__cuAct) setTimeout(() => activate(window.__cuAct), 0);   // 还没载完就被换到前台了
 document.addEventListener('keydown', e => {
@@ -1830,7 +1830,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122n'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122p'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2311,7 +2311,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122n'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122p'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
@@ -3017,7 +3017,7 @@ async function lyrInit(key) {
   if (!S.lyrics) return lyrDraw();
   try { LYR = JSON.parse(new TextDecoder().decode(await open(key, ub64(S.lyrics)))); } catch (e) { LYR = null; }
   lyrDraw();
-  if (FS_BACK && LYR && LYR.lines && LYR.lines.length) { FS_BACK = false; lyrFull(); }   // 从全屏歌词里切过来的：接着全屏
+  if (FS_BACK) { FS_BACK = false; playFull(); }   // 从全屏歌词里切过来的：接着全屏
 }
 // 段落（Verse / Hook / 歌手名）插在歌词里：每段标在它开始后的第一句前面，点段名 = 跳到这一段
 // 歌词里自己写了「削面」「Cam」这种歌手 / 段落名的一行：和上面的段名重复，藏起来
@@ -3133,7 +3133,9 @@ function lyrSync(i) {
   });
 }
 // 全屏歌词（Spotify 那样）：封面糊成背景，大字歌词跟着走，底下播放 / 进度；Esc 或 ⌄ 退出
-function lyrFull() {
+// 全屏歌词已并进全屏播放：所有「全屏歌词」入口都打开全屏播放，并切到歌词
+function lyrFull() { store.set('review:lyfsSeen', '1'); $('#mini').classList.remove('hint'); $('#plyr').classList.remove('hint'); if (miniHasLyr()) store.set('review:plly', '1'); playFull(); }
+function lyrFullOld() {
   const L = LYR && LYR.lines; if (!L || $('#lyfs')) return;
   store.set('review:lyfsSeen', '1'); $('#mini').classList.remove('hint'); $('#plyr').classList.remove('hint');
   const f = document.createElement('div'); f.className = 'lyfs'; f.id = 'lyfs';
@@ -3166,15 +3168,15 @@ function playFull() {
   const tipN = +(store.get('review:plfsTip') || 0), tip = tipN < 3; store.set('review:plfsTip', String(tipN + 1));
   if (LL) f.classList.add('hasly'); if (LL && store.get('review:plly') !== '0') f.classList.add('showly');
   f.innerHTML = `<div class="fbg"${cvu ? ` style="background-image:url('${cvu}')"` : ''}></div>
-    <div class="fhd"><button class="fx press" aria-label="收起"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}</span></div>${LL ? '<button class="ply press" id="ply"></button>' : ''}</div>
+    <div class="fhd"><button class="fx press" aria-label="收起"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div><b>${esc(S.title)}</b><span>${esc(S.artist || '')}</span></div>${LL ? '<button class="ply press" id="ply"></button>' : ''}<button class="fup press" hidden aria-label="下一首"><i>下一首</i><b></b><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5.5v13c0 .8.9 1.3 1.5.8l8.7-6.3c.6-.4.6-1.4 0-1.8L5.5 4.8C4.9 4.3 4 4.8 4 5.5z"/></svg></button></div>
     <div class="pbody"><div class="pcol"><div class="pcv"${cvu ? ` style="background-image:url('${cvu}')"` : ''}></div>
     ${LL ? `<div class="lyrs plyrs"><div class="lyin">${lyrRows(LL)}</div></div>` : ''}
     <div class="pvs" id="pvs"></div>${tip && V.length > 1 ? '<div class="phint">点版本切换，接着当前位置播放</div>' : ''}
     <div class="pwv"><canvas></canvas>${tip ? '<div class="pdrag"><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>左右拖动波形找位置</div>' : ''}</div>
     <div class="ptm"><span class="pc">0:00</span><span class="pm"></span><span class="pr"></span></div>
-    <div class="pct"><button class="pbk press" aria-label="后退 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">5</text></svg></button>
+    <div class="pct"><button class="fsk fpv press" aria-label="上一首" disabled><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5.5v13c0 .8-.9 1.3-1.5.8L9.8 13c-.6-.4-.6-1.4 0-1.8l8.7-6.4c.6-.5 1.5 0 1.5.7z"/></svg></button><button class="pbk press" aria-label="后退 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">5</text></svg></button>
       <button class="fpl press" aria-label="播放 / 暂停"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5.2v13.6c0 .8.9 1.3 1.6.9l10.6-6.8c.6-.4.6-1.4 0-1.8L9.6 4.3C8.9 3.9 8 4.4 8 5.2z"/></svg><svg class="pa" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></svg></button>
-      <button class="pfw press" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4.5h-4.5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">5</text></svg></button></div>
+      <button class="pfw press" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4.5h-4.5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">5</text></svg></button><button class="fsk fnx press" aria-label="下一首" disabled><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5.5v13c0 .8.9 1.3 1.5.8l8.7-6.3c.6-.4.6-1.4 0-1.8L5.5 4.8C4.9 4.3 4 4.8 4 5.5z"/></svg></button></div>
     <button class="pcm press" id="pcm">写评论</button></div></div>`;
   document.body.appendChild(f); document.documentElement.classList.add('lyfs-on');
   if (LL) { lyrBind(f, LL); const ply = $('#ply'), lyUi = () => { ply.textContent = f.classList.contains('showly') ? '封面' : '歌词'; };
@@ -3185,6 +3187,9 @@ function playFull() {
   vers(); const onVer = () => vers(); addEventListener('cu-ver', onVer);
   $('#pvs').onclick = e => { const b = e.target.closest('button'); if (b) switchTo(+b.dataset.i); };
   f.querySelector('.fpl').onclick = toggle;
+  f.querySelector('.fpv').onclick = () => { if (curTime() > 3) seek(0); else goTrack(-1, true); };   // 放了 3 秒以上：回到这首开头
+  f.querySelector('.fnx').onclick = f.querySelector('.fup').onclick = () => goTrack(1, true);
+  fsNav();
   f.querySelector('.pbk').onclick = () => seek(curTime() - 5);
   f.querySelector('.pfw').onclick = () => seek(curTime() + 5);
   // 写评论：暂停、把时间点锁在现在，回到审听页的评论框

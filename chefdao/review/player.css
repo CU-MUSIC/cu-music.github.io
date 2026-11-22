@@ -1209,3 +1209,10 @@ body.rlp-on .rlp-tab{display:none}
 .head .art .fstip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);z-index:5;padding:6px 12px;border-radius:999px;background:var(--pearl);color:var(--ink);font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.35);animation:fstip .4s cubic-bezier(.2,.8,.2,1) both}
 .head .art .fstip::before{content:'';position:absolute;left:-5px;top:50%;margin-top:-5px;border:5px solid transparent;border-left:0;border-right-color:var(--pearl)}
 @keyframes fstip{from{opacity:0;transform:translate(-6px,-50%)}to{opacity:1;transform:translateY(-50%)}}
+/* 全屏播放里的上一首 / 下一首（只有项目里有多首歌时出现） */
+.plfs .pct{gap:22px}
+.plfs .fsk{width:40px;height:40px;display:grid;place-items:center;color:#ecebe8}
+.plfs .fsk svg{width:22px;height:22px;fill:currentColor}
+.plfs .fsk:disabled{visibility:hidden}
+.plfs .fhd .fup{margin-left:auto}
+.plfs .fhd .ply + .fup{margin-left:8px}
