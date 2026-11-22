@@ -91,7 +91,8 @@ async function cuUpload(o) {
   let lufs; if (!big) try { await loadLib('lufs.js', 'cuLufs'); lufs = await cuLufs(au); } catch (e) {}   // 低采样率解出来的不测响度
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   let bytes, mime;
-  if (ext === 'mp3') { bytes = new Uint8Array(buf); mime = 'audio/mpeg'; }
+  if (o.lossless && ext === 'wav') { bytes = new Uint8Array(buf); mime = 'audio/wav'; }   // 无损：WAV 原样上传，客户那边显示 Lossless
+  else if (ext === 'mp3') { bytes = new Uint8Array(buf); mime = 'audio/mpeg'; }
   else if (['m4a', 'mp4', 'aac'].includes(ext)) { bytes = new Uint8Array(buf); mime = 'audio/mp4'; }
   else if (await aacOk(au)) {   // WAV / AIFF：转成 m4a（AAC 320k），用浏览器自带的编码器
     const fit = Math.floor((24 * 1048576 - 64) * 8 / au.duration / 1000 * .96 / 32) * 32, k = Math.max(128, Math.min(320, fit));   // 320k 放得下就 320k，长歌直接按能放下的码率压，不压两遍

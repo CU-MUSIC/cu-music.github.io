@@ -552,7 +552,7 @@ async function cachePut(i, u8) {
 }
 const cached = new Set();
 // 格式 + 码率：由文件大小和时长算出（去掉加密的 28 字节），贴近标准档位就取整；无损格式显示 Lossless
-const SIZE = {};
+const SIZE = {}, WFMT = {};
 function fmtTag(i) {
   const v = V[i], n = SIZE[i]; if (!n || !v.duration) return '';
   const m = v.mime || 'audio/mpeg';
@@ -578,6 +578,11 @@ async function fetchVersion(i, onp) {
     }
     SIZE[i] = u8.length - 28; if (i === vi) setTimeout(showMeta, 0);
     const plain = await open(KEY, u8);
+    if (/wav/.test(V[i].mime || '')) try {   // WAV 头里读位深和采样率，Lossless 标志后面写「24-bit / 48 kHz」
+      const b = plain instanceof ArrayBuffer ? new Uint8Array(plain) : plain, dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+      for (let o = 12; o + 24 <= b.length;) { const id = String.fromCharCode(b[o], b[o + 1], b[o + 2], b[o + 3]), sz = dv.getUint32(o + 4, true);
+        if (id === 'fmt ') { WFMT[i] = { rate: dv.getUint32(o + 12, true), bits: dv.getUint16(o + 22, true) }; if (i === vi) setTimeout(showMeta, 0); break; } o += 8 + sz + (sz & 1); }
+    } catch (e) {}
     return (READY[i] = URL.createObjectURL(new Blob([plain], { type: V[i].mime || 'audio/mpeg' })));
   })();
   try { return await urls[i]; } catch (e) { delete urls[i]; throw e; }
@@ -1444,7 +1449,9 @@ function showMeta() {
   // 大字是歌名，小字是当前版本和日期
   const tag = fmtTag(vi);
   const latest = V.reduce((m, v) => (v.date && v.date > m ? v.date : m), '');
-  $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + relTime(cur.ts, cur.date) + (latest && latest !== cur.date ? ' · 曲目更新 ' + cdate(latest) : '')) + (tag ? '<span class="ftag' + (tag === 'Lossless' ? ' ll' : '') + '">' + esc(tag) + '</span>' : '');
+  $('#vmeta').innerHTML = esc(vname(cur) + ' · ' + relTime(cur.ts, cur.date) + (latest && latest !== cur.date ? ' · 曲目更新 ' + cdate(latest) : '')) + (tag === 'Lossless' ? '<span class="ftag ll"><svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 6h1.5M4 3.5v5M6.5 1v10M9 3v6M11.5 4.5v3M14 6h1"/></svg>Lossless'
+      + (WFMT[vi] ? '<i>' + WFMT[vi].bits + '-bit / ' + (WFMT[vi].rate / 1000).toFixed(WFMT[vi].rate % 1000 ? 1 : 0) + ' kHz</i>' : '') + '</span>'
+      : tag ? '<span class="ftag">' + esc(tag) + '</span>' : '');
   try { miniLine(true); } catch (e) { $('#mt').textContent = S.title + ' · ' + vname(cur); }   // 歌词部分还没初始化时（页面刚载入）
 }
 let switching = 0;
@@ -1818,7 +1825,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122h'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122i'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -1847,11 +1854,15 @@ function ownerTools() {
       const lab = (STAGE[st] ? STAGE[st] + ' ' : '') + (existing ? vlab(existing) : want || String(V.filter(v => stageOf(v) === st).length + 1));
       if (existing && !confirm('「' + lab + '」已经有了，要覆盖吗？')) return;
       if (!batch && !confirm('把「' + file.name + '」上传为《' + S.title + '》' + (STAGE[st] ? lab : ver) + '？')) return;
+      // WAV：可以不压缩，客户直接听无损（显示 Lossless）；收尾的一版顺手转「交付结算」
+      const ll = !batch && /\.wav$/i.test(file.name) && confirm('保留 WAV 无损给客户听？\n确定 = 无损 WAV（显示 Lossless）\n取消 = 照常转 m4a');
+      const settle = ll && S.prog && S.prog.s !== 8 && confirm('传完后进入「交付结算」？');
       own.classList.add('busy');
-      const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, overwrite: !!existing, date: n.date, step: t => busy(batch ? file.name.replace(/\.[^.]+$/, '') + '：' + t : t),
+      const r = await cuUpload({ api: live.api, key, file, slug: S.slug, ver, overwrite: !!existing, date: n.date, lossless: ll, step: t => busy(batch ? file.name.replace(/\.[^.]+$/, '') + '：' + t : t),
         bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
       busy('《' + S.title + '》' + r.ver + ' 已上线');
       if (batch) { own.classList.remove('busy'); if (!existing) V.push({ ver: r.ver, file: file.name }); return r; }   // 先记进列表，下一个文件才能认出 2A / 算出下一个 V 号
+      if (settle) try { await post('/radm/meta', { slug: S.slug, prog: { ...S.prog, s: 8, at: { ...(S.prog.at || {}), 8: Date.now() } } }); busy('《' + S.title + '》' + r.ver + ' 已上线，进入交付结算'); } catch (e) { busy(r.ver + ' 已上线，但没转成交付结算，到进度那里手动改'); }
       setTimeout(() => softReload(r.ver), 300);
     } catch (e) { own.classList.remove('busy'); busy(/HTTP|^[a-z]+$/.test(e.message) ? '没传成功（' + e.message + '），再试一次' : e.message); }
   }
@@ -2295,7 +2306,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122h'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122i'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
