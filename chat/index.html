@@ -80,7 +80,11 @@ header{position:relative;z-index:2;flex:none;padding:calc(10px + env(safe-area-i
 .qk{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px 6px;max-width:720px;box-sizing:border-box}
 .qk button{height:36px;padding:0 15px;border:1px solid var(--field);border-radius:18px;background:transparent;color:var(--accent);font:inherit;font-size:15px;letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:transform .2s var(--spring),opacity .2s}
 .qk button:active{transform:scale(.94);opacity:.7}
+.qk button{animation:qkin .42s cubic-bezier(.22,1.2,.36,1) both}
+@keyframes qkin{from{opacity:0;transform:translateY(8px) scale(.92)}}
+.qk.out{overflow:hidden;opacity:0;transition:height .24s cubic-bezier(.2,.8,.2,1),opacity .16s ease-in,padding .24s;padding-top:0;padding-bottom:0}
 body.qkon .faq{display:none}
+.faq button{animation:qkin .36s cubic-bezier(.22,1.2,.36,1) both}
 
 /* 输入栏 */
 form{flex:none;padding:6px 12px calc(8px + env(safe-area-inset-bottom));background:var(--bg)}
@@ -226,14 +230,20 @@ button.send:active{transform:scale(.88)}
     qkOff();
     var left = FAQ.filter(function (q) { return !asked[q.k]; }); if (!left.length) return;
     var w = document.createElement('div'); w.className = 'qk';
-    left.forEach(function (q) {
-      var b = document.createElement('button'); b.type = 'button'; b.textContent = q.q;
+    left.forEach(function (q, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = q.q; b.style.animationDelay = (120 + i * 55) + 'ms';   // 一个接一个冒出来
       b.onclick = function () { if (busy) return; asked[q.k] = 1; qkOff(); send(q.q, q.k); };
       w.appendChild(b);
     });
     log.appendChild(w); document.body.classList.add('qkon');
   }
-  function qkOff() { var q = log.querySelector('.qk'); if (q) q.remove(); document.body.classList.remove('qkon'); }
+  // 收起：高度收到 0 同时淡出，后面的新消息跟着平滑上移（不一下子跳）
+  function qkOff() {
+    var q = log.querySelector('.qk:not(.out)'); document.body.classList.remove('qkon'); if (!q) return;
+    if (still) { q.remove(); return; }
+    q.classList.add('out'); q.style.height = q.offsetHeight + 'px'; q.offsetHeight;
+    q.style.height = '0px'; setTimeout(function () { q.remove(); }, 260);
+  }
   function add(m, cls, before) {
     if (!before) qkOff();
     var st = log.querySelector('.st'); if (st) st.remove();

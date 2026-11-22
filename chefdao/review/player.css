@@ -1232,3 +1232,10 @@ body.rlp-on .rlp-tab{display:none}
 .fnote .fnb{padding:0 16px 14px}
 .fnote p{margin:6px 0}.fnote p b{color:var(--text);margin-right:8px}
 .fnote ul{margin:2px 0 8px;padding-left:1.2em}
+/* 新出现的块都带入场动画：A/B 定方案行、定稿说明、全屏里的版本提示和 Lossless */
+@keyframes cuIn{from{opacity:0;transform:translateY(6px)}}
+.vabp:not([hidden]),.fnote:not([hidden]),.plfs .phint,.times.isll .llx,.plfs .ptm .pm.ll{animation:cuIn .36s cubic-bezier(.2,.8,.2,1) both}
+.vabp .ok{animation:cuIn .3s cubic-bezier(.2,.8,.2,1) both}
+.fnote[open] .fnb{animation:cuIn .32s cubic-bezier(.2,.8,.2,1) both}
+.vabx .vrow{transition:background-color .25s,color .25s}
+@media (prefers-reduced-motion:reduce){.vabp,.fnote,.fnote .fnb,.plfs .phint,.times .llx,.plfs .pm,.vabp .ok{animation:none!important}}
