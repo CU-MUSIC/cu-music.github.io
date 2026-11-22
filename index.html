@@ -929,7 +929,7 @@ function renderAlbums(filter = 'all'){
       return `
         <a class="album-item" href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">
           <div class="album-cover">
-            <img src="${esc(a.image)}" alt="《${esc(a.title)}》专辑封面" loading="lazy" decoding="async">
+            <img src="${esc(a.image)}${/music\.126\.net/.test(a.image) && !a.image.includes('?') ? '?param=600y600' : ''}" alt="《${esc(a.title)}》专辑封面" loading="lazy" decoding="async">
             ${badge ? `<span class="album-badge">${badge}</span>` : ''}
             <div class="album-overlay">
               <h3 class="album-title">${esc(a.title)}</h3>
