@@ -401,6 +401,16 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .vpick .vrow .hasdot{position:absolute;top:3px;right:4px;width:5px;height:5px;margin:0}
 .vpick .vrow .vdel{padding:0 0 0 2px;font-size:14px;line-height:1;color:inherit;opacity:.5;background:none}
 .vpick .vrow .vdel:hover{opacity:1;color:var(--red);background:none}
+/* A/B 方案：12 [A|B] 一颗胶囊 */
+.vab{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--fill)}
+.vab .vabn{padding:0 8px 0 12px;font-size:16px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums}
+.vpick .vab .vrow{min-width:44px;min-height:38px;padding:8px 14px;background:none}
+.vpick .vab .vrow.on{background:var(--pearl);color:var(--ink)}
+.vab:has(.vrow.on) .vabn{color:var(--text)}
+.vabp{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 10px 10px 16px;border-radius:14px;background:var(--fill);font-size:15px;line-height:1.5;color:var(--text-2)}
+.vabp[hidden]{display:none}
+.vabp button{flex:none;padding:8px 16px;min-height:40px;border-radius:999px;background:var(--pearl);color:var(--ink);font-size:15px;font-weight:600}
+.vabp .ok{color:var(--text);font-weight:600;padding:9px 0}
 
 /* 格式标签：AAC 320k / MP3 192k / Lossless */
 .head .meta .ftag{display:inline-block;margin-left:8px;padding:0 7px;border:.5px solid var(--fill-3);border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:18px;color:var(--text-2);vertical-align:1px}

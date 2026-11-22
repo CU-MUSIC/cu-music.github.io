@@ -177,10 +177,15 @@ document.body.innerHTML = `
     V.forEach((v, i) => { const st = stageOf(v); if (!groups.length || groups[groups.length - 1].st !== st) groups.push({ st, items: [] }); groups[groups.length - 1].items.push(i); });
     // 到了后面的阶段，前面阶段的版本收成一颗药丸「编辑 · 6 版」，点开才展开；当前阶段永远是展开的
     const RK = { '': 0, demo: 1, edit: 2, mix: 3, master: 4 }, top = Math.max(...groups.map(g => RK[g.st]));
+    const row = (i, t) => `<button class="vrow press${V[i].hide ? ' hid' : ''}" data-i="${i}"><span class="vn">${esc(t)}</span><span class="hasdot"></span></button>`;
+    // 并列备选（12A、12B）合成一颗「12 [A|B]」：同一轮的两个方案，切换时接着原位置播
+    const rows = items => { const runs = []; items.forEach(i => { const m = /^(.*\d)([A-Z])$/.exec(vlab(V[i])), l = runs[runs.length - 1];
+      if (m && l && l.b === m[1]) l.items.push(i); else runs.push({ b: m ? m[1] : null, items: [i] }); });
+      return runs.map(r => r.b && r.items.length > 1 ? `<span class="vab"><span class="vabn">${esc(r.b)}</span>${r.items.map(i => row(i, vlab(V[i]).slice(-1))).join('')}</span>` : r.items.map(i => row(i, vlab(V[i]))).join('')).join(''); };
     return groups.map(g => { const old = STAGE[g.st] && RK[g.st] < top;
-      return `<div class="vg${old ? ' old' : ''}">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${old ? `<button class="vsum press" aria-expanded="false">${g.items.length} 版<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}${g.items.map(i =>
-      `<button class="vrow press${V[i].hide ? ' hid' : ''}" data-i="${i}"><span class="vn">${esc(vlab(V[i]))}</span><span class="hasdot"></span></button>`).join('')}</div>`; }).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
+      return `<div class="vg${old ? ' old' : ''}">${STAGE[g.st] ? `<span class="vgl">${STAGE[g.st]}</span>` : ''}${old ? `<button class="vsum press" aria-expanded="false">${g.items.length} 版<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}${rows(g.items)}</div>`; }).join('') + `<button class="vtog press" id="vtog" aria-expanded="false" aria-controls="vlist">展开<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>`;
   })()}</section>
+  <div class="vabp" id="vabp" hidden></div>
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
@@ -1813,7 +1818,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122e'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122f'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2290,7 +2295,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122e'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122f'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
@@ -2682,6 +2687,21 @@ addEventListener('cu-ver', () => vtipUi()); vtipUi();
 const VFOCUS = { edit: ['编辑版', '请重点听音准、节奏、和声对齐、杂音与断点，尽量在这一版一次提完。'] };   // 只在编辑版提示
 function vfocusUi() { const el = $('#vfocus'); if (!el) return; if (S.slug === 'yqkfkwa6') { el.hidden = true; return; }   /* Over the Hills 正在收尾，这首不提示 */ const f = VFOCUS[stageOf(cur)]; el.hidden = !f; if (f) el.innerHTML = '<b>' + f[0] + '</b>' + f[1]; }
 addEventListener('cu-ver', vfocusUi); vfocusUi();
+// A/B 方案：当前版本是并列备选时，下面一行「定方案 B」；点了记成一条不带时间点的评论「定这版：混音 12B」，评论区和 CU Notes 里都看得到
+function vabUi() { const el = $('#vabp'); if (!el) return;
+  const m = /^(.*\d)([A-Z])$/.exec(vlab(cur)), st = stageOf(cur);
+  const sib = m ? V.filter(x => stageOf(x) === st && /^(.*\d)([A-Z])$/.test(vlab(x)) && vlab(x).slice(0, -1) === m[1]) : [];
+  if (IS_OWNER || sib.length < 2) { el.hidden = true; return; }
+  const pk = 'review:pick:' + S.slug + ':' + st + m[1], picked = store.get(pk), pv = V.find(x => x.ver === picked);
+  el.hidden = false;
+  el.innerHTML = picked === cur.ver ? `<span class="ok">✓ 已定方案 ${m[2]}</span>`
+    : `<span>${sib.length} 个方案二选一${pv ? '，已定方案 ' + esc(vlab(pv).slice(-1)) : ''}</span><button class="press" id="vabGo">定方案 ${m[2]}</button>`;
+  const go = $('#vabGo'); if (go) go.onclick = () => {
+    notes.push({ t: 0, nt: 1, m: '定这版：' + vname(cur), id: Date.now() }); notes.sort((x, y) => x.t - y.t);
+    render(); save(); updateCta(); clearTimeout(syncT); track(vi, true);
+    store.set(pk, cur.ver); vabUi(); };
+}
+addEventListener('cu-ver', vabUi); vabUi();
 $('#mstBtn').onclick = () => { mstOpen = !mstOpen; $('#mst').hidden = !mstOpen; $('#mstBtn').classList.toggle('on', mstOpen); $('#mstBtn').setAttribute('aria-pressed', mstOpen); showStats(); };
 async function switchTo(i) {
   if (i === vi || !KEY) return;
