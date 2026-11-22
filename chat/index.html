@@ -161,6 +161,8 @@ button.send:active{transform:scale(.88)}
 <script>
 (function () {
   var API = 'https://stats.cumusic.work', $ = function (i) { return document.getElementById(i); };
+  // iPhone 键盘弹出时：页面高度跟着可见区域缩、滚动归零，不让 Safari 把整页往上推（推上去会把标题和对话顶出屏幕，只剩输入框和一片白）
+  if (window.visualViewport) { var vv = window.visualViewport, vfit = function () { document.body.style.height = Math.round(vv.height) + 'px'; if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }; vv.addEventListener('resize', vfit); vv.addEventListener('scroll', vfit); vfit(); }
   var log = $('log'), tx = $('tx'), go = $('go'), f = $('f');
   var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var LS = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
@@ -190,12 +192,23 @@ button.send:active{transform:scale(.88)}
 
   // 最后一条是你发的：没读显示「已送达」，读了显示「19:03 已读」
   function status() {
-    var old = log.querySelector('.st'); if (old) old.remove();
-    var el = log.lastElementChild;
-    if (!el || !el.classList.contains('me') || el.classList.contains('pend') || el.classList.contains('fail') || !el.dataset.ts) return;
-    var s = document.createElement('div'); s.className = 'st';
-    s.textContent = oseen && +el.dataset.ts <= oseen ? hm(oseen) + '已读' : '已送达';
-    el.after(s);
+    var old = log.querySelector('.st:not(.red)'), el = log.lastElementChild; if (el === old) el = el.previousElementSibling;
+    if (!el || !el.classList.contains('me') || el.classList.contains('pend') || el.classList.contains('fail') || !el.dataset.ts) { if (old) old.remove(); return; }
+    stSwap(old, el, oseen && +el.dataset.ts <= oseen ? hm(oseen) + '已读' : '已送达');
+  }
+  // 「已送达」→「已读」：同一条消息下面原地换字，旧字淡出上移、新字从下面淡入（不再整行删掉重画）
+  function stSwap(s, el, text) {
+    if (s && s.previousElementSibling === el) {
+      if (s.textContent === text || s._to === text) return;
+      s._to = text;
+      if (still || !s.animate) { s.textContent = text; return; }
+      s.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }], { duration: 160, easing: 'ease-in', fill: 'forwards' }).onfinish = function () {
+        s.textContent = s._to; s.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
+      };
+      return;
+    }
+    if (s) s.remove();
+    s = document.createElement('div'); s.className = 'st'; s.textContent = text; el.after(s);
   }
   // 消息里的网址变成可点的链接（只认 https 开头，其余原样当文字）
   function fill(b, text) {
@@ -341,11 +354,18 @@ button.send:active{transform:scale(.88)}
   }
   // 新访客：先冒「输入中」，再弹欢迎语 + 可点问题（只画在页面上；发第一条消息时服务端才把欢迎语存进记录）
   function welcome() {
-    if (!HI || log.querySelector('.m')) return;
+    if (!HI) return;
+    var ms = log.querySelectorAll('.m');
+    if (ms.length) { if (ms.length === 1 && ms[0].firstChild.textContent === HI) { chips(); bottom(false); } return; }   // 以前打开过、还没说话：欢迎语已在记录里，补上可点问题
     if (ty) ty.set(true);
     setTimeout(function () {
       if (ty) { ty.set(false); ty.detach(); }
-      if (!log.querySelector('.m')) { var el = add({ who: 'a', text: HI, ts: Date.now() }); el.dataset.hi = '1'; popIn(el); chips(); bottom(true); }
+      if (!log.querySelector('.m')) {
+        var el = add({ who: 'a', text: HI, ts: Date.now() }); el.dataset.hi = '1'; popIn(el); chips(); bottom(true);
+        // 打开就记一个会话（不推送、不标未读），后台能看到谁只打开了没留言
+        fetch(API + '/chat/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tid: tid, name: LS.get('chat:name') || '', contact: LS.get('chat:contact') || '' }) })
+          .then(function (r) { return r.json(); }).then(function (j) { if (j && j.hi && j.hi.id && !el.dataset.id) { seen[j.hi.id] = 1; if (j.hi.id > last) last = j.hi.id; el.dataset.id = j.hi.id; el.dataset.ts = j.hi.ts; } }).catch(function () {});
+      }
       if (ty) ty.reattach();
     }, still ? 200 : 900);
   }
