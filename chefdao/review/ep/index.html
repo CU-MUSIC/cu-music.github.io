@@ -141,6 +141,8 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .cbar.go{background:rgba(236,234,230,.16);box-shadow:inset 0 0 0 1px rgba(236,234,230,.32)}
 .cbar.slow{background:rgba(224,181,90,.28);box-shadow:inset 0 0 0 1px rgba(224,181,90,.75)}
 .cal .cr b{position:absolute;top:13px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:#ecebe8;box-shadow:0 0 0 1.5px #151516}
+.cpre{position:absolute;top:14px;height:0;border-top:1.5px dashed rgba(236,234,230,.28)}
+.cleg .l.pre{height:0;border-top:1.5px dashed rgba(236,234,230,.4);border-radius:0;vertical-align:3px}
 .cfin{position:absolute;top:6px;margin-left:-6px;font-style:normal;font-size:12px;color:#e0b55a}
 .cal .cn{position:absolute;top:8px;white-space:nowrap;font-size:11px;color:var(--text-3)}
 .ctoday{position:absolute;top:36px;bottom:0;left:calc(var(--td) + var(--w) / 2);width:1px;background:rgba(232,201,138,.55)}
@@ -592,37 +594,43 @@ function dropAdd() {
     } catch (er) { msg('没传成功：' + (er.message || '检查网络再试')); ov.classList.remove('busy'); busy = false; setTimeout(() => ov.classList.remove('on'), 2600); }
   });
 }
-// 制作日历（仅你可见）：每首从第一版到 Final（没设 Final 但已交付 = 最后一版）用了几天，横向一格一天；上面一行是每天传了几版
+// 制作日历（仅你可见）：每首从第一个编辑版（没有编辑版就从第一个混音 / 母带版）到 Final（没设 Final 但已交付 = 最后一版）用了几天；
+// 之前那段（只有 Demo / 素材）是「确认素材」，画成虚线、不算进用时。上面一行是每天传了几版
 function calPanel() {
   const DAY = 864e5, dk = ts => { const d = new Date(ts); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())) / DAY); };   // 按本地日期算第几天
-  const today = dk(Date.now());
+  const today = dk(Date.now()), WORK = ['edit', 'mix', 'master'];
   const rows = P.tracks.map(t => {
     const vt = (t.vt || []).filter(x => x[0] > 0).sort((a, b) => a[0] - b[0]); if (!vt.length) return null;
-    const s = dk(vt[0][0]), fin = vt.find(x => x[1]), done = !!fin || (t.prog && t.prog.s === 5);
-    const e = fin ? dk(fin[0]) : done ? dk(vt[vt.length - 1][0]) : today;
-    return { t, s, e, done, fin: !!fin, n: e - s + 1, ups: vt.map(x => dk(x[0])) };
+    const p0 = dk(vt[0][0]), w = vt.find(x => WORK.includes(x[2])), fin = vt.find(x => x[1]), done = !!fin || (t.prog && t.prog.s === 5);
+    if (!w) return { t, p0, s: null, e: today, done: false, fin: false, n: 0, pre: today - p0 + 1, ups: vt.map(x => dk(x[0])) };   // 还在确认素材
+    const s = dk(w[0]), e = fin ? dk(fin[0]) : done ? dk(vt[vt.length - 1][0]) : today;
+    return { t, p0, s, e, done, fin: !!fin, n: e - s + 1, pre: s - p0, ups: vt.map(x => dk(x[0])) };
   }).filter(Boolean);
   if (!rows.length) return;
-  const fd = rows.filter(r => r.done), avg = fd.length ? fd.reduce((a, r) => a + r.n, 0) / fd.length : 0;
-  const fast = fd.slice().sort((a, b) => a.n - b.n)[0], slow = rows.filter(r => !r.done).sort((a, b) => b.n - a.n)[0];
-  let d0 = Math.min(...rows.map(r => r.s)), d1 = Math.max(today, ...rows.map(r => r.e)); if (d1 - d0 > 119) d0 = d1 - 119;
+  const st = rows.filter(r => r.s !== null), fd = st.filter(r => r.done), wait = rows.filter(r => r.s === null);
+  const avg = fd.length ? fd.reduce((a, r) => a + r.n, 0) / fd.length : 0;
+  const fast = fd.slice().sort((a, b) => a.n - b.n)[0], slow = st.filter(r => !r.done).sort((a, b) => b.n - a.n)[0];
+  let d0 = Math.min(...rows.map(r => r.p0)), d1 = Math.max(today, ...rows.map(r => r.e)); if (d1 - d0 > 119) d0 = d1 - 119;
   const nd = d1 - d0 + 1, W = 18, cnt = {}; rows.forEach(r => r.ups.forEach(u => { cnt[u] = (cnt[u] || 0) + 1; })); const mx = Math.max(1, ...Object.values(cnt));
-  const dt = k => new Date(k * DAY), wk = k => dt(k).getUTCDay();
+  const dt = k => new Date(k * DAY), wk = k => dt(k).getUTCDay(), X = k => (Math.max(k, d0) - d0) * W;
   let hd = '', heat = '';
   for (let k = d0; k <= d1; k++) { const d = dt(k), first = k === d0 || d.getUTCDate() === 1;
     hd += `<i class="${wk(k) === 0 || wk(k) === 6 ? 'we' : ''}${k === today ? ' td' : ''}">${first ? '<u>' + (d.getUTCMonth() + 1) + '月</u>' : ''}${d.getUTCDate()}</i>`;
     const c = cnt[k] || 0; heat += `<i title="${d.getUTCMonth() + 1}/${d.getUTCDate()}：传了 ${c} 版"${c ? ` style="--a:${(.25 + .75 * c / mx).toFixed(2)}"` : ''}${c ? ' class="on"' : ''}></i>`; }
-  const bar = r => { const a = Math.max(r.s, d0) - d0, b = r.e - d0, slowX = avg && !r.done && r.n > avg * 1.5;
+  const bar = r => {
     const dots = [...new Set(r.ups)].filter(u => u >= d0).map(u => `<b style="left:${(u - d0) * W + W / 2}px"></b>`).join('');
-    return `<div class="cbar${r.done ? ' dn' : ' go'}${slowX ? ' slow' : ''}" style="left:${a * W + 2}px;width:${(b - a + 1) * W - 4}px"></div>${dots}${r.fin ? `<em class="cfin" style="left:${b * W + W / 2}px">★</em>` : ''}<span class="cn" style="left:${(b + 1) * W + 6}px">${r.done ? r.n + ' 天' : '进行中 ' + r.n + ' 天'}</span>`; };
+    const preEnd = r.s === null ? today : r.s - 1, pre = preEnd >= r.p0 ? `<div class="cpre" style="left:${X(r.p0) + W / 2}px;width:${Math.max(0, X(preEnd) - X(r.p0))}px"></div>` : '';
+    if (r.s === null) return pre + dots + `<span class="cn" style="left:${X(today) + W + 6}px">确认素材 ${r.pre} 天</span>`;
+    const slowX = avg && !r.done && r.n > avg * 1.5;
+    return pre + `<div class="cbar${r.done ? ' dn' : ' go'}${slowX ? ' slow' : ''}" style="left:${X(r.s) + 2}px;width:${X(r.e) - X(r.s) + W - 4}px"></div>${dots}${r.fin ? `<em class="cfin" style="left:${X(r.e) + W / 2}px">★</em>` : ''}<span class="cn" style="left:${X(r.e) + W + 6}px">${r.done ? r.n + ' 天' : '进行中 ' + r.n + ' 天'}</span>`; };
   const el = document.createElement('section'); el.className = 'pay cal';
-  el.innerHTML = '<div class="pyhd"><span>制作日历</span><i>仅你可见 · 第一版 → Final</i></div>'
+  el.innerHTML = '<div class="pyhd"><span>制作日历</span><i>仅你可见 · 第一个编辑版 → Final</i></div>'
     + `<div class="cst"><div><b>${fd.length}<small>/${rows.length}</small></b><span>已定稿</span></div><div><b>${avg ? (Math.round(avg * 10) / 10) : '—'}<small>${avg ? ' 天' : ''}</small></b><span>平均每首</span></div>`
-    + (fd.length >= 2 ? `<div><b>${fast.n}<small> 天</small></b><span>最快 · ${esc(fast.t.title)}</span></div>` : `<div><b>${today - Math.min(...rows.map(r => r.s)) + 1}<small> 天</small></b><span>项目第几天 · 还差 ${rows.length - fd.length} 首</span></div>`)
+    + (fd.length >= 2 ? `<div><b>${fast.n}<small> 天</small></b><span>最快 · ${esc(fast.t.title)}</span></div>` : `<div><b>${st.length - fd.length}<small> 首</small></b><span>制作中 · 另有 ${wait.length} 首在确认素材</span></div>`)
     + (slow ? `<div class="${avg && slow.n > avg * 1.5 ? 'hot' : ''}"><b>${slow.n}<small> 天</small></b><span>拖最久 · ${esc(slow.t.title)}</span></div>` : '') + '</div>'
     + `<div class="cwrap"><div class="cnames"><div class="ch"></div><div class="chh">每天传了几版</div>${rows.map(r => `<div class="cr"><a href="${esc(r.t.url)}">${esc(r.t.title)}</a></div>`).join('')}</div>`
-    + `<div class="cscroll"><div class="cgrid" style="width:${nd * W + 70}px;--w:${W}px;--td:${(today - d0) * W}px"><div class="ch">${hd}</div><div class="chh">${heat}</div>${rows.map(r => `<div class="cr">${bar(r)}</div>`).join('')}<div class="ctoday"></div></div></div></div>`
-    + '<div class="cleg"><span><i class="l dn"></i>已定稿 / 已交付</span><span><i class="l go"></i>进行中</span><span><i class="l slow"></i>超过平均 1.5 倍</span><span><i class="l dot"></i>传了一版</span><span>★ Final</span></div>';
+    + `<div class="cscroll"><div class="cgrid" style="width:${nd * W + 96}px;--w:${W}px;--td:${(today - d0) * W}px"><div class="ch">${hd}</div><div class="chh">${heat}</div>${rows.map(r => `<div class="cr">${bar(r)}</div>`).join('')}<div class="ctoday"></div></div></div></div>`
+    + '<div class="cleg"><span><i class="l pre"></i>确认素材（不计时）</span><span><i class="l dn"></i>已定稿 / 已交付</span><span><i class="l go"></i>制作中</span><span><i class="l slow"></i>超过平均 1.5 倍</span><span><i class="l dot"></i>传了一版</span><span>★ Final</span></div>';
   document.getElementById('list').appendChild(el);
   const sc = el.querySelector('.cscroll'); requestAnimationFrame(() => { sc.scrollLeft = sc.scrollWidth; });   // 默认看到最近
 }
