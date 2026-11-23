@@ -1284,3 +1284,5 @@ body.rlp-on .rlp-tab{display:none}
 html.tune-on{overflow:hidden}
 @media (prefers-reduced-motion:reduce){.tu-sheet,.tune,.tu-tray.in{transition:none;animation:none}}
 .tu-loop[hidden],.tu-tray[hidden]{display:none}
+/* 正在播的是隐藏版本：保留白底深字（原来被 .hid 的透明底盖掉，深字落在深底上看不见），虚线框表示客户看不到 */
+.vpick .vrow.hid.on,.vpick .vabx .vrow.hid.on{background:var(--pearl);color:var(--ink);opacity:.8;box-shadow:inset 0 0 0 1.5px var(--fill-3)}
