@@ -75,7 +75,7 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
   PIN.addEventListener('change', () => apply(PIN.matches ? want() : false));
   addEventListener('keydown', e => { if (e.key === 'Escape' && root.classList.contains('cu-side-open') && !PIN.matches) apply(false); });
 
-  let DATA = null, archOpen = ls.get('cu:side:arch') === '1';
+  let DATA = null, archOpen = ls.get('cu:side:arch') === '1', soonOpen = ls.get('cu:side:soon') === '1';
   const L = side.querySelector('#cuSideL'), Q = side.querySelector('#cuSideQ');
   const tag = p => p && p.s != null ? '<span class="st"' + (HOT[p.s] ? ' style="color:' + HOT[p.s] + '"' : '') + '>' + esc(STAGE[p.s] || '') + (p.s === 7 && p.r ? ' · 第' + p.r + '轮' : '') + '</span>' : '';
   const cover = (p, t) => '<span class="cv"' + (p.cover ? ' style="background-image:url(' + API + p.cover + ')"' : '') + '>' + (p.cover ? '' : esc([...(t || '·')][0])) + '</span>';
@@ -92,12 +92,16 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
     const q = Q.value.trim().toLowerCase();
     const hit = p => !q || [p.title, p.artist, ...p.tracks.map(t => t.title + ' ' + t.artist)].join(' ').toLowerCase().includes(q);
     const ps = DATA.projects.filter(p => p.tracks.length && hit(p));
-    const live = ps.filter(p => !p.archived), arch = ps.filter(p => p.archived);
+    // 即将归档：每首都「已交付」（到期会自动归档）——收进一个折叠区，不跟在做的项目混在一起
+    const soonOf = p => !p.archived && p.tracks.every(t => t.prog && t.prog.s === 5);
+    const live = ps.filter(p => !p.archived && !soonOf(p)), soon = ps.filter(soonOf), arch = ps.filter(p => p.archived);
     const loose = (DATA.loose || []).filter(x => !q || (x.title + ' ' + x.artist).toLowerCase().includes(q));
     let h = live.map(projRow).join('');
     if (loose.length) h += '<div class="sec" style="cursor:default">未归项目</div>' + loose.map(x => '<div class="it' + (isHere(x.url) ? ' on' : '') + (isPlay(x.url) ? ' pl' : '') + '" data-u="' + esc(x.url) + '">' + cover({}, x.title) + '<span class="tx"><span class="tt">' + esc(x.title) + '</span>' + (x.artist ? '<span class="ar">' + esc(x.artist) + '</span>' : '') + '</span></div>').join('');
+    if (soon.length) { const o = soonOpen || !!q || soon.some(p => isHere(p.url) || p.tracks.some(t => isHere(t.url))); h += '<button class="sec" id="cuSideS" aria-expanded="' + o + '"><i>▾</i>即将归档 ' + soon.length + '</button>' + (o ? soon.map(projRow).join('') : ''); }
     if (arch.length) { const o = archOpen || !!q; h += '<button class="sec" id="cuSideA" aria-expanded="' + o + '"><i>▾</i>已归档 ' + arch.length + '</button>' + (o ? arch.map(projRow).join('') : ''); }
     L.innerHTML = h || '<div class="empty">' + (q ? '没有匹配的项目' : '还没有项目') + '</div>';
+    const sn = L.querySelector('#cuSideS'); if (sn) sn.onclick = () => { soonOpen = !soonOpen; ls.set('cu:side:soon', soonOpen ? '1' : '0'); draw(); };
     const a = L.querySelector('#cuSideA'); if (a) a.onclick = () => { archOpen = !archOpen; ls.set('cu:side:arch', archOpen ? '1' : '0'); draw(); };
     const cur = L.querySelector('.it.on'); if (cur && !q) cur.scrollIntoView({ block: 'nearest' });
   }
