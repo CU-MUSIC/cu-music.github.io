@@ -110,9 +110,18 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 .nbar{display:flex;gap:10px;align-items:center;margin:-8px 0 22px;padding:10px 14px;border-radius:14px;background:var(--fill);font-size:14px;color:var(--text-2)}
 .nbar span{flex:1;min-width:0}.nbar button{flex:none;font-size:14px;font-weight:600;padding:6px 14px;border-radius:999px;background:var(--pearl);color:var(--ink)}
 .feed{display:flex;flex-direction:column;gap:6px;margin-bottom:28px}
-.fr{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;text-align:left;padding:10px 14px;border-radius:14px;background:var(--fill);width:100%}
-.fr b{font-size:15px;font-weight:600}.fr span{grid-column:1;font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fr em{grid-column:2;grid-row:1/3;align-self:center;font-style:normal;font-size:12px;color:var(--text-3)}
+.fr{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;border-radius:14px;background:var(--fill);width:100%;overflow:hidden;transition:opacity .25s ease,max-height .3s cubic-bezier(.32,.72,0,1),padding .3s cubic-bezier(.32,.72,0,1),margin .3s;max-height:120px}
+.fr.gone{opacity:0;max-height:0;padding-top:0;padding-bottom:0;margin-top:-6px}
+.fm{flex:1;min-width:0;display:flex;flex-direction:column;text-align:left}
+.fr b{font-size:15px;font-weight:600}.fr .fm span{font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fa{flex:none;display:flex;align-items:center;gap:8px}
+.fr em{font-style:normal;font-size:12px;color:var(--text-3);white-space:nowrap}
+.fk{height:30px;padding:0 13px;border-radius:999px;background:var(--warm);color:var(--ink);font-size:13px;font-weight:600;white-space:nowrap;transition:transform .15s,opacity .2s}
+.fk:active{transform:scale(.95)}
+.fk.on{background:none;color:var(--text-3);font-weight:500;padding:0 4px;animation:fkIn .3s cubic-bezier(.2,.9,.25,1.12)}
+@keyframes fkIn{from{opacity:0;transform:scale(.85)}}
+.fx{width:28px;height:28px;border-radius:50%;color:var(--text-3);font-size:18px;line-height:28px;text-align:center}
+.fx:hover{background:var(--fill);color:var(--text)}
 .fr.nw{box-shadow:0 0 0 1px rgba(232,201,138,.4) inset}.fr.nw b::after{content:'新';font-size:11px;font-weight:700;color:var(--ink);background:var(--warm);border-radius:999px;padding:0 6px;margin-left:8px;vertical-align:2px}
 .ver b em.nw{color:var(--ink);background:var(--warm);border-radius:999px;padding:0 5px;font-weight:700}
 .nh{font-size:13px;color:var(--text-3);margin-top:4px}
@@ -216,7 +225,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
     h += '<div class="nbar" id="nbar" hidden></div>';
     // 最近动态：上次打开之后的标「新」
     const fd = (D.feed || []).slice(0, 6);
-    if (fd.length) h += `<div class="sect">最近动态<span>${fd.filter(x => x.ts > SEEN).length ? fd.filter(x => x.ts > SEEN).length + ' 条新的' : ''}</span></div><div class="feed">${fd.map(x => `<button class="fr${x.ts > SEEN ? ' nw' : ''}" data-fs="${esc(x.slug)}"><b>${esc(x.title)}</b><span>${esc(x.body)}</span><em>${ago(x.ts)}</em></button>`).join('')}</div>`;
+    if (fd.length) h += `<div class="sect">最近动态<span>${fd.filter(x => x.ts > SEEN).length ? fd.filter(x => x.ts > SEEN).length + ' 条新的' : ''}</span></div><div class="feed">${fd.map(x => `<div class="fr${x.ts > SEEN ? ' nw' : ''}" data-id="${x.id}"><button class="fm" data-fs="${esc(x.slug)}"><b>${esc(x.title)}</b><span>${esc(x.body)}</span></button><div class="fa"><em>${ago(x.ts)}</em>${x.ack ? '<span class="fk on">✓ 已收到</span>' : '<button class="fk" title="收到 / 接单：刀大厨那边会看到">收到</button>'}<button class="fx" aria-label="移除这条" title="移除这条">×</button></div></div>`).join('')}</div>`;
     if (busy.length) h += `<div class="sect">现在要做<span>点开看意见</span></div><div class="todo">${busy.map(({ p, t }) => `<button class="trow" data-p="${esc(p.slug)}">${cov(t.cover || p.cover)}<div style="min-width:0"><b>${esc(t.title)}</b><span>${esc(p.title)}${t.ddl && !t.ddl.done ? ' · ' + md(t.ddl.due) + ' 截止' : ''}</span></div><em${t.ddl && !t.ddl.done && dleft(t.ddl.due) <= 1 ? ' class="hot"' : ''}>${t.ddl && !t.ddl.done ? dtxt(t.ddl.due) : todo(t) + ' 条'}</em></button>`).join('')}</div>`;
     const v = view();
     h += `<div class="sect">项目<span></span></div><div class="lbar"><span>${D.projects.length} 个项目</span><span class="lvt" id="lvt"><button data-lv="grid" class="${v === 'grid' ? 'on' : ''}" aria-label="网格"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></button><button data-lv="list" class="${v === 'list' ? 'on' : ''}" aria-label="单列"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button></span></div>`;
@@ -229,6 +238,11 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
     app.querySelectorAll('[data-p]').forEach(b => b.onclick = () => sheet(b.dataset.p));
     app.querySelectorAll('[data-fs]').forEach(b => b.onclick = () => { const p = D.projects.find(x => x.slug === b.dataset.fs || x.tracks.some(t => t.slug === b.dataset.fs)); if (p) sheet(p.slug); });
     pushBar();
+    // 动态：「收到」= 接单（刀大厨在 Insights 的助理记录里看得到），「×」= 移除这条
+    const fpost = (id, act) => fetch(API + '/hp/feed', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tok, id, act }) }).then(r => r.json()).catch(() => ({ ok: false }));
+    app.querySelectorAll('.fr[data-id]').forEach(row => { const id = +row.dataset.id, x = (D.feed || []).find(f => f.id === id); if (!x) return;
+      const k = row.querySelector('button.fk'); if (k) k.onclick = async () => { x.ack = Date.now(); k.outerHTML = '<span class="fk on">✓ 已收到</span>'; const j = await fpost(id, 'ack'); if (!j.ok) { x.ack = null; draw(); } };
+      row.querySelector('.fx').onclick = async () => { row.classList.add('gone'); const j = await fpost(id, 'hide'); setTimeout(() => { if (j.ok) { D.feed = D.feed.filter(f => f.id !== id); } draw(); }, 320); }; });
     app.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { ls.set('hp:view', b.dataset.lv); draw(); });
     document.getElementById('rf').onclick = () => load(true);
     if (openPj) sheet(openPj);

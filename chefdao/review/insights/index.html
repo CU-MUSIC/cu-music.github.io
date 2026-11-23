@@ -486,7 +486,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261123.0115';
+const BUILD = '261123.1720';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -1791,7 +1791,7 @@ function openProject(slug) {
     try { const j = await lib('/hp/ptest', { name: HPN }); b.textContent = j.devices ? '已发到 ' + j.devices + ' 台设备' : '已记进他的动态（他还没开通知）'; }
     catch (e) { b.textContent = '没发出去'; } setTimeout(() => { b.disabled = false; b.textContent = '发测试通知'; }, 3000); };
   // hanp 的访问记录：打开工作台 / 打开某首歌 / 标改好了（服务端已去重：工作台 30 分钟一次、同一首歌 10 分钟一次）
-  hpP.then(h => { const L = ((h && h.log) || []).filter(x => x.name === HPN), K = { open: '打开了工作台', song: '打开了', done: '改好了', undo: '取消了改好', up: '提交了新版本', okv: '版本已发布', back: '版本被退回', vdel: '删掉了自己提交的版本', me: '改了头像 / 名字' };
+  hpP.then(h => { const L = ((h && h.log) || []).filter(x => x.name === HPN), K = { open: '打开了工作台', song: '打开了', done: '改好了', undo: '取消了改好', up: '提交了新版本', okv: '版本已发布', back: '版本被退回', vdel: '删掉了自己提交的版本', me: '改了头像 / 名字', ack: '确认收到' };
     const when = ts => { const d = new Date(ts), t = Date.now() - ts; return t < 36e5 ? Math.max(1, Math.round(t / 6e4)) + ' 分钟前' : t < 864e5 ? Math.round(t / 36e5) + ' 小时前' : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
     $p('hpLog').querySelector('summary').textContent = 'hanp 的访问记录' + (L.length ? ' · 最近 ' + when(L[0].ts) : ' · 还没打开过');
     $p('hpLogB').innerHTML = L.length ? L.slice(0, 30).map(x => `<div class="hpl"><em>${when(x.ts)}</em><span>${K[x.kind] || x.kind}${x.title ? '《' + esc(x.title) + '》' : ''}${x.kind === 'done' || x.kind === 'undo' ? ' ' + esc(x.info) : x.info ? ' · ' + esc(x.info) : ''}</span></div>`).join('') : '还没有记录'; });
