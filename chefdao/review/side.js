@@ -52,7 +52,7 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
 #cuSide .ar{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#74726f}
 #cuSide .st{flex:none;font-size:11px;color:#74726f}
 #cuSide .it.pl .tt::before{content:'♪ ';color:#e8c98a}
-#cuSide .tr{padding:5px 8px 5px 48px}
+#cuSide .tr{padding:5px 8px 5px 48px}#cuSide .tr.ac{opacity:.45}
 #cuSide .tr .tt{font-weight:400;font-size:13.5px}
 #cuSide .empty{padding:20px 12px;color:#74726f;font-size:13px}`;
   document.head.appendChild(css);
@@ -79,12 +79,13 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
   const L = side.querySelector('#cuSideL'), Q = side.querySelector('#cuSideQ');
   const tag = p => p && p.s != null ? '<span class="st"' + (HOT[p.s] ? ' style="color:' + HOT[p.s] + '"' : '') + '>' + esc(STAGE[p.s] || '') + (p.s === 7 && p.r ? ' · 第' + p.r + '轮' : '') + '</span>' : '';
   const cover = (p, t) => '<span class="cv"' + (p.cover ? ' style="background-image:url(' + API + p.cover + ')"' : '') + '>' + (p.cover ? '' : esc([...(t || '·')][0])) + '</span>';
+  const act = p => p.tracks.filter(t => !t.arch);   // 单独归档的曲目不算在做的
   const projRow = p => {
-    const one = p.tracks.length === 1, t0 = p.tracks[0];
+    const live0 = act(p), one = (live0.length || p.tracks.length) === 1, t0 = live0[0] || p.tracks[0];
     const url = p.url || t0.url, on = isHere(url) || p.tracks.some(t => isHere(t.url));
-    const sub = [p.artist || (t0 && t0.artist), one ? '' : p.tracks.length + ' 首'].filter(Boolean).join(' · ');
+    const sub = [p.artist || (t0 && t0.artist), one ? '' : (live0.length || p.tracks.length) + ' 首'].filter(Boolean).join(' · ');
     let h = '<div class="it' + (isHere(url) ? ' on' : '') + (isPlay(url) || p.tracks.some(t => isPlay(t.url)) ? ' pl' : '') + '" data-u="' + esc(url) + '">' + cover(p, p.title) + '<span class="tx"><span class="tt">' + esc(p.title) + '</span>' + (sub ? '<span class="ar">' + esc(sub) + '</span>' : '') + '</span>' + (one ? tag(t0.prog) : '') + '</div>';
-    if (on) h += p.tracks.map(t => '<div class="it tr' + (isHere(t.url) ? ' on' : '') + (isPlay(t.url) ? ' pl' : '') + '" data-u="' + esc(t.url) + '"><span class="tx"><span class="tt">' + esc(t.title) + '</span></span>' + tag(t.prog) + '</div>').join('');
+    if (on) h += [...live0, ...p.tracks.filter(t => t.arch)].map(t => '<div class="it tr' + (t.arch ? ' ac' : '') + (isHere(t.url) ? ' on' : '') + (isPlay(t.url) ? ' pl' : '') + '" data-u="' + esc(t.url) + '"><span class="tx"><span class="tt">' + esc(t.title) + '</span></span>' + (t.arch ? '<span class="st">已归档</span>' : tag(t.prog)) + '</div>').join('');
     return h;
   };
   function draw() {
@@ -93,8 +94,9 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
     const hit = p => !q || [p.title, p.artist, ...p.tracks.map(t => t.title + ' ' + t.artist)].join(' ').toLowerCase().includes(q);
     const ps = DATA.projects.filter(p => p.tracks.length && hit(p));
     // 即将归档：每首都「已交付」（到期会自动归档）——收进一个折叠区，不跟在做的项目混在一起
-    const soonOf = p => !p.archived && p.tracks.every(t => t.prog && t.prog.s === 5);
-    const live = ps.filter(p => !p.archived && !soonOf(p)), soon = ps.filter(soonOf), arch = ps.filter(p => p.archived);
+    const archOf = p => p.archived || !act(p).length;   // 每首都单独归档了 = 整个项目算归档
+    const soonOf = p => !archOf(p) && act(p).every(t => t.prog && t.prog.s === 5);
+    const live = ps.filter(p => !archOf(p) && !soonOf(p)), soon = ps.filter(soonOf), arch = ps.filter(archOf);
     const loose = (DATA.loose || []).filter(x => !q || (x.title + ' ' + x.artist).toLowerCase().includes(q));
     let h = live.map(projRow).join('');
     if (loose.length) h += '<div class="sec" style="cursor:default">未归项目</div>' + loose.map(x => '<div class="it' + (isHere(x.url) ? ' on' : '') + (isPlay(x.url) ? ' pl' : '') + '" data-u="' + esc(x.url) + '">' + cover({}, x.title) + '<span class="tx"><span class="tt">' + esc(x.title) + '</span>' + (x.artist ? '<span class="ar">' + esc(x.artist) + '</span>' : '') + '</span></div>').join('');
@@ -107,6 +109,7 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
   }
   L.onclick = e => { const it = e.target.closest('.it[data-u]'); if (it) { if (isHere(it.dataset.u)) { if (!PIN.matches) apply(false); return; } go(it.dataset.u); if (window.cuNav && !PIN.matches) apply(false); } };
   Q.oninput = draw; window.cuSideDraw = draw;
+  window.cuSideReload = () => { try { const c = JSON.parse(ls.get('cu:side:lib') || 'null'); if (c && c.d) { DATA = c.d; draw(); } } catch (e) {} };
 
   // 先用本机存的列表马上画出来，再去服务端拿新的（两分钟内打开过就不再拿，省数据库读取）
   try { const c = JSON.parse(ls.get('cu:side:lib') || 'null'); if (c && c.d) { DATA = c.d; draw(); } } catch (e) {}
@@ -114,7 +117,7 @@ html.cu-side-open:not(.cu-side-pin) #cuSideMask{opacity:1;pointer-events:auto}
   if (!DATA || Date.now() - ts > 120000) fetch(API + '/lib', { headers: { Authorization: 'Bearer ' + KEY }, cache: 'no-store' }).then(r => r.json()).then(j => {
     if (!j.ok) { if (!DATA) L.innerHTML = '<div class="empty">载入失败</div>'; return; }
     DATA = { projects: j.projects.map(p => ({ slug: p.slug, title: p.title, artist: p.artist || '', cover: p.cover, url: p.url, archived: !!p.archived,
-      tracks: p.tracks.map(t => ({ slug: t.slug, title: t.title, artist: t.artist || '', url: t.url, prog: t.prog ? { s: t.prog.s, r: t.prog.r } : null })) })),
+      tracks: p.tracks.map(t => ({ slug: t.slug, title: t.title, artist: t.artist || '', url: t.url, prog: t.prog ? { s: t.prog.s, r: t.prog.r } : null, arch: t.arch ? 1 : 0 })) })),
       loose: (j.loose || []).map(x => ({ slug: x.slug, title: x.title, artist: x.artist || '', url: x.url })) };
     ls.set('cu:side:lib', JSON.stringify({ ts: Date.now(), d: DATA })); draw();
   }).catch(() => { if (!DATA) L.innerHTML = '<div class="empty">网络异常</div>'; });

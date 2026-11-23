@@ -196,7 +196,7 @@ document.body.innerHTML = `
   <section class="vlist" id="vlist" hidden></section>
   <div class="vtip" id="vtip" hidden><b>什么是编辑版本？</b><p>编辑版本还没有混音：已经对齐节奏、修正音高、清掉杂音。音色和空间感留到混音再做，所以听起来偏「干」是正常的。</p><p>这一版请重点听：<em>节奏、音高、咬字</em>。</p><button class="press" id="vtipX">知道了，不再提示</button></div>
 
-  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownTrust">自助领取</button><button class="press" id="ownFinal">最终文件</button><button class="press" id="ownLink">文件链接</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" multiple accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
+  <div class="own" id="own" hidden><span id="ownT"></span><button class="press" id="ownPart">＋ 段落</button><button class="press" id="ownTrust">自助领取</button><button class="press" id="ownFinal">最终文件</button><button class="press" id="ownLink">文件链接</button><button class="press" id="ownColors">歌手颜色</button><button class="press" id="ownBpm">测 BPM</button><button class="press" id="ownLyr">歌词</button><button class="press" id="ownShareP" hidden>分享项目</button><button class="press" id="ownDl">⬇ 关</button><button class="press" id="ownWm">水印 开</button><button class="press" id="ownArch">归档</button><button class="press" id="ownShare">分享</button><button class="press" id="ownPick">选择文件</button><input type="file" id="ownFile" multiple accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="parts" id="parts" hidden></div>
   <div class="wave" id="wave"><canvas></canvas><div class="rng" id="rng" hidden><span></span></div><div class="tip">0:00</div><div class="loading" id="loading">正在加载音频…</div></div>
   <div class="times"><span id="cur">0:00</span><span class="pnow" id="pnow"></span><span id="rem">-${fmt(cur.duration)}</span></div>
@@ -1526,14 +1526,14 @@ function ownerTools() {
   function iconize() {
     const P = { part: 'M6 4v16M6 5h10l-2.5 4L16 13H6', fee: 'M7 4.5l5 6.5 5-6.5M12 11v8.5M8 13.5h8M8 16.8h8', color: 'M12 4a8 8 0 1 0 0 16c1.3 0 1.8-.9 1.8-1.8 0-1.2-1-1.5-1-2.6 0-1 .8-1.6 2-1.6H17a3 3 0 0 0 3-3C20 7.3 16.4 4 12 4z|M8 11h.01M10.5 7.8h.01M14.5 8h.01',
       bpm: 'M9.5 4h5l3.5 16H6zM12 16.5l4.5-9M7.5 14h9', lyr: 'M5 7h14M5 12h14M5 17h9', shareP: 'M3.5 7.5h6l2 2h9v10h-17zM12 17v-5M9.8 14l2.2-2.2 2.2 2.2', share: 'M12 4v11M8 8l4-4 4 4M5 13v6.5h14V13',
-      dl: 'M12 4v11M7 10.5l5 5 5-5M5 19.5h14', wm: 'M12 4c3 4 6 7 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10z', pick: 'M12 16V5M7 9.5l5-5 5 5M5 19.5h14', del: 'M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7M10.5 11v5M13.5 11v5', tag: 'M4 12V4h8l8 8-8 8zM8.5 8.5h.01' };
-    const KIND = { ownPart: 'part', ownColors: 'color', ownBpm: 'bpm', ownLyr: 'lyr', ownShareP: 'shareP', ownShare: 'share', ownDl: 'dl', ownWm: 'wm', ownPick: 'pick' };
+      dl: 'M12 4v11M7 10.5l5 5 5-5M5 19.5h14', wm: 'M12 4c3 4 6 7 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10z', pick: 'M12 16V5M7 9.5l5-5 5 5M5 19.5h14', del: 'M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7M10.5 11v5M13.5 11v5', tag: 'M4 12V4h8l8 8-8 8zM8.5 8.5h.01', arch: 'M4 5h16v4H4z|M5.5 9v10h13V9|M10 13h4' };
+    const KIND = { ownPart: 'part', ownColors: 'color', ownBpm: 'bpm', ownLyr: 'lyr', ownShareP: 'shareP', ownShare: 'share', ownDl: 'dl', ownWm: 'wm', ownPick: 'pick', ownArch: 'arch' };
     const NAME = { ownPart: '加段落', ownColors: '歌手颜色', ownBpm: '测 BPM', ownLyr: '歌词', ownShareP: '复制项目链接', ownShare: '复制这首链接', ownPick: '选择文件上传新版本' };
     own.querySelectorAll(':scope > button').forEach(b => {
       const t = b.textContent.trim(); if (!t && b.classList.contains('ic')) return;
       const k = KIND[b.id] || (/^费用/.test(t) ? 'fee' : /REF/.test(t) && /删除/.test(t) ? 'del' : /REF/.test(t) ? 'ref' : /^删除/.test(t) ? 'del' : /类别/.test(t) ? 'tag' : '');
       if (!k) return;
-      const lab = NAME[b.id] || (b.id === 'ownDl' ? '客户下载：' + t.replace(/^⬇\s*/, '') : b.id === 'ownWm' ? '播放水印：' + t.replace(/^水印\s*/, '') : t);
+      const lab = b.id === 'ownArch' ? (S.arch ? '这首已归档 · 点一下取消' : '归档这首：从侧栏和插件歌单收起，客户链接不受影响') : NAME[b.id] || (b.id === 'ownDl' ? '客户下载：' + t.replace(/^⬇\s*/, '') : b.id === 'ownWm' ? '播放水印：' + t.replace(/^水印\s*/, '') : t);
       b.title = lab; b.setAttribute('aria-label', lab); b.classList.add('ic');
       b.innerHTML = k === 'ref' ? '<b>REF</b>' : '<svg viewBox="0 0 24 24">' + P[k].split('|').map(d => '<path d="' + d + '"/>').join('') + '</svg>';
     });
@@ -1654,6 +1654,17 @@ function ownerTools() {
     $('#ownDl').classList.toggle('hot', !DL.on && rq.length > 0);
     $('#ownWm').textContent = '水印 ' + (DL.wm ? '开' : '关'); $('#ownWm').classList.toggle('on', !!DL.wm); $('#ownDl').classList.toggle('on', !!DL.on);
     $('#ownDl').dataset.n = !DL.on && rq.length ? rq.length : ''; iconize(); };
+  // 单曲归档：项目里这一首做完了，单独从侧栏和插件歌单收起来（客户链接、项目页照常）
+  const archOwn = () => { const b = $('#ownArch'); if (!b) return; const lab = S.arch ? '这首已归档 · 点一下取消' : '归档这首：从侧栏和插件歌单收起，客户链接不受影响'; b.title = lab; b.setAttribute('aria-label', lab); b.classList.toggle('on', !!S.arch); };
+  $('#ownArch').onclick = async () => {
+    const on = !S.arch;
+    try {
+      await post('/radm/meta', { slug: S.slug, arch: on }); S.arch = on ? 1 : 0; archOwn(); busy(on ? '已归档：侧栏和插件里收起来了' : '已取消归档');
+      try { const c = JSON.parse(localStorage.getItem('cu:side:lib') || 'null'); if (c && c.d) { c.d.projects.forEach(p => p.tracks.forEach(t => { if (t.slug === S.slug) t.arch = on ? 1 : 0; })); localStorage.setItem('cu:side:lib', JSON.stringify(c)); } } catch (e) {}
+      try { if (window.cuSideReload) window.cuSideReload(); } catch (e) {}
+    } catch (e) { busy('没改成，检查网络再试'); }
+  };
+  setTimeout(archOwn, 0);
   const trustOwn = () => { $('#ownTrust').textContent = '自助领取 ' + (DL.trust ? '开' : '关'); $('#ownTrust').classList.toggle('on', !!DL.trust); $('#ownTrust').title = '信任的客户：确认没问题后扫码付款，点「我已付款」就能直接下载，你事后核对到账';
     $('#ownLink').textContent = DL.link ? '文件链接 ✓' : '文件链接'; $('#ownLink').title = DL.link ? DL.link : '最终压缩包放网盘，把链接填这里：客户拿到文件时给链接，不下载试听版本'; };
   // 最终文件：直接传到 R2（免费 10GB，服务端卡在 9GB，超出就拒绝上传，不会产生费用）。客户开放下载后点下载拿到的就是它
