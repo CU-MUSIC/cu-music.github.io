@@ -1039,7 +1039,11 @@ function decorate(row, r) {
   if (r.read) { const d = document.createElement('span'); d.className = 'rd'; d.textContent = '已读'; if (r.read_at) d.title = '刀大厨 ' + tstr(r.read_at) + ' 看过'; m.appendChild(d); }
   if (r.quote) { const d = document.createElement('span'); d.className = 'qt'; d.textContent = '新方案 · 需报价'; m.appendChild(d); }
   if (r.done) { const d = document.createElement('span'); d.className = 'dn'; d.textContent = '✓ 已处理'; m.appendChild(d); }
-  if (r.reply) { const p = document.createElement('div'); p.className = 'rp'; p.innerHTML = '<b>刀大厨</b>'; p.appendChild(document.createTextNode(r.reply)); m.appendChild(p); }
+  if (r.reply || r.img) {
+    const p = document.createElement('div'); p.className = 'rp'; p.innerHTML = '<b>刀大厨</b>'; if (r.reply) p.appendChild(document.createTextNode(r.reply));
+    if (r.img) { const a = document.createElement('a'), im = document.createElement('img'); a.href = im.src = API_BASE + '/cv/' + S.slug + '/' + r.img; a.target = '_blank'; a.rel = 'noopener'; im.alt = '回复附图'; im.loading = 'lazy'; a.appendChild(im); p.appendChild(a); }   // 回复附图（改音高前后的截图等），点开看大图
+    m.appendChild(p);
+  }
 }
 // 单曲公告：你在这首歌页面上写的留言，不是评论、没有时间点，显示在评论区上方；只有你的设备能编辑
 let NOTICE = '';
@@ -2023,7 +2027,7 @@ const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no)
             const r = await fetch(API + '/cr', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
               body: JSON.stringify({ slug: S.slug, ver: o.ver, t: kt, m: km, ...body }) });
             const j = await r.json(); if (!j.ok) throw new Error();
-            if (!j.reply && !j.done && !j.read && !j.quote && !j.cat && !j.tidy) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, done: j.done, read: j.read, quote: j.quote, cat: j.cat, tidy: j.tidy });
+            if (!j.reply && !j.img && !j.done && !j.read && !j.quote && !j.cat && !j.tidy) mine.delete(k); else mine.set(k, { ...(mine.get(k) || {}), reply: j.reply, img: j.img, done: j.done, read: j.read, quote: j.quote, cat: j.cat, tidy: j.tidy });
             if (!lazy) cfbRender(); else if (row.isConnected) try { sync(); updAll(); } catch (x) {}   // 已经滑到新位置重画过的，旧行不用再更新
           } catch (e) { if (lazy) { if (before) mine.set(k, before); else mine.delete(k); if (moved) cfbFlip(); else { sync(); updAll(); } } alert('没存上，检查网络再试'); }
         };

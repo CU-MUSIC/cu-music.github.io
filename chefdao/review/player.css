@@ -316,6 +316,7 @@ body.dropping::after{content:"松开，上传为新版本";position:fixed;inset:
 .m .dn{display:inline-block;margin-left:8px;font-size:12px;color:var(--text-2);background:var(--fill-2);padding:1px 8px;border-radius:999px;vertical-align:1px}
 .m .rp{margin-top:6px;padding:7px 10px;border-radius:10px;background:var(--fill-2);font-size:14px;line-height:1.55;color:var(--text)}
 .m .rp b{display:block;font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:1px}
+.m .rp a{display:block;margin-top:6px}.m .rp img{display:block;max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--hair,rgba(128,128,128,.2));cursor:zoom-in}
 #cfl .row{flex-wrap:wrap}
 #cfl .acts{display:flex;gap:6px;margin-left:auto;align-self:center}
 #cfl .acts button{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--fill-2);color:var(--text-2)}
