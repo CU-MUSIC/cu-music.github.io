@@ -632,9 +632,12 @@ const dur = () => (isFinite(a.duration) && a.duration) || cur.duration;
 let hover = null, t0 = 0, lastT = 0, lastAt = 0, started = false;
 const ease = x => 1 - Math.pow(1 - x, 3);
 function curTime() {                     // 播放时用时钟插值，播放头不跳
+  // 平滑时钟：自己按真实时间往前走，再慢慢贴近 currentTime（它更新得粗，直接用会一顿一顿、甚至往回跳）；差太多（拖动 / 跳转）直接对齐
   const t = a.currentTime, now = performance.now();
-  if (t !== lastT) { lastT = t; lastAt = now; }
-  return a.paused ? t : Math.min(dur(), t + (now - lastAt) / 1000);
+  if (a.paused || a.seeking || !curTime.at) { curTime.e = t; curTime.at = now; return t; }
+  const dt = Math.min(.25, (now - curTime.at) / 1000); let e = curTime.e + dt * (a.playbackRate || 1);
+  const df = t - e; if (Math.abs(df) > .25) e = t; else e += df * Math.min(1, dt * 4);
+  curTime.e = e; curTime.at = now; return Math.max(0, Math.min(dur(), e));
 }
 function amp(f, now) {                    // f: 0..N-1，带入场动画
   const i = Math.floor(f), u = f - i, j = Math.min(N - 1, i + 1);
@@ -3328,8 +3331,10 @@ function playFull() {
     if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
     const d = dur() || 1, tt = curTime(), mid = (h - 10) / 2, bw = 2.5, step = 5, n = P.length;
-    for (let x = (w / 2) % step; x < w; x += step) {
-      const t = tt + (x - w / 2) / PPS; if (t < 0 || t > d) continue;
+    // 竖条钉在时间上（每 step/PPS 秒一根），整条波形随播放平移；以前钉在屏幕上、只变高度，看起来像在「沸腾」
+    const ts = step / PPS, k0 = Math.max(0, Math.floor((tt - w / 2 / PPS) / ts)), k1 = Math.ceil((tt + w / 2 / PPS) / ts);
+    for (let k = k0; k <= k1; k++) {
+      const t = k * ts; if (t > d) break; const x = w / 2 + (t - tt) * PPS;
       const fi = t / d * (n - 1), i = Math.floor(fi), u = fi - i, v = (P[i] || 0) * (1 - u) + (P[Math.min(n - 1, i + 1)] || 0) * u, bh = Math.max(2, v * (h - 14));
       g.fillStyle = t <= tt ? '#ecebe8' : 'rgba(236,235,232,.32)'; g.beginPath(); g.roundRect ? g.roundRect(x - bw / 2, mid - bh / 2, bw, bh, bw / 2) : g.rect(x - bw / 2, mid - bh / 2, bw, bh); g.fill();
     }
