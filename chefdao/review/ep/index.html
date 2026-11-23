@@ -113,6 +113,42 @@ body.kb .kind{margin-top:12px}body.kb h1{font-size:20px}body.kb .ask{margin-top:
 .pgall{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--text-3)}
 /* 收款情况（仅你可见） */
 .pyhd{cursor:pointer;user-select:none}.pyhd span::after{content:' ▾';color:var(--text-3);font-size:11px}.pay.fold>:not(.pyhd){display:none}.pay.fold .pyhd span::after{content:' ▸'}
+/* 制作日历（仅你可见）：一格一天，条 = 第一版到 Final */
+.cal .cst{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px;margin:12px 0 16px}
+.cal .cst div{background:var(--fill);border-radius:12px;padding:10px 12px;min-width:0}
+.cal .cst b{display:block;font-size:22px;font-weight:650;color:var(--text);line-height:1.2}.cal .cst small{font-size:12px;color:var(--text-3);font-weight:500}
+.cal .cst span{display:block;font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal .cst .hot b{color:#e0b55a}
+.cwrap{display:flex;font-size:12px}
+.cnames{flex:none;width:112px;border-right:.5px solid var(--hair)}
+.cscroll{flex:1;min-width:0;overflow-x:auto;scrollbar-width:thin;padding-bottom:4px}
+.cgrid{position:relative;background-image:repeating-linear-gradient(90deg,transparent 0 calc(var(--w) - 1px),rgba(236,234,230,.045) calc(var(--w) - 1px) var(--w))}
+.cal .ch{height:36px;display:flex;align-items:flex-end}
+.cgrid .ch i{flex:none;width:var(--w);text-align:center;font-style:normal;font-size:10px;color:var(--text-3);position:relative;padding-bottom:5px;font-variant-numeric:tabular-nums}
+.cgrid .ch i.we{opacity:.5}.cgrid .ch i.td{color:#e8c98a;font-weight:700;opacity:1}
+.cgrid .ch i u{position:absolute;top:-15px;left:3px;text-decoration:none;white-space:nowrap;color:var(--text-2);font-weight:600;font-size:11px}
+.cal .chh{height:22px;display:flex;align-items:center}
+.cnames .chh{font-size:11px;color:var(--text-3)}
+.cgrid .chh i{flex:none;width:var(--w);height:14px;padding:0 2px;box-sizing:border-box}
+.cgrid .chh i::before{content:"";display:block;height:100%;border-radius:3px;background:var(--fill)}
+.cgrid .chh i.on::before{background:rgba(232,201,138,var(--a))}
+.cal .cr{height:30px;position:relative;display:flex;align-items:center}
+.cnames .cr a{color:var(--text-2);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px;font-size:12.5px}
+.cnames .cr a:hover{color:var(--text)}
+.cbar{position:absolute;top:9px;height:12px;border-radius:6px;transform-origin:left center;animation:cgrow .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cgrow{from{transform:scaleX(0);opacity:0}}
+.cbar.dn{background:rgba(236,234,230,.72)}
+.cbar.go{background:rgba(236,234,230,.16);box-shadow:inset 0 0 0 1px rgba(236,234,230,.32)}
+.cbar.slow{background:rgba(224,181,90,.28);box-shadow:inset 0 0 0 1px rgba(224,181,90,.75)}
+.cal .cr b{position:absolute;top:13px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:#ecebe8;box-shadow:0 0 0 1.5px #151516}
+.cfin{position:absolute;top:6px;margin-left:-6px;font-style:normal;font-size:12px;color:#e0b55a}
+.cal .cn{position:absolute;top:8px;white-space:nowrap;font-size:11px;color:var(--text-3)}
+.ctoday{position:absolute;top:36px;bottom:0;left:calc(var(--td) + var(--w) / 2);width:1px;background:rgba(232,201,138,.55)}
+.cleg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:11px;color:var(--text-3)}
+.cleg .l{display:inline-block;width:14px;height:8px;border-radius:4px;margin-right:5px}
+.cleg .l.dn{background:rgba(236,234,230,.72)}.cleg .l.go{background:rgba(236,234,230,.16);box-shadow:inset 0 0 0 1px rgba(236,234,230,.32)}.cleg .l.slow{background:rgba(224,181,90,.28);box-shadow:inset 0 0 0 1px rgba(224,181,90,.75)}
+.cleg .l.dot{width:6px;height:6px;border-radius:50%;background:#ecebe8}
+@media (prefers-reduced-motion:reduce){.cbar{animation:none}}
 .pay{margin-top:34px;padding:16px;border-radius:14px;border:1px dashed rgba(236,234,230,.16);text-align:left;font-variant-numeric:tabular-nums}
 .pyhd{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;color:var(--text-2)}.pyhd i{font-style:normal;font-weight:400;font-size:12px;color:var(--text-3)}
 .pysum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
@@ -370,7 +406,7 @@ async function open(pw, key) {
     const ad = document.createElement('a'); ad.className = 'addtr'; ad.textContent = '＋ 加曲目 · 或直接把音频拖进来'; ad.href = '/chefdao/review/insights/#up=' + slug; ad.target = '_top';
     document.getElementById('list').appendChild(ad);
     dropAdd();
-    progPanel(); payPanel();
+    progPanel(); try { calPanel(); } catch (e) {} payPanel();
     const sc = document.createElement('script'); sc.src = '../ownstats.js?v=20261119a';
     sc.onload = () => window.cuListenStats({ api: API, key: ls.get('insights:key'), slugs: P.tracks.map(t => t.slug), tracks: P.tracks.map(t => ({ slug: t.slug, artist: t.artist })), title: P.title, mount: el => document.getElementById('list').appendChild(el) });
     document.head.appendChild(sc); }
@@ -555,6 +591,40 @@ function dropAdd() {
       msg('已加好，刷新中…'); bar(1); setTimeout(() => location.reload(), 700);
     } catch (er) { msg('没传成功：' + (er.message || '检查网络再试')); ov.classList.remove('busy'); busy = false; setTimeout(() => ov.classList.remove('on'), 2600); }
   });
+}
+// 制作日历（仅你可见）：每首从第一版到 Final（没设 Final 但已交付 = 最后一版）用了几天，横向一格一天；上面一行是每天传了几版
+function calPanel() {
+  const DAY = 864e5, dk = ts => { const d = new Date(ts); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())) / DAY); };   // 按本地日期算第几天
+  const today = dk(Date.now());
+  const rows = P.tracks.map(t => {
+    const vt = (t.vt || []).filter(x => x[0] > 0).sort((a, b) => a[0] - b[0]); if (!vt.length) return null;
+    const s = dk(vt[0][0]), fin = vt.find(x => x[1]), done = !!fin || (t.prog && t.prog.s === 5);
+    const e = fin ? dk(fin[0]) : done ? dk(vt[vt.length - 1][0]) : today;
+    return { t, s, e, done, fin: !!fin, n: e - s + 1, ups: vt.map(x => dk(x[0])) };
+  }).filter(Boolean);
+  if (!rows.length) return;
+  const fd = rows.filter(r => r.done), avg = fd.length ? fd.reduce((a, r) => a + r.n, 0) / fd.length : 0;
+  const fast = fd.slice().sort((a, b) => a.n - b.n)[0], slow = rows.filter(r => !r.done).sort((a, b) => b.n - a.n)[0];
+  let d0 = Math.min(...rows.map(r => r.s)), d1 = Math.max(today, ...rows.map(r => r.e)); if (d1 - d0 > 119) d0 = d1 - 119;
+  const nd = d1 - d0 + 1, W = 18, cnt = {}; rows.forEach(r => r.ups.forEach(u => { cnt[u] = (cnt[u] || 0) + 1; })); const mx = Math.max(1, ...Object.values(cnt));
+  const dt = k => new Date(k * DAY), wk = k => dt(k).getUTCDay();
+  let hd = '', heat = '';
+  for (let k = d0; k <= d1; k++) { const d = dt(k), first = k === d0 || d.getUTCDate() === 1;
+    hd += `<i class="${wk(k) === 0 || wk(k) === 6 ? 'we' : ''}${k === today ? ' td' : ''}">${first ? '<u>' + (d.getUTCMonth() + 1) + '月</u>' : ''}${d.getUTCDate()}</i>`;
+    const c = cnt[k] || 0; heat += `<i title="${d.getUTCMonth() + 1}/${d.getUTCDate()}：传了 ${c} 版"${c ? ` style="--a:${(.25 + .75 * c / mx).toFixed(2)}"` : ''}${c ? ' class="on"' : ''}></i>`; }
+  const bar = r => { const a = Math.max(r.s, d0) - d0, b = r.e - d0, slowX = avg && !r.done && r.n > avg * 1.5;
+    const dots = [...new Set(r.ups)].filter(u => u >= d0).map(u => `<b style="left:${(u - d0) * W + W / 2}px"></b>`).join('');
+    return `<div class="cbar${r.done ? ' dn' : ' go'}${slowX ? ' slow' : ''}" style="left:${a * W + 2}px;width:${(b - a + 1) * W - 4}px"></div>${dots}${r.fin ? `<em class="cfin" style="left:${b * W + W / 2}px">★</em>` : ''}<span class="cn" style="left:${(b + 1) * W + 6}px">${r.done ? r.n + ' 天' : '进行中 ' + r.n + ' 天'}</span>`; };
+  const el = document.createElement('section'); el.className = 'pay cal';
+  el.innerHTML = '<div class="pyhd"><span>制作日历</span><i>仅你可见 · 第一版 → Final</i></div>'
+    + `<div class="cst"><div><b>${fd.length}<small>/${rows.length}</small></b><span>已定稿</span></div><div><b>${avg ? (Math.round(avg * 10) / 10) : '—'}<small>${avg ? ' 天' : ''}</small></b><span>平均每首</span></div>`
+    + (fd.length >= 2 ? `<div><b>${fast.n}<small> 天</small></b><span>最快 · ${esc(fast.t.title)}</span></div>` : `<div><b>${today - Math.min(...rows.map(r => r.s)) + 1}<small> 天</small></b><span>项目第几天 · 还差 ${rows.length - fd.length} 首</span></div>`)
+    + (slow ? `<div class="${avg && slow.n > avg * 1.5 ? 'hot' : ''}"><b>${slow.n}<small> 天</small></b><span>拖最久 · ${esc(slow.t.title)}</span></div>` : '') + '</div>'
+    + `<div class="cwrap"><div class="cnames"><div class="ch"></div><div class="chh">每天传了几版</div>${rows.map(r => `<div class="cr"><a href="${esc(r.t.url)}">${esc(r.t.title)}</a></div>`).join('')}</div>`
+    + `<div class="cscroll"><div class="cgrid" style="width:${nd * W + 70}px;--w:${W}px;--td:${(today - d0) * W}px"><div class="ch">${hd}</div><div class="chh">${heat}</div>${rows.map(r => `<div class="cr">${bar(r)}</div>`).join('')}<div class="ctoday"></div></div></div></div>`
+    + '<div class="cleg"><span><i class="l dn"></i>已定稿 / 已交付</span><span><i class="l go"></i>进行中</span><span><i class="l slow"></i>超过平均 1.5 倍</span><span><i class="l dot"></i>传了一版</span><span>★ Final</span></div>';
+  document.getElementById('list').appendChild(el);
+  const sc = el.querySelector('.cscroll'); requestAnimationFrame(() => { sc.scrollLeft = sc.scrollWidth; });   // 默认看到最近
 }
 function progPanel() {
   const key = ls.get('insights:key'), el = document.createElement('section'); el.className = 'pay';
