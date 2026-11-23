@@ -246,6 +246,7 @@ document.body.innerHTML = `
   <div class="ovt" id="ovtags"></div>
   <textarea class="overall" id="overall" rows="3" placeholder="其他想说的（可选），例如：鼓再有力一点"></textarea>
   <button type="button" class="ovsend" id="ovsend" hidden></button>
+  <section class="refs" id="refs" hidden></section>
 </main>
 
 <div class="dock">
@@ -357,6 +358,7 @@ async function tryUnlock(pw, typed) {
     document.title = S.title;
     if (S.token) PUSH = new TextDecoder().decode(await open(key, ub64(S.token)));
     if (S.wkey) WK = new TextDecoder().decode(await open(key, ub64(S.wkey)));
+    try { refsUi(); } catch (e) {}
     try { ovUi(); } catch (e) {}   // 钥匙解出来了：「发送给刀大厨」现在才知道能不能显示
     if (WK && apAdopted && myName) { apAdopted = false; fetch(API_BASE + '/lself', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: WK, slug: S.slug, lid, name: myName }) }).catch(() => {}); }
     if (QUICK) { enterApp(true); loadAudio(key); clientFb(); ownerTools(); loadReplies(); lyrInit(key); quickRestore(); return; }
@@ -3479,3 +3481,62 @@ try {
   }
 } catch (e) {}
 })();
+
+/* ───────── 参考曲目：客户每首最多加 3 首（网易云分享链接 / 别的链接 / 直接写歌名）+ 想参考的地方；你的设备能看到、能删 ───────── */
+let REFS = Array.isArray(S.refs) ? S.refs.slice(0, 3) : [];
+const REF_SRC = [[/(^|\.)(163cn\.tv|music\.163\.com|163\.com)$/, '网易云'], [/(^|\.)y\.qq\.com$|(^|\.)qq\.com$/, 'QQ 音乐'], [/(^|\.)spotify\.(com|link)$/, 'Spotify'], [/(^|\.)music\.apple\.com$/, 'Apple Music'],
+  [/(^|\.)(youtube\.com|youtu\.be)$/, 'YouTube'], [/(^|\.)(bilibili\.com|b23\.tv)$/, 'B 站'], [/(^|\.)kugou\.com$/, '酷狗'], [/(^|\.)(douyin\.com|iesdouyin\.com)$/, '抖音']];
+const refSrc = u => { try { const h = new URL(u).hostname.replace(/^www\./, ''); const m = REF_SRC.find(x => x[0].test(h)); return m ? m[1] : h; } catch (e) { return ''; } };
+// 网易云分享文字：「分享XX的单曲《歌名》: https://163cn.tv/xxx (来自@网易云音乐)」→ 链接 + 「歌名 - XX」
+function refParse(s) {
+  s = String(s || '').trim(); const m = /https?:\/\/[^\s<>"'()（）]+/i.exec(s), u = m ? m[0].replace(/[，。,.;；!！]+$/, '') : '';
+  const q = /《([^》]{1,60})》/.exec(s), ar = /分享(.{1,30}?)的(?:单曲|歌曲|音乐)/.exec(s);
+  let t = q ? q[1] + (ar ? ' - ' + ar[1] : '') : '';
+  if (!t) { const rest = (m ? s.replace(m[0], '') : s).replace(/[（(]来自@?[^)）]*[)）]/g, '').replace(/^[\s:：]+|[\s:：]+$/g, ''); if (rest.length <= 80 && !/^https?:/i.test(rest)) t = rest; }
+  return { u, t: t.slice(0, 80) };
+}
+const refCan = () => !!(WK || IS_OWNER) && !S.helper;
+function refsUi(anim) {
+  const box = $('#refs'); if (!box) return;
+  if (!REFS.length && !refCan()) { box.hidden = true; return; }
+  box.hidden = false;
+  const open = box.querySelector('.rfform') && !box.querySelector('.rfform').hidden;
+  box.innerHTML = '<div class="sect">参考曲目<span class="r">' + (REFS.length ? REFS.length + ' / 3' : '最多 3 首') + '</span></div>'
+    + '<div class="rflist">' + REFS.map((r, i) => {
+      const src = r.u ? refSrc(r.u) : '', name = r.t || (src ? src + ' 链接' : '参考曲目');
+      return '<div class="rfi' + (anim === r.id ? ' rfin' : '') + '" data-id="' + esc(r.id) + '"><span class="rfn">' + (i + 1) + '</span><div class="rfb">'
+        + '<div class="rft">' + (r.u ? '<a href="' + esc(r.u) + '" target="_blank" rel="noopener">' + esc(name) + '<svg viewBox="0 0 24 24"><path d="M9 6h9v9M18 6 7 17"/></svg></a>' : '<b>' + esc(name) + '</b>') + '</div>'
+        + (r.n ? '<div class="rfd">' + esc(r.n) + '</div>' : '')
+        + '<div class="rfm">' + [src, r.who && r.who !== '歌手' ? r.who : '', r.ts ? new Date(r.ts).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }) : ''].filter(Boolean).map(esc).join(' · ') + '</div></div>'
+        + (refCan() ? '<button type="button" class="rfx press" aria-label="删除这首参考">×</button>' : '') + '</div>'; }).join('') + '</div>'
+    + (refCan() && REFS.length < 3 ? '<button type="button" class="rfadd press"' + (open ? ' hidden' : '') + '>＋ 添加参考曲目</button>'
+      + '<div class="rfform"' + (open ? '' : ' hidden') + '><input class="rfu" type="text" inputmode="url" autocomplete="off" placeholder="粘贴网易云分享链接，或直接写歌名">'
+      + '<div class="rfpv" hidden></div>'
+      + '<textarea class="rfnote" rows="2" maxlength="300" placeholder="想参考哪里（可选），例如：副歌人声的空间感"></textarea>'
+      + '<div class="rfbtn"><button type="button" class="rfcancel press">取消</button><button type="button" class="rfok press" disabled>添加</button></div></div>' : '');
+  const f = box.querySelector('.rfform');
+  box.querySelectorAll('.rfx').forEach(b => b.onclick = () => refDel(b.closest('.rfi')));
+  if (!f) return;
+  const inp = f.querySelector('.rfu'), pv = f.querySelector('.rfpv'), ok = f.querySelector('.rfok'), note = f.querySelector('.rfnote');
+  const upd = () => { const p = refParse(inp.value); ok.disabled = !(p.u || p.t);
+    pv.hidden = !(p.u || p.t); pv.innerHTML = p.u || p.t ? (p.u ? '<i>' + esc(refSrc(p.u)) + '</i>' : '') + '<span>' + esc(p.t || '歌名会显示成链接') + '</span>' : ''; };
+  inp.addEventListener('input', upd); note.addEventListener('input', () => grow(note));
+  box.querySelector('.rfadd').onclick = e => { e.currentTarget.hidden = true; f.hidden = false; f.classList.add('rfin'); inp.focus(); };
+  f.querySelector('.rfcancel').onclick = () => { f.hidden = true; inp.value = ''; note.value = ''; upd(); box.querySelector('.rfadd').hidden = false; };
+  ok.onclick = async () => { const p = refParse(inp.value); if (!(p.u || p.t) || ok.dataset.busy) return; ok.dataset.busy = '1'; ok.textContent = '添加中…';
+    const j = await refPost({ act: 'add', u: p.u, t: p.t, n: note.value.trim() });
+    ok.dataset.busy = ''; ok.textContent = '添加';
+    if (!j || !j.ok) { hud(j && j.e === 'full' ? '最多 3 首参考曲目' : '没添加成功，检查网络再试'); if (j && j.refs) { REFS = j.refs; refsUi(); } return; }
+    const nw = j.refs.find(x => !REFS.some(y => y.id === x.id)); REFS = j.refs; f.hidden = true; refsUi(nw && nw.id); hud(IS_OWNER ? '已添加' : '已添加，刀大厨会收到提醒'); };
+}
+async function refPost(o) {
+  try { const hd = { 'Content-Type': 'application/json' }; if (IS_OWNER) hd.Authorization = 'Bearer ' + store.get('insights:key');
+    return await (await fetch(API_BASE + '/rref', { method: 'POST', headers: hd, body: JSON.stringify({ slug: S.slug, k: WK, lid, ...o }) })).json(); } catch (e) { return null; }
+}
+async function refDel(row) {
+  if (!row || row.dataset.busy) return; const id = row.dataset.id; row.dataset.busy = '1'; row.classList.add('rfbusy');
+  const j = await refPost({ act: 'del', id });
+  if (!j || !j.ok) { row.dataset.busy = ''; row.classList.remove('rfbusy'); hud('没删掉，检查网络再试'); return; }
+  row.style.height = row.offsetHeight + 'px'; row.getBoundingClientRect(); row.classList.add('rfout');   // 收起高度再重画
+  setTimeout(() => { REFS = j.refs; refsUi(); }, 300);
+}

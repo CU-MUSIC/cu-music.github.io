@@ -1286,3 +1286,40 @@ html.tune-on{overflow:hidden}
 .tu-loop[hidden],.tu-tray[hidden]{display:none}
 /* 正在播的是隐藏版本：保留白底深字（原来被 .hid 的透明底盖掉，深字落在深底上看不见），虚线框表示客户看不到 */
 .vpick .vrow.hid.on,.vpick .vabx .vrow.hid.on{background:var(--pearl);color:var(--ink);opacity:.8;box-shadow:inset 0 0 0 1.5px var(--fill-3)}
+
+/* 参考曲目 */
+.refs .sect .r{color:var(--text-3)}
+.rflist{display:flex;flex-direction:column;gap:8px}
+.rflist:empty{display:none}
+.rfi{display:flex;align-items:flex-start;gap:12px;background:var(--fill);border:.5px solid var(--hair);border-radius:16px;padding:12px 10px 12px 14px;overflow:hidden;
+  transition:opacity .25s var(--ios),height .3s var(--ios),padding .3s var(--ios),margin .3s var(--ios),border-width .3s}
+.rfi.rfbusy{opacity:.5}
+.rfi.rfout{opacity:0;height:0!important;padding-top:0;padding-bottom:0;margin-top:-8px;border-width:0}
+.rfin{animation:rfin .38s var(--ios) both}
+@keyframes rfin{from{opacity:0;transform:translateY(8px)}}
+.rfn{flex:none;width:22px;height:22px;border-radius:50%;background:var(--fill-2);color:var(--text-2);font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:1px;font-variant-numeric:tabular-nums}
+.rfb{flex:1;min-width:0}
+.rft{font-size:16px;font-weight:600;line-height:1.45;overflow-wrap:anywhere}
+.rft a{color:var(--text);text-decoration:none}
+.rft a svg{width:14px;height:14px;margin-left:4px;vertical-align:-1px;fill:none;stroke:var(--text-3);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.rft a:active{opacity:.6}
+.rfd{color:var(--text-2);font-size:15px;line-height:1.6;margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere}
+.rfm{color:var(--text-3);font-size:12px;margin-top:5px}
+.rfx{flex:none;width:32px;height:32px;margin:-4px -2px 0 0;border:0;border-radius:50%;background:transparent;color:var(--text-3);font-size:20px;line-height:1}
+.rfx:active{background:var(--fill-2)}
+.rfadd{display:block;width:100%;margin-top:8px;min-height:48px;border:1px dashed var(--hair);border-radius:16px;background:transparent;color:var(--text-2);font:inherit;font-size:15px;font-weight:600}
+.rfadd:active{background:var(--fill)}
+.rfadd[hidden]{display:none}
+.rfform{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.rfform[hidden]{display:none}
+.rfu,.rfnote{width:100%;display:block;background:var(--fill);border:.5px solid var(--hair);border-radius:14px;outline:0;color:var(--text);font:inherit;font-size:16px;line-height:1.6;padding:11px 14px;resize:none;transition:border-color .2s,background-color .2s}
+.rfu:focus,.rfnote:focus{border-color:rgba(236,234,230,.28);background:var(--fill-2)}
+.rfu::placeholder,.rfnote::placeholder{color:var(--text-3)}
+.rfpv{display:flex;align-items:center;gap:8px;padding:0 4px;font-size:14px;color:var(--text-2);animation:rfin .3s var(--ios) both}
+.rfpv[hidden]{display:none}
+.rfpv i{font-style:normal;font-size:11px;font-weight:700;color:var(--text-2);background:var(--fill-2);border-radius:6px;padding:2px 7px;flex:none}
+.rfpv span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rfbtn{display:flex;gap:8px}
+.rfbtn button{flex:1;min-height:46px;border-radius:14px;font:inherit;font-size:15px;font-weight:600;border:.5px solid var(--hair);background:transparent;color:var(--text-2)}
+.rfbtn .rfok{border:1px solid rgba(143,199,162,.5);background:rgba(143,199,162,.08);color:#9fd2b0;font-weight:700}
+.rfbtn .rfok:disabled{opacity:.4}
