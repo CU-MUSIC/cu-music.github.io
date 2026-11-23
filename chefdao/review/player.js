@@ -857,12 +857,13 @@ function quickMark() {
 /* ───────── 评论 ───────── */
 const txt = $('#txt');
 // 整体方向：四行五档（默认正好），可点可拖、吸附到档位；动过的才写进整体感觉，文字框另写「其他」
-const OVT = [['人声大小', '人声', 'VOCAL', ['小很多', '小一点', '正好', '大一点', '大很多']],
-  ['整体亮度', '亮度', 'BRIGHTNESS', ['暗很多', '暗一点', '正好', '亮一点', '亮很多']],
-  ['混响空间', '混响', 'SPACE', ['少很多', '少一点', '正好', '多一点', '多很多']],
-  ['低频', '低频', 'LOW END', ['薄很多', '薄一点', '正好', '厚一点', '厚很多']]];
+const OVT = [['人声大小', '人声', 'VOCAL', ['再小很多', '再小一点', '正好', '再大一点', '再大很多']],
+  ['整体亮度', '亮度', 'BRIGHTNESS', ['再暗很多', '再暗一点', '正好', '再亮一点', '再亮很多']],
+  ['混响空间', '混响', 'SPACE', ['再少很多', '再少一点', '正好', '再多一点', '再多很多']],
+  ['低频', '低频', 'LOW END', ['再薄很多', '再薄一点', '正好', '再厚一点', '再厚很多']]];
 let ovTags = [0, 0, 0, 0];
-const ovLine = () => OVT.map((d, i) => ovTags[i] ? d[1] + '：' + d[3][ovTags[i] + 2] : '').filter(Boolean).join(' · ');
+const ovLine = () => OVT.map((d, i) => ovTags[i] ? d[1] + '：想要' + d[3][ovTags[i] + 2] : '')   // 「想要再多很多」：写明是希望往哪边调，不会被读成「现在多很多」
+  .filter(Boolean).join(' · ');
 const ovFull = () => { const l = ovLine(), t = ($('#overall') ? $('#overall').value : '').trim(); return l && t ? l + '\n' + t : l || t; };
 function ovPaint(i, v, drag) {
   const r = document.querySelector('#ovtags .ovr[data-i="' + i + '"]'); if (!r) return;
