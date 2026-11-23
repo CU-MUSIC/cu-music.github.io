@@ -316,7 +316,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
   function close() { if (UPING) return; const el = document.getElementById('pj'); if (el) el.remove(); openPj = null; }
   // 上传：按需加载 upload.js（和看板同一份），进度写在这首歌的提交栏里；传的时候不让关弹层、不自动刷新
   let UPING = false;
-  const needUp = () => window.cuUpload ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../upload.js?v=20261123a'; s.onload = ok; s.onerror = () => no(new Error('没加载上上传工具，刷新再试')); document.head.appendChild(s); });
+  const needUp = () => window.cuUpload ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../upload.js?v=20261123b'; s.onload = ok; s.onerror = () => no(new Error('没加载上上传工具，刷新再试')); document.head.appendChild(s); });
   async function upload(slug, ver, file, note) {
     const slot = document.querySelector(`[data-slot="${slug}"]`); if (!slot) return;
     UPING = true; slot.innerHTML = '<div class="upp"><span>准备上传…</span><i><b style="width:2%"></b></i></div>';

@@ -3098,6 +3098,91 @@ function lyrBind(el, L) {
     seek(t); if (a.paused && !$('#play').disabled) a.play();
   });
 }
+// ── 修音模式：歌词静止排开，点一句 = 单句循环，点字（再点同一句的另一个字 = 选一段）→ 选标签 → 变成一条带时间段的评论 ──
+// 评论文字固定格式「字」标签 · 标签：补充，插件和看板按这个格式认出标签
+const TUNE_TAGS = [['偏高', 'M12 19V5M6 11l6-6 6 6'], ['偏低', 'M12 5v14M6 13l6 6 6-6'], ['抖', 'M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0'], ['滑音多', 'M4 17c5 0 6-10 16-10'],
+  ['拖拍', 'M4 12h13M13 7l5 5-5 5M20 5v14'], ['抢拍', 'M20 12H7M11 7l-5 5 5 5M4 5v14'], ['咬字', 'M5 9h14M5 15h9']];
+const TUNE_RE = /^「([^」]{1,40})」([^：:]+?)(?:[：:]\s*(.*))?$/s;
+const tuneTags = m => { const r = TUNE_RE.exec(String(m || '')); if (!r) return null; const g = r[2].split(/\s*·\s*/).filter(x => TUNE_TAGS.some(t => t[0] === x)); return g.length ? { w: r[1], g, x: r[3] || '' } : null; };
+const tuneIcon = d => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+let TUNE = null;   // { el, li, s, e, tags:Set }
+function tuneWordT(x, k) { const off = lyrOff(), n = x.w.length, s = x.t + off + x.w[k][1]; return { s, e: s + Math.max(.12, Math.min(x.w[k][2], k === n - 1 ? .8 : 1.2)) }; }
+function tuneLineRange(L, i) {
+  const x = L[i], off = lyrOff(), s = x.t + off;
+  const lastE = x.w && x.w.length ? tuneWordT(x, x.w.length - 1).e : s + 4;
+  const nx = L.slice(i + 1).find(y => y.t != null), ne = nx ? nx.t + off : Infinity;
+  return { a: Math.max(0, s - .25), b: Math.min(ne, lastE + .5, dur() || Infinity) };
+}
+function tuneOpen() {
+  const L = LYR && LYR.lines; if (!L || !L.some(x => x.w)) return;
+  const el = document.createElement('div'); el.className = 'tune'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', '修音模式');
+  el.innerHTML = `<div class="tu-sheet"><header class="tu-hd"><div><b>修音模式</b><small>点一句单句循环，点字标出问题</small></div><button class="tu-x press" aria-label="关闭">${tuneIcon('M6 6l12 12M18 6L6 18')}</button></header>
+    <div class="tu-loop" hidden><span></span><button class="press" data-a="unloop">停止循环</button></div>
+    <div class="tu-body">${L.map((x, i) => x.t == null || !x.w || x.w.map(u => u[0]).join('') !== x.x ? '' :
+      `<div class="tu-ln" data-i="${i}"><button class="tu-no press" aria-label="循环第 ${i + 1} 句">${String(i + 1).padStart(2, '0')}</button><div class="tu-ws">${x.w.map((u, k) => `<button class="tu-w" data-k="${k}">${esc(u[0])}</button>`).join('')}</div></div>`).join('')}</div>
+    <div class="tu-tray" hidden><div class="tu-sel"><span class="tu-q"></span><span class="tu-t"></span></div>
+      <div class="tu-tags">${TUNE_TAGS.map(([n, d]) => `<button class="tu-tag press" data-g="${n}" aria-pressed="false">${tuneIcon(d)}<span>${n}</span></button>`).join('')}</div>
+      <div class="tu-row"><input class="tu-in" maxlength="80" placeholder="补充一句（可不填）" enterkeyhint="send"><button class="tu-add press" disabled>添加</button></div></div></div>`;
+  document.body.appendChild(el); document.documentElement.classList.add('tune-on');
+  requestAnimationFrame(() => el.classList.add('show'));
+  TUNE = { el, li: -1, s: -1, e: -1, tags: new Set() };
+  const close = () => { el.classList.remove('show'); document.documentElement.classList.remove('tune-on'); LOOP = { a: null, b: null }; loopUi(); setTimeout(() => el.remove(), 320); TUNE = null; };
+  el.querySelector('.tu-x').onclick = close;
+  el.addEventListener('click', e => { if (e.target === el) close(); });
+  el.querySelector('[data-a=unloop]').onclick = () => { LOOP = { a: null, b: null }; loopUi(); tuneUi(); };
+  const loopLine = i => { const r = tuneLineRange(L, i); LOOP = { a: r.a, b: r.b }; loopUi(); seek(r.a); if (a.paused && !$('#play').disabled) a.play(); };
+  el.querySelectorAll('.tu-ln').forEach(ln => {
+    const i = +ln.dataset.i;
+    ln.querySelector('.tu-no').onclick = () => { if (TUNE.li !== i) { TUNE.li = i; TUNE.s = TUNE.e = -1; } loopLine(i); tuneUi(); };
+    ln.querySelectorAll('.tu-w').forEach(w => w.onclick = () => {
+      const k = +w.dataset.k;
+      if (TUNE.li !== i) { TUNE.li = i; TUNE.s = TUNE.e = k; TUNE.tags.clear(); loopLine(i); }
+      else if (TUNE.s === k && TUNE.e === k) { TUNE.s = TUNE.e = -1; }
+      else if (TUNE.s < 0) TUNE.s = TUNE.e = k;
+      else if (k < TUNE.s) TUNE.s = k; else if (k > TUNE.e) TUNE.e = k; else TUNE.s = TUNE.e = k;   // 点范围外 = 扩到那个字；点范围内 = 只选这个字
+      if (!(LOOP.b !== null && LOOP.a <= tuneWordT(L[i], k).s && tuneWordT(L[i], k).s <= LOOP.b)) loopLine(i);
+      tuneUi();
+    });
+  });
+  el.querySelectorAll('.tu-tag').forEach(b => b.onclick = () => { const g = b.dataset.g; TUNE.tags.has(g) ? TUNE.tags.delete(g) : TUNE.tags.add(g); tuneUi(); });
+  const inp = el.querySelector('.tu-in');
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); tuneAdd(); } });
+  el.querySelector('.tu-add').onclick = tuneAdd;
+  tuneUi(); tuneMarks();
+  const cl = L.findIndex((x, i) => i >= lyrIdx && x.w); const row = el.querySelector(`.tu-ln[data-i="${cl < 0 ? 0 : cl}"]`); if (row) row.scrollIntoView({ block: 'center' });
+}
+function tuneUi() {
+  if (!TUNE) return; const { el, li, s, e } = TUNE, L = LYR.lines;
+  el.querySelectorAll('.tu-ln').forEach(ln => { const i = +ln.dataset.i; ln.classList.toggle('sel', i === li);
+    ln.querySelectorAll('.tu-w').forEach(w => { const k = +w.dataset.k; w.classList.toggle('on', i === li && s >= 0 && k >= s && k <= e); w.classList.toggle('a', i === li && k === s); w.classList.toggle('b', i === li && k === e); }); });
+  const lp = el.querySelector('.tu-loop'); lp.hidden = LOOP.b === null; if (LOOP.b !== null) lp.querySelector('span').textContent = '单句循环 · ' + fmt(LOOP.a) + '–' + fmt(LOOP.b);
+  const tray = el.querySelector('.tu-tray'), has = li >= 0 && s >= 0;
+  if (has !== !tray.hidden) { tray.hidden = !has; if (has) { tray.classList.remove('in'); void tray.offsetWidth; tray.classList.add('in'); } }
+  if (!has) return;
+  const x = L[li], word = x.w.slice(s, e + 1).map(u => u[0]).join('');
+  tray.querySelector('.tu-q').textContent = '「' + word + '」'; tray.querySelector('.tu-t').textContent = fmt(tuneWordT(x, s).s);
+  tray.querySelectorAll('.tu-tag').forEach(b => b.setAttribute('aria-pressed', TUNE.tags.has(b.dataset.g)));
+  tray.querySelector('.tu-add').disabled = !TUNE.tags.size;
+}
+// 已经标过的字：下面一条细线，长按 / 悬停能看到标了什么
+function tuneMarks() {
+  if (!TUNE) return; const L = LYR.lines;
+  TUNE.el.querySelectorAll('.tu-ln').forEach(ln => { const x = L[+ln.dataset.i];
+    ln.querySelectorAll('.tu-w').forEach(w => { const k = +w.dataset.k, r = tuneWordT(x, k), mid = (r.s + Math.min(r.e, r.s + .4)) / 2;
+      const hit = notes.filter(o => !o.nt && tuneTags(o.m) && o.e > o.t && o.t - .15 <= mid && mid <= o.e + .05);
+      w.classList.toggle('mk', hit.length > 0); w.title = hit.map(o => tuneTags(o.m).g.join(' · ')).join('，'); }); });
+}
+function tuneAdd() {
+  if (!TUNE || TUNE.li < 0 || TUNE.s < 0 || !TUNE.tags.size) return;
+  const x = LYR.lines[TUNE.li], word = x.w.slice(TUNE.s, TUNE.e + 1).map(u => u[0]).join('');
+  const g = TUNE_TAGS.map(t => t[0]).filter(t => TUNE.tags.has(t)), inp = TUNE.el.querySelector('.tu-in'), more = inp.value.trim();
+  const t = Math.round(tuneWordT(x, TUNE.s).s * 10) / 10, e = Math.max(t + .3, Math.round(tuneWordT(x, TUNE.e).e * 10) / 10);
+  const o = { t, e, m: '「' + word + '」' + g.join(' · ') + (more ? '：' + more : ''), id: Date.now() };
+  notes.push(o); notes.sort((p, q) => p.t - q.t);
+  render(o.id); save(); updateCta(); clearTimeout(syncT); track(vi, true);
+  inp.value = ''; TUNE.tags.clear(); TUNE.s = TUNE.e = -1; tuneUi(); tuneMarks();
+  hud('已添加：「' + word + '」' + g.join(' · '));
+}
 function lyrTick() { lyrRaf = requestAnimationFrame(lyrTick); lyrStep(); }
 a.addEventListener('timeupdate', () => lyrStep());   // 后台 / 锁屏回来时 rAF 停过：靠播放进度补上
 a.addEventListener('seeked', () => { lyrIdx = -2; lyrStep(true); });
@@ -3207,6 +3292,7 @@ function playFull() {
       <button class="pfw press" aria-label="前进 5 秒"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4.5h-4.5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">5</text></svg></button><button class="fsk fnx press" aria-label="下一首" disabled><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5.5v13c0 .8.9 1.3 1.5.8l8.7-6.3c.6-.4.6-1.4 0-1.8L5.5 4.8C4.9 4.3 4 4.8 4 5.5z"/></svg></button></div>
     <button class="pcm press" id="pcm">写评论</button></div></div>`;
   document.body.appendChild(f); document.documentElement.classList.add('lyfs-on');
+  if (LL && LL.some(x => x.w)) { const tb = document.createElement('button'); tb.className = 'ptu press'; tb.textContent = '修音'; tb.setAttribute('aria-label', '修音模式：点歌词里的字标出问题'); const hd = f.querySelector('.fhd'), py = hd.querySelector('.ply'); hd.insertBefore(tb, py); tb.onclick = () => { if (!a.paused) a.pause(); tuneOpen(); }; }
   if (LL) { lyrBind(f, LL); const ply = $('#ply'), lyUi = () => { ply.textContent = f.classList.contains('showly') ? '封面' : '歌词'; };
     lyUi(); ply.onclick = () => { f.classList.toggle('showly'); store.set('review:plly', f.classList.contains('showly') ? '1' : '0'); lyrIdx = -2; lyrStep(true); lyUi(); }; }
   // 版本：当前阶段的版本一排（并列备选显示成 12A 12B），点了直接切，接着原位置播
