@@ -96,9 +96,9 @@ button{background:none;border:0;cursor:pointer}
 .ivst.sum{grid-template-columns:repeat(4,1fr);margin:6px 0 4px}
 .ivst.sum b{font-size:22px}
 .ivst{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 14px}
-.ivst div{padding:14px 0;border-radius:14px;background:rgba(255,255,255,.04)}
+.ivst div{padding:14px 0;border-radius:14px;background:rgba(255,255,255,.04);text-align:center}
 .ivst b{display:block;font:600 26px var(--mono);font-variant-numeric:tabular-nums;color:var(--text);transition:color .3s}
-.ivst span{font-size:12px;color:var(--text-3)}
+.ivst span{display:block;margin-top:2px;font-size:12px;color:var(--text-3)}
 .ivlink{padding:12px 14px;border-radius:12px;background:var(--s2);border:1px solid var(--line);font:500 12.5px var(--mono);color:var(--text-2);word-break:break-all;text-align:left}
 .cbtn[hidden]{display:none}
 .clink{display:block;margin:14px auto 0;font-size:14px;color:var(--text-3)}
@@ -128,6 +128,13 @@ button{background:none;border:0;cursor:pointer}
 .drop:hover .ring::before,.drop:hover .ring::after{background:var(--mint)}
 .drop h2{position:relative;font-size:19px;font-weight:600;letter-spacing:-.01em;transition:font-size .6s var(--ease),color .3s}
 .drop p{position:relative;font:500 10.5px var(--mono);letter-spacing:.3em;color:var(--text-3);transition:opacity .3s}
+.dropw{display:flex;gap:8px;align-items:stretch}
+.dropw .drop{flex:1;min-width:0}
+.clr{flex:none;width:0;margin-top:4px;padding:0;border-radius:14px;font-size:14px;font-weight:500;color:var(--text-2);background:var(--s1);border:1px solid var(--line);white-space:nowrap;overflow:hidden;opacity:0;pointer-events:none;
+  transition:width .5s var(--ease),opacity .4s var(--ease),color .2s,border-color .2s,background .2s}
+.has .clr{width:72px;opacity:1;pointer-events:auto}
+.has .clr.arm{width:128px;color:var(--warn);border-color:rgba(217,153,153,.45);background:rgba(217,153,153,.08)}
+.busy .clr{pointer-events:none;opacity:.4}
 .has .drop{flex-direction:row;height:52px;margin-top:4px;border-radius:14px;gap:12px}
 .has .drop::before{opacity:0}
 .has .drop .ring{width:24px;height:24px}
@@ -302,7 +309,10 @@ button.chip:hover{border-color:var(--line-2)}
 
 <div class="app">
   <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="tr">免费</span><span class="sp"></span><button class="lg iv" id="ivBtn">邀请</button><button class="lg fb" id="fbBtn">反馈</button><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
-  <label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="ring"></span><h2>拖入分轨</h2><p>WAV · AIFF · MP3</p></label>
+  <div class="dropw">
+    <label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="ring"></span><h2>拖入分轨</h2><p>WAV · AIFF · MP3</p></label>
+    <button class="clr" id="clr" title="清空分轨，换一首">清空</button>
+  </div>
   <div class="info" id="info"><button class="chip wait" id="bpmChip" title="点一下切换半速 / 倍速">BPM <b id="bpmV">···</b></button><span class="chip wait" id="keyChip">Key <b id="keyV">···</b> <em id="keyN"></em></span></div>
   <div class="list" id="tracks"></div>
   <button class="go hide" id="go"><i class="bar"></i><span>处理</span></button>
@@ -755,6 +765,22 @@ function mix(list) {
   analyze(list).then(showSong).catch(e => { console.error(e); showSong(); });
 }
 
+// 清空：点一下变成「再点一次清空」，2 秒内再点才执行；分轨、调整、保存的这一份一起清掉
+let clrT = 0;
+$('#clr').onclick = () => {
+  const b = $('#clr'); if (busy) return;
+  if (!b.classList.contains('arm')) { b.classList.add('arm'); b.textContent = '再点一次清空'; clearTimeout(clrT); clrT = setTimeout(() => { b.classList.remove('arm'); b.textContent = '清空'; }, 2000); return; }
+  clearTimeout(clrT); b.classList.remove('arm'); b.textContent = '清空';
+  if (mixed) unmix();
+  for (const t of tracks) t.el.classList.add('out');
+  setTimeout(() => {
+    tracks.forEach(t => t.el.remove()); tracks = [];
+    for (const r of ['LV', 'INST']) { const f = $('#f' + r); f.value = 0; f.dispatchEvent(new Event('input')); }
+    setBv(BV_DEFAULT); song.mul = 1; setAB(true); err.textContent = '';
+    sync();   // 分轨为空 → 保存的那一份也删掉
+  }, 330);
+};
+
 function unmix() {   // 改了角色或加了分轨：结果作废，回到「处理」
   stop(); mixed = false; B.classList.remove('mix'); $('#info').classList.remove('on');
   for (const t of tracks) {
@@ -900,6 +926,7 @@ function encodeWav(data, sr) {   // 32-bit float WAV（fmt 18 字节 + fact + �
 // ── 记录（你的设备上有 Insights 钥匙才显示） ─────────────────────────
 const fmtD = ts => { const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const sg = v => v > 0 ? '+' + v : String(v);
+const geoT = g => [...new Set(String(g || '').split(/\s+/).filter(Boolean))].join(' ');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 $('#lgBtn').onclick = async () => {
   const sh = $('#sheet'), L = $('#lgList'); B.classList.add('sheeting'); sh.classList.add('on'); L.innerHTML = '<p class="empty">读取中</p>';
@@ -907,16 +934,16 @@ $('#lgBtn').onclick = async () => {
     const r = await fetch(API + '/preset/logs', { headers: { Authorization: 'Bearer ' + store.get('insights:key') } });
     if (r.status === 401) { L.innerHTML = '<p class="empty">钥匙无效</p>'; return; }
     const { rows, bugs = [], people = [], sum = {} } = await r.json();
-    const bh = bugs.length ? '<p class="sec">反馈</p>' + bugs.map(x => `<div class="bug"><div class="a">${esc(x.who || '—')}${x.trial ? ' · 试用' : ''}<span>${fmtD(x.ts)}${x.geo ? ' · ' + esc(x.geo) : ''}</span></div>
+    const bh = bugs.length ? '<p class="sec">反馈</p>' + bugs.map(x => `<div class="bug"><div class="a">${esc(x.who || '—')}${x.trial ? ' · 试用' : ''}<span>${fmtD(x.ts)}${x.geo ? ' · ' + esc(geoT(x.geo)) : ''}</span></div>
       <p>${esc(x.text)}</p><small>${x.contact ? '微信 ' + esc(x.contact) + ' · ' : ''}${esc((x.ctx && x.ctx.ua) || '')}${x.ctx && x.ctx.tracks ? ' · ' + esc(x.ctx.tracks.map(t => t.r + ' ' + t.n + (t.s ? '（' + t.s + '）' : '')).join(' / ')) : ''}${x.ctx && x.ctx.errs && x.ctx.errs.length ? ' · 报错 ' + esc(x.ctx.errs.join(' | ')) : ''}</small></div>`).join('') + '<p class="sec">下载</p>' : '';
     const ago = ts => { const m = (Date.now() - ts) / 6e4; return m < 60 ? Math.max(1, Math.round(m)) + ' 分钟前' : m < 1440 ? Math.round(m / 60) + ' 小时前' : Math.round(m / 1440) + ' 天前'; };
     const sumH = `<div class="ivst sum"><div><b>${sum.d1 || 0}</b><span>24 小时</span></div><div><b>${sum.d7 || 0}</b><span>7 天</span></div><div><b>${sum.proc_p || 0}</b><span>处理过</span></div><div><b>${sum.dl_p || 0}</b><span>下载过</span></div></div>`;
-    const ph = '<p class="sec">谁在用</p>' + (people.length ? people.map(x => `<div class="lgr"><div class="a">${esc(x.who || (x.member ? '刀门会员' : '访客'))}${x.geo ? ' · ' + esc(x.geo) : ''}<span>${ago(x.last)}</span></div>
+    const ph = '<p class="sec">谁在用</p>' + (people.length ? people.map(x => `<div class="lgr"><div class="a">${esc(x.who || (x.member ? '刀门会员' : '访客'))}${x.geo ? ' · ' + esc(geoT(x.geo)) : ''}<span>${ago(x.last)}</span></div>
       <div class="b"><i>${esc(x.ua || '')}</i><i class="${x.procs ? 'on' : ''}">处理 ${x.procs || 0}</i><i class="${x.dls ? 'on' : ''}">下载 ${x.dls || 0}</i><i>打开 ${x.opens || 0}</i>${x.member ? '<i class="on">刀门</i>' : ''}</div>
       ${x.info ? `<div class="c">${esc(x.info)}</div>` : ''}</div>`).join('') : '<p class="empty">还没有人打开过</p>');
     L.innerHTML = sumH + ph + bh.replace('<p class="sec">下载</p>', '') + '<p class="sec">下载明细</p>' + (rows.length ? rows.map(x => {
       const n = x.tracks.length, c = { LV: 0, BV: 0, INST: 0 }; x.tracks.forEach(t => c[t.r] = (c[t.r] || 0) + 1);
-      return `<div class="lgr"><div class="a">${esc(x.who || '—')}<span>${fmtD(x.ts)}${x.geo ? ' · ' + esc(x.geo) : ''}</span></div>
+      return `<div class="lgr"><div class="a">${esc(x.who || '—')}<span>${fmtD(x.ts)}${x.geo ? ' · ' + esc(geoT(x.geo)) : ''}</span></div>
         <div class="b"><i class="${x.lv ? 'on' : ''}">主人声 ${sg(x.lv)}</i><i class="${x.bv !== -9 ? 'on' : ''}">和声 ${x.bv}</i><i class="${x.inst ? 'on' : ''}">伴奏 ${sg(x.inst)}</i><i>${n} 轨 · LV ${c.LV} · BV ${c.BV} · INST ${c.INST}</i>${x.trial ? '<i class="t">试用</i>' : ''}</div>
         <div class="c">${esc(x.tracks.map(t => t.n).join('  ·  '))}</div></div>`;
     }).join('') : '<p class="empty">还没有下载记录</p>');
