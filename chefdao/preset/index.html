@@ -278,7 +278,7 @@ button.chip:hover{border-color:var(--line-2)}
 
 <div class="app">
   <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="tr">试用</span><span class="sp"></span><button class="lg fb" id="fbBtn">反馈</button><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
-  <label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="ring"></span><h2>拖入分轨</h2><p>WAV · AIFF</p></label>
+  <label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="ring"></span><h2>拖入分轨</h2><p>WAV · AIFF · MP3</p></label>
   <div class="info" id="info"><button class="chip wait" id="bpmChip" title="点一下切换半速 / 倍速">BPM <b id="bpmV">···</b></button><span class="chip wait" id="keyChip">Key <b id="keyV">···</b> <em id="keyN"></em></span></div>
   <div class="list" id="tracks"></div>
   <button class="go hide" id="go"><i class="bar"></i><span>处理</span></button>
@@ -336,7 +336,7 @@ let who = store.get('al:who') || '';
 async function sha(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
 const TRIAL_SEC = 30;
 let trial = store.get('al:mode') === 'trial';
-function enter() { $('#me').textContent = who; B.classList.toggle('trial', trial); $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); }
+function enter() { $('#me').textContent = who; B.classList.toggle('trial', trial); $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); if (!sesTried) { sesTried = true; setTimeout(restore, 0); } }
 if (who && (store.get('al:ok') === PW_HASH || trial)) enter(); else { $('#gwho').value = who; setTimeout(() => (who ? $('#gpw') : $('#gwho')).focus(), 400); }
 $('#gform').onsubmit = async e => {
   e.preventDefault();
@@ -362,7 +362,7 @@ function guess(name) {
   return '';
 }
 // 文件名清理：去掉 Logic / 导出时带的杂项（_bip、#01、Audio 1、日期、采样率、final、copy …），只留真正的名字
-const JUNK = /^(bip|bnc|bounce|bounced|export|exported|final|finale|mixdown|print|printed|render|rendered|copy|new|edit|edited|comp|st|stereo|mono|wav|aif|aiff|mp3|v\d+|ver\d*|take|tk|audio|track|trk|[0-9]{1,2}|\d{2,3}k|\d{2,3}\.\d+k|\d{2}bit|\d{2,3}bpm|\d{6,8}|\d{4}\s?\d{2}\s?\d{2}|最终版|最终|导出|副本|音频)$/i;
+const JUNK = /^(bip|bnc|bounce|bounced|export|exported|final|finale|mixdown|print|printed|render|rendered|copy|new|edit|edited|comp|st|stereo|mono|wav|aif|aiff|mp3|v\d+|ver\d*|take|tk|audio|track|trk|[0-9]{1,2}|\d{2,3}k|\d{2,3}\.\d+k|\d{2}bit|\d{3,4}|\d{2,3}bpm|\d{6,8}|\d{4}\s?\d{2}\s?\d{2}|最终版|最终|导出|副本|音频)$/i;
 function cleanName(fname) {
   let b = fname.replace(/\.[^.]+$/, '').replace(/#\d+/g, ' ').replace(/\(\d+\)|（\d+）/g, ' ').replace(/[_\-.,+]+/g, ' ');
   const words = b.split(/\s+/).filter(Boolean);
@@ -392,7 +392,7 @@ function add(files) {
       <div class="wv"></div><div class="pg"><i></i></div>`;
     el.querySelector('.nm').textContent = t.clean; el.querySelector('.nm').title = f.name;
     el.querySelector('.x').onclick = () => remove(t);
-    el.querySelector('.role').onclick = () => { if (mixed) unmix(); t.role = ROLES[(ROLES.indexOf(t.role) + 1) % 3]; showRole(t, true); err.textContent = ''; };
+    el.querySelector('.role').onclick = () => { if (mixed) unmix(); t.role = ROLES[(ROLES.indexOf(t.role) + 1) % 3]; showRole(t, true); err.textContent = ''; persist(); };
     el.querySelector('.solo').onclick = () => { t.solo = !t.solo; applyGains(); };
     el.querySelector('.lr').onclick = () => swapPan(t);
     t.el = el; showRole(t); box.appendChild(el); tracks.push(t);
@@ -405,7 +405,7 @@ function showRole(t, anim) {
   if (anim) { r.classList.remove('flip'); void r.offsetWidth; r.classList.add('flip'); }
 }
 function remove(t) { if (busy) return; t.el.classList.add('out'); setTimeout(() => { t.el.remove(); tracks = tracks.filter(x => x !== t); sync(); }, 320); }
-function sync() { B.classList.toggle('has', tracks.length > 0); go.classList.toggle('hide', !tracks.length); if (!tracks.length) err.textContent = ''; }
+function sync() { persist(true); B.classList.toggle('has', tracks.length > 0); go.classList.toggle('hide', !tracks.length); if (!tracks.length) err.textContent = ''; }
 async function probe(t) {
   const m = t.el.querySelector('.sub');
   try { const h = parseHeader(await t.file.slice(0, 1 << 16).arrayBuffer(), t.file.size);
@@ -595,12 +595,12 @@ addEventListener('keydown', e => { if (e.code === 'Space' && mixed && !/INPUT|TE
 // ── 主人声 / 伴奏 ±3，和声 -6 / -9 / -12 ──────────────────────────────
 for (const role of ['LV', 'INST']) {
   const f = $('#f' + role), v = $('#v' + role);
-  const upd = () => { off[role] = +f.value; f.style.setProperty('--p', ((+f.value + 3) / 6 * 100) + '%'); v.textContent = off[role] > 0 ? '+' + off[role] : String(off[role]); v.classList.toggle('z', !off[role]); if (ctx) applyGains(); rematchSoon(); };
+  const upd = () => { off[role] = +f.value; f.style.setProperty('--p', ((+f.value + 3) / 6 * 100) + '%'); v.textContent = off[role] > 0 ? '+' + off[role] : String(off[role]); v.classList.toggle('z', !off[role]); if (ctx) applyGains(); rematchSoon(); persist(); };
   f.oninput = upd; f.ondblclick = () => { f.value = 0; upd(); }; upd();
 }
 function setBv(v) {
   bvLevel = v; const bs = [...$('#bvOpts').querySelectorAll('button')], n = bs.findIndex(b => +b.dataset.v === v);
-  $('#bvOpts').style.setProperty('--n', n); bs.forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === v)); if (ctx) applyGains(); rematchSoon();
+  $('#bvOpts').style.setProperty('--n', n); bs.forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === v)); if (ctx) applyGains(); rematchSoon(); persist();
 }
 $('#bvOpts').querySelectorAll('button').forEach(b => b.onclick = () => setBv(+b.dataset.v)); setBv(BV_DEFAULT);
 
@@ -689,30 +689,22 @@ async function analyze(list) {
   const chroma = new Float64Array(12), bass = new Float64Array(12), N2 = 4096, bins = [], bbin = [];
   for (let k = 1; k < N2 / 2; k++) { const f = k * SR / N2; const pc = ((Math.round(12 * Math.log2(f / 440)) + 69) % 12 + 12) % 12; bins[k] = f >= 65 && f <= 2000 ? pc : -1; bbin[k] = f >= 30 && f <= 160 ? pc : -1; }
   spectra(x, N2, 2048, mag => { const c = new Float64Array(12); let s = 0; for (let k = 1; k < N2 / 2; k++) if (bins[k] >= 0) { c[bins[k]] += mag[k]; s += mag[k]; } if (s > 1e-6) for (let i = 0; i < 12; i++) chroma[i] += c[i] / s; for (let k = 1; k < N2 / 2; k++) if (bbin[k] >= 0) bass[bbin[k]] += mag[k]; });
-  let kb = -2, key = null;
+  // 24 个调全比：Krumhansl 相关 + 小调小幅优先（说唱伴奏小调居多）+ 低音根音加分；前两名很接近就两个都写
+  const bmax = Math.max(...bass) || 1, cand = [];
   for (let r = 0; r < 12; r++) {
-    const rot = [...chroma.slice(r), ...chroma.slice(0, r)];
-    const a = corr(rot, KMAJ), b = corr(rot, KMIN);
-    if (a > kb) { kb = a; key = { root: r, minor: false }; }
-    if (b > kb) { kb = b; key = { root: r, minor: true }; }
+    const rot = [...chroma.slice(r), ...chroma.slice(0, r)], bb = .03 * bass[r] / bmax;
+    cand.push({ root: r, minor: false, sc: corr(rot, KMAJ) + bb }, { root: r, minor: true, sc: corr(rot, KMIN) + .03 + bb });
   }
-  // 相对大小调（C 大调 / A 小调用同一组音）：看低音落在哪个根音上多
-  // 相对大小调（C 大调 / A 小调同一组音）：说唱伴奏小调居多，先给小调一点优势；再看低音落在哪个根音上多；还是很接近就两个都写
-  if (key) {
-    const rotA = r => [...chroma.slice(r), ...chroma.slice(0, r)];
-    const mr = key.minor ? key.root : (key.root + 9) % 12, Mr = (mr + 3) % 12;
-    let sm = corr(rotA(mr), KMIN) + .03, sM = corr(rotA(Mr), KMAJ);
-    if (bass[mr] > bass[Mr] * 1.15) sm += .03; else if (bass[Mr] > bass[mr] * 1.15) sM += .03;
-    const minor = sm >= sM, root = minor ? mr : Mr, other = minor ? Mr : mr, close = Math.abs(sm - sM) < .03;
-    song.key = { root, minor, short: KEYS[root] + (minor ? 'm' : ''), name: KEYS[root] + (minor ? ' 小调' : ' 大调') + (close ? ` / ${KEYS[other]}${minor ? ' 大调' : ' 小调'}` : ''), conf: kb };
-  }
+  cand.sort((a, b) => b.sc - a.sc);
+  const [k1, k2] = cand, nm = k => KEYS[k.root] + (k.minor ? ' 小调' : ' 大调'), close = k2 && k1.sc - k2.sc < .03;
+  song.key = { root: k1.root, minor: k1.minor, short: KEYS[k1.root] + (k1.minor ? 'm' : ''), name: nm(k1) + (close ? ' / ' + nm(k2) : ''), conf: k1.sc };
 }
 function showSong() {
   const b = song.bpm ? Math.round(song.bpm * song.mul) : 0;
   $('#bpmV').textContent = b || '—'; $('#bpmChip').classList.toggle('wait', !b);
   $('#keyV').textContent = song.key ? song.key.short : '—'; $('#keyN').textContent = song.key ? song.key.name : ''; $('#keyChip').classList.toggle('wait', !song.key);
 }
-$('#bpmChip').onclick = () => { if (!song.bpm) return; const opts = [1, 2, .5].filter(m => song.bpm * m >= 55 && song.bpm * m <= 200); song.mul = opts[(opts.indexOf(song.mul) + 1) % opts.length]; showSong(); };   // 原速 → 倍速 → 半速 → 原速
+$('#bpmChip').onclick = () => { if (!song.bpm) return; const opts = [1, 2, .5].filter(m => song.bpm * m >= 55 && song.bpm * m <= 200); song.mul = opts[(opts.indexOf(song.mul) + 1) % opts.length]; showSong(); persist(); };   // 原速 → 倍速 → 半速 → 原速
 
 // ── 进入试听 ───────────────────────────────────────────────────
 function mix(list) {
@@ -720,7 +712,7 @@ function mix(list) {
   B.classList.add('mix'); $('#play').innerHTML = ICON_PLAY;
   tracks.forEach(t => t.res && showPan(t)); drawOverview(list); setHead(0);
   luBefore = null; setAB(true); rematch();
-  song.bpm = 0; song.mul = 1; song.key = null; showSong(); $('#info').classList.add('on');
+  song.bpm = 0; song.mul = sesMul || 1; sesMul = 0; song.key = null; showSong(); persist(); $('#info').classList.add('on');
   analyze(list).then(showSong).catch(e => { console.error(e); showSong(); });
 }
 
@@ -859,6 +851,45 @@ $('#fbForm').onsubmit = async e => {
 const shOff = () => { $('#sheet').classList.remove('on'); B.classList.remove('sheeting'); };
 $('#shClose').onclick = shOff;
 $('#sheet').onclick = e => { if (e.target.id === 'sheet') shOff(); };
+
+// ── 24 小时内重开浏览器：恢复上次的分轨（原文件存在本机 IndexedDB）、角色、调整，处理过的自动再处理一遍 ──
+var SES_TTL = 864e5, sesTried = false, sesReady = false, restoring = false, sesMul = 0, persistT = 0;
+function idbOpen() { return new Promise((ok, no) => { const r = indexedDB.open('autolevel', 1); r.onupgradeneeded = () => r.result.createObjectStore('s'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); }
+async function idb(mode, fn) {
+  const db = await idbOpen();
+  return new Promise((ok, no) => { const tx = db.transaction('s', mode), q = fn(tx.objectStore('s')); tx.oncomplete = () => { db.close(); ok(q && q.result); }; tx.onerror = tx.onabort = () => { db.close(); no(tx.error); }; });
+}
+function persist(withFiles) {   // 文件只在分轨列表变化时存（大）；其余随时存（小）
+  if (!sesReady || restoring) return;
+  if (withFiles) persist.files = true;
+  clearTimeout(persistT);
+  persistT = setTimeout(async () => {
+    const files = persist.files; persist.files = false;
+    try {
+      if (!tracks.length) { await idb('readwrite', st => { st.delete('files'); return st.delete('state'); }); return; }
+      const state = { ts: Date.now(), mixed, off: { LV: off.LV, INST: off.INST }, bv: bvLevel, mul: song.mul, roles: tracks.map(t => t.role), n: tracks.length };
+      await idb('readwrite', st => { if (files) st.put(tracks.map(t => t.file), 'files'); return st.put(state, 'state'); });
+    } catch (e) { console.warn('persist', e); }
+  }, 400);
+}
+async function restore() {
+  try {
+    const st = await idb('readonly', s => s.get('state'));
+    if (!st) return;
+    if (Date.now() - st.ts > SES_TTL) { await idb('readwrite', s => { s.delete('files'); return s.delete('state'); }); return; }
+    const files = await idb('readonly', s => s.get('files'));
+    if (!files || !files.length || tracks.length) return;
+    restoring = true;
+    add(files);
+    tracks.forEach((t, i) => { if (st.roles && st.roles[i] != null) { t.role = st.roles[i]; showRole(t); } });
+    for (const r of ['LV', 'INST']) { const f = $('#f' + r); f.value = (st.off && st.off[r]) || 0; f.dispatchEvent(new Event('input')); }
+    if (st.bv) setBv(st.bv);
+    sesMul = st.mul || 1;
+    restoring = false; sesReady = true;
+    if (st.mixed) await go.onclick();
+  } catch (e) { console.warn('restore', e); }
+  finally { restoring = false; sesReady = true; }
+}
 
 // ── 核心：切段 → 每段算 LUFS → 增益 → 限峰（和混音助理 SOP 步骤 2 + 8 同一套） ──
 function biquad(type, fc, G, Q, fs) {
