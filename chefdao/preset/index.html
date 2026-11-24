@@ -182,6 +182,12 @@ button{background:none;border:0;cursor:pointer}
 .mix .dock{transform:none}
 .dock .in{max-width:640px;margin:0 auto}
 .tp{display:flex;align-items:center;gap:14px}
+.ab{position:relative;flex:none;display:flex;padding:2px;border-radius:99px;background:rgba(255,255,255,.07)}
+.ab button{position:relative;z-index:1;width:56px;height:28px;border-radius:99px;font-size:12.5px;font-weight:600;color:var(--text-3);transition:color .3s var(--ease)}
+.ab button[aria-pressed=true]{color:#0a0a0a}
+.ab .k{position:absolute;top:2px;left:2px;width:56px;height:28px;border-radius:99px;background:var(--text);transform:translateX(calc(var(--n,1) * 56px));transition:transform .45s var(--spring),background .35s}
+.ab.pre .k{background:var(--amber)}
+@media (max-width:420px){ .tm{display:none} }
 .play{flex:none;width:42px;height:42px;border-radius:50%;background:var(--text);color:#0a0a0a;display:grid;place-items:center;transition:transform .2s var(--spring)}
 .play:active{transform:scale(.9)}
 .play svg{width:14px;height:14px;fill:currentColor}
@@ -266,6 +272,7 @@ button{background:none;border:0;cursor:pointer}
 <div class="dock" id="dock"><div class="in">
   <div class="tp">
     <button class="play" id="play" aria-label="播放"></button>
+    <div class="ab" id="ab" title="B 键切换"><i class="k"></i><button data-v="0" aria-pressed="false">平衡前</button><button data-v="1" aria-pressed="true">平衡后</button></div>
     <div class="ov" id="ov"><canvas></canvas><i class="ph"></i></div>
     <span class="tm" id="tm"></span>
   </div>
@@ -413,7 +420,7 @@ go.onclick = async () => {
     try {
       const au = await decode(t.file); t.cut = trial && trimTrial(au); t.mono = monoize(au); step(.2);
       const r = await level(au, t.role, f => step(.2 + f * .75));
-      t.res = { data: r.data, sr: au.sr, ch: au.ch, n: au.n, dur: au.n / au.sr, cuts: r.cuts || [], segsAt: r.segsAt || [] };
+      t.res = { data: r.data, raw: au.data, sr: au.sr, ch: au.ch, n: au.n, dur: au.n / au.sr, cuts: r.cuts || [], segsAt: r.segsAt || [] };
       t.pk = peaks(r.data, 720);
       const risky = t.res.cuts.filter(c => c.risk).length, bits = [];
       if (t.role !== 'INST') bits.push(`${r.segs} 段`);
@@ -468,22 +475,29 @@ function panGains(p, ch) {   // -3 dB 补偿声像律（同 Logic 默认，居�
 const roleGain = t => dbl(t.role === 'BV' ? bvLevel : (off[t.role] || 0));
 
 // ── 试听 ──────────────────────────────────────────────────────
-let ctx = null, master = null, playing = null, dur = 0, raf = 0, pos = 0;
+let ctx = null, master = null, busA = null, busB = null, playing = null, dur = 0, raf = 0, pos = 0;
+let abAfter = true, matchGain = 1;   // 平衡前 / 平衡后；平衡前整体乘 matchGain，两版响度一致
 function ensureCtx() {
   if (ctx) return;
   ctx = new (window.AudioContext || window.webkitAudioContext)();
   const lim = ctx.createDynamicsCompressor();
   lim.threshold.value = -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .1;
   master = ctx.createGain(); master.connect(lim); lim.connect(ctx.destination);
+  busA = ctx.createGain(); busB = ctx.createGain(); busA.connect(master); busB.connect(master);
+  busA.gain.value = abAfter ? 1 : 0; busB.gain.value = abAfter ? 0 : matchGain;
 }
+const mkBuf = (data, ch, n, sr) => { const b = new AudioBuffer({ length: n, numberOfChannels: ch, sampleRate: sr }); for (let c = 0; c < ch; c++) b.copyToChannel(data[c], c); return b; };
+function bufs(t) { const r = t.res; if (!t.bufA) { t.bufA = mkBuf(r.data, r.ch, r.n, r.sr); t.bufB = mkBuf(r.raw, r.ch, r.n, r.sr); } }
+function chain(c, buf, ch, bus) {
+  const vol = c.createGain(), gl = c.createGain(), gr = c.createGain(), mg = c.createChannelMerger(2);
+  gl.connect(mg, 0, 0); gr.connect(mg, 0, 1); mg.connect(vol); vol.connect(bus);
+  let split = null; if (ch > 1) { split = c.createChannelSplitter(ch); split.connect(gl, 0); split.connect(gr, 1); }
+  return { buf, vol, gl, gr, split };
+}
+function feed(c, ch, when, from, len) { const s = c.createBufferSource(); s.buffer = ch.buf; if (ch.split) s.connect(ch.split); else { s.connect(ch.gl); s.connect(ch.gr); } s.start(when, from, len || undefined); return s; }
 function graph(t) {
   if (t.g) return;
-  const r = t.res, buf = ctx.createBuffer(r.ch, r.n, r.sr);
-  for (let c = 0; c < r.ch; c++) buf.copyToChannel(r.data[c], c);
-  const vol = ctx.createGain(), gl = ctx.createGain(), gr = ctx.createGain(), mg = ctx.createChannelMerger(2);
-  gl.connect(mg, 0, 0); gr.connect(mg, 0, 1); mg.connect(vol); vol.connect(master);
-  let split = null; if (r.ch > 1) { split = ctx.createChannelSplitter(r.ch); split.connect(gl, 0); split.connect(gr, 1); }
-  t.g = { buf, vol, gl, gr, split };
+  bufs(t); t.g = chain(ctx, t.bufA, t.res.ch, busA); t.gb = chain(ctx, t.bufB, t.res.ch, busB);
 }
 function applyGains(only) {
   const any = tracks.some(t => t.res && t.solo);
@@ -494,8 +508,10 @@ function applyGains(only) {
     showPan(t);
     if (!t.g) continue;
     const [l, r] = panGains(t.pan, t.res.ch), now = ctx.currentTime;
-    t.g.gl.gain.setTargetAtTime(l, now, .015); t.g.gr.gain.setTargetAtTime(r, now, .015);
-    t.g.vol.gain.setTargetAtTime(only === t ? roleGain(t) : any && !t.solo ? 0 : roleGain(t), now, .02);
+    const on = only === t || !(any && !t.solo);
+    for (const g of [t.g, t.gb]) { g.gl.gain.setTargetAtTime(l, now, .015); g.gr.gain.setTargetAtTime(r, now, .015); }
+    t.g.vol.gain.setTargetAtTime(on ? roleGain(t) : 0, now, .02);
+    t.gb.vol.gain.setTargetAtTime(on ? 1 : 0, now, .02);
   }
 }
 async function play(from, only, len) {
@@ -505,9 +521,8 @@ async function play(from, only, len) {
   const t0 = ctx.currentTime + .04, srcs = [];
   for (const t of list) {
     if (from >= t.res.dur) continue;
-    const s = ctx.createBufferSource(); s.buffer = t.g.buf;
-    if (t.g.split) s.connect(t.g.split); else { s.connect(t.g.gl); s.connect(t.g.gr); }
-    s.start(t0, from, len || undefined); srcs.push(s);
+    srcs.push(feed(ctx, t.g, t0, from, len));
+    srcs.push(feed(ctx, t.gb, t0, from, len));   // 两版同时在跑，切换只动两条总线的音量
   }
   playing = { srcs, t0, from, only, end: len ? Math.min(dur, from + len) : dur };
   (only ? only.el : B).classList.add('playing');
@@ -546,26 +561,62 @@ addEventListener('keydown', e => { if (e.code === 'Space' && mixed && !/INPUT|TE
 // ── 主人声 / 伴奏 ±3，和声 -6 / -9 / -12 ──────────────────────────────
 for (const role of ['LV', 'INST']) {
   const f = $('#f' + role), v = $('#v' + role);
-  const upd = () => { off[role] = +f.value; f.style.setProperty('--p', ((+f.value + 3) / 6 * 100) + '%'); v.textContent = off[role] > 0 ? '+' + off[role] : String(off[role]); v.classList.toggle('z', !off[role]); if (ctx) applyGains(); };
+  const upd = () => { off[role] = +f.value; f.style.setProperty('--p', ((+f.value + 3) / 6 * 100) + '%'); v.textContent = off[role] > 0 ? '+' + off[role] : String(off[role]); v.classList.toggle('z', !off[role]); if (ctx) applyGains(); rematchSoon(); };
   f.oninput = upd; f.ondblclick = () => { f.value = 0; upd(); }; upd();
 }
 function setBv(v) {
   bvLevel = v; const bs = [...$('#bvOpts').querySelectorAll('button')], n = bs.findIndex(b => +b.dataset.v === v);
-  $('#bvOpts').style.setProperty('--n', n); bs.forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === v)); if (ctx) applyGains();
+  $('#bvOpts').style.setProperty('--n', n); bs.forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === v)); if (ctx) applyGains(); rematchSoon();
 }
 $('#bvOpts').querySelectorAll('button').forEach(b => b.onclick = () => setBv(+b.dataset.v)); setBv(BV_DEFAULT);
+
+// ── 平衡前 / 平衡后：两版同步播放，平衡前按整首混音响度补偿到和平衡后一样 ──────────
+function setAB(after) {
+  abAfter = after;
+  const bs = [...$('#ab').querySelectorAll('button')];
+  bs.forEach(b => b.setAttribute('aria-pressed', (b.dataset.v === '1') === after));
+  $('#ab').style.setProperty('--n', after ? 1 : 0); $('#ab').classList.toggle('pre', !after);
+  if (ctx) { const now = ctx.currentTime; busA.gain.setTargetAtTime(after ? 1 : 0, now, .012); busB.gain.setTargetAtTime(after ? 0 : matchGain, now, .012); }
+}
+$('#ab').querySelectorAll('button').forEach(b => b.onclick = () => setAB(b.dataset.v === '1'));
+addEventListener('keydown', e => { if (e.code === 'KeyB' && mixed && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) setAB(!abAfter); });
+const LSR = 24000;
+async function mixLufs(after) {   // 离线把整首混出来（含声像和当前的调整）再测 LUFS
+  const list = tracks.filter(t => t.res); if (!list.length) return -70;
+  const oc = new OfflineAudioContext(2, Math.max(1, Math.ceil(dur * LSR)), LSR);
+  for (const t of list) {
+    bufs(t); const c = chain(oc, after ? t.bufA : t.bufB, t.res.ch, oc.destination), [l, r] = panGains(t.pan, t.res.ch);
+    c.gl.gain.value = l; c.gr.gain.value = r; c.vol.gain.value = after ? roleGain(t) : 1; feed(oc, c, 0, 0);
+  }
+  const rb = await oc.startRendering();
+  const s1 = biquad('shelf', 1681.974450955533, 3.999843853973347, .7071752369554196, LSR), s2 = biquad('hp', 38.13547087602444, 0, .5003270373238773, LSR);
+  const kw = [0, 1].map(c => filt(filt(rb.getChannelData(c), s1), s2));
+  const { E } = hopEnergy(kw, LSR); const v = gatedLufs(E, 0, E.length);
+  return Number.isFinite(v) ? v : -70;
+}
+let luBefore = null, matchJob = 0, matchT = 0;
+async function rematch() {
+  const job = ++matchJob;
+  if (luBefore == null) luBefore = await mixLufs(false);
+  const luAfter = await mixLufs(true);
+  if (job !== matchJob) return;
+  matchGain = luBefore > -70 && luAfter > -70 ? Math.min(dbl(24), dbl(luAfter - luBefore)) : 1;
+  if (ctx && !abAfter) busB.gain.setTargetAtTime(matchGain, ctx.currentTime, .05);
+}
+function rematchSoon() { if (!mixed) return; clearTimeout(matchT); matchT = setTimeout(rematch, 350); }   // 声明式：滑块初始化时会先调用到
 
 // ── 进入试听 ───────────────────────────────────────────────────
 function mix(list) {
   mixed = true; dur = Math.max(...list.map(t => t.res.dur)); pos = 0;
   B.classList.add('mix'); $('#play').innerHTML = ICON_PLAY;
   tracks.forEach(t => t.res && showPan(t)); drawOverview(list); setHead(0);
+  luBefore = null; setAB(true); rematch();
 }
 
 function unmix() {   // 改了角色或加了分轨：结果作废，回到「处理」
   stop(); mixed = false; B.classList.remove('mix');
   for (const t of tracks) {
-    t.res = null; t.g = null; t.pk = null; t.mate = null; t.pan = 0; t.solo = false; t.el.classList.remove('done', 'mutedx');
+    t.res = null; t.g = null; t.gb = null; t.bufA = t.bufB = null; t.pk = null; t.mate = null; t.pan = 0; t.solo = false; t.el.classList.remove('done', 'mutedx');
     t.el.querySelector('.pg i').style.width = '0'; const w = t.el.querySelector('.wv'); w.classList.remove('on'); setTimeout(() => { if (!t.res) w.innerHTML = ''; }, 500);
     const m = t.el.querySelector('.sub'); m.className = 'sub'; m.textContent = t.info || '';
   }
