@@ -360,7 +360,7 @@
 			@media (prefers-reduced-motion: reduce) {
 				.qb-prog, .floating-cta { transition-property: opacity; }
 				body.qb-bar-on .qb-prog, .qb-prog { transform: none; }
-				body.qb-bar-on .floating-cta { transform: translate(-50%, 0); }
+				body.qb-bar-on .floating-cta, body.cta-tuck .floating-cta { transform: translate(-50%, 0); }
 				.qb-help-panel { animation-duration: 0.16s; animation-name: none; }
 				.qb-assist.on .qb-assist-ico, .qb-preset-card:hover { transform: none; }
 			}
@@ -858,6 +858,7 @@
 			/* 同一时间只留一个主行动：在报价器里就是价格条，离开了才把「联系我们」还回来 */
 			.floating-cta { transition: opacity 0.3s var(--ease), transform 0.3s var(--ease); }
 			body.qb-bar-on .floating-cta { opacity: 0; transform: translate(-50%, 16px); pointer-events: none; }
+			body.cta-tuck .floating-cta { opacity: 0; transform: translate(-50%, 16px); pointer-events: none; }
 			.qb-prog.live .qb-prog-txt { font-size: 12px; }
 			:root[data-theme="light"] .qb-prog {
 				background: linear-gradient(rgba(var(--green-ink), 0.13), rgba(var(--green-ink), 0.11)), rgba(var(--veil), 0.95);
@@ -5363,6 +5364,28 @@ function render(lang) {
 	renderQuoteBuilder();
 	setupReveal();
 	qbSetupBar();
+	ctaSetupTuck();
+}
+
+// ── 「联系我们」手机上往下滑先收起、往上滑再出来 ─────────────
+// 浮在底部正中会压住价格、按钮和 FAQ 题目；读内容时让开，想找时往上一滑就在。
+var ctaTuckOn = false;
+function ctaSetupTuck() {
+	if (ctaTuckOn) return;
+	ctaTuckOn = true;
+	var lastY = window.scrollY, ticking = false;
+	window.addEventListener("scroll", function () {
+		if (ticking) return;
+		ticking = true;
+		requestAnimationFrame(function () {
+			ticking = false;
+			var y = window.scrollY, d = y - lastY;
+			var atEnd = y + window.innerHeight >= document.documentElement.scrollHeight - 40;
+			if (Math.abs(d) < 6 && !atEnd) return;
+			document.body.classList.toggle("cta-tuck", d > 0 && y > 120 && !atEnd);
+			lastY = y;
+		});
+	}, { passive: true });
 }
 function switchLang(lang) {
 	if (lang === currentLang) return;
