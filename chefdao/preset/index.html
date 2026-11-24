@@ -62,6 +62,7 @@ button{background:none;border:0;cursor:pointer}
 .top .me:hover,.top .lg:hover{color:var(--text);border-color:var(--line-2)}
 .top .lg{display:none}
 .top .fb{display:block}
+.trial .top .iv{display:block;color:var(--mint);border-color:rgba(143,195,169,.35)}
 .top{gap:8px}
 .top b{white-space:nowrap}
 .top .me,.top .lg{flex:none;white-space:nowrap;padding:0 11px}
@@ -90,6 +91,13 @@ button{background:none;border:0;cursor:pointer}
 .cbtn{display:block;width:100%;height:50px;margin-top:10px;border-radius:14px;font-size:15px;font-weight:600;line-height:50px;text-decoration:none;color:var(--text);background:rgba(255,255,255,.06);transition:transform .15s var(--ease),background .2s}
 .cbtn:active{transform:scale(.985)}
 .cbtn.pri{background:var(--rolex);color:#fff}
+.cbtn.inv{color:var(--mint);background:rgba(143,195,169,.1)}
+.cbtn.ok{background:var(--mint);color:#08110c}
+.ivst{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 14px}
+.ivst div{padding:14px 0;border-radius:14px;background:rgba(255,255,255,.04)}
+.ivst b{display:block;font:600 26px var(--mono);font-variant-numeric:tabular-nums;color:var(--text);transition:color .3s}
+.ivst span{font-size:12px;color:var(--text-3)}
+.ivlink{padding:12px 14px;border-radius:12px;background:var(--s2);border:1px solid var(--line);font:500 12.5px var(--mono);color:var(--text-2);word-break:break-all;text-align:left}
 .cbtn[hidden]{display:none}
 .clink{display:block;margin:14px auto 0;font-size:14px;color:var(--text-3)}
 .by2{margin-top:18px;font:500 10.5px var(--mono);letter-spacing:.12em;color:var(--text-3)}
@@ -291,7 +299,7 @@ button.chip:hover{border-color:var(--line-2)}
 </div></div>
 
 <div class="app">
-  <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="tr">免费</span><span class="sp"></span><button class="lg fb" id="fbBtn">反馈</button><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
+  <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="tr">免费</span><span class="sp"></span><button class="lg iv" id="ivBtn">邀请</button><button class="lg fb" id="fbBtn">反馈</button><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
   <label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="ring"></span><h2>拖入分轨</h2><p>WAV · AIFF · MP3</p></label>
   <div class="info" id="info"><button class="chip wait" id="bpmChip" title="点一下切换半速 / 倍速">BPM <b id="bpmV">···</b></button><span class="chip wait" id="keyChip">Key <b id="keyV">···</b> <em id="keyN"></em></span></div>
   <div class="list" id="tracks"></div>
@@ -319,9 +327,17 @@ button.chip:hover{border-color:var(--line-2)}
   <p class="ey">AUTO LEVEL</p><h2 id="ctaT"></h2><p class="cs" id="ctaS"></p>
   <a class="cbtn pri" href="/chefdao/price/" target="_blank" rel="noopener">查看价格</a>
   <a class="cbtn" href="/chat/" target="_blank" rel="noopener">匿名咨询</a>
+  <button class="cbtn inv" id="ctaIv">邀请好友 · 多用 1 次</button>
   <button class="cbtn" id="ctaPw" hidden>刀门会员 · 输入密码</button>
   <button class="clink" id="ctaClose">关闭</button>
   <p class="by2">made by 刀大厨ChefDao</p>
+</div></div>
+<div class="sheet" id="ivSheet"><div class="pn cta">
+  <p class="ey">INVITE</p><h2>邀请好友，多用 1 次</h2><p class="cs">好友通过链接第一次下载后 +1 次，可累积</p>
+  <div class="ivst"><div><b id="ivN">0</b><span>已邀请</span></div><div><b id="ivB">0</b><span>剩余加次</span></div></div>
+  <div class="ivlink"><span id="ivUrl">···</span></div>
+  <button class="cbtn pri" id="ivCopy">复制邀请</button>
+  <button class="clink" id="ivClose">关闭</button>
 </div></div>
 <div class="sheet" id="fbSheet"><div class="pn"><h3>问题反馈 <button id="fbClose">关闭</button></h3>
   <form class="fbf" id="fbForm"><textarea id="fbText" maxlength="2000" placeholder="遇到的问题、出现的步骤、想要的功能"></textarea>
@@ -358,7 +374,7 @@ let who = store.get('al:who') || '';
 // ── 密码 ──────────────────────────────────────────────────────
 async function sha(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
 let trial = store.get('al:mode') === 'trial';
-function enter() { $('#me').textContent = who; B.classList.toggle('trial', trial); $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); if (!sesTried) { sesTried = true; setTimeout(restore, 0); } }
+function enter() { $('#me').textContent = who; B.classList.toggle('trial', trial); $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); if (!sesTried) { sesTried = true; setTimeout(restore, 0); } setTimeout(() => typeof loadRef === 'function' && loadRef(), 0); }
 if (who && (store.get('al:ok') === PW_HASH || trial)) enter(); else { $('#gwho').value = who; setTimeout(() => (who ? $('#gpw') : $('#gwho')).focus(), 400); }
 $('#gform').onsubmit = async e => {
   e.preventDefault();
@@ -800,19 +816,39 @@ const today = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10)
 async function quotaOk() {   // 访客每天 1 首：本机先查，再问服务器（服务器没回应就放行）
   if (!trial) return true;
   const q = JSON.parse(store.get('al:q') || '{}');
-  if (q.day === today() && q.sid && q.sid !== songSid) return false;
   try {
-    const r = await fetch(API + '/preset/quota', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid, sid: songSid }) });
-    const j = await r.json(); if (j.ok && j.allow === false) return false;
-  } catch {}
+    const r = await fetch(API + '/preset/quota', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid, sid: songSid, ref: store.get('al:ref') || '' }) });
+    const j = await r.json();
+    if (j.ok) { refInfo.bonus = j.bonus || 0; showBonus(); if (j.allow === false) return false; }
+  } catch { if (q.day === today() && q.sid && q.sid !== songSid) return false; }
   store.set('al:q', JSON.stringify({ day: today(), sid: songSid })); return true;
 }
 function card(limit) {
   $('#ctaT').textContent = limit ? '今日免费 1 首已用完' : '这首歌，交给刀大厨混。';
   $('#ctaS').textContent = limit ? '明天可以继续免费使用。' : '混音 · 母带 · 人声制作';
-  $('#ctaPw').hidden = !limit;
+  $('#ctaPw').hidden = !limit; $('#ctaIv').hidden = !trial;
   B.classList.add('sheeting'); $('#cta').classList.add('on');
 }
+// ── 邀请：每人一个码；好友带码第一次下载，邀请人 +1 次 ───────────────────
+const refInfo = { code: '', bonus: 0, invited: 0 };
+{ const r = new URLSearchParams(location.search).get('r'); if (r && /^[A-Z0-9]{6}$/i.test(r)) { store.set('al:ref', r.toUpperCase()); history.replaceState(null, '', location.pathname); } }
+const ivUrl = () => refInfo.code ? `https://cumusic.work/chefdao/preset/?r=${refInfo.code}` : '';
+function showBonus() { $('.top .tr').textContent = refInfo.bonus > 0 ? `免费 +${refInfo.bonus}` : '免费'; $('#ivB').textContent = refInfo.bonus; $('#ivN').textContent = refInfo.invited; }
+async function loadRef() {
+  if (!trial) return;
+  try { const j = await (await fetch(API + '/preset/ref', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid }) })).json();
+    if (j.ok) { Object.assign(refInfo, { code: j.code, bonus: j.bonus, invited: j.invited }); if (store.get('al:ref') === j.code) store.del('al:ref'); showBonus(); $('#ivUrl').textContent = ivUrl(); } } catch {}
+}
+function openInvite() { $('#cta').classList.remove('on'); B.classList.add('sheeting'); $('#ivSheet').classList.add('on'); loadRef(); }
+$('#ivBtn').onclick = openInvite; $('#ctaIv').onclick = openInvite;
+$('#ivClose').onclick = () => { $('#ivSheet').classList.remove('on'); B.classList.remove('sheeting'); };
+$('#ivSheet').onclick = e => { if (e.target.id === 'ivSheet') $('#ivClose').click(); };
+$('#ivCopy').onclick = async () => {
+  if (!refInfo.code) await loadRef(); if (!refInfo.code) return;
+  const text = `录完音平衡不对？Auto Level 一键平衡干声，每天免费一次：${ivUrl()}`, btn = $('#ivCopy');
+  try { await navigator.clipboard.writeText(text); } catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  btn.classList.add('ok'); btn.textContent = '已复制，发给好友'; setTimeout(() => { btn.classList.remove('ok'); btn.textContent = '复制邀请'; }, 1800);
+};
 $('#ctaClose').onclick = () => { $('#cta').classList.remove('on'); B.classList.remove('sheeting'); };
 $('#cta').onclick = e => { if (e.target.id === 'cta') $('#ctaClose').click(); };
 $('#ctaPw').onclick = () => { $('#ctaClose').click(); $('#me').click(); };
