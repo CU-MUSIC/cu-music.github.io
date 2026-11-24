@@ -8,220 +8,241 @@
 <title>Auto Level · CU MUSIC</title>
 <link rel="icon" href="/chefdao/assets/cu-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/chefdao/assets/cu-180.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap">
 <style>
-/* 说唱预设的分轨预处理：和混音助理 SOP 步骤 2 + 8 同一套做法（Strip Silence 切开 → 每段 Normalize），全部在浏览器本地算，不上传。
-   设计沿用主厨之选投递页：#080808 黑底、浅色主按钮、劳力士绿 #1f8a5b 只做标题斜体、选中角色、完成状态 */
+/* 说唱预设的分轨预处理：切无声段 → 每段统一响度 → 和声成对的自动左右 pan → 整体试听 → 主人声 / 伴奏 ±3 dB → 导出。
+   全部在浏览器本地算。配色沿用主厨之选（#080808 / 劳力士绿），版式是「分轨列表 + 底部调音条」 */
 :root{
-  --bg:#080808; --surface:#111111; --lift:#151515; --border:rgba(255,255,255,.08); --border-hover:rgba(255,255,255,.2);
-  --text:#f0f0f0; --text-2:#9a9a9a; --text-3:#7d7d7d;
-  --cta-bg:#f0f0f0; --cta-fg:#0a0a0a;
-  --rolex:#1f8a5b; --green-soft:#8fc3a9; --green-line:rgba(96,176,134,.35); --green-fill:rgba(96,176,134,.14);
-  --warn:#d99; --amber:#d9b36c;
+  --bg:#080808; --surface:#111; --lift:#161616; --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.16);
+  --text:#f0f0f0; --text-2:#9a9a9a; --text-3:#6f6f6f;
+  --rolex:#1f8a5b; --rolex-2:#2fae7a; --mint:#8fc3a9; --amber:#d9b36c; --warn:#d99;
   --ease:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.36,.64,1); --r:14px;
-  --font:-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","PingFang SC",Arial,sans-serif;
+  --font:-apple-system,"SF Pro Text","Helvetica Neue","PingFang SC",Arial,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
 }
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg);overflow-x:hidden}
-body{background:var(--bg);color:var(--text);font:16px/1.7 var(--font);-webkit-font-smoothing:antialiased;
-  padding:0 max(20px,env(safe-area-inset-left)) calc(72px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-right))}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--text);font:16px/1.7 var(--font);-webkit-font-smoothing:antialiased;min-height:100vh;
+  padding:0 max(18px,env(safe-area-inset-left)) calc(40px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-right));transition:padding-bottom .5s var(--ease)}
+body.mix{padding-bottom:calc(196px + env(safe-area-inset-bottom))}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-main{max-width:520px;margin:0 auto}
+main{max-width:600px;margin:0 auto}
 
-/* CU 标：底纹 b / 开场线 d / 进度 p（外圈 = 总进度，内圈 = 当前这一轨） */
-.cumark{display:block;width:100%;height:100%;overflow:visible}
-.cumark path{fill:none;stroke-width:30;stroke-linecap:round;stroke-dasharray:1 2}
-.cumark .b{stroke:rgba(255,255,255,.07);stroke-dashoffset:0}
-.cumark .d{stroke:var(--text);stroke-dashoffset:1.06;opacity:0}
-.drawing .cumark .d{opacity:1;animation:draw 1.7s cubic-bezier(.45,.05,.15,1) .1s forwards}
-.drawing .cumark .d2{animation-delay:.45s}
-.settled .cumark .d{opacity:0;transition:opacity 1.1s var(--ease)}
-.cumark .p{stroke:var(--text);stroke-dashoffset:1.06;transition:stroke-dashoffset .6s var(--ease)}
-.cumark.ok .p{stroke:#2fae7a}
-@keyframes draw{from{stroke-dashoffset:1.06}to{stroke-dashoffset:0}}
+/* 顶栏 */
+.top{display:flex;align-items:center;gap:10px;height:64px;padding-top:env(safe-area-inset-top);animation:fade .8s var(--ease) both}
+.top svg{width:22px;height:22px}
+.top svg path{fill:none;stroke:var(--text);stroke-width:42;stroke-linecap:round}
+.top b{font-size:15px;font-weight:600;letter-spacing:.01em}
+.top i{width:6px;height:6px;border-radius:50%;background:var(--rolex-2);box-shadow:0 0 0 4px rgba(47,174,122,.16)}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{opacity:0;transform:translateY(10px)}}
 
-.hero{position:relative;overflow-x:clip;padding:calc(10vh + env(safe-area-inset-top)) 0 40px;text-align:center}
-.hero::before{content:"";position:absolute;left:50%;top:calc(10vh + env(safe-area-inset-top) + 60px);width:min(150vw,680px);height:min(150vw,680px);pointer-events:none;opacity:0;
-  background:radial-gradient(circle,rgba(255,252,248,.07) 0%,rgba(255,252,248,.02) 34%,transparent 68%);transform:translate(-50%,-50%) translateZ(0)}
-.titled .hero::before{animation:fadein 1.8s ease .3s forwards}
-.hero .mark{width:clamp(104px,30vw,132px);height:clamp(104px,30vw,132px);margin:0 auto}
-.hero .mark svg{transition:transform .9s var(--spring)}
-.hero .mark.pop svg{transform:scale(1.08)}
-.hero h1{position:relative;z-index:3;margin-top:28px;padding-top:.2em;padding-bottom:.12em;font-size:clamp(30px,8.4vw,50px);line-height:1;font-weight:600;letter-spacing:-.028em;white-space:nowrap}
-.hero h1 .it{display:inline-block;font-family:"Instrument Serif","Times New Roman",serif;font-style:italic;font-weight:400;font-size:1.3em;line-height:.8;letter-spacing:-.005em;
-  padding:0 .14em 0 .08em;margin:0 -.06em 0 -.06em;color:var(--rolex)}
-.hero h1 .it,.hero h1 .w{opacity:0;transform:translateY(.35em);filter:blur(8px)}
-.hero h1 .w{display:inline-block;margin-left:.2em}
-.titled .hero h1 .it{animation:letter 1s var(--ease) .05s forwards}
-.titled .hero h1 .w{animation:letter 1s var(--ease) .16s forwards}
-@keyframes letter{to{opacity:1;transform:none;filter:none}}
-.tags{margin-top:16px;font:500 11px/1 var(--mono);letter-spacing:.24em;color:var(--text-3);opacity:0}
-.titled .tags{animation:fadein .8s var(--ease) .55s forwards}
-.tags b{font-weight:500;color:var(--text-2)}
-@keyframes fadein{to{opacity:1}}
+/* 拖入区：没文件时是大块，有文件后收成一行 */
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-top:28px;height:220px;border-radius:20px;
+  border:1px dashed var(--line-2);background:radial-gradient(120% 90% at 50% 0%,rgba(31,138,91,.10),transparent 60%),var(--surface);
+  transition:height .55s var(--ease),margin .55s var(--ease),border-color .3s,background-color .3s;animation:up .9s var(--ease) .1s both;cursor:pointer;overflow:hidden}
+.drop:hover,.dragging .drop{border-color:rgba(143,195,169,.55)}
+.drop input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.drop .ring{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line-2);display:grid;place-items:center;font-size:22px;line-height:1;color:var(--text-2);transition:transform .5s var(--spring),border-color .3s,width .55s var(--ease),height .55s var(--ease)}
+.drop:hover .ring{transform:rotate(90deg);border-color:var(--mint);color:var(--mint)}
+.drop h2{font-size:20px;font-weight:600;letter-spacing:-.01em;transition:font-size .55s var(--ease)}
+.drop p{font:500 11px var(--mono);letter-spacing:.2em;color:var(--text-3);transition:opacity .3s}
+.has .drop{height:56px;margin-top:8px;flex-direction:row;gap:12px;border-style:solid;border-color:var(--line);background:var(--surface)}
+.has .drop .ring{width:26px;height:26px;font-size:15px}
+.has .drop h2{font-size:15px;font-weight:500;color:var(--text-2)}
+.has .drop p{display:none}
+.busy .drop{pointer-events:none;opacity:.5}
 
-/* 内容逐块浮起 */
-.rise{opacity:0;transform:translateY(10px)}
-.ready .rise{animation:rise 1s var(--ease) forwards;animation-delay:calc(var(--k,0) * 80ms)}
-@keyframes rise{to{opacity:1;transform:none}}
-
-.group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.row{position:relative;display:flex;align-items:center;min-height:56px;padding:0 16px;width:100%;text-align:left}
-.row+.row::before,.trk+.trk::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--border)}
-
-/* 选分轨 */
-.file{cursor:pointer;transition:background .3s var(--ease)}
-.file:hover{background:var(--lift)}
-.file input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0;z-index:2}
-.file .lab{flex:1;color:var(--text-3);transition:color .2s}
-.file:hover .lab{color:var(--text-2)}
-.file .plus{flex:none;width:22px;height:22px;border-radius:50%;border:1px solid var(--border-hover);display:grid;place-items:center;color:var(--text-2);font-size:15px;line-height:1}
-
-/* 分轨列表 */
-.list{margin-top:12px;display:grid;grid-template-rows:0fr;transition:grid-template-rows .55s var(--ease)}
-.list.on{grid-template-rows:1fr}
-.list>.group{min-height:0}
-.list.on>.group{border-color:var(--border)}
-.list:not(.on)>.group{border-color:transparent}
-.trk{position:relative;padding:13px 16px 14px;animation:rise .7s var(--ease) both;animation-delay:calc(var(--k,0) * 45ms)}
-.trk.out{animation:collapse .4s var(--ease) forwards}
-@keyframes collapse{to{opacity:0;transform:translateX(12px)}}
+/* 分轨 */
+.tracks{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.trk{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 12px 12px 14px;animation:up .6s var(--ease) both;animation-delay:calc(var(--k,0) * 50ms);transition:border-color .3s,opacity .3s}
+.trk.out{animation:gone .35s var(--ease) forwards}
+@keyframes gone{to{opacity:0;transform:scale(.98)}}
+.trk.soloed{border-color:rgba(143,195,169,.5)}
+.trk.muted{opacity:.45}
 .th{display:flex;align-items:center;gap:10px}
-.th .nm{flex:1;min-width:0;font-size:15px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.th .x{flex:none;width:26px;height:26px;border-radius:50%;color:var(--text-3);font-size:17px;line-height:26px;transition:color .2s,background .2s,opacity .3s}
-.th .x:hover{color:var(--text);background:rgba(255,255,255,.06)}
-.busy .th .x{opacity:0;pointer-events:none}
-.tb{display:flex;align-items:center;gap:12px;margin-top:9px}
-.meta{flex:1;min-width:0;font:500 11.5px/1.4 var(--mono);color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.meta.res{color:var(--text-2);animation:swap .5s var(--ease)}
-.meta.res b{font-weight:600;color:var(--green-soft)}
-.meta.res i{font-style:normal;color:var(--amber)}
-.meta.bad{color:var(--warn)}
-@keyframes swap{from{opacity:0;transform:translateY(4px)}}
-/* 角色：胶囊分段，滑块跟着走 */
-.seg{position:relative;flex:none;display:flex;padding:3px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid var(--border);transition:border-color .3s}
-.seg.need{border-color:rgba(217,153,153,.5)}
-.seg button{position:relative;z-index:1;width:52px;height:26px;border-radius:99px;font:600 11px/26px var(--mono);letter-spacing:.08em;color:var(--text-3);transition:color .3s var(--ease)}
-.seg button[aria-pressed=true]{color:var(--text)}
-.seg .th-b{position:absolute;z-index:0;top:3px;left:3px;width:52px;height:26px;border-radius:99px;background:var(--rolex);opacity:0;transform:translateX(calc(var(--n,0) * 52px));transition:transform .45s var(--spring),opacity .3s}
-.seg.set .th-b{opacity:1}
+.nm{flex:1;min-width:0;font-size:15px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub{margin-top:2px;font:500 11.5px var(--mono);color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sub.res{color:var(--text-2);animation:swap .5s var(--ease)}
+.sub.res i{font-style:normal;color:var(--amber)}
+.sub.bad{color:var(--warn)}
+@keyframes swap{from{opacity:0;transform:translateY(3px)}}
+.x{flex:none;width:28px;height:28px;border-radius:50%;color:var(--text-3);font-size:18px;line-height:28px;transition:color .2s,background .2s}
+.x:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.busy .x,.mix .x{display:none}
+/* 角色 */
+.seg{position:relative;flex:none;display:flex;padding:2px;border-radius:9px;background:rgba(255,255,255,.05);transition:box-shadow .3s}
+.seg.need{box-shadow:0 0 0 1px rgba(217,153,153,.6)}
+.seg button{position:relative;z-index:1;width:44px;height:26px;border-radius:7px;font:600 10.5px/26px var(--mono);letter-spacing:.06em;color:var(--text-3);transition:color .3s var(--ease)}
+.seg button[aria-pressed=true]{color:#fff}
+.seg .k{position:absolute;top:2px;left:2px;width:44px;height:26px;border-radius:7px;background:var(--rolex);opacity:0;transform:translateX(calc(var(--n,0) * 44px));transition:transform .45s var(--spring),opacity .3s}
+.seg.set .k{opacity:1}
 .busy .seg{pointer-events:none}
-/* 每轨进度：细线 */
-.pg{position:absolute;left:16px;right:16px;bottom:0;height:2px;border-radius:2px;background:transparent;overflow:hidden}
-.pg i{display:block;height:100%;width:0;background:var(--text);transition:width .3s var(--ease),background .4s}
-.trk.done .pg i{background:#2fae7a;opacity:0;transition:opacity .8s var(--ease) .4s}
-
-.go{display:block;width:100%;margin-top:16px;height:52px;border-radius:var(--r);background:var(--cta-bg);color:var(--cta-fg);font-size:16px;font-weight:600;letter-spacing:.02em;transition:transform .15s var(--ease),opacity .4s var(--ease),background .3s,color .3s}
-.go:active{transform:scale(.985)}
-.go[disabled]{background:rgba(240,240,240,.28);color:rgba(10,10,10,.75);cursor:default}
-.go.ok{background:var(--rolex);color:#f0f0f0}
-.err{min-height:1.4em;margin-top:12px;text-align:center;font-size:13px;color:var(--warn);transition:opacity .3s}
-.foot{margin-top:28px;text-align:center;font:500 11px/1.8 var(--mono);letter-spacing:.14em;color:var(--text-3)}
-.foot b{font-weight:500;color:var(--text-2)}
-
+/* 处理后才出现：声像、独奏 */
+.pan,.solo{flex:none;height:26px;border-radius:7px;font:600 10.5px/26px var(--mono);letter-spacing:.06em;color:var(--text-2);background:rgba(255,255,255,.05);
+  display:none;animation:pop .4s var(--spring)}
+.pan{padding:0 9px}
+.solo{width:28px}
+.mix .solo{display:block}
+.mix .pan.on{display:block}
+.pan.on{color:var(--mint)}
+.solo[aria-pressed=true]{background:var(--mint);color:#08110c}
+@keyframes pop{from{opacity:0;transform:scale(.8)}}
+/* 进度细线 */
+.pg{position:absolute;left:14px;right:14px;bottom:0;height:2px;overflow:hidden;border-radius:2px}
+.pg i{display:block;height:100%;width:0;background:var(--text);transition:width .3s var(--ease)}
+.done .pg i{opacity:0;transition:opacity .6s var(--ease) .3s}
 /* 波形 + 断点 */
 .wv{position:relative;height:0;margin-top:0;opacity:0;cursor:pointer;transition:height .5s var(--ease),margin-top .5s var(--ease),opacity .6s var(--ease) .1s}
-.wv.on{height:44px;margin-top:12px;opacity:1}
-.wv canvas{display:block;width:100%;height:100%;border-radius:6px}
-.wv .ph{position:absolute;top:-3px;bottom:-3px;width:1.5px;margin-left:-.75px;background:var(--text);opacity:0;transition:opacity .2s;pointer-events:none}
-.wv .ph.on{opacity:1}
+.wv.on{height:40px;margin-top:10px;opacity:1}
+.wv canvas{display:block;width:100%;height:40px}
+.ph{position:absolute;top:-2px;bottom:-2px;left:0;width:1.5px;margin-left:-.75px;background:var(--text);opacity:0;pointer-events:none;transition:opacity .2s}
+.playing .ph{opacity:1}
 .ct{position:absolute;top:-4px;bottom:-4px;width:15px;margin-left:-7.5px;padding:0;z-index:2}
-.ct::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:1px;background:rgba(143,195,169,.55)}
-.ct.frag::before{top:14px;bottom:14px}
+.ct::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:1px;background:rgba(143,195,169,.45)}
 .ct.join::before{background:none;border-left:1px dashed rgba(143,195,169,.7)}
-.ct::after{content:"";position:absolute;left:5px;top:0;width:5px;height:5px;border-radius:50%;background:var(--green-soft);opacity:0;transform:scale(.4);transition:opacity .2s,transform .3s var(--spring)}
-.ct:hover::after,.ct.play::after{opacity:1;transform:none}
+.ct.frag::before{top:12px;bottom:12px}
+.ct::after{content:"";position:absolute;left:5px;top:0;width:5px;height:5px;border-radius:50%;background:var(--mint);opacity:0;transform:scale(.4);transition:opacity .2s,transform .3s var(--spring)}
+.ct:hover::after{opacity:1;transform:none}
 .ct.risk::before{background:var(--amber);width:1.5px}
 .ct.risk::after{background:var(--amber);opacity:1;transform:none;box-shadow:0 0 0 3px rgba(217,179,108,.2)}
-.trk.dl .th{cursor:pointer}
-.trk.dl .th:hover .nm{color:var(--green-soft)}
-#dropzone{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(8,8,8,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
-#dropzone::before{content:"";position:absolute;inset:16px;border:1px dashed var(--green-line);border-radius:24px}
-#dropzone p{font-size:15px;color:var(--text-2);letter-spacing:.02em}
-.dragging #dropzone{opacity:1}
+
+/* 处理按钮：进度直接长在按钮里 */
+.go{position:relative;display:block;width:100%;height:52px;margin-top:16px;border-radius:var(--r);background:var(--text);color:#0a0a0a;font-size:16px;font-weight:600;overflow:hidden;
+  transition:transform .15s var(--ease),opacity .4s,max-height .5s var(--ease),margin .5s var(--ease);max-height:52px}
+.go:active{transform:scale(.985)}
+.go[disabled]{opacity:.3;cursor:default}
+.go .bar{position:absolute;inset:0;width:0;background:var(--rolex);transition:width .3s var(--ease)}
+.go span{position:relative}
+.go.run{background:#1a1a1a;color:var(--text);opacity:1}
+.mix .go{max-height:0;margin-top:0;opacity:0;pointer-events:none}
+.hide{display:none}
+.err{min-height:1.4em;margin-top:10px;text-align:center;font-size:13px;color:var(--warn)}
+
+/* 底部调音条 */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:14px max(18px,env(safe-area-inset-left)) calc(14px + env(safe-area-inset-bottom));
+  background:rgba(12,12,12,.86);-webkit-backdrop-filter:saturate(1.4) blur(20px);backdrop-filter:saturate(1.4) blur(20px);border-top:1px solid var(--line);
+  transform:translateY(110%);transition:transform .6s var(--ease)}
+.mix .dock{transform:none}
+.dock .in{max-width:600px;margin:0 auto}
+.tp{display:flex;align-items:center;gap:12px}
+.play{flex:none;width:44px;height:44px;border-radius:50%;background:var(--text);color:#0a0a0a;display:grid;place-items:center;transition:transform .2s var(--spring)}
+.play:active{transform:scale(.92)}
+.play svg{width:15px;height:15px;fill:currentColor}
+.ov{position:relative;flex:1;height:34px;cursor:pointer;touch-action:none}
+.ov canvas{display:block;width:100%;height:34px}
+.ov .ph{opacity:1}
+.tm{flex:none;font:500 11.5px var(--mono);color:var(--text-2);font-variant-numeric:tabular-nums;min-width:74px;text-align:right}
+.ctl{display:grid;grid-template-columns:1fr 1fr auto;gap:18px;align-items:center;margin-top:12px}
+.fd{min-width:0}
+.fd .lb{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-2);line-height:1}
+.fd .lb b{font:600 11.5px var(--mono);color:var(--text);font-variant-numeric:tabular-nums;transition:color .2s}
+.fd .lb b.z{color:var(--text-3)}
+.fd input{-webkit-appearance:none;appearance:none;display:block;width:100%;height:24px;margin-top:4px;background:transparent;cursor:pointer;--p:50%}
+.fd input::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:
+  linear-gradient(to right,transparent calc(50% - 1px),rgba(255,255,255,.35) calc(50% - 1px),rgba(255,255,255,.35) calc(50% + 1px),transparent calc(50% + 1px)),
+  linear-gradient(to right,rgba(255,255,255,.12) min(50%,var(--p)),var(--rolex-2) min(50%,var(--p)),var(--rolex-2) max(50%,var(--p)),rgba(255,255,255,.12) max(50%,var(--p)))}
+.fd input::-moz-range-track{height:4px;border-radius:4px;background:rgba(255,255,255,.12)}
+.fd input::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border-radius:50%;background:#f0f0f0;box-shadow:0 1px 4px rgba(0,0,0,.5);transition:transform .2s var(--spring)}
+.fd input:active::-webkit-slider-thumb{transform:scale(1.15)}
+.fd input::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:#f0f0f0}
+.dl{flex:none;height:40px;padding:0 18px;border-radius:12px;background:var(--rolex);color:#fff;font-size:14px;font-weight:600;transition:transform .15s var(--ease),background .3s}
+.dl:active{transform:scale(.97)}
+.dl[disabled]{opacity:.5}
+@media (max-width:520px){ .ctl{grid-template-columns:1fr 1fr} .dl{grid-column:1/-1;width:100%} body.mix{padding-bottom:calc(244px + env(safe-area-inset-bottom))} }
+
+#dz{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(8,8,8,.8);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
+#dz::before{content:"";position:absolute;inset:16px;border:1px dashed rgba(143,195,169,.5);border-radius:24px}
+#dz p{font-size:15px;color:var(--text-2)}
+.dragging #dz{opacity:1}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
-<body class="drawing">
+<body>
 <main>
-<section class="hero">
-  <div class="mark" id="mark"><svg class="cumark" id="cm" viewBox="272 164 456 456" aria-hidden="true">
-    <path class="b" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="b" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>
-    <path class="d" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="d d2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>
-    <path class="p" id="p1" pathLength="1" d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path class="p" id="p2" pathLength="1" d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/>
-  </svg></div>
-  <h1 aria-label="Auto Level"><span class="it">Auto</span><span class="w">Level</span></h1>
-  <p class="tags"><b>LV</b> · <b>BV</b> −23 LUFS &nbsp;/&nbsp; <b>INST</b> −26 LUFS</p>
-</section>
+<header class="top">
+  <svg viewBox="272 164 456 456" aria-hidden="true"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></svg>
+  <b>Auto Level</b><i></i>
+</header>
 
-<div class="group rise" style="--k:0">
-  <label class="row file"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="lab">选择分轨</span><span class="plus">+</span></label>
-</div>
-<div class="list" id="list"><div class="group" id="tracks"></div></div>
-<button class="go rise" id="go" style="--k:1" disabled>处理</button>
+<label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*">
+  <span class="ring">+</span><h2>拖入分轨</h2><p>WAV · AIFF</p></label>
+<div class="tracks" id="tracks"></div>
+<button class="go hide" id="go"><i class="bar"></i><span>处理</span></button>
 <p class="err" id="err"></p>
-<p class="foot rise" style="--k:2">WAV · AIFF &nbsp;·&nbsp; <b>本地处理</b></p>
 </main>
-<div id="dropzone"><p>松开即可添加</p></div>
+
+<div class="dock" id="dock"><div class="in">
+  <div class="tp">
+    <button class="play" id="play" aria-label="播放"></button>
+    <div class="ov" id="ov"><canvas></canvas><i class="ph"></i></div>
+    <span class="tm" id="tm">0:00 / 0:00</span>
+  </div>
+  <div class="ctl">
+    <div class="fd"><div class="lb"><span>主人声</span><b id="vLV" class="z">0</b></div><input type="range" id="fLV" min="-3" max="3" step="0.5" value="0"></div>
+    <div class="fd"><div class="lb"><span>伴奏</span><b id="vINST" class="z">0</b></div><input type="range" id="fINST" min="-3" max="3" step="0.5" value="0"></div>
+    <button class="dl" id="dl">下载</button>
+  </div>
+</div></div>
+<div id="dz"><p>松开即可添加</p></div>
 
 <script>
 (() => {
 'use strict';
-// ── 参数（和 SOP 对齐；改这里即可） ──────────────────────────────
-const TARGET = { LV: -23, BV: -23, INST: -26 };   // 伴奏比人声低 3 dB
+// ── 参数 ──────────────────────────────────────────────────────
+const TARGET = { LV: -23, BV: -23, INST: -20 };   // 伴奏比人声大 3 dB
 const ROLES = ['LV', 'BV', 'INST'];
-const GATE_DB = -50;      // 有声门限的中心值：实际 = 底噪 + 15 dB，夹在 -60…-40（Logic 的 -80 是给棚里底噪用的，家录切不开）
+const GATE_DB = -50;      // 有声门限的中心值：实际 = 底噪 + 15 dB，夹在 -60…-40
 const MIN_GAP = 0.5;      // 无声超过 0.5 秒才切开
 const PAD_SAFE = 0.05;    // 尾音真正收干净之后再多留 50ms
 const MIN_PHRASE = 0.35;  // 有声不到 0.35 秒算碎片（呼吸、喷麦、咔哒），不单独拉响度
 const FADE = 0.01;        // 静音断点 10ms 淡入淡出
 const RAMP = 0.02;        // 连接点前后各 20ms 增益渐变
 const CEIL = Math.pow(10, -1 / 20);   // 限峰 -1 dBFS
-const MAX_GAIN = 30;      // 单段最多提 30 dB，防止把一声呼吸拉爆
+const MAX_GAIN = 30;      // 单段最多提 30 dB
+const BV_PAN = 0.5;       // 成对和声左右各 50
+const PAIR_SIM = 0.7;     // 两轨和声有声位置重合 70% 以上算一对
 
 const $ = s => document.querySelector(s);
-const list = $('#list'), box = $('#tracks'), go = $('#go'), err = $('#err'), pick = $('#pick');
-const p1 = $('#p1'), p2 = $('#p2'), cm = $('#cm');
+const box = $('#tracks'), go = $('#go'), err = $('#err'), pick = $('#pick'), B = document.body;
 const tick = () => new Promise(r => setTimeout(r, 0));
-let tracks = [], busy = false, outs = null;
-
-// 开场：CU 标画出来 → 标题 → 内容
-setTimeout(() => { document.body.classList.add('titled'); }, 1350);
-setTimeout(() => { document.body.classList.replace('drawing', 'settled'); document.body.classList.add('ready'); }, 2100);
+const dbl = d => Math.pow(10, d / 20);
+const fmtT = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const ICON_PLAY = '<svg viewBox="0 0 12 12"><path d="M2.5 1l8.5 5-8.5 5z"/></svg>', ICON_PAUSE = '<svg viewBox="0 0 12 12"><path d="M2 1h3v10H2zM7 1h3v10H7z"/></svg>';
+let tracks = [], busy = false, mixed = false;
+const off = { LV: 0, INST: 0 };
 
 // ── 命名识别 ──────────────────────────────────────────────────
 function guess(name) {
   const n = name.toLowerCase().replace(/\.[^.]+$/, '');
-  if (/(^|[^a-z])(bv|bgv|bvs|backing|back|harm|harmony|double|dbl|dub|adlib|ad[\s_-]?lib|hype|stack|oct)([^a-z]|$)|和声|叠|垫|副歌和|辅唱/.test(n)) return 'BV';
-  if (/(^|[^a-z])(inst|instrumental|beat|beats|karaoke|2trk|2mix|track ?out|伴奏)([^a-z]|$)|伴奏|^beat/.test(n)) return 'INST';
+  if (/(^|[^a-z])(bv|bgv|bvs|backing|back|harm|harmony|double|dbl|dub|adlib|ad[\s_-]?lib|hype|stack|oct)([^a-z]|$)|和声|叠|垫|辅唱/.test(n)) return 'BV';
+  if (/(^|[^a-z])(inst|instrumental|beat|beats|karaoke|2trk|2mix|伴奏)([^a-z]|$)|伴奏|^beat/.test(n)) return 'INST';
   if (/(^|[^a-z])(lv|lead|main|vox|vocal|vocals|voc|verse|hook|chorus)([^a-z]|$)|主唱|主人声|人声|主歌/.test(n)) return 'LV';
   return null;
 }
+const sideHint = name => { const n = name.replace(/\.[^.]+$/, ''); return /(^|[\s_\-(.])(l|left|左)([\s_\-).]|$)/i.test(n) ? -1 : /(^|[\s_\-(.])(r|right|右)([\s_\-).]|$)/i.test(n) ? 1 : 0; };
 
 // ── 列表 ──────────────────────────────────────────────────────
-const fmtT = s => { s = Math.round(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function add(files) {
   if (busy) return;
-  const base = tracks.length;
-  [...files].forEach((f, i) => {
-    if (tracks.some(t => t.file.name === f.name && t.file.size === f.size)) return;
-    const t = { file: f, role: guess(f.name), el: null, out: null };
+  if (mixed) unmix();
+  let k = 0;
+  for (const f of files) {
+    if (tracks.some(t => t.file.name === f.name && t.file.size === f.size)) continue;
+    const t = { file: f, role: guess(f.name), pan: 0, solo: false };
     const el = document.createElement('div');
-    el.className = 'trk'; el.style.setProperty('--k', i);
-    el.innerHTML = `<div class="th"><span class="nm"></span><button class="x" aria-label="移除">×</button></div>
-      <div class="tb"><span class="meta">读取中</span><div class="seg"><i class="th-b"></i>${ROLES.map(r => `<button data-r="${r}" aria-pressed="false">${r}</button>`).join('')}</div></div>
-      <div class="wv"></div><div class="pg"><i></i></div>`;
+    el.className = 'trk'; el.style.setProperty('--k', k++);
+    el.innerHTML = `<div class="th"><div class="seg"><i class="k"></i>${ROLES.map(r => `<button data-r="${r}" aria-pressed="false">${r}</button>`).join('')}</div>
+      <div class="nm"></div><button class="pan" title="左右互换"></button><button class="solo" aria-pressed="false" title="独奏">S</button><button class="x" aria-label="移除">×</button></div>
+      <div class="sub">读取中</div><div class="wv"></div><div class="pg"><i></i></div>`;
     el.querySelector('.nm').textContent = f.name;
-    el.querySelector('.x').onclick = e => { e.stopPropagation(); remove(t); };
-    el.querySelectorAll('.seg button').forEach(b => b.onclick = e => { e.stopPropagation(); t.role = b.dataset.r; setRole(t); reset(); check(); });
-    el.querySelector('.th').onclick = () => { if (t.out) save(t.out.blob, t.out.name); };
+    el.querySelector('.x').onclick = () => remove(t);
+    el.querySelectorAll('.seg button').forEach(b => b.onclick = () => { if (t.role === b.dataset.r) return; t.role = b.dataset.r; setRole(t); if (mixed) unmix(); });
+    el.querySelector('.solo').onclick = () => { t.solo = !t.solo; applyGains(); };
+    el.querySelector('.pan').onclick = () => swapPan(t);
     t.el = el; setRole(t); box.appendChild(el); tracks.push(t);
     probe(t);
-  });
-  list.classList.toggle('on', tracks.length > 0);
-  reset(); check();
+  }
+  sync();
 }
 function setRole(t) {
   const seg = t.el.querySelector('.seg'), n = ROLES.indexOf(t.role);
@@ -232,135 +253,259 @@ function setRole(t) {
 function remove(t) {
   if (busy) return;
   t.el.classList.add('out');
-  setTimeout(() => { t.el.remove(); tracks = tracks.filter(x => x !== t); list.classList.toggle('on', tracks.length > 0); reset(); check(); }, 380);
+  setTimeout(() => { t.el.remove(); tracks = tracks.filter(x => x !== t); sync(); }, 340);
 }
-function check() {
+function sync() {
+  B.classList.toggle('has', tracks.length > 0);
+  go.classList.toggle('hide', !tracks.length);
   go.disabled = busy || !tracks.length;
-  if (!busy && !outs) go.textContent = '处理';
+  if (!tracks.length) err.textContent = '';
 }
-function reset() {   // 改了列表或角色，之前的结果作废
-  if (!outs) return;
-  outs = null; go.classList.remove('ok'); cm.classList.remove('ok'); prog(0, 0);
-  tracks.forEach(t => { t.out = null; t.el.classList.remove('done', 'dl'); t.el.querySelector('.pg i').style.width = '0'; t.el.querySelector('.wv').classList.remove('on'); probe(t, true); });
-}
-async function probe(t, quick) {   // 只读文件头，显示时长/采样率
-  const m = t.el.querySelector('.meta');
-  if (quick && t.info) { m.className = 'meta'; m.textContent = t.info; return; }
+async function probe(t) {
+  const m = t.el.querySelector('.sub');
   try {
     const h = parseHeader(await t.file.slice(0, 1 << 16).arrayBuffer(), t.file.size);
-    t.info = h ? `${fmtT(h.frames / h.sr)} · ${Math.round(h.sr / 100) / 10}k · ${h.bits}bit · ${h.ch === 1 ? 'Mono' : h.ch === 2 ? 'Stereo' : h.ch + 'ch'}` : '—';
+    t.info = h ? `${fmtT(h.frames / h.sr)} · ${Math.round(h.sr / 100) / 10}k · ${h.ch === 1 ? 'Mono' : h.ch === 2 ? 'Stereo' : h.ch + 'ch'}` : '—';
   } catch { t.info = '—'; }
-  m.className = 'meta'; m.textContent = t.info;
+  m.className = 'sub'; m.textContent = t.info;
 }
-
-// 选择 / 拖入
 pick.onchange = () => { add(pick.files); pick.value = ''; };
 let dragN = 0;
-addEventListener('dragenter', e => { if (e.dataTransfer?.types?.includes('Files')) { dragN++; document.body.classList.add('dragging'); } });
-addEventListener('dragleave', () => { if (--dragN <= 0) { dragN = 0; document.body.classList.remove('dragging'); } });
+addEventListener('dragenter', e => { if (e.dataTransfer?.types?.includes('Files')) { dragN++; B.classList.add('dragging'); } });
+addEventListener('dragleave', () => { if (--dragN <= 0) { dragN = 0; B.classList.remove('dragging'); } });
 addEventListener('dragover', e => e.preventDefault());
-addEventListener('drop', e => { e.preventDefault(); dragN = 0; document.body.classList.remove('dragging'); if (e.dataTransfer.files.length) add(e.dataTransfer.files); });
-
-// ── 进度：外圈总进度，内圈当前这一轨 ───────────────────────────────
-function prog(all, cur) { p1.style.strokeDashoffset = 1.06 - 1.06 * all; p2.style.strokeDashoffset = 1.06 - 1.06 * cur; }
+addEventListener('drop', e => { e.preventDefault(); dragN = 0; B.classList.remove('dragging'); if (e.dataTransfer.files.length) add(e.dataTransfer.files); });
 
 // ── 处理 ──────────────────────────────────────────────────────
+const goTxt = go.querySelector('span'), goBar = go.querySelector('.bar');
 go.onclick = async () => {
-  if (outs) return saveAll();
   const miss = tracks.filter(t => !t.role);
-  if (miss.length) {
-    miss.forEach(t => t.el.querySelector('.seg').classList.add('need'));
-    err.textContent = `${miss.length} 轨未标记 LV / BV / INST`;
-    return;
-  }
-  err.textContent = ''; busy = true; document.body.classList.add('busy'); go.disabled = true; go.textContent = '处理中';
-  const done = [];
+  if (miss.length) { miss.forEach(t => t.el.querySelector('.seg').classList.add('need')); err.textContent = `${miss.length} 轨未标记 LV / BV / INST`; return; }
+  err.textContent = ''; busy = true; B.classList.add('busy'); go.classList.add('run'); goTxt.textContent = '处理中';
   for (let i = 0; i < tracks.length; i++) {
-    const t = tracks[i], m = t.el.querySelector('.meta'), bar = t.el.querySelector('.pg i');
-    const step = f => { bar.style.width = (f * 100) + '%'; prog((i + f) / tracks.length, f); };
-    step(0.02);
+    const t = tracks[i], m = t.el.querySelector('.sub'), bar = t.el.querySelector('.pg i');
+    t.el.classList.remove('done'); t.res = null;
+    const step = f => { bar.style.width = (f * 100) + '%'; goBar.style.width = ((i + f) / tracks.length * 100) + '%'; };
+    step(.02);
     try {
-      const au = await decode(t.file); step(0.2);
-      const r = await level(au, t.role, f => step(0.2 + f * 0.65));
-      const pk = peaks(r.data, 720), blob = encodeWav(r.data, au.sr); r.data = null; step(1);
-      t.out = { blob, name: outName(t.file.name, t.role), sr: au.sr, ch: au.ch, dur: au.n / au.sr };
-      const risky = (r.cuts || []).filter(c => c.risk).length;
-      m.className = 'meta res';
-      m.innerHTML = `<b>${r.lufs.toFixed(1)} LUFS</b>` + (t.role !== 'INST' ? ` · ${r.segs} 段 · 断点 ${r.cuts.length}` : '')
-        + (risky ? ` · <i>${risky} 处待听</i>` : '') + (r.limited ? ` · <i>${t.role === 'INST' ? '限峰' : r.limited + ' 段限峰'}</i>` : '');
-      wave(t, pk, r);
-      t.el.classList.add('done', 'dl');
-      done.push(t);
+      const au = await decode(t.file); step(.2);
+      const r = await level(au, t.role, f => step(.2 + f * .75));
+      t.res = { data: r.data, sr: au.sr, ch: au.ch, n: au.n, dur: au.n / au.sr, cuts: r.cuts || [], segsAt: r.segsAt || [], segs: r.segs };
+      t.pk = peaks(r.data, 720);
+      const risky = t.res.cuts.filter(c => c.risk).length;
+      m.className = 'sub res';
+      m.innerHTML = t.role === 'INST' ? fmtT(t.res.dur) : `${r.segs} 段` + (risky ? ` · <i>${risky} 处待听</i>` : '');
+      step(1); t.el.classList.add('done');
     } catch (e) {
       console.error(e);
-      m.className = 'meta bad'; m.textContent = e.message === 'fmt' ? '格式不支持，请导出 WAV' : '读取失败';
+      m.className = 'sub bad'; m.textContent = e.message === 'fmt' ? '格式不支持，请导出 WAV' : e.message === 'silent' ? '没有声音' : '读取失败';
       bar.style.width = '0';
     }
     await tick();
   }
-  busy = false; document.body.classList.remove('busy');
-  prog(1, 1);
-  if (done.length) {
-    outs = done; cm.classList.add('ok');
-    const mk = $('#mark'); mk.classList.add('pop'); setTimeout(() => mk.classList.remove('pop'), 500);
-    go.disabled = false; go.classList.add('ok'); go.textContent = done.length > 1 ? `下载全部 · ${done.length} 轨` : '下载';
-  } else { prog(0, 0); check(); err.textContent = '没有可处理的分轨'; }
+  busy = false; B.classList.remove('busy'); go.classList.remove('run'); goBar.style.width = '0'; goTxt.textContent = '处理';
+  const ok = tracks.filter(t => t.res);
+  if (!ok.length) { err.textContent = '没有可处理的分轨'; sync(); return; }
+  pairBV(ok);
+  ok.forEach(t => wave(t));
+  mix(ok);
 };
-const outName = (n, role) => { const b = n.replace(/\.[^.]+$/, ''); return (new RegExp('^' + role + '[_ -]', 'i').test(b) ? b : role + '_' + b) + '.wav'; };
-function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); }
-async function saveAll() {
-  if (outs.length === 1) return save(outs[0].blob, outs[0].name);
-  go.disabled = true; go.textContent = '打包中';
-  try { save(await zip(outs.map(t => t.out)), 'Auto Level.zip'); } finally { go.disabled = false; go.textContent = `下载全部 · ${outs.length} 轨`; }
+
+// ── 和声配对：有声位置几乎一样的两轨 = 叠唱，左右各 50 ─────────────────
+function activity(t) {
+  const { data, sr, n } = t.res, w = Math.round(sr * .05), nw = Math.ceil(n / w), a = new Uint8Array(nw), thr = dbl(-50);
+  for (let k = 0; k < nw; k++) { let p = 0; for (const d of data) for (let i = k * w, e = Math.min(n, i + w); i < e; i += 2) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > p) p = v; } a[k] = p > thr ? 1 : 0; }
+  return a;
+}
+function pairBV(list) {
+  list.forEach(t => t.pan = 0);
+  const bv = list.filter(t => t.role === 'BV'); if (bv.length < 2) return;
+  const acts = bv.map(activity), cand = [];
+  for (let i = 0; i < bv.length; i++) for (let j = i + 1; j < bv.length; j++) {
+    const a = acts[i], b = acts[j], n = Math.min(a.length, b.length); let both = 0, any = 0;
+    for (let k = 0; k < n; k++) { both += a[k] & b[k]; any += a[k] | b[k]; }
+    for (let k = n; k < Math.max(a.length, b.length); k++) any += (a[k] || 0) | (b[k] || 0);
+    const sim = any ? both / any : 0; if (sim >= PAIR_SIM) cand.push([sim, i, j]);
+  }
+  cand.sort((x, y) => y[0] - x[0]);
+  const used = new Set();
+  for (const [, i, j] of cand) {
+    if (used.has(i) || used.has(j)) continue; used.add(i); used.add(j);
+    const A = bv[i], Bt = bv[j], hA = sideHint(A.file.name), hB = sideHint(Bt.file.name);
+    const aLeft = hA ? hA < 0 : hB ? hB > 0 : true;
+    A.pan = aLeft ? -BV_PAN : BV_PAN; Bt.pan = -A.pan; A.mate = Bt; Bt.mate = A;
+  }
+}
+function swapPan(t) { if (!t.mate) return; t.pan = -t.pan; t.mate.pan = -t.mate.pan; showPan(t); showPan(t.mate); applyGains(); }
+function showPan(t) { const p = t.el.querySelector('.pan'); p.classList.toggle('on', !!t.pan); p.textContent = t.pan < 0 ? 'L' : t.pan > 0 ? 'R' : ''; }
+// 声像：-3 dB 补偿声像律（和 Logic 默认一样，居中 = 原音量）
+function panGains(p, ch) {
+  const th = (p + 1) * Math.PI / 4, l = Math.SQRT2 * Math.cos(th), r = Math.SQRT2 * Math.sin(th);
+  return ch === 1 ? [l, r] : [Math.min(1, l), Math.min(1, r)];
+}
+const roleGain = t => dbl(off[t.role] || 0);
+
+// ── 试听：所有轨一起播；断点上点一下只播这一轨前后 1.5 秒 ──────────────
+let ctx = null, master = null, playing = null, dur = 0, raf = 0;
+function ensureCtx() {
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const lim = ctx.createDynamicsCompressor();   // 只防爆，不当效果器用
+  lim.threshold.value = -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .1;
+  master = ctx.createGain(); master.connect(lim); lim.connect(ctx.destination);
+}
+function graph(t) {
+  if (t.g) return;
+  const r = t.res, buf = ctx.createBuffer(r.ch, r.n, r.sr);
+  for (let c = 0; c < r.ch; c++) buf.copyToChannel(r.data[c], c);
+  const vol = ctx.createGain(), gl = ctx.createGain(), gr = ctx.createGain(), mg = ctx.createChannelMerger(2);
+  gl.connect(mg, 0, 0); gr.connect(mg, 0, 1); mg.connect(vol); vol.connect(master);
+  let split = null; if (r.ch > 1) { split = ctx.createChannelSplitter(r.ch); split.connect(gl, 0); split.connect(gr, 1); }
+  t.g = { buf, vol, gl, gr, split };
+}
+function applyGains() {
+  const any = tracks.some(t => t.res && t.solo);
+  for (const t of tracks) {
+    if (!t.res) continue;
+    t.el.querySelector('.solo').setAttribute('aria-pressed', t.solo);
+    t.el.classList.toggle('soloed', t.solo); t.el.classList.toggle('muted', any && !t.solo);
+    showPan(t);
+    if (!t.g) continue;
+    const [l, r] = panGains(t.pan, t.res.ch), now = ctx.currentTime;
+    t.g.gl.gain.setTargetAtTime(l, now, .015); t.g.gr.gain.setTargetAtTime(r, now, .015);
+    t.g.vol.gain.setTargetAtTime(any && !t.solo ? 0 : roleGain(t), now, .02);
+  }
+}
+async function play(from, only, len) {
+  stop();
+  ensureCtx(); await ctx.resume();
+  const list = (only ? [only] : tracks.filter(t => t.res));
+  list.forEach(graph); applyGains();
+  if (only) { const any = tracks.some(t => t.res && t.solo); if (any && !only.solo) only.g.vol.gain.value = roleGain(only); }
+  const t0 = ctx.currentTime + .04, srcs = [];
+  for (const t of list) {
+    if (from >= t.res.dur) continue;
+    const s = ctx.createBufferSource(); s.buffer = t.g.buf;
+    if (t.g.split) s.connect(t.g.split); else { s.connect(t.g.gl); s.connect(t.g.gr); }
+    s.start(t0, from, len || undefined); srcs.push(s);
+  }
+  playing = { srcs, t0, from, only, end: len ? from + len : dur };
+  B.classList.add('playing'); (only ? only.el : B).classList.add('playing');
+  $('#play').innerHTML = ICON_PAUSE;
+  const loop = () => {
+    if (!playing) return;
+    const p = playing.from + (ctx.currentTime - playing.t0);
+    if (p >= playing.end) { const was = playing; stop(); if (!was.only) seekTo(0); return; }
+    setHead(Math.max(playing.from, p), playing.only);
+    raf = requestAnimationFrame(loop);
+  };
+  loop();
+}
+let pos = 0;
+function stop() {
+  if (!playing) return;
+  const p = playing; playing = null; cancelAnimationFrame(raf);
+  p.srcs.forEach(s => { try { s.stop(); } catch {} });
+  if (!p.only) pos = Math.min(dur, p.from + (ctx.currentTime - p.t0));
+  B.classList.remove('playing'); tracks.forEach(t => t.el.classList.remove('playing'));
+  if (p.only) { applyGains(); setHead(pos); }
+  $('#play').innerHTML = ICON_PLAY;
+}
+function setHead(p, only) {
+  if (!only) { pos = p; $('#ov .ph').style.left = (p / dur * 100) + '%'; $('#tm').textContent = fmtT(p) + ' / ' + fmtT(dur); }
+  for (const t of only ? [only] : tracks) if (t.res) { const h = t.el.querySelector('.wv .ph'); if (h) h.style.left = Math.min(100, p / t.res.dur * 100) + '%'; }
+}
+function seekTo(p) { const was = playing && !playing.only; stop(); pos = Math.max(0, Math.min(dur, p)); setHead(pos); if (was) play(pos); }
+$('#play').onclick = () => { if (playing && !playing.only) stop(); else play(pos >= dur - .05 ? 0 : pos); };
+addEventListener('keydown', e => { if (e.code === 'Space' && mixed && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); $('#play').click(); } });
+{ const ov = $('#ov'); let drag = false;
+  const at = e => { const r = ov.getBoundingClientRect(); return (e.clientX - r.left) / r.width * dur; };
+  ov.onpointerdown = e => { drag = true; ov.setPointerCapture(e.pointerId); setHead(at(e)); };
+  ov.onpointermove = e => { if (drag) setHead(Math.max(0, Math.min(dur, at(e)))); };
+  ov.onpointerup = e => { if (!drag) return; drag = false; seekTo(at(e)); };
 }
 
+// ── 主人声 / 伴奏 ±3 dB ──────────────────────────────────────────
+for (const role of ['LV', 'INST']) {
+  const f = $('#f' + role), v = $('#v' + role);
+  const upd = () => { off[role] = +f.value; f.style.setProperty('--p', ((+f.value + 3) / 6 * 100) + '%'); v.textContent = off[role] > 0 ? '+' + off[role] : String(off[role]); v.classList.toggle('z', !off[role]); if (ctx) applyGains(); };
+  f.oninput = upd; f.ondblclick = () => { f.value = 0; upd(); }; upd();
+}
 
-// ── 波形 + 断点：处理完每轨画出来，断点竖线，待听的琥珀色；点断点试听前后 1.5 秒，点别处从那里播 ──
+// ── 进入 / 退出 试听状态 ─────────────────────────────────────────
+function mix(list) {
+  mixed = true; dur = Math.max(...list.map(t => t.res.dur)); pos = 0;
+  B.classList.add('mix'); $('#play').innerHTML = ICON_PLAY;
+  applyGainsUI(); drawOverview(list); setHead(0);
+}
+function applyGainsUI() { for (const t of tracks) if (t.res) { showPan(t); t.el.querySelector('.solo').setAttribute('aria-pressed', t.solo); } if (ctx) applyGains(); }
+function unmix() {
+  stop(); mixed = false; B.classList.remove('mix');
+  for (const t of tracks) { t.res = null; t.g = null; t.pk = null; t.mate = null; t.pan = 0; t.solo = false; t.el.classList.remove('done', 'soloed', 'muted');
+    t.el.querySelector('.pg i').style.width = '0'; const w = t.el.querySelector('.wv'); w.classList.remove('on'); setTimeout(() => { if (!t.res) w.innerHTML = ''; }, 500);
+    const m = t.el.querySelector('.sub'); m.className = 'sub'; m.textContent = t.info || ''; }
+}
+
+// ── 波形 ──────────────────────────────────────────────────────
 function peaks(data, N) {
   const n = data[0].length, out = new Float32Array(N), step = n / N;
   for (let k = 0; k < N; k++) { const a = Math.floor(k * step), b = Math.min(n, Math.floor((k + 1) * step)); let p = 0; for (const d of data) for (let i = a; i < b; i += 4) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > p) p = v; } out[k] = p; }
   return out;
 }
-function wave(t, pk, r) {
-  const box = t.el.querySelector('.wv'), dur = t.out.dur;
-  box.innerHTML = '<canvas></canvas><div class="ph"></div>' + (r.cuts || []).map((c, i) =>
-    `<button class="ct ${c.kind}${c.risk ? ' risk' : ''}" style="left:${c.t / dur * 100}%" data-i="${i}" title="${fmtT(c.t)}${c.why ? ' · ' + c.why : ''}"></button>`).join('');
-  t.cuts = r.cuts || []; t.segsAt = r.segsAt || []; t.pk = pk;
-  draw(t);
-  requestAnimationFrame(() => box.classList.add('on'));
-  box.querySelectorAll('.ct').forEach(b => b.onclick = e => { e.stopPropagation(); const c = t.cuts[+b.dataset.i]; audition(t, Math.max(0, c.t - 1.5), 3, c.t, b); });
-  box.onclick = e => { const rc = box.getBoundingClientRect(), x = (e.clientX - rc.left) / rc.width; audition(t, x * dur, 4); };
-}
-function draw(t) {
-  const cv = t.el.querySelector('.wv canvas'); if (!cv) return;
-  const W = cv.clientWidth || t.el.clientWidth - 32, H = 44, dpr = devicePixelRatio || 1, pk = t.pk, dur = t.out.dur;
+function paint(cv, pk, H, segsAt, d, color) {
+  const W = cv.clientWidth || cv.parentNode.clientWidth, dpr = devicePixelRatio || 1;
   cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr);
   let mx = 1e-9; for (const v of pk) if (v > mx) mx = v;
-  // 段落底色：正常段淡绿，碎片灰
-  for (const [a, b, frag] of t.segsAt) { g.fillStyle = frag ? 'rgba(255,255,255,.05)' : 'rgba(47,174,122,.10)'; g.fillRect(a / dur * W, 0, Math.max(1, (b - a) / dur * W), H); }
-  const bw = W / pk.length; g.fillStyle = 'rgba(240,240,240,.55)';
+  if (segsAt) for (const [a, b, frag] of segsAt) { g.fillStyle = frag ? 'rgba(255,255,255,.04)' : 'rgba(47,174,122,.10)'; g.fillRect(a / d * W, 0, Math.max(1, (b - a) / d * W), H); }
+  const bw = W / pk.length; g.fillStyle = color;
   for (let k = 0; k < pk.length; k++) { const h = Math.max(1, pk[k] / mx * (H - 4)); g.fillRect(k * bw, (H - h) / 2, Math.max(1, bw - .4), h); }
 }
-addEventListener('resize', () => tracks.forEach(t => t.out && draw(t)));
-let actx = null, cur = null;
-async function audition(t, from, len, mark, btn) {
-  if (cur) { try { cur.src.stop(); } catch {} cur.done(); cur = null; }
-  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-  await actx.resume();
-  const { sr, ch, blob, dur } = t.out, fb = ch * 3, a = Math.floor(Math.max(0, from) * sr), b = Math.min(Math.floor(dur * sr), a + Math.floor(len * sr));
-  const u = new Uint8Array(await blob.slice(44 + a * fb, 44 + b * fb).arrayBuffer()), n = b - a;
-  const ab = actx.createBuffer(ch, n, sr);
-  for (let c = 0; c < ch; c++) { const d = ab.getChannelData(c); for (let i = 0, o = c * 3; i < n; i++, o += fb) { let s = u[o] | (u[o + 1] << 8) | (u[o + 2] << 16); if (s & 0x800000) s -= 0x1000000; d[i] = s / 8388608; } }
-  const src = actx.createBufferSource(); src.buffer = ab; src.connect(actx.destination);
-  const ph = t.el.querySelector('.wv .ph'), t0 = actx.currentTime + .02; let raf;
-  ph.classList.add('on'); btn && btn.classList.add('play');
-  const loop = () => { const p = from + (actx.currentTime - t0); ph.style.left = Math.min(100, Math.max(0, p / dur * 100)) + '%'; raf = requestAnimationFrame(loop); };
-  const done = () => { cancelAnimationFrame(raf); ph.classList.remove('on'); btn && btn.classList.remove('play'); };
-  src.onended = () => { if (cur && cur.src === src) { done(); cur = null; } };
-  src.start(t0); loop(); cur = { src, done };
+function wave(t) {
+  const box = t.el.querySelector('.wv'), d = t.res.dur;
+  box.innerHTML = '<canvas></canvas><i class="ph"></i>' + t.res.cuts.map((c, i) =>
+    `<button class="ct ${c.kind}${c.risk ? ' risk' : ''}" style="left:${c.t / d * 100}%" data-i="${i}" title="${fmtT(c.t)}${c.why ? ' · ' + c.why : ''}"></button>`).join('');
+  box.classList.add('on');
+  requestAnimationFrame(() => paint(box.querySelector('canvas'), t.pk, 40, t.res.segsAt, d, 'rgba(240,240,240,.5)'));
+  box.querySelectorAll('.ct').forEach(b => b.onclick = e => { e.stopPropagation(); const c = t.res.cuts[+b.dataset.i]; play(Math.max(0, c.t - 1.5), t, 3); });
+  box.onclick = e => { const r = box.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * d); if (!playing) play(pos); };
+}
+function drawOverview(list) {
+  const N = 720, sum = new Float32Array(N);
+  for (const t of list) { const k = t.res.dur / dur; for (let i = 0; i < N; i++) { const j = Math.floor(i / k); if (j < t.pk.length) sum[i] = Math.max(sum[i], t.pk[j]); } }
+  paint($('#ov canvas'), sum, 34, null, dur, 'rgba(240,240,240,.38)');
+}
+addEventListener('resize', () => { if (!mixed) return; const list = tracks.filter(t => t.res); list.forEach(t => paint(t.el.querySelector('.wv canvas'), t.pk, 40, t.res.segsAt, t.res.dur, 'rgba(240,240,240,.5)')); drawOverview(list); });
+
+// ── 导出：把 ±3 dB 和声像写进文件（有声像的变立体声），32-bit float 不怕削波 ──
+const outName = (n, role) => { const b = n.replace(/\.[^.]+$/, ''); return (new RegExp('^' + role + '[_ -]', 'i').test(b) ? b : role + '_' + b) + '.wav'; };
+function render(t) {
+  const r = t.res, g = roleGain(t);
+  if (!t.pan) return encodeWav(r.data.map(d => g === 1 ? d : d.map(x => x * g)), r.sr);
+  const [l, rr] = panGains(t.pan, r.ch), L = r.data[0], R = r.data[r.ch > 1 ? 1 : 0];
+  return encodeWav([L.map(x => x * l * g), R.map(x => x * rr * g)], r.sr);
+}
+function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); }
+$('#dl').onclick = async () => {
+  const list = tracks.filter(t => t.res), btn = $('#dl'); if (!list.length) return;
+  btn.disabled = true; btn.textContent = '打包中';
+  try {
+    const files = []; for (const t of list) { files.push({ blob: render(t), name: outName(t.file.name, t.role) }); await tick(); }
+    if (files.length === 1) save(files[0].blob, files[0].name); else save(await zip(files), 'Auto Level.zip');
+  } finally { btn.disabled = false; btn.textContent = '下载'; }
+};
+
+function encodeWav(data, sr) {   // 32-bit float WAV（fmt 18 字节 + fact）
+  const ch = data.length, n = data[0].length, bytes = n * ch * 4, H = 58, buf = new ArrayBuffer(H + bytes), v = new DataView(buf), u = new Uint8Array(buf);
+  const str = (o, s) => { for (let i = 0; i < 4; i++) u[o + i] = s.charCodeAt(i); };
+  str(0, 'RIFF'); v.setUint32(4, H - 8 + bytes, true); str(8, 'WAVE');
+  str(12, 'fmt '); v.setUint32(16, 18, true); v.setUint16(20, 3, true); v.setUint16(22, ch, true); v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 4, true); v.setUint16(32, ch * 4, true); v.setUint16(34, 32, true); v.setUint16(36, 0, true);
+  str(38, 'fact'); v.setUint32(42, 4, true); v.setUint32(46, n, true);
+  str(50, 'data'); v.setUint32(54, bytes, true);
+  for (let i = 0, o = H; i < n; i++) for (let c = 0; c < ch; c++, o += 4) v.setFloat32(o, data[c][i], true);
+  return new Blob([buf], { type: 'audio/wav' });
 }
 
-// ── 核心：切段 → 每段算 LUFS → 增益 → 限峰 ─────────────────────────
+// ── 核心：切段 → 每段算 LUFS → 增益 → 限峰（和混音助理 SOP 步骤 2 + 8 同一套） ──
 function biquad(type, fc, G, Q, fs) {
   const A = Math.pow(10, G / 40), w = 2 * Math.PI * fc / fs, c = Math.cos(w), al = Math.sin(w) / (2 * Q), sA = 2 * Math.sqrt(A) * al;
   let b0, b1, b2, a0, a1, a2;
@@ -556,21 +701,6 @@ async function decode(file) {
     const ab = await ctx.decodeAudioData(await file.arrayBuffer());
     return { sr: ab.sampleRate, ch: ab.numberOfChannels, n: ab.length, data: Array.from({ length: ab.numberOfChannels }, (_, i) => ab.getChannelData(i)) };
   } catch { throw new Error('fmt'); } finally { ctx.close?.(); }
-}
-
-// ── 写 24-bit WAV ────────────────────────────────────────────
-function encodeWav(data, sr) {
-  const ch = data.length, n = data[0].length, bytes = n * ch * 3, buf = new ArrayBuffer(44 + bytes), v = new DataView(buf), u = new Uint8Array(buf);
-  const str = (o, s) => { for (let i = 0; i < 4; i++) u[o + i] = s.charCodeAt(i); };
-  str(0, 'RIFF'); v.setUint32(4, 36 + bytes, true); str(8, 'WAVE'); str(12, 'fmt '); v.setUint32(16, 16, true);
-  v.setUint16(20, 1, true); v.setUint16(22, ch, true); v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 3, true); v.setUint16(32, ch * 3, true); v.setUint16(34, 24, true);
-  str(36, 'data'); v.setUint32(40, bytes, true);
-  for (let i = 0, o = 44; i < n; i++) for (let c = 0; c < ch; c++, o += 3) {
-    let x = data[c][i]; x = x > 1 ? 1 : x < -1 ? -1 : x;
-    let s = Math.round(x * 8388607); if (s < 0) s += 0x1000000;
-    u[o] = s & 255; u[o + 1] = (s >> 8) & 255; u[o + 2] = (s >> 16) & 255;
-  }
-  return new Blob([buf], { type: 'audio/wav' });
 }
 
 // ── zip（不压缩，WAV 压不了多少） ───────────────────────────────
