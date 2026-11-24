@@ -772,7 +772,13 @@ function exportNames(list) {
   const used = new Set();
   return sorted.map((t, i) => {
     let core = t.clean.replace(new RegExp('^\\s*(' + t.role + '|lv|bv|inst)\\b', 'i'), ' ').replace(/\s+/g, ' ').trim();
-    let nm = `${String(i + 1).padStart(2, '0')}_${t.role}` + (core ? '_' + safe(core) : '');
+    // 伴奏文件名带上测出来的 BPM 和调性（名字里原本写的调性 / BPM 先去掉，避免重复）：05_INST_Beat_92BPM_Am.wav
+    let tail = '';
+    if (t.role === 'INST' && song.bpm) {
+      core = core.replace(/(^|\s)([A-G](#|b)?m?|[A-G](#|b)?\s?(major|minor|maj|min)|\d{2,3}\s?bpm)(?=\s|$)/gi, ' ').replace(/\s+/g, ' ').trim();
+      tail = `_${Math.round(song.bpm * (song.mul || 1))}BPM` + (song.key ? '_' + song.key.short : '');
+    }
+    let nm = `${String(i + 1).padStart(2, '0')}_${t.role}` + (core ? '_' + safe(core) : '') + tail;
     while (used.has(nm)) nm += '_b'; used.add(nm);
     return { t, name: nm + '.wav' };
   });
