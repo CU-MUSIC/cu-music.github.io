@@ -112,8 +112,6 @@ main{max-width:520px;margin:0 auto}
 .pg{position:absolute;left:16px;right:16px;bottom:0;height:2px;border-radius:2px;background:transparent;overflow:hidden}
 .pg i{display:block;height:100%;width:0;background:var(--text);transition:width .3s var(--ease),background .4s}
 .trk.done .pg i{background:#2fae7a;opacity:0;transition:opacity .8s var(--ease) .4s}
-.trk.dl{cursor:pointer}
-.trk.dl:hover{background:var(--lift)}
 
 .go{display:block;width:100%;margin-top:16px;height:52px;border-radius:var(--r);background:var(--cta-bg);color:var(--cta-fg);font-size:16px;font-weight:600;letter-spacing:.02em;transition:transform .15s var(--ease),opacity .4s var(--ease),background .3s,color .3s}
 .go:active{transform:scale(.985)}
@@ -123,6 +121,22 @@ main{max-width:520px;margin:0 auto}
 .foot{margin-top:28px;text-align:center;font:500 11px/1.8 var(--mono);letter-spacing:.14em;color:var(--text-3)}
 .foot b{font-weight:500;color:var(--text-2)}
 
+/* 波形 + 断点 */
+.wv{position:relative;height:0;margin-top:0;opacity:0;cursor:pointer;transition:height .5s var(--ease),margin-top .5s var(--ease),opacity .6s var(--ease) .1s}
+.wv.on{height:44px;margin-top:12px;opacity:1}
+.wv canvas{display:block;width:100%;height:100%;border-radius:6px}
+.wv .ph{position:absolute;top:-3px;bottom:-3px;width:1.5px;margin-left:-.75px;background:var(--text);opacity:0;transition:opacity .2s;pointer-events:none}
+.wv .ph.on{opacity:1}
+.ct{position:absolute;top:-4px;bottom:-4px;width:15px;margin-left:-7.5px;padding:0;z-index:2}
+.ct::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:1px;background:rgba(143,195,169,.55)}
+.ct.frag::before{top:14px;bottom:14px}
+.ct.join::before{background:none;border-left:1px dashed rgba(143,195,169,.7)}
+.ct::after{content:"";position:absolute;left:5px;top:0;width:5px;height:5px;border-radius:50%;background:var(--green-soft);opacity:0;transform:scale(.4);transition:opacity .2s,transform .3s var(--spring)}
+.ct:hover::after,.ct.play::after{opacity:1;transform:none}
+.ct.risk::before{background:var(--amber);width:1.5px}
+.ct.risk::after{background:var(--amber);opacity:1;transform:none;box-shadow:0 0 0 3px rgba(217,179,108,.2)}
+.trk.dl .th{cursor:pointer}
+.trk.dl .th:hover .nm{color:var(--green-soft)}
 #dropzone{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(8,8,8,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
 #dropzone::before{content:"";position:absolute;inset:16px;border:1px dashed var(--green-line);border-radius:24px}
 #dropzone p{font-size:15px;color:var(--text-2);letter-spacing:.02em}
@@ -158,10 +172,12 @@ main{max-width:520px;margin:0 auto}
 // ── 参数（和 SOP 对齐；改这里即可） ──────────────────────────────
 const TARGET = { LV: -23, BV: -23, INST: -26 };   // 伴奏比人声低 3 dB
 const ROLES = ['LV', 'BV', 'INST'];
-const GATE_DB = -50;      // 低于这个电平算无声（Logic 的 -80 是给录音棚底噪用的，家录底噪高，用 -50 才切得开）
+const GATE_DB = -50;      // 有声门限的中心值：实际 = 底噪 + 15 dB，夹在 -60…-40（Logic 的 -80 是给棚里底噪用的，家录切不开）
 const MIN_GAP = 0.5;      // 无声超过 0.5 秒才切开
-const PAD = 0.1;          // 每段前后各留 0.1 秒（Attack / Decay）
-const FADE = 0.005;       // 段落边缘 5ms 淡入淡出，防爆音
+const PAD_SAFE = 0.05;    // 尾音真正收干净之后再多留 50ms
+const MIN_PHRASE = 0.35;  // 有声不到 0.35 秒算碎片（呼吸、喷麦、咔哒），不单独拉响度
+const FADE = 0.01;        // 静音断点 10ms 淡入淡出
+const RAMP = 0.02;        // 连接点前后各 20ms 增益渐变
 const CEIL = Math.pow(10, -1 / 20);   // 限峰 -1 dBFS
 const MAX_GAIN = 30;      // 单段最多提 30 dB，防止把一声呼吸拉爆
 
@@ -196,11 +212,11 @@ function add(files) {
     el.className = 'trk'; el.style.setProperty('--k', i);
     el.innerHTML = `<div class="th"><span class="nm"></span><button class="x" aria-label="移除">×</button></div>
       <div class="tb"><span class="meta">读取中</span><div class="seg"><i class="th-b"></i>${ROLES.map(r => `<button data-r="${r}" aria-pressed="false">${r}</button>`).join('')}</div></div>
-      <div class="pg"><i></i></div>`;
+      <div class="wv"></div><div class="pg"><i></i></div>`;
     el.querySelector('.nm').textContent = f.name;
     el.querySelector('.x').onclick = e => { e.stopPropagation(); remove(t); };
     el.querySelectorAll('.seg button').forEach(b => b.onclick = e => { e.stopPropagation(); t.role = b.dataset.r; setRole(t); reset(); check(); });
-    el.onclick = () => { if (t.out) save(t.out.blob, t.out.name); };
+    el.querySelector('.th').onclick = () => { if (t.out) save(t.out.blob, t.out.name); };
     t.el = el; setRole(t); box.appendChild(el); tracks.push(t);
     probe(t);
   });
@@ -225,7 +241,7 @@ function check() {
 function reset() {   // 改了列表或角色，之前的结果作废
   if (!outs) return;
   outs = null; go.classList.remove('ok'); cm.classList.remove('ok'); prog(0, 0);
-  tracks.forEach(t => { t.out = null; t.el.classList.remove('done', 'dl'); t.el.querySelector('.pg i').style.width = '0'; probe(t, true); });
+  tracks.forEach(t => { t.out = null; t.el.classList.remove('done', 'dl'); t.el.querySelector('.pg i').style.width = '0'; t.el.querySelector('.wv').classList.remove('on'); probe(t, true); });
 }
 async function probe(t, quick) {   // 只读文件头，显示时长/采样率
   const m = t.el.querySelector('.meta');
@@ -266,10 +282,13 @@ go.onclick = async () => {
     try {
       const au = await decode(t.file); step(0.2);
       const r = await level(au, t.role, f => step(0.2 + f * 0.65));
-      const blob = encodeWav(r.data, au.sr); step(1);
-      t.out = { blob, name: outName(t.file.name, t.role) };
+      const pk = peaks(r.data, 720), blob = encodeWav(r.data, au.sr); r.data = null; step(1);
+      t.out = { blob, name: outName(t.file.name, t.role), sr: au.sr, ch: au.ch, dur: au.n / au.sr };
+      const risky = (r.cuts || []).filter(c => c.risk).length;
       m.className = 'meta res';
-      m.innerHTML = `<b>${r.lufs.toFixed(1)} LUFS</b>` + (t.role !== 'INST' ? ` · ${r.segs} 段` : '') + (r.limited ? ` · <i>${t.role === 'INST' ? '限峰' : r.limited + ' 段限峰'}</i>` : '');
+      m.innerHTML = `<b>${r.lufs.toFixed(1)} LUFS</b>` + (t.role !== 'INST' ? ` · ${r.segs} 段 · 断点 ${r.cuts.length}` : '')
+        + (risky ? ` · <i>${risky} 处待听</i>` : '') + (r.limited ? ` · <i>${t.role === 'INST' ? '限峰' : r.limited + ' 段限峰'}</i>` : '');
+      wave(t, pk, r);
       t.el.classList.add('done', 'dl');
       done.push(t);
     } catch (e) {
@@ -293,6 +312,52 @@ async function saveAll() {
   if (outs.length === 1) return save(outs[0].blob, outs[0].name);
   go.disabled = true; go.textContent = '打包中';
   try { save(await zip(outs.map(t => t.out)), 'Auto Level.zip'); } finally { go.disabled = false; go.textContent = `下载全部 · ${outs.length} 轨`; }
+}
+
+
+// ── 波形 + 断点：处理完每轨画出来，断点竖线，待听的琥珀色；点断点试听前后 1.5 秒，点别处从那里播 ──
+function peaks(data, N) {
+  const n = data[0].length, out = new Float32Array(N), step = n / N;
+  for (let k = 0; k < N; k++) { const a = Math.floor(k * step), b = Math.min(n, Math.floor((k + 1) * step)); let p = 0; for (const d of data) for (let i = a; i < b; i += 4) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > p) p = v; } out[k] = p; }
+  return out;
+}
+function wave(t, pk, r) {
+  const box = t.el.querySelector('.wv'), dur = t.out.dur;
+  box.innerHTML = '<canvas></canvas><div class="ph"></div>' + (r.cuts || []).map((c, i) =>
+    `<button class="ct ${c.kind}${c.risk ? ' risk' : ''}" style="left:${c.t / dur * 100}%" data-i="${i}" title="${fmtT(c.t)}${c.why ? ' · ' + c.why : ''}"></button>`).join('');
+  t.cuts = r.cuts || []; t.segsAt = r.segsAt || []; t.pk = pk;
+  draw(t);
+  requestAnimationFrame(() => box.classList.add('on'));
+  box.querySelectorAll('.ct').forEach(b => b.onclick = e => { e.stopPropagation(); const c = t.cuts[+b.dataset.i]; audition(t, Math.max(0, c.t - 1.5), 3, c.t, b); });
+  box.onclick = e => { const rc = box.getBoundingClientRect(), x = (e.clientX - rc.left) / rc.width; audition(t, x * dur, 4); };
+}
+function draw(t) {
+  const cv = t.el.querySelector('.wv canvas'); if (!cv) return;
+  const W = cv.clientWidth || t.el.clientWidth - 32, H = 44, dpr = devicePixelRatio || 1, pk = t.pk, dur = t.out.dur;
+  cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr);
+  let mx = 1e-9; for (const v of pk) if (v > mx) mx = v;
+  // 段落底色：正常段淡绿，碎片灰
+  for (const [a, b, frag] of t.segsAt) { g.fillStyle = frag ? 'rgba(255,255,255,.05)' : 'rgba(47,174,122,.10)'; g.fillRect(a / dur * W, 0, Math.max(1, (b - a) / dur * W), H); }
+  const bw = W / pk.length; g.fillStyle = 'rgba(240,240,240,.55)';
+  for (let k = 0; k < pk.length; k++) { const h = Math.max(1, pk[k] / mx * (H - 4)); g.fillRect(k * bw, (H - h) / 2, Math.max(1, bw - .4), h); }
+}
+addEventListener('resize', () => tracks.forEach(t => t.out && draw(t)));
+let actx = null, cur = null;
+async function audition(t, from, len, mark, btn) {
+  if (cur) { try { cur.src.stop(); } catch {} cur.done(); cur = null; }
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  await actx.resume();
+  const { sr, ch, blob, dur } = t.out, fb = ch * 3, a = Math.floor(Math.max(0, from) * sr), b = Math.min(Math.floor(dur * sr), a + Math.floor(len * sr));
+  const u = new Uint8Array(await blob.slice(44 + a * fb, 44 + b * fb).arrayBuffer()), n = b - a;
+  const ab = actx.createBuffer(ch, n, sr);
+  for (let c = 0; c < ch; c++) { const d = ab.getChannelData(c); for (let i = 0, o = c * 3; i < n; i++, o += fb) { let s = u[o] | (u[o + 1] << 8) | (u[o + 2] << 16); if (s & 0x800000) s -= 0x1000000; d[i] = s / 8388608; } }
+  const src = actx.createBufferSource(); src.buffer = ab; src.connect(actx.destination);
+  const ph = t.el.querySelector('.wv .ph'), t0 = actx.currentTime + .02; let raf;
+  ph.classList.add('on'); btn && btn.classList.add('play');
+  const loop = () => { const p = from + (actx.currentTime - t0); ph.style.left = Math.min(100, Math.max(0, p / dur * 100)) + '%'; raf = requestAnimationFrame(loop); };
+  const done = () => { cancelAnimationFrame(raf); ph.classList.remove('on'); btn && btn.classList.remove('play'); };
+  src.onended = () => { if (cur && cur.src === src) { done(); cur = null; } };
+  src.start(t0); loop(); cur = { src, done };
 }
 
 // ── 核心：切段 → 每段算 LUFS → 增益 → 限峰 ─────────────────────────
@@ -340,41 +405,92 @@ async function level(au, role, onp) {
     if (pk * g > CEIL) { g = CEIL / pk; limited = 1; }
     for (let c = 0; c < ch; c++) { const s = raw[c], d = out[c]; for (let i = 0; i < n; i++) d[i] = s[i] * g; }
     onp(1);
-    return { data: out, lufs: lu + 20 * Math.log10(g), segs: 1, limited };
+    return { data: out, lufs: lu + 20 * Math.log10(g), segs: 1, limited, cuts: [], segsAt: [] };
   }
 
-  // 人声：10ms 包络 → 有声区间 → 合并近的 → 前后留白
-  const w = Math.max(1, Math.round(fs * .01)), nw = Math.ceil(n / w), thr = Math.pow(10, GATE_DB / 20), act = new Uint8Array(nw);
-  for (let k = 0; k < nw; k++) { const a = k * w, b = Math.min(n, a + w); let p = 0; for (const d of raw) for (let i = a; i < b; i++) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > p) p = v; } act[k] = p > thr ? 1 : 0; }
+  // ── 人声 ──
+  // 1) 10ms 包络（dB）+ 底噪（最安静的 10% 处）。门限跟着底噪走：家录底噪高、棚录底噪低，都切得开
+  const w = Math.max(1, Math.round(fs * .01)), nw = Math.ceil(n / w), env = new Float32Array(nw);
+  for (let k = 0; k < nw; k++) { const a = k * w, b = Math.min(n, a + w); let p = 0; for (const d of raw) for (let i = a; i < b; i++) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > p) p = v; } env[k] = p > 0 ? 20 * Math.log10(p) : -150; }
+  const live = Float32Array.from(env.filter(x => x > -140)).sort();
+  const floor = live.length ? live[Math.floor(live.length * .1)] : -90;
+  const open = Math.min(GATE_DB + 10, Math.max(GATE_DB - 10, floor + 15));   // 有声：底噪上 15 dB（夹在 -60…-40）
+  const close = Math.min(open - 6, floor + 6);                                // 尾音收干净：回到底噪上 6 dB 以内
+  // 2) 有声区间；空档不到 MIN_GAP 的并成一段
+  const gapW = Math.round(MIN_GAP / .01), padW = Math.max(1, Math.round(PAD_SAFE / .01)), quietW = 5;
   let runs = [];
-  for (let k = 0; k < nw;) { if (!act[k]) { k++; continue; } let e = k; while (e < nw && act[e]) e++; runs.push([k * w, Math.min(n, e * w)]); k = e; }
-  const gap = MIN_GAP * fs, pad = Math.round(PAD * fs);
-  const merged = [];
-  for (const r of runs) { const last = merged[merged.length - 1]; if (last && r[0] - last[1] < gap) last[1] = r[1]; else merged.push([...r]); }
-  runs = merged.map(([a, b]) => [Math.max(0, a - pad), Math.min(n, b + pad)]);
-  for (let i = runs.length - 1; i > 0; i--) if (runs[i][0] <= runs[i - 1][1]) { runs[i - 1][1] = runs[i][1]; runs.splice(i, 1); }
-  onp(.45);
-
-  const fd = Math.max(1, Math.round(FADE * fs)), gmax = Math.pow(10, MAX_GAIN / 20);
-  let segs = 0, limited = 0, eSum = 0, eLen = 0;
-  for (let r = 0; r < runs.length; r++) {
-    const [a, b] = runs[r];
-    const lu = gatedLufs(E, Math.floor(a / hop), Math.max(Math.floor(a / hop) + 1, Math.ceil(b / hop)));
-    if (!Number.isFinite(lu) || lu < -70) continue;   // 太小声当无声
-    let g = Math.min(gmax, Math.pow(10, (tgt - lu) / 20)); const pk = peakOf(a, b);
-    if (pk * g > CEIL) { g = CEIL / pk; limited++; }
-    const len = b - a, f = Math.min(fd, len >> 1);
-    for (let c = 0; c < ch; c++) {
-      const s = raw[c], d = out[c];
-      for (let i = a; i < b; i++) { const o = i - a, e = b - 1 - i; let k = g; if (o < f) k *= o / f; else if (e < f) k *= e / f; d[i] = s[i] * k; }
-    }
-    const got = lu + 20 * Math.log10(g), dur = b - a; eSum += Math.pow(10, got / 10) * dur; eLen += dur;
-    segs++;
-    if (r % 8 === 0) { onp(.45 + .55 * (r / runs.length)); await tick(); }
+  for (let k = 0; k < nw;) { if (env[k] <= open) { k++; continue; } let e = k; while (e < nw && env[e] > open) e++; runs.push([k, e]); k = e; }
+  const mg = []; for (const r of runs) { const l = mg[mg.length - 1]; if (l && r[0] - l[1] < gapW) l[1] = r[1]; else mg.push([...r]); }
+  runs = mg;
+  if (!runs.length) throw new Error('silent');
+  onp(.4);
+  // 3) 找断点：从声音往外走，直到连续 50ms 回到 close 以下才算真的停了（尾音、气口、齿音尾巴都留着）。
+  //    两段之间如果一直没安静下来，就不静音，在这段空档里最安静的 10ms 处换增益（连接点）
+  const tailEnd = (k, lim) => { let q = 0; for (; k < lim; k++) { if (env[k] < close) { if (++q >= quietW) return k - quietW + 1; } else q = 0; } return -1; };
+  const headStart = (k, lim) => { let q = 0; for (k--; k >= lim; k--) { if (env[k] < close) { if (++q >= quietW) return k + quietW; } else q = 0; } return -1; };
+  const S = runs.map(r => ({ a: r[0], b: r[1], act: r[1] - r[0], jl: false, jr: false }));
+  { const h = headStart(S[0].a, 0); S[0].a = Math.max(0, (h < 0 ? 0 : h) - padW); }
+  { const L1 = S[S.length - 1], t = tailEnd(L1.b, nw); L1.b = Math.min(nw, (t < 0 ? nw : t) + padW); }
+  for (let i = 0; i + 1 < S.length; i++) {
+    const A = S[i], B = S[i + 1], ae = A.b, bs = B.a, te = tailEnd(ae, bs), hs = headStart(bs, ae);
+    if (te >= 0 && hs >= 0 && te + 2 * padW <= hs) { A.b = te + padW; B.a = hs - padW; }
+    else { let m = ae, mv = Infinity; for (let k = ae; k < bs; k++) if (env[k] < mv) { mv = env[k]; m = k; } A.b = B.a = m; A.jr = B.jl = true; }
   }
-  if (!segs) throw new Error('silent');
+  onp(.5);
+  // 4) 每段算 LUFS → 增益。太短的碎片（单独一声呼吸、喷麦、咔哒）不自己拉，跟最近的正常段用同一个增益
+  const gmax = Math.pow(10, MAX_GAIN / 20), FRAG = Math.round(MIN_PHRASE / .01);
+  for (const s of S) {
+    const a = s.a * w, b = Math.min(n, s.b * w);
+    s.lu = gatedLufs(E, Math.floor(a / hop), Math.max(Math.floor(a / hop) + 1, Math.ceil(b / hop)));
+    s.frag = s.act < FRAG || !Number.isFinite(s.lu) || s.lu < -70;
+    s.pk = peakOf(a, b);
+  }
+  const real = S.filter(s => !s.frag);
+  for (const s of S) {
+    if (!s.frag) s.g = Math.min(gmax, Math.pow(10, (tgt - s.lu) / 20));
+    else if (real.length) { const c = (s.a + s.b) / 2; s.g = real.reduce((x, y) => Math.abs((y.a + y.b) / 2 - c) < Math.abs((x.a + x.b) / 2 - c) ? y : x).g; }
+    else s.g = Number.isFinite(s.lu) && s.lu > -70 ? Math.min(Math.pow(10, 12 / 20), Math.pow(10, (tgt - s.lu) / 20)) : 1;
+  }
+  let limited = 0;
+  for (const s of S) if (s.pk * s.g > CEIL) {
+    // 碎片拉了会顶到限峰 = 很尖的短促声（咔哒、喷麦、碰麦），不放大，保持原样并标成待听
+    if (s.frag) { s.g = Math.min(1, CEIL / s.pk); s.click = true; } else { s.g = CEIL / s.pk; limited++; }
+  }
+  // 5) 写出：静音断点 10ms 淡入淡出；连接点 40ms 增益渐变
+  const fd = Math.max(1, Math.round(FADE * fs)), rp = Math.max(1, Math.round(RAMP * fs));
+  for (let si = 0; si < S.length; si++) {
+    const s = S[si], a = s.a * w, b = Math.min(n, s.b * w), f = Math.min(fd, (b - a) >> 1);
+    for (let c = 0; c < ch; c++) {
+      const src = raw[c], d = out[c];
+      for (let i = a; i < b; i++) { let k = s.g; if (!s.jl && i - a < f) k *= (i - a) / f; else if (!s.jr && b - 1 - i < f) k *= (b - 1 - i) / f; d[i] = src[i] * k; }
+    }
+    if (si % 8 === 0) { onp(.5 + .4 * si / S.length); await tick(); }
+  }
+  for (let i = 0; i + 1 < S.length; i++) if (S[i].jr) {
+    const m = S[i].b * w, g0 = S[i].g, g1 = S[i + 1].g, a = Math.max(0, m - rp), b = Math.min(n, m + rp);
+    for (let c = 0; c < ch; c++) { const src = raw[c], d = out[c]; for (let j = a; j < b; j++) d[j] = src[j] * (g0 + (g1 - g0) * (j - a) / (b - a)); }
+  }
+  // 6) 断点检查：每个断点看两件事 ——
+  //    静音断点：切下去那一刻原声还有多响（高过底噪 12 dB = 可能切到字）；处理后边缘有没有跳变
+  //    连接点：两边增益差多少（>6 dB 且那里不安静 = 可能听得出音量跳）
+  const cuts = [], lvl = k => env[Math.max(0, Math.min(nw - 1, k))];
+  const jump = i => { let mx = 0; for (const d of out) { const x = Math.abs(d[i] - (d[i - 1] || 0)); if (x > mx) mx = x; } return mx; };
+  for (let i = 0; i < S.length; i++) {
+    const s = S[i];
+    if (!s.jl) { const k = s.a, r = lvl(k) > close + 6 || (s.a * w > 0 && jump(s.a * w + 1) > .05); cuts.push({ t: s.a * w / fs, kind: 'in', risk: r || !!s.click, why: s.click ? '短促声' : r ? '入点有声' : '' }); }
+    if (!s.jr) { const k = s.b - 1, r = lvl(k) > close + 6 || (s.b * w < n && jump(Math.min(n - 1, s.b * w - 1)) > .05); cuts.push({ t: Math.min(n, s.b * w) / fs, kind: 'out', risk: r || !!s.click, why: s.click ? '短促声' : r ? '出点有声' : '' }); }
+    else { const d = Math.abs(20 * Math.log10(S[i + 1].g / s.g)), r = d > 6 && lvl(s.b) > close + 6; cuts.push({ t: s.b * w / fs, kind: 'join', risk: r, why: r ? `跳 ${d.toFixed(0)} dB` : '', db: d }); }
+  }
+  // 头尾两个（文件开头、文件结尾）不算断点
+  // 很短的一段（< 0.3 秒）入点出点挨在一起，合成一个标记
+  for (let i = cuts.length - 2; i >= 0; i--) if (cuts[i].kind === 'in' && cuts[i + 1].kind === 'out' && cuts[i + 1].t - cuts[i].t < .3) {
+    const a = cuts[i], b = cuts[i + 1]; cuts.splice(i, 2, { t: (a.t + b.t) / 2, kind: 'frag', risk: a.risk || b.risk, why: a.why || b.why || '短段' });
+  }
+  const inner = cuts.filter(c => c.t > 0.001 && c.t < n / fs - 0.001);
+  let eSum = 0, eLen = 0;
+  for (const s of real) { const got = s.lu + 20 * Math.log10(s.g), dur = s.b - s.a; eSum += Math.pow(10, got / 10) * dur; eLen += dur; }
   onp(1);
-  return { data: out, lufs: 10 * Math.log10(eSum / eLen), segs, limited };
+  return { data: out, lufs: eLen ? 10 * Math.log10(eSum / eLen) : tgt, segs: real.length, frags: S.length - real.length, limited, cuts: inner, floor, segsAt: S.map(s => [s.a * w / fs, Math.min(n, s.b * w) / fs, s.frag]) };
 }
 
 // ── 读文件：WAV / AIFF 自己解析（保留原采样率和长度，拖回去对得上）；其他格式交给浏览器 ──
