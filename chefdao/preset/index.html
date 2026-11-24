@@ -219,7 +219,7 @@ button{background:none;border:0;cursor:pointer}
   <svg class="cu"><use href="#cu"/></svg>
   <h1>Auto Level</h1><small>CU MUSIC</small>
   <form class="gform" id="gform" autocomplete="off">
-    <div class="gbox"><input id="gwho" placeholder="艺名" maxlength="30" autocomplete="nickname"><input id="gpw" type="password" inputmode="numeric" placeholder="密码" maxlength="20"></div>
+    <div class="gbox"><input id="gwho" placeholder="艺名" maxlength="30" autocomplete="nickname"><input id="gpw" type="password" placeholder="密码" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
     <button class="gbtn" type="submit">进入</button>
     <p class="gerr" id="gerr"></p>
   </form>
@@ -254,7 +254,7 @@ button{background:none;border:0;cursor:pointer}
 (() => {
 'use strict';
 // ── 参数 ──────────────────────────────────────────────────────
-const PW_HASH = 'eb6492af3b27d1071b436715f993ee6fba928ba2eb808fadc2816051c7eb55b3';   // sha256('cu:' + 密码)，改密码：终端 printf 'cu:新密码' | shasum -a 256
+const PW_HASH = '4e11ac68c417623b37a1ab233e3da8e1af77773dd066d8f9b3857be0aabfb434';   // sha256('cu:' + 密码)，改密码：终端 printf 'cu:新密码' | shasum -a 256
 const API = 'https://stats.cumusic.work';
 const TARGET = { LV: -23, BV: -23, INST: -20 };   // 伴奏比人声大 3 dB；和声再按 -6 / -9 / -12 整体压
 const BV_DEFAULT = -9;
