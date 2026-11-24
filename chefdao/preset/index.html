@@ -38,7 +38,7 @@ button{background:none;border:0;cursor:pointer}
 .gate .in{position:relative;width:100%;max-width:320px;text-align:center}
 .gate .cu{width:48px;height:48px;margin:0 auto;color:var(--text);animation:up 1s var(--ease) both}
 .gate h1{margin-top:22px;font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.2;animation:up 1s var(--ease) .08s both}
-.gate small{display:block;margin-top:8px;font:500 10.5px var(--mono);letter-spacing:.32em;color:var(--text-3);animation:up 1s var(--ease) .14s both}
+.gate small{display:block;margin-top:8px;font:500 11px var(--mono);letter-spacing:.12em;color:var(--text-3);animation:up 1s var(--ease) .14s both}
 .gform{margin-top:40px;animation:up 1s var(--ease) .22s both}
 .gbox{background:var(--s1);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left;transition:border-color .3s}
 .gbox:focus-within{border-color:var(--line-2)}
@@ -68,7 +68,7 @@ button{background:none;border:0;cursor:pointer}
 .top .me{max-width:96px;overflow:hidden;text-overflow:ellipsis}
 .sheeting .dock{opacity:0;pointer-events:none}
 .dock{transition:transform .7s var(--ease),opacity .3s var(--ease)}
-.top .tr{display:none;height:22px;padding:0 9px;border-radius:99px;font:600 10.5px/22px var(--mono);letter-spacing:.08em;color:var(--amber);background:rgba(217,179,108,.12);animation:pop .4s var(--spring)}
+.top .tr{display:none;white-space:nowrap;height:22px;padding:0 9px;border-radius:99px;font:600 10.5px/22px var(--mono);letter-spacing:.08em;color:var(--amber);background:rgba(217,179,108,.12);animation:pop .4s var(--spring)}
 .trial .top .tr{display:block}
 .gtry{display:block;width:100%;height:46px;margin-top:10px;border-radius:14px;font-size:15px;font-weight:500;color:var(--text-2);border:1px solid var(--line);transition:color .2s,border-color .2s,transform .15s var(--ease)}
 .gtry:hover{color:var(--text);border-color:var(--line-2)}
@@ -83,6 +83,18 @@ button{background:none;border:0;cursor:pointer}
 .fbf .send[disabled]{opacity:.5}
 .fbf .send.ok{background:var(--rolex);color:#fff}
 .fbf .note{min-height:20px;margin-top:8px;font-size:12.5px;color:var(--warn);text-align:center}
+.cta{text-align:center;padding-top:30px}
+.cta .ey{font:600 10.5px var(--mono);letter-spacing:.3em;color:var(--mint)}
+.cta h2{margin-top:10px;font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.35}
+.cta .cs{margin:6px 0 22px;font-size:14px;color:var(--text-2)}
+.cbtn{display:block;width:100%;height:50px;margin-top:10px;border-radius:14px;font-size:15px;font-weight:600;line-height:50px;text-decoration:none;color:var(--text);background:rgba(255,255,255,.06);transition:transform .15s var(--ease),background .2s}
+.cbtn:active{transform:scale(.985)}
+.cbtn.pri{background:var(--rolex);color:#fff}
+.cbtn[hidden]{display:none}
+.clink{display:block;margin:14px auto 0;font-size:14px;color:var(--text-3)}
+.by2{margin-top:18px;font:500 10.5px var(--mono);letter-spacing:.12em;color:var(--text-3)}
+.sheet.on .cta h2,.sheet.on .cta .cbtn{animation:up .6s var(--ease) both}
+.sheet.on .cta .cbtn{animation-delay:.08s}
 .bug{padding:12px 0;border-top:1px solid var(--line)}
 .bug .a{display:flex;justify-content:space-between;gap:12px;font-size:15px;font-weight:500}
 .bug .a span{font:500 11px var(--mono);color:var(--text-3);white-space:nowrap}
@@ -181,6 +193,8 @@ button.chip:hover{border-color:var(--line-2)}
 .go span{position:relative}
 .go.run{background:var(--s2);color:var(--text)}
 .go.hide,.mix .go{max-height:0;margin-top:0;opacity:0;pointer-events:none}
+.sign{display:block;width:max-content;margin:40px auto 0;font:500 11px var(--mono);letter-spacing:.12em;color:var(--text-3);text-decoration:none;transition:color .2s;animation:fade 1s var(--ease) .4s both}
+.sign:hover{color:var(--mint)}
 .err{min-height:1.4em;margin-top:10px;text-align:center;font-size:13px;color:var(--warn)}
 
 /* ── 底部调音条 ── */
@@ -267,22 +281,23 @@ button.chip:hover{border-color:var(--line-2)}
 
 <div class="gate" id="gate"><div class="in">
   <svg class="cu"><use href="#cu"/></svg>
-  <h1>Auto Level</h1><small>CU MUSIC</small>
+  <h1>Auto Level</h1><small class="by">made by 刀大厨ChefDao</small>
   <form class="gform" id="gform" autocomplete="off">
     <div class="gbox"><input id="gwho" placeholder="艺名" maxlength="30" autocomplete="nickname"><input id="gpw" type="password" placeholder="密码" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
     <button class="gbtn" type="submit">进入</button>
-    <button class="gtry" type="button" id="gtry">免费试用 30 秒</button>
+    <button class="gtry" type="button" id="gtry">免费使用 · 每天 1 首</button>
     <p class="gerr" id="gerr"></p>
   </form>
 </div></div>
 
 <div class="app">
-  <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="tr">试用</span><span class="sp"></span><button class="lg fb" id="fbBtn">反馈</button><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
+  <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="tr">免费</span><span class="sp"></span><button class="lg fb" id="fbBtn">反馈</button><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
   <label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="ring"></span><h2>拖入分轨</h2><p>WAV · AIFF · MP3</p></label>
   <div class="info" id="info"><button class="chip wait" id="bpmChip" title="点一下切换半速 / 倍速">BPM <b id="bpmV">···</b></button><span class="chip wait" id="keyChip">Key <b id="keyV">···</b> <em id="keyN"></em></span></div>
   <div class="list" id="tracks"></div>
   <button class="go hide" id="go"><i class="bar"></i><span>处理</span></button>
   <p class="err" id="err"></p>
+  <a class="sign" href="/chefdao/" target="_blank" rel="noopener">made by 刀大厨ChefDao</a>
 </div>
 
 <div class="dock" id="dock"><div class="in">
@@ -300,6 +315,14 @@ button.chip:hover{border-color:var(--line-2)}
   </div>
 </div></div>
 
+<div class="sheet" id="cta"><div class="pn cta">
+  <p class="ey">AUTO LEVEL</p><h2 id="ctaT"></h2><p class="cs" id="ctaS"></p>
+  <a class="cbtn pri" href="/chefdao/price/" target="_blank" rel="noopener">查看价格</a>
+  <a class="cbtn" href="/chat/" target="_blank" rel="noopener">匿名咨询</a>
+  <button class="cbtn" id="ctaPw" hidden>刀门会员 · 输入密码</button>
+  <button class="clink" id="ctaClose">关闭</button>
+  <p class="by2">made by 刀大厨ChefDao</p>
+</div></div>
 <div class="sheet" id="fbSheet"><div class="pn"><h3>问题反馈 <button id="fbClose">关闭</button></h3>
   <form class="fbf" id="fbForm"><textarea id="fbText" maxlength="2000" placeholder="遇到的问题、出现的步骤、想要的功能"></textarea>
   <input id="fbContact" maxlength="80" placeholder="微信号（选填）" autocomplete="off"><button class="send" type="submit">发送</button><p class="note" id="fbNote"></p></form></div></div>
@@ -334,7 +357,6 @@ let who = store.get('al:who') || '';
 
 // ── 密码 ──────────────────────────────────────────────────────
 async function sha(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
-const TRIAL_SEC = 30;
 let trial = store.get('al:mode') === 'trial';
 function enter() { $('#me').textContent = who; B.classList.toggle('trial', trial); $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); if (!sesTried) { sesTried = true; setTimeout(restore, 0); } }
 if (who && (store.get('al:ok') === PW_HASH || trial)) enter(); else { $('#gwho').value = who; setTimeout(() => (who ? $('#gpw') : $('#gwho')).focus(), 400); }
@@ -405,7 +427,7 @@ function showRole(t, anim) {
   if (anim) { r.classList.remove('flip'); void r.offsetWidth; r.classList.add('flip'); }
 }
 function remove(t) { if (busy) return; t.el.classList.add('out'); setTimeout(() => { t.el.remove(); tracks = tracks.filter(x => x !== t); sync(); }, 320); }
-function sync() { persist(true); B.classList.toggle('has', tracks.length > 0); go.classList.toggle('hide', !tracks.length); if (!tracks.length) err.textContent = ''; }
+function sync() { songSid = rid(); persist(true); B.classList.toggle('has', tracks.length > 0); go.classList.toggle('hide', !tracks.length); if (!tracks.length) err.textContent = ''; }
 async function probe(t) {
   const m = t.el.querySelector('.sub');
   try { const h = parseHeader(await t.file.slice(0, 1 << 16).arrayBuffer(), t.file.size);
@@ -419,12 +441,6 @@ addEventListener('dragenter', e => { if (e.dataTransfer?.types?.includes('Files'
 addEventListener('dragleave', () => { if (--dragN <= 0) { dragN = 0; B.classList.remove('dragging'); } });
 addEventListener('dragover', e => e.preventDefault());
 addEventListener('drop', e => { e.preventDefault(); dragN = 0; B.classList.remove('dragging'); if (e.dataTransfer.files.length) add(e.dataTransfer.files); });
-
-// ── 试用：只处理前 30 秒 ─────────────────────────────────────────
-function trimTrial(au) {
-  const m = Math.round(TRIAL_SEC * au.sr); if (au.n <= m) return false;
-  au.data = au.data.map(d => d.slice(0, m)); au.n = m; return true;
-}
 
 // ── 假立体声 → 单声道 ───────────────────────────────────────────
 function monoize(au) {
@@ -449,7 +465,7 @@ go.onclick = async () => {
     const step = f => { bar.style.width = (f * 100) + '%'; goBar.style.width = ((i + f) / order.length * 100) + '%'; };
     step(.02);
     try {
-      const au = await decode(t.file); t.cut = trial && trimTrial(au); t.mono = monoize(au); step(.2);
+      const au = await decode(t.file); t.mono = monoize(au); step(.2);
       const r = await level(au, t.role, f => step(.2 + f * .75));
       t.res = { curve: r.curve, data: r.data, raw: au.data, sr: au.sr, ch: au.ch, n: au.n, dur: au.n / au.sr, cuts: r.cuts || [], segsAt: r.segsAt || [] };
       t.pk = peaks(r.data, 720);
@@ -457,7 +473,6 @@ go.onclick = async () => {
       if (t.role !== 'INST') bits.push(`${r.segs} 段`);
       else bits.push(fmtT(t.res.dur));
       if (t.mono) bits.push('<em>转单声道</em>');
-      if (t.cut) bits.push('<i>前 30 秒</i>');
       if (risky) bits.push(`<i>${risky} 处待听</i>`);
       m.className = 'sub res'; m.innerHTML = bits.join(' · ');
       step(1); t.el.classList.add('done');
@@ -780,9 +795,31 @@ function save(blob, name) { const a = document.createElement('a'); a.href = URL.
 let withDry = store.get('al:dry') === '1';
 const showDry = () => $('#dry').setAttribute('aria-pressed', withDry);
 $('#dry').onclick = () => { withDry = !withDry; store.set('al:dry', withDry ? '1' : '0'); showDry(); }; showDry();
+const rid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+const today = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);   // 北京时间的日期，和服务器一致
+async function quotaOk() {   // 访客每天 1 首：本机先查，再问服务器（服务器没回应就放行）
+  if (!trial) return true;
+  const q = JSON.parse(store.get('al:q') || '{}');
+  if (q.day === today() && q.sid && q.sid !== songSid) return false;
+  try {
+    const r = await fetch(API + '/preset/quota', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid, sid: songSid }) });
+    const j = await r.json(); if (j.ok && j.allow === false) return false;
+  } catch {}
+  store.set('al:q', JSON.stringify({ day: today(), sid: songSid })); return true;
+}
+function card(limit) {
+  $('#ctaT').textContent = limit ? '今日免费 1 首已用完' : '这首歌，交给刀大厨混。';
+  $('#ctaS').textContent = limit ? '明天可以继续免费使用。' : '混音 · 母带 · 人声制作';
+  $('#ctaPw').hidden = !limit;
+  B.classList.add('sheeting'); $('#cta').classList.add('on');
+}
+$('#ctaClose').onclick = () => { $('#cta').classList.remove('on'); B.classList.remove('sheeting'); };
+$('#cta').onclick = e => { if (e.target.id === 'cta') $('#ctaClose').click(); };
+$('#ctaPw').onclick = () => { $('#ctaClose').click(); $('#me').click(); };
 $('#dl').onclick = async () => {
   const list = tracks.filter(t => t.res), btn = $('#dl'); if (!list.length) return;
   btn.disabled = true; btn.textContent = '打包中';
+  if (!(await quotaOk())) { btn.disabled = false; btn.textContent = '下载'; card(true); return; }
   try {
     const files = [];
     for (const { t, name } of exportNames(list)) {
@@ -790,19 +827,28 @@ $('#dl').onclick = async () => {
       if (withDry) { files.push({ blob: encodeWav(t.res.raw, t.res.sr), name: 'Dry_平衡前/' + name }); await tick(); }
     }
     const tag = [safe(who || 'Auto Level'), song.bpm ? Math.round(song.bpm * (song.mul || 1)) + 'BPM' : '', song.key ? song.key.short : ''].filter(Boolean).join('_');
-    if (files.length === 1) save(files[0].blob, files[0].name); else save(await zip(files), tag + '.zip');
+    files.push({ blob: new Blob([SIGN_TXT], { type: 'text/plain' }), name: 'Made by 刀大厨ChefDao.txt' });
+    save(await zip(files), tag + '.zip');
+    if (trial) setTimeout(() => card(false), 900);
     fetch(API + '/preset/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
       body: JSON.stringify({ lid, who, trial: trial ? 1 : 0, lv: off.LV, inst: off.INST, bv: bvLevel, tracks: list.map(t => ({ n: t.file.name, r: t.role, p: t.pan, m: t.mono ? 1 : 0 })).concat(song.bpm ? [{ n: `[分析] ${Math.round(song.bpm * (song.mul || 1))} BPM · ${song.key ? song.key.short : ''}`, r: '' }] : []) }) }).catch(() => {});
   } finally { btn.disabled = false; btn.textContent = '下载'; }
 };
-function encodeWav(data, sr) {   // 32-bit float WAV（fmt 18 字节 + fact）
-  const ch = data.length, n = data[0].length, bytes = n * ch * 4, H = 58, buf = new ArrayBuffer(H + bytes), v = new DataView(buf), u = new Uint8Array(buf);
+const SIGN_TXT = 'Auto Level — made by 刀大厨ChefDao\nhttps://cumusic.work/chefdao/preset/\n\n混音 · 母带 · 人声制作：https://cumusic.work/chefdao/price/\n';
+const INFO = (() => {   // WAV 的 LIST/INFO 块：ISFT 软件名、ICMT 注释，DAW 和播放器里能看到
+  const te = new TextEncoder(), sub = (id, text) => { const b = te.encode(text + '\0'), pad = b.length & 1, o = new Uint8Array(8 + b.length + pad), dv = new DataView(o.buffer); for (let i = 0; i < 4; i++) o[i] = id.charCodeAt(i); dv.setUint32(4, b.length, true); o.set(b, 8); return o; };
+  const a = sub('ISFT', 'Auto Level — made by 刀大厨ChefDao'), b = sub('ICMT', 'https://cumusic.work/chefdao/preset/'), body = 4 + a.length + b.length, o = new Uint8Array(8 + body), dv = new DataView(o.buffer);
+  o.set([76, 73, 83, 84]); dv.setUint32(4, body, true); o.set([73, 78, 70, 79], 8); o.set(a, 12); o.set(b, 12 + a.length); return o;
+})();
+function encodeWav(data, sr) {   // 32-bit float WAV（fmt 18 字节 + fact + 末尾 LIST/INFO 署名）
+  const ch = data.length, n = data[0].length, bytes = n * ch * 4, H = 58, buf = new ArrayBuffer(H + bytes + INFO.length), v = new DataView(buf), u = new Uint8Array(buf);
   const str = (o, s) => { for (let i = 0; i < 4; i++) u[o + i] = s.charCodeAt(i); };
-  str(0, 'RIFF'); v.setUint32(4, H - 8 + bytes, true); str(8, 'WAVE');
+  str(0, 'RIFF'); v.setUint32(4, H - 8 + bytes + INFO.length, true); str(8, 'WAVE');
   str(12, 'fmt '); v.setUint32(16, 18, true); v.setUint16(20, 3, true); v.setUint16(22, ch, true); v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 4, true); v.setUint16(32, ch * 4, true); v.setUint16(34, 32, true); v.setUint16(36, 0, true);
   str(38, 'fact'); v.setUint32(42, 4, true); v.setUint32(46, n, true);
   str(50, 'data'); v.setUint32(54, bytes, true);
   for (let i = 0, o = H; i < n; i++) for (let c = 0; c < ch; c++, o += 4) v.setFloat32(o, data[c][i], true);
+  u.set(INFO, H + bytes);
   return new Blob([buf], { type: 'audio/wav' });
 }
 
@@ -853,7 +899,7 @@ $('#shClose').onclick = shOff;
 $('#sheet').onclick = e => { if (e.target.id === 'sheet') shOff(); };
 
 // ── 24 小时内重开浏览器：恢复上次的分轨（原文件存在本机 IndexedDB）、角色、调整，处理过的自动再处理一遍 ──
-var SES_TTL = 864e5, sesTried = false, sesReady = false, restoring = false, sesMul = 0, persistT = 0;
+var songSid = '', SES_TTL = 864e5, sesTried = false, sesReady = false, restoring = false, sesMul = 0, persistT = 0;
 function idbOpen() { return new Promise((ok, no) => { const r = indexedDB.open('autolevel', 1); r.onupgradeneeded = () => r.result.createObjectStore('s'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); }
 async function idb(mode, fn) {
   const db = await idbOpen();
@@ -867,7 +913,7 @@ function persist(withFiles) {   // 文件只在分轨列表变化时存（大）
     const files = persist.files; persist.files = false;
     try {
       if (!tracks.length) { await idb('readwrite', st => { st.delete('files'); return st.delete('state'); }); return; }
-      const state = { ts: Date.now(), mixed, off: { LV: off.LV, INST: off.INST }, bv: bvLevel, mul: song.mul, roles: tracks.map(t => t.role), n: tracks.length };
+      const state = { ts: Date.now(), sid: songSid, mixed, off: { LV: off.LV, INST: off.INST }, bv: bvLevel, mul: song.mul, roles: tracks.map(t => t.role), n: tracks.length };
       await idb('readwrite', st => { if (files) st.put(tracks.map(t => t.file), 'files'); return st.put(state, 'state'); });
     } catch (e) { console.warn('persist', e); }
   }, 400);
@@ -884,7 +930,7 @@ async function restore() {
     tracks.forEach((t, i) => { if (st.roles && st.roles[i] != null) { t.role = st.roles[i]; showRole(t); } });
     for (const r of ['LV', 'INST']) { const f = $('#f' + r); f.value = (st.off && st.off[r]) || 0; f.dispatchEvent(new Event('input')); }
     if (st.bv) setBv(st.bv);
-    sesMul = st.mul || 1;
+    sesMul = st.mul || 1; if (st.sid) songSid = st.sid;
     restoring = false; sesReady = true;
     if (st.mixed) await go.onclick();
   } catch (e) { console.warn('restore', e); }
