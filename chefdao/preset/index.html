@@ -93,6 +93,8 @@ button{background:none;border:0;cursor:pointer}
 .cbtn.pri{background:var(--rolex);color:#fff}
 .cbtn.inv{color:var(--mint);background:rgba(143,195,169,.1)}
 .cbtn.ok{background:var(--mint);color:#08110c}
+.ivst.sum{grid-template-columns:repeat(4,1fr);margin:6px 0 4px}
+.ivst.sum b{font-size:22px}
 .ivst{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 14px}
 .ivst div{padding:14px 0;border-radius:14px;background:rgba(255,255,255,.04)}
 .ivst b{display:block;font:600 26px var(--mono);font-variant-numeric:tabular-nums;color:var(--text);transition:color .3s}
@@ -287,13 +289,13 @@ button.chip:hover{border-color:var(--line-2)}
 <body>
 <svg width="0" height="0" style="position:absolute"><symbol id="cu" viewBox="272 164 456 456" fill="none" stroke="currentColor" stroke-width="40" stroke-linecap="round"><path d="M 592.06,203.25 A 210,210 0 1 1 407.94,203.25"/><path d="M 619.61,478.90 A 147.84,147.84 0 1 1 619.61,305.10"/></symbol></svg>
 
-<div class="gate" id="gate"><div class="in">
+<div class="gate off" id="gate"><div class="in">
   <svg class="cu"><use href="#cu"/></svg>
   <h1>Auto Level</h1><small class="by">made by 刀大厨ChefDao</small>
   <form class="gform" id="gform" autocomplete="off">
     <div class="gbox"><input id="gwho" placeholder="艺名" maxlength="30" autocomplete="nickname"><input id="gpw" type="password" placeholder="密码" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
     <button class="gbtn" type="submit">进入</button>
-    <button class="gtry" type="button" id="gtry">免费使用 · 每天 1 首</button>
+    <button class="gtry" type="button" id="gtry">先免费用</button>
     <p class="gerr" id="gerr"></p>
   </form>
 </div></div>
@@ -373,23 +375,28 @@ let who = store.get('al:who') || '';
 
 // ── 密码 ──────────────────────────────────────────────────────
 async function sha(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
-let trial = store.get('al:mode') === 'trial';
-function enter() { $('#me').textContent = who; B.classList.toggle('trial', trial); $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); if (!sesTried) { sesTried = true; setTimeout(restore, 0); } setTimeout(() => typeof loadRef === 'function' && loadRef(), 0); }
-if (who && (store.get('al:ok') === PW_HASH || trial)) enter(); else { $('#gwho').value = who; setTimeout(() => (who ? $('#gpw') : $('#gwho')).focus(), 400); }
+let trial = store.get('al:ok') !== PW_HASH;   // 没输过刀门密码 = 免费模式
+function enter() { $('#me').textContent = trial ? '刀门' : (who || '刀门会员'); B.classList.toggle('trial', trial); $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); if (!sesTried) { sesTried = true; setTimeout(restore, 0); } setTimeout(() => typeof loadRef === 'function' && loadRef(), 0); }
+{ const mk = /[#&]k=([\w-]+)/.exec(location.hash); if (mk) { store.set('insights:key', mk[1]); history.replaceState(null, '', location.pathname + location.search); } }   // 带 #k=钥匙 打开：这台设备能看「记录」
+enter(); setTimeout(() => ev('open'), 0);
 $('#gform').onsubmit = async e => {
   e.preventDefault();
   const w = $('#gwho').value.trim(), pw = $('#gpw').value.trim(), ge = $('#gerr');
   const bad = m => { ge.textContent = m; ge.classList.add('on'); const f = $('#gform'); f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake'); };
   if (!w) return bad('请填写艺名');
   if (await sha('cu:' + pw) !== PW_HASH) { $('#gpw').value = ''; return bad('密码不对'); }
-  who = w; trial = false; store.set('al:who', w); store.set('al:ok', PW_HASH); store.del('al:mode'); ge.classList.remove('on'); enter();
+  who = w; trial = false; store.set('al:who', w); store.set('al:ok', PW_HASH); store.del('al:mode'); ge.classList.remove('on'); enter(); ev('open', '输入刀门密码');
 };
-$('#gtry').onclick = () => {
-  const w = $('#gwho').value.trim(), ge = $('#gerr');
-  if (!w) { ge.textContent = '请填写艺名'; ge.classList.add('on'); const f = $('#gform'); f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake'); $('#gwho').focus(); return; }
-  who = w; trial = true; store.set('al:who', w); store.set('al:mode', 'trial'); store.del('al:ok'); ge.classList.remove('on'); enter();
+$('#gtry').onclick = () => { $('#gerr').classList.remove('on'); $('#gate').classList.add('off'); };   // 关掉密码框，继续免费用
+function askPw() { $('#gwho').value = who; $('#gpw').value = ''; $('#gate').classList.remove('off'); setTimeout(() => (who ? $('#gpw') : $('#gwho')).focus(), 300); }
+$('#me').onclick = () => {   // 免费模式：输入刀门密码；会员：退出回免费模式
+  if (busy) return;
+  if (trial) return askPw();
+  if (!confirm('退出刀门会员，回到免费模式？')) return;
+  store.del('al:ok'); trial = true; enter();
 };
-$('#me').onclick = () => { if (busy) return; store.del('al:ok'); store.del('al:mode'); trial = false; $('#gwho').value = who; $('#gpw').value = ''; $('#gate').classList.remove('off'); setTimeout(() => $('#gpw').focus(), 300); };
+// 使用过程：打开 / 处理完 / 下载
+function ev(e, info) { try { fetch(API + '/preset/ev', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify({ lid, who: trial ? '' : who, member: trial ? 0 : 1, ev: e, info: info || '' }) }).catch(() => {}); } catch {} }
 
 // ── 命名识别 ──────────────────────────────────────────────────
 function guess(name) {
@@ -503,6 +510,7 @@ go.onclick = async () => {
   const ok = tracks.filter(t => t.res);
   if (!ok.length) { err.textContent = '没有可处理的分轨'; return; }
   pairBV(ok); ok.forEach(wave); mix(ok);
+  ev('proc', ok.map(t => t.role + ' ' + t.clean).join(' / ').slice(0, 280));
 };
 
 // ── 和声配对（只影响试听的声像） ────────────────────────────────────
@@ -851,7 +859,7 @@ $('#ivCopy').onclick = async () => {
 };
 $('#ctaClose').onclick = () => { $('#cta').classList.remove('on'); B.classList.remove('sheeting'); };
 $('#cta').onclick = e => { if (e.target.id === 'cta') $('#ctaClose').click(); };
-$('#ctaPw').onclick = () => { $('#ctaClose').click(); $('#me').click(); };
+$('#ctaPw').onclick = () => { $('#ctaClose').click(); askPw(); };
 $('#dl').onclick = async () => {
   const list = tracks.filter(t => t.res), btn = $('#dl'); if (!list.length) return;
   btn.disabled = true; btn.textContent = '打包中';
@@ -866,6 +874,7 @@ $('#dl').onclick = async () => {
     files.push({ blob: new Blob([SIGN_TXT], { type: 'text/plain' }), name: 'Made by 刀大厨ChefDao.txt' });
     save(await zip(files), tag + '.zip');
     if (trial) setTimeout(() => card(false), 900);
+    ev('dl', `${list.length} 轨${song.bpm ? ' · ' + Math.round(song.bpm * (song.mul || 1)) + ' BPM' : ''}${song.key ? ' · ' + song.key.short : ''}`);
     fetch(API + '/preset/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
       body: JSON.stringify({ lid, who, trial: trial ? 1 : 0, lv: off.LV, inst: off.INST, bv: bvLevel, tracks: list.map(t => ({ n: t.file.name, r: t.role, p: t.pan, m: t.mono ? 1 : 0 })).concat(song.bpm ? [{ n: `[分析] ${Math.round(song.bpm * (song.mul || 1))} BPM · ${song.key ? song.key.short : ''}`, r: '' }] : []) }) }).catch(() => {});
   } finally { btn.disabled = false; btn.textContent = '下载'; }
@@ -897,10 +906,15 @@ $('#lgBtn').onclick = async () => {
   try {
     const r = await fetch(API + '/preset/logs', { headers: { Authorization: 'Bearer ' + store.get('insights:key') } });
     if (r.status === 401) { L.innerHTML = '<p class="empty">钥匙无效</p>'; return; }
-    const { rows, bugs = [] } = await r.json();
+    const { rows, bugs = [], people = [], sum = {} } = await r.json();
     const bh = bugs.length ? '<p class="sec">反馈</p>' + bugs.map(x => `<div class="bug"><div class="a">${esc(x.who || '—')}${x.trial ? ' · 试用' : ''}<span>${fmtD(x.ts)}${x.geo ? ' · ' + esc(x.geo) : ''}</span></div>
       <p>${esc(x.text)}</p><small>${x.contact ? '微信 ' + esc(x.contact) + ' · ' : ''}${esc((x.ctx && x.ctx.ua) || '')}${x.ctx && x.ctx.tracks ? ' · ' + esc(x.ctx.tracks.map(t => t.r + ' ' + t.n + (t.s ? '（' + t.s + '）' : '')).join(' / ')) : ''}${x.ctx && x.ctx.errs && x.ctx.errs.length ? ' · 报错 ' + esc(x.ctx.errs.join(' | ')) : ''}</small></div>`).join('') + '<p class="sec">下载</p>' : '';
-    L.innerHTML = bh + (rows.length ? rows.map(x => {
+    const ago = ts => { const m = (Date.now() - ts) / 6e4; return m < 60 ? Math.max(1, Math.round(m)) + ' 分钟前' : m < 1440 ? Math.round(m / 60) + ' 小时前' : Math.round(m / 1440) + ' 天前'; };
+    const sumH = `<div class="ivst sum"><div><b>${sum.d1 || 0}</b><span>24 小时</span></div><div><b>${sum.d7 || 0}</b><span>7 天</span></div><div><b>${sum.proc_p || 0}</b><span>处理过</span></div><div><b>${sum.dl_p || 0}</b><span>下载过</span></div></div>`;
+    const ph = '<p class="sec">谁在用</p>' + (people.length ? people.map(x => `<div class="lgr"><div class="a">${esc(x.who || (x.member ? '刀门会员' : '访客'))}${x.geo ? ' · ' + esc(x.geo) : ''}<span>${ago(x.last)}</span></div>
+      <div class="b"><i>${esc(x.ua || '')}</i><i class="${x.procs ? 'on' : ''}">处理 ${x.procs || 0}</i><i class="${x.dls ? 'on' : ''}">下载 ${x.dls || 0}</i><i>打开 ${x.opens || 0}</i>${x.member ? '<i class="on">刀门</i>' : ''}</div>
+      ${x.info ? `<div class="c">${esc(x.info)}</div>` : ''}</div>`).join('') : '<p class="empty">还没有人打开过</p>');
+    L.innerHTML = sumH + ph + bh.replace('<p class="sec">下载</p>', '') + '<p class="sec">下载明细</p>' + (rows.length ? rows.map(x => {
       const n = x.tracks.length, c = { LV: 0, BV: 0, INST: 0 }; x.tracks.forEach(t => c[t.r] = (c[t.r] || 0) + 1);
       return `<div class="lgr"><div class="a">${esc(x.who || '—')}<span>${fmtD(x.ts)}${x.geo ? ' · ' + esc(x.geo) : ''}</span></div>
         <div class="b"><i class="${x.lv ? 'on' : ''}">主人声 ${sg(x.lv)}</i><i class="${x.bv !== -9 ? 'on' : ''}">和声 ${x.bv}</i><i class="${x.inst ? 'on' : ''}">伴奏 ${sg(x.inst)}</i><i>${n} 轨 · LV ${c.LV} · BV ${c.BV} · INST ${c.INST}</i>${x.trial ? '<i class="t">试用</i>' : ''}</div>
