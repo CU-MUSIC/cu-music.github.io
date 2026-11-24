@@ -115,6 +115,14 @@ button{background:none;border:0;cursor:pointer}
 .busy .drop{pointer-events:none;opacity:.4}
 
 /* 分轨：一张卡片，细分隔线 */
+.info{display:flex;gap:8px;margin-top:10px;height:0;opacity:0;overflow:hidden;transition:height .5s var(--ease),opacity .5s var(--ease)}
+.info.on{height:34px;opacity:1}
+.chip{display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:10px;background:var(--s1);border:1px solid var(--line);font-size:12.5px;color:var(--text-3);transition:border-color .2s}
+.chip b{font:600 14px var(--mono);color:var(--text);font-variant-numeric:tabular-nums;transition:opacity .3s}
+.chip em{font-style:normal;color:var(--text-2)}
+.chip.wait b{opacity:.35}
+button.chip{cursor:pointer}
+button.chip:hover{border-color:var(--line-2)}
 .list{margin-top:10px;background:var(--s1);border:1px solid var(--line);border-radius:16px;overflow:hidden;animation:up .7s var(--ease) both}
 .list:empty{display:none}
 .trk{position:relative;padding:14px 14px 14px 16px;animation:up .6s var(--ease) both;animation-delay:calc(var(--k,0) * 45ms);transition:opacity .3s,background .3s}
@@ -212,6 +220,13 @@ button{background:none;border:0;cursor:pointer}
 .bvs button{position:relative;z-index:1;width:40px;height:24px;border-radius:7px;font:600 11px/24px var(--mono);color:var(--text-3);transition:color .3s}
 .bvs button[aria-pressed=true]{color:#0a0a0a}
 .bvs .k{position:absolute;top:2px;left:2px;width:40px;height:24px;border-radius:7px;background:var(--mint);transform:translateX(calc(var(--n,1) * 40px));transition:transform .45s var(--spring)}
+.dlw{display:flex;align-items:center;gap:8px}
+.dry{height:40px;padding:0 12px 0 32px;position:relative;border-radius:12px;font-size:13px;font-weight:500;color:var(--text-3);background:rgba(255,255,255,.05);white-space:nowrap;transition:color .2s,background .2s}
+.dry::before{content:"";position:absolute;left:11px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:4px;box-shadow:inset 0 0 0 1.5px var(--line-2);transition:background .2s,box-shadow .2s}
+.dry::after{content:"";position:absolute;left:16px;top:50%;width:4px;height:8px;margin-top:-6px;border:solid #0a0a0a;border-width:0 1.8px 1.8px 0;transform:rotate(45deg) scale(0);transition:transform .3s var(--spring)}
+.dry[aria-pressed=true]{color:var(--text)}
+.dry[aria-pressed=true]::before{background:var(--mint);box-shadow:none}
+.dry[aria-pressed=true]::after{transform:rotate(45deg) scale(1)}
 .dl{height:40px;padding:0 20px;border-radius:12px;background:var(--rolex);color:#fff;font-size:14px;font-weight:600;transition:transform .15s var(--ease),opacity .3s}
 .dl:active{transform:scale(.97)}
 .dl[disabled]{opacity:.5}
@@ -220,7 +235,7 @@ button{background:none;border:0;cursor:pointer}
   .bvs{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}
   .bvs .lb{display:block}
   .bvs .opts{margin-top:0}
-  .bvs{order:3}.dl{order:4;grid-column:1/-1;width:100%}
+  .bvs{order:3}.dlw{order:4;grid-column:1/-1}.dlw .dl{flex:1}
   .mix .app{padding-bottom:calc(290px + env(safe-area-inset-bottom))}
 }
 
@@ -264,6 +279,7 @@ button{background:none;border:0;cursor:pointer}
 <div class="app">
   <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="tr">试用</span><span class="sp"></span><button class="lg fb" id="fbBtn">反馈</button><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
   <label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="ring"></span><h2>拖入分轨</h2><p>WAV · AIFF</p></label>
+  <div class="info" id="info"><button class="chip wait" id="bpmChip" title="点一下切换半速 / 倍速">BPM <b id="bpmV">···</b></button><span class="chip wait" id="keyChip">Key <b id="keyV">···</b> <em id="keyN"></em></span></div>
   <div class="list" id="tracks"></div>
   <button class="go hide" id="go"><i class="bar"></i><span>处理</span></button>
   <p class="err" id="err"></p>
@@ -280,7 +296,7 @@ button{background:none;border:0;cursor:pointer}
     <div class="fd"><div class="lb"><span>主人声</span><b id="vLV" class="z">0</b></div><input type="range" id="fLV" min="-3" max="3" step="0.5" value="0"></div>
     <div class="bvs"><div class="lb"><span>和声</span></div><div class="opts" id="bvOpts"><i class="k"></i><button data-v="-6">-6</button><button data-v="-9">-9</button><button data-v="-12">-12</button></div></div>
     <div class="fd"><div class="lb"><span>伴奏</span><b id="vINST" class="z">0</b></div><input type="range" id="fINST" min="-3" max="3" step="0.5" value="0"></div>
-    <button class="dl" id="dl">下载</button>
+    <div class="dlw"><button class="dry" id="dry" aria-pressed="false">含干声</button><button class="dl" id="dl">下载</button></div>
   </div>
 </div></div>
 
@@ -345,6 +361,19 @@ function guess(name) {
   if (/(^|[^a-z])(lv|lead|main|vox|vocal|vocals|voc|verse|hook|chorus)([^a-z]|$)|主唱|主人声|人声|主歌/.test(n)) return 'LV';
   return '';
 }
+// 文件名清理：去掉 Logic / 导出时带的杂项（_bip、#01、Audio 1、日期、采样率、final、copy …），只留真正的名字
+const JUNK = /^(bip|bnc|bounce|bounced|export|exported|final|finale|mixdown|print|printed|render|rendered|copy|new|edit|edited|comp|st|stereo|mono|wav|aif|aiff|mp3|v\d+|ver\d*|take|tk|audio|track|trk|[0-9]{1,2}|\d{2,3}k|\d{2,3}\.\d+k|\d{2}bit|\d{2,3}bpm|\d{6,8}|\d{4}\s?\d{2}\s?\d{2}|最终版|最终|导出|副本|音频)$/i;
+function cleanName(fname) {
+  let b = fname.replace(/\.[^.]+$/, '').replace(/#\d+/g, ' ').replace(/\(\d+\)|（\d+）/g, ' ').replace(/[_\-.,+]+/g, ' ');
+  const words = b.split(/\s+/).filter(Boolean);
+  let keep = words.filter((w, i) => !JUNK.test(w) || (/^\d{1,2}$/.test(w) && i > 0 && /^(take|tk|v|ver)$/i.test(words[i - 1])));
+  keep = keep.filter((w, i) => !(/^(audio|track|trk)$/i.test(w)));
+  const out = keep.map(w => /^[a-z]/.test(w) && w.length > 2 && w === w.toLowerCase() ? w[0].toUpperCase() + w.slice(1) : w).join(' ').trim();
+  if (out) return out;
+  // 全是杂项（比如 Logic 默认的「Audio 3_bip」）：留下 Audio 3 这类编号，只去掉 bip / bounce 这些
+  const soft = words.filter(w => !/^(bip|bnc|bounce|bounced|export|exported|final|finale|mixdown|print|printed|render|rendered|copy|new|wav|aif|aiff|mp3|\d{6,8})$/i.test(w)).join(' ').trim();
+  return soft || fname.replace(/\.[^.]+$/, '');
+}
 const sideHint = name => { const n = name.replace(/\.[^.]+$/, ''); return /(^|[\s_\-(.])(l|left|左)([\s_\-).]|$)/i.test(n) ? -1 : /(^|[\s_\-(.])(r|right|右)([\s_\-).]|$)/i.test(n) ? 1 : 0; };
 
 // ── 列表 ──────────────────────────────────────────────────────
@@ -354,13 +383,14 @@ function add(files) {
   let k = 0;
   for (const f of files) {
     if (tracks.some(t => t.file.name === f.name && t.file.size === f.size)) continue;
-    const t = { file: f, role: guess(f.name), pan: 0, solo: false };
+    const clean = cleanName(f.name);
+    const t = { file: f, clean, role: guess(clean) || guess(f.name), pan: 0, solo: false };
     const el = document.createElement('div');
     el.className = 'trk'; el.style.setProperty('--k', k++);
     el.innerHTML = `<div class="th"><button class="role"></button><div class="nmw"><div class="nm"></div><div class="sub">读取中</div></div>
       <button class="lr" title="左右互换"></button><button class="solo" aria-pressed="false" title="独奏">S</button><button class="x" aria-label="移除">×</button></div>
       <div class="wv"></div><div class="pg"><i></i></div>`;
-    el.querySelector('.nm').textContent = f.name;
+    el.querySelector('.nm').textContent = t.clean; el.querySelector('.nm').title = f.name;
     el.querySelector('.x').onclick = () => remove(t);
     el.querySelector('.role').onclick = () => { if (mixed) unmix(); t.role = ROLES[(ROLES.indexOf(t.role) + 1) % 3]; showRole(t, true); err.textContent = ''; };
     el.querySelector('.solo').onclick = () => { t.solo = !t.solo; applyGains(); };
@@ -413,14 +443,15 @@ go.onclick = async () => {
   const miss = tracks.filter(t => !t.role);
   if (miss.length) { miss.forEach(t => showRole(t, true)); err.textContent = `点 ? 标记 ${miss.length} 轨（LV / BV / INST）`; return; }
   err.textContent = ''; busy = true; B.classList.add('busy'); go.classList.add('run'); goTxt.textContent = '处理中';
-  for (let i = 0; i < tracks.length; i++) {
-    const t = tracks[i], m = t.el.querySelector('.sub'), bar = t.el.querySelector('.pg i');
-    const step = f => { bar.style.width = (f * 100) + '%'; goBar.style.width = ((i + f) / tracks.length * 100) + '%'; };
+  const order = tracks;
+  for (let i = 0; i < order.length; i++) {
+    const t = order[i], m = t.el.querySelector('.sub'), bar = t.el.querySelector('.pg i');
+    const step = f => { bar.style.width = (f * 100) + '%'; goBar.style.width = ((i + f) / order.length * 100) + '%'; };
     step(.02);
     try {
       const au = await decode(t.file); t.cut = trial && trimTrial(au); t.mono = monoize(au); step(.2);
       const r = await level(au, t.role, f => step(.2 + f * .75));
-      t.res = { data: r.data, raw: au.data, sr: au.sr, ch: au.ch, n: au.n, dur: au.n / au.sr, cuts: r.cuts || [], segsAt: r.segsAt || [] };
+      t.res = { curve: r.curve, data: r.data, raw: au.data, sr: au.sr, ch: au.ch, n: au.n, dur: au.n / au.sr, cuts: r.cuts || [], segsAt: r.segsAt || [] };
       t.pk = peaks(r.data, 720);
       const risky = t.res.cuts.filter(c => c.risk).length, bits = [];
       if (t.role !== 'INST') bits.push(`${r.segs} 段`);
@@ -514,8 +545,10 @@ function applyGains(only) {
     t.gb.vol.gain.setTargetAtTime(on ? 1 : 0, now, .02);
   }
 }
+let playSeq = 0;   // 每次播放 / 停止都换号；等音频上下文启动回来时号码变了，就不再出声（连点不会叠出停不掉的声音）
 async function play(from, only, len) {
-  stop(); ensureCtx(); await ctx.resume();
+  stop(); const my = ++playSeq; ensureCtx(); await ctx.resume();
+  if (my !== playSeq) return;
   const list = only ? [only] : tracks.filter(t => t.res);
   list.forEach(graph); applyGains(only);
   const t0 = ctx.currentTime + .04, srcs = [];
@@ -536,6 +569,7 @@ async function play(from, only, len) {
   loop();
 }
 function stop() {
+  playSeq++;
   if (!playing) return;
   const p = playing; playing = null; cancelAnimationFrame(raf);
   p.srcs.forEach(s => { try { s.stop(); } catch {} });
@@ -605,16 +639,93 @@ async function rematch() {
 }
 function rematchSoon() { if (!mixed) return; clearTimeout(matchT); matchT = setTimeout(rematch, 350); }   // 声明式：滑块初始化时会先调用到
 
+// ── BPM / 调性：优先用伴奏（没有伴奏就用全部人声），取中间 90 秒 ─────────────────
+const song = { bpm: 0, mul: 1, key: null };
+function fftR(re, im) {   // 原地基 2 FFT
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) { let b = n >> 1; for (; j & b; b >>= 1) j ^= b; j ^= b; if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; } }
+  for (let len = 2; len <= n; len <<= 1) {
+    const a = -2 * Math.PI / len, wr = Math.cos(a), wi = Math.sin(a);
+    for (let i = 0; i < n; i += len) { let cr = 1, ci = 0;
+      for (let j = 0; j < len / 2; j++) { const u = i + j, v = u + len / 2, tr = re[v] * cr - im[v] * ci, ti = re[v] * ci + im[v] * cr;
+        re[v] = re[u] - tr; im[v] = im[u] - ti; re[u] += tr; im[u] += ti; const nr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nr; } }
+  }
+}
+function spectra(x, N, hop, cb) {
+  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = .5 - .5 * Math.cos(2 * Math.PI * i / N);
+  const re = new Float32Array(N), im = new Float32Array(N), mag = new Float32Array(N / 2);
+  for (let s = 0; s + N <= x.length; s += hop) {
+    for (let i = 0; i < N; i++) { re[i] = x[s + i] * win[i]; im[i] = 0; }
+    fftR(re, im); for (let k = 0; k < N / 2; k++) mag[k] = Math.hypot(re[k], im[k]); cb(mag);
+  }
+}
+const KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const KMAJ = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88], KMIN = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+function corr(a, b) { const ma = a.reduce((x, y) => x + y) / 12, mb = b.reduce((x, y) => x + y) / 12; let n = 0, da = 0, db = 0; for (let i = 0; i < 12; i++) { n += (a[i] - ma) * (b[i] - mb); da += (a[i] - ma) ** 2; db += (b[i] - mb) ** 2; } return n / Math.sqrt(da * db + 1e-12); }
+async function analyze(list) {
+  const src = list.filter(t => t.role === 'INST').length ? list.filter(t => t.role === 'INST') : list;
+  const SR = 11025, span = Math.min(90, dur), t0 = Math.max(0, (dur - span) / 2);
+  const oc = new OfflineAudioContext(1, Math.ceil(span * SR), SR);
+  for (const t of src) { bufs(t); const s = oc.createBufferSource(); s.buffer = t.bufA; s.connect(oc.destination); s.start(0, t0); }
+  const x = (await oc.startRendering()).getChannelData(0);
+  await tick();
+  // 节奏：对数频谱通量 → 去掉缓慢起伏 → 自相关，偏好 70–170
+  const N = 1024, hop = 256, fr = SR / hop, flux = []; let prev = null;
+  spectra(x, N, hop, mag => { let f = 0; const cur = new Float32Array(N / 2); for (let k = 1; k < N / 2; k++) { cur[k] = Math.log1p(100 * mag[k]); if (prev) { const d = cur[k] - prev[k]; if (d > 0) f += d; } } flux.push(f); prev = cur; });
+  await tick();
+  const L = flux.length, w = Math.round(fr * .5), on = new Float32Array(L);
+  for (let i = 0; i < L; i++) { let m = 0, c = 0; for (let j = Math.max(0, i - w); j < Math.min(L, i + w); j++) { m += flux[j]; c++; } on[i] = Math.max(0, flux[i] - m / c); }
+  const ac = lag => { let s = 0; for (let i = lag; i < L; i++) s += on[i] * on[i - lag]; return s / (L - lag); };
+  let best = 0, bl = 0;
+  const minLag = Math.floor(60 * fr / 180), maxLag = Math.ceil(60 * fr / 60), A = [];
+  for (let lag = minLag; lag <= maxLag * 2 + 2; lag++) A[lag] = ac(lag);
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    const bpm = 60 * fr / lag, wgt = Math.exp(-.5 * (Math.log2(bpm / 105) / .85) ** 2);
+    const sc = (A[lag] + .5 * (A[lag * 2] || 0)) * wgt;
+    if (sc > best) { best = sc; bl = lag; }
+  }
+  if (bl) { const a = A[bl - 1] || 0, b = A[bl], c = A[bl + 1] || 0, d = a - 2 * b + c; const off = d ? .5 * (a - c) / d : 0; song.bpm = 60 * fr / (bl + Math.max(-.5, Math.min(.5, off))); }
+  // 调性：65–2000 Hz 色度，逐帧归一后累加，和 Krumhansl 大小调模板求相关
+  const chroma = new Float64Array(12), bass = new Float64Array(12), N2 = 4096, bins = [], bbin = [];
+  for (let k = 1; k < N2 / 2; k++) { const f = k * SR / N2; const pc = ((Math.round(12 * Math.log2(f / 440)) + 69) % 12 + 12) % 12; bins[k] = f >= 65 && f <= 2000 ? pc : -1; bbin[k] = f >= 30 && f <= 160 ? pc : -1; }
+  spectra(x, N2, 2048, mag => { const c = new Float64Array(12); let s = 0; for (let k = 1; k < N2 / 2; k++) if (bins[k] >= 0) { c[bins[k]] += mag[k]; s += mag[k]; } if (s > 1e-6) for (let i = 0; i < 12; i++) chroma[i] += c[i] / s; for (let k = 1; k < N2 / 2; k++) if (bbin[k] >= 0) bass[bbin[k]] += mag[k]; });
+  let kb = -2, key = null;
+  for (let r = 0; r < 12; r++) {
+    const rot = [...chroma.slice(r), ...chroma.slice(0, r)];
+    const a = corr(rot, KMAJ), b = corr(rot, KMIN);
+    if (a > kb) { kb = a; key = { root: r, minor: false }; }
+    if (b > kb) { kb = b; key = { root: r, minor: true }; }
+  }
+  // 相对大小调（C 大调 / A 小调用同一组音）：看低音落在哪个根音上多
+  // 相对大小调（C 大调 / A 小调同一组音）：说唱伴奏小调居多，先给小调一点优势；再看低音落在哪个根音上多；还是很接近就两个都写
+  if (key) {
+    const rotA = r => [...chroma.slice(r), ...chroma.slice(0, r)];
+    const mr = key.minor ? key.root : (key.root + 9) % 12, Mr = (mr + 3) % 12;
+    let sm = corr(rotA(mr), KMIN) + .03, sM = corr(rotA(Mr), KMAJ);
+    if (bass[mr] > bass[Mr] * 1.15) sm += .03; else if (bass[Mr] > bass[mr] * 1.15) sM += .03;
+    const minor = sm >= sM, root = minor ? mr : Mr, other = minor ? Mr : mr, close = Math.abs(sm - sM) < .03;
+    song.key = { root, minor, short: KEYS[root] + (minor ? 'm' : ''), name: KEYS[root] + (minor ? ' 小调' : ' 大调') + (close ? ` / ${KEYS[other]}${minor ? ' 大调' : ' 小调'}` : ''), conf: kb };
+  }
+}
+function showSong() {
+  const b = song.bpm ? Math.round(song.bpm * song.mul) : 0;
+  $('#bpmV').textContent = b || '—'; $('#bpmChip').classList.toggle('wait', !b);
+  $('#keyV').textContent = song.key ? song.key.short : '—'; $('#keyN').textContent = song.key ? song.key.name : ''; $('#keyChip').classList.toggle('wait', !song.key);
+}
+$('#bpmChip').onclick = () => { if (!song.bpm) return; const opts = [1, 2, .5].filter(m => song.bpm * m >= 55 && song.bpm * m <= 200); song.mul = opts[(opts.indexOf(song.mul) + 1) % opts.length]; showSong(); };   // 原速 → 倍速 → 半速 → 原速
+
 // ── 进入试听 ───────────────────────────────────────────────────
 function mix(list) {
   mixed = true; dur = Math.max(...list.map(t => t.res.dur)); pos = 0;
   B.classList.add('mix'); $('#play').innerHTML = ICON_PLAY;
   tracks.forEach(t => t.res && showPan(t)); drawOverview(list); setHead(0);
   luBefore = null; setAB(true); rematch();
+  song.bpm = 0; song.mul = 1; song.key = null; showSong(); $('#info').classList.add('on');
+  analyze(list).then(showSong).catch(e => { console.error(e); showSong(); });
 }
 
 function unmix() {   // 改了角色或加了分轨：结果作废，回到「处理」
-  stop(); mixed = false; B.classList.remove('mix');
+  stop(); mixed = false; B.classList.remove('mix'); $('#info').classList.remove('on');
   for (const t of tracks) {
     t.res = null; t.g = null; t.gb = null; t.bufA = t.bufB = null; t.pk = null; t.mate = null; t.pan = 0; t.solo = false; t.el.classList.remove('done', 'mutedx');
     t.el.querySelector('.pg i').style.width = '0'; const w = t.el.querySelector('.wv'); w.classList.remove('on'); setTimeout(() => { if (!t.res) w.innerHTML = ''; }, 500);
@@ -653,17 +764,37 @@ function drawOverview(list) {
 addEventListener('resize', () => { if (!mixed) return; const list = tracks.filter(t => t.res); list.forEach(t => paint(t.el.querySelector('.wv canvas'), t.pk, 30, t.res.segsAt, t.res.dur, 'rgba(242,242,240,.42)')); drawOverview(list); });
 
 // ── 导出：单声道（真立体声保持立体声），调整写进文件；32-bit float ───────────────
-const outName = (n, role) => { const b = n.replace(/\.[^.]+$/, ''); return (new RegExp('^' + role + '[_ -]', 'i').test(b) ? b : role + '_' + b) + '.wav'; };
+// 导出命名：01_LV_Lead_Vox.wav / 02_BV_Hook_Double_L.wav / 05_INST_Beat.wav（按 LV → BV → INST 排）
+// 勾选「含干声」：湿 = 平衡后、干 = 平衡前（原始，只做过转单声道 / 试用截断），分两个文件夹，文件名一致
+const safe = s => s.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, '_').replace(/^_+|_+$/g, '');
+function exportNames(list) {
+  const rank = { LV: 0, BV: 1, INST: 2 }, sorted = [...list].sort((a, b) => (rank[a.role] - rank[b.role]) || (tracks.indexOf(a) - tracks.indexOf(b)));
+  const used = new Set();
+  return sorted.map((t, i) => {
+    let core = t.clean.replace(new RegExp('^\\s*(' + t.role + '|lv|bv|inst)\\b', 'i'), ' ').replace(/\s+/g, ' ').trim();
+    let nm = `${String(i + 1).padStart(2, '0')}_${t.role}` + (core ? '_' + safe(core) : '');
+    while (used.has(nm)) nm += '_b'; used.add(nm);
+    return { t, name: nm + '.wav' };
+  });
+}
 function render(t) { const g = roleGain(t); return encodeWav(t.res.data.map(d => g === 1 ? d : d.map(x => x * g)), t.res.sr); }
 function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); }
+let withDry = store.get('al:dry') === '1';
+const showDry = () => $('#dry').setAttribute('aria-pressed', withDry);
+$('#dry').onclick = () => { withDry = !withDry; store.set('al:dry', withDry ? '1' : '0'); showDry(); }; showDry();
 $('#dl').onclick = async () => {
   const list = tracks.filter(t => t.res), btn = $('#dl'); if (!list.length) return;
   btn.disabled = true; btn.textContent = '打包中';
   try {
-    const files = []; for (const t of list) { files.push({ blob: render(t), name: outName(t.file.name, t.role) }); await tick(); }
-    if (files.length === 1) save(files[0].blob, files[0].name); else save(await zip(files), 'Auto Level.zip');
+    const files = [];
+    for (const { t, name } of exportNames(list)) {
+      files.push({ blob: render(t), name: withDry ? 'Wet_平衡后/' + name : name }); await tick();
+      if (withDry) { files.push({ blob: encodeWav(t.res.raw, t.res.sr), name: 'Dry_平衡前/' + name }); await tick(); }
+    }
+    const tag = [safe(who || 'Auto Level'), song.bpm ? Math.round(song.bpm * (song.mul || 1)) + 'BPM' : '', song.key ? song.key.short : ''].filter(Boolean).join('_');
+    if (files.length === 1) save(files[0].blob, files[0].name); else save(await zip(files), tag + '.zip');
     fetch(API + '/preset/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
-      body: JSON.stringify({ lid, who, trial: trial ? 1 : 0, lv: off.LV, inst: off.INST, bv: bvLevel, tracks: list.map(t => ({ n: t.file.name, r: t.role, p: t.pan, m: t.mono ? 1 : 0 })) }) }).catch(() => {});
+      body: JSON.stringify({ lid, who, trial: trial ? 1 : 0, lv: off.LV, inst: off.INST, bv: bvLevel, tracks: list.map(t => ({ n: t.file.name, r: t.role, p: t.pan, m: t.mono ? 1 : 0 })).concat(song.bpm ? [{ n: `[分析] ${Math.round(song.bpm * (song.mul || 1))} BPM · ${song.key ? song.key.short : ''}`, r: '' }] : []) }) }).catch(() => {});
   } finally { btn.disabled = false; btn.textContent = '下载'; }
 };
 function encodeWav(data, sr) {   // 32-bit float WAV（fmt 18 字节 + fact）
@@ -768,7 +899,7 @@ async function level(au, role, onp) {
     if (pk * g > CEIL) { g = CEIL / pk; limited = 1; }
     for (let c = 0; c < ch; c++) { const s = raw[c], d = out[c]; for (let i = 0; i < n; i++) d[i] = s[i] * g; }
     onp(1);
-    return { data: out, lufs: lu + 20 * Math.log10(g), segs: 1, limited, cuts: [], segsAt: [] };
+    return { data: out, lufs: lu + 20 * Math.log10(g), segs: 1, limited, cuts: [], segsAt: [], curve: [[0, n / fs, g]] };
   }
 
   // ── 人声 ──
@@ -853,7 +984,7 @@ async function level(au, role, onp) {
   let eSum = 0, eLen = 0;
   for (const s of real) { const got = s.lu + 20 * Math.log10(s.g), dur = s.b - s.a; eSum += Math.pow(10, got / 10) * dur; eLen += dur; }
   onp(1);
-  return { data: out, lufs: eLen ? 10 * Math.log10(eSum / eLen) : tgt, segs: real.length, frags: S.length - real.length, limited, cuts: inner, floor, segsAt: S.map(s => [s.a * w / fs, Math.min(n, s.b * w) / fs, s.frag]) };
+  return { data: out, lufs: eLen ? 10 * Math.log10(eSum / eLen) : tgt, segs: real.length, frags: S.length - real.length, limited, cuts: inner, floor, segsAt: S.map(s => [s.a * w / fs, Math.min(n, s.b * w) / fs, s.frag]), curve: S.map(s => [s.a * w / fs, Math.min(n, s.b * w) / fs, s.g]) };
 }
 
 // ── 读文件：WAV / AIFF 自己解析（保留原采样率和长度，拖回去对得上）；其他格式交给浏览器 ──
