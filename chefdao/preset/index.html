@@ -61,6 +61,35 @@ button{background:none;border:0;cursor:pointer}
 .top .me,.top .lg{height:30px;padding:0 12px;border-radius:99px;font-size:13px;color:var(--text-2);border:1px solid var(--line);transition:color .2s,border-color .2s}
 .top .me:hover,.top .lg:hover{color:var(--text);border-color:var(--line-2)}
 .top .lg{display:none}
+.top .fb{display:block}
+.top{gap:8px}
+.top b{white-space:nowrap}
+.top .me,.top .lg{flex:none;white-space:nowrap;padding:0 11px}
+.top .me{max-width:96px;overflow:hidden;text-overflow:ellipsis}
+.sheeting .dock{opacity:0;pointer-events:none}
+.dock{transition:transform .7s var(--ease),opacity .3s var(--ease)}
+.top .tr{display:none;height:22px;padding:0 9px;border-radius:99px;font:600 10.5px/22px var(--mono);letter-spacing:.08em;color:var(--amber);background:rgba(217,179,108,.12);animation:pop .4s var(--spring)}
+.trial .top .tr{display:block}
+.gtry{display:block;width:100%;height:46px;margin-top:10px;border-radius:14px;font-size:15px;font-weight:500;color:var(--text-2);border:1px solid var(--line);transition:color .2s,border-color .2s,transform .15s var(--ease)}
+.gtry:hover{color:var(--text);border-color:var(--line-2)}
+.gtry:active{transform:scale(.985)}
+.fbf textarea,.fbf input{display:block;width:100%;background:var(--s2);border:1px solid var(--line);border-radius:12px;color:var(--text);font:inherit;font-size:16px;outline:0;transition:border-color .3s}
+.fbf textarea{min-height:132px;padding:12px 14px;line-height:1.7;resize:vertical}
+.fbf input{height:48px;padding:0 14px;margin-top:10px}
+.fbf textarea:focus,.fbf input:focus{border-color:var(--line-2)}
+.fbf textarea::placeholder,.fbf input::placeholder{color:var(--text-3)}
+.fbf .send{display:block;width:100%;height:48px;margin-top:12px;border-radius:12px;background:var(--text);color:#0a0a0a;font-size:15px;font-weight:600;transition:transform .15s var(--ease),opacity .3s,background .4s,color .4s}
+.fbf .send:active{transform:scale(.985)}
+.fbf .send[disabled]{opacity:.5}
+.fbf .send.ok{background:var(--rolex);color:#fff}
+.fbf .note{min-height:20px;margin-top:8px;font-size:12.5px;color:var(--warn);text-align:center}
+.bug{padding:12px 0;border-top:1px solid var(--line)}
+.bug .a{display:flex;justify-content:space-between;gap:12px;font-size:15px;font-weight:500}
+.bug .a span{font:500 11px var(--mono);color:var(--text-3);white-space:nowrap}
+.bug p{margin-top:4px;font-size:14px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.bug small{display:block;margin-top:4px;font:500 11px/1.6 var(--mono);color:var(--text-3);word-break:break-all}
+.sec{margin:14px 0 2px;font:600 11px var(--mono);letter-spacing:.16em;color:var(--text-3)}
+.lgr .b i.t{background:rgba(217,179,108,.14);color:var(--amber)}
 .admin .top .lg{display:block}
 
 /* 拖入区 */
@@ -190,7 +219,7 @@ button{background:none;border:0;cursor:pointer}
 }
 
 /* ── 记录（只在你的设备上） ── */
-.sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5);opacity:0;visibility:hidden;transition:opacity .4s var(--ease),visibility .4s}
+.sheet{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5);opacity:0;visibility:hidden;transition:opacity .4s var(--ease),visibility .4s}
 .sheet.on{opacity:1;visibility:visible}
 .sheet .pn{width:100%;max-width:640px;max-height:80vh;overflow:auto;background:var(--s1);border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom));transform:translateY(40px);transition:transform .5s var(--ease)}
 .sheet.on .pn{transform:none}
@@ -221,12 +250,13 @@ button{background:none;border:0;cursor:pointer}
   <form class="gform" id="gform" autocomplete="off">
     <div class="gbox"><input id="gwho" placeholder="艺名" maxlength="30" autocomplete="nickname"><input id="gpw" type="password" placeholder="密码" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
     <button class="gbtn" type="submit">进入</button>
+    <button class="gtry" type="button" id="gtry">免费试用 30 秒</button>
     <p class="gerr" id="gerr"></p>
   </form>
 </div></div>
 
 <div class="app">
-  <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="sp"></span><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
+  <header class="top"><svg class="cu"><use href="#cu"/></svg><b>Auto Level</b><span class="tr">试用</span><span class="sp"></span><button class="lg fb" id="fbBtn">反馈</button><button class="lg" id="lgBtn">记录</button><button class="me" id="me"></button></header>
   <label class="drop" id="drop"><input type="file" id="pick" multiple accept=".wav,.wave,.aif,.aiff,.aifc,audio/*"><span class="ring"></span><h2>拖入分轨</h2><p>WAV · AIFF</p></label>
   <div class="list" id="tracks"></div>
   <button class="go hide" id="go"><i class="bar"></i><span>处理</span></button>
@@ -247,6 +277,9 @@ button{background:none;border:0;cursor:pointer}
   </div>
 </div></div>
 
+<div class="sheet" id="fbSheet"><div class="pn"><h3>问题反馈 <button id="fbClose">关闭</button></h3>
+  <form class="fbf" id="fbForm"><textarea id="fbText" maxlength="2000" placeholder="遇到的问题、出现的步骤、想要的功能"></textarea>
+  <input id="fbContact" maxlength="80" placeholder="微信号（选填）" autocomplete="off"><button class="send" type="submit">发送</button><p class="note" id="fbNote"></p></form></div></div>
 <div class="sheet" id="sheet"><div class="pn"><h3>记录 <button id="shClose">完成</button></h3><div id="lgList"></div></div></div>
 <div id="dz"><p>松开即可添加</p></div>
 
@@ -278,17 +311,24 @@ let who = store.get('al:who') || '';
 
 // ── 密码 ──────────────────────────────────────────────────────
 async function sha(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
-function enter() { $('#me').textContent = who; $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); }
-if (store.get('al:ok') === PW_HASH && who) enter(); else { $('#gwho').value = who; setTimeout(() => (who ? $('#gpw') : $('#gwho')).focus(), 400); }
+const TRIAL_SEC = 30;
+let trial = store.get('al:mode') === 'trial';
+function enter() { $('#me').textContent = who; B.classList.toggle('trial', trial); $('#gate').classList.add('off'); if (store.get('insights:key')) B.classList.add('admin'); }
+if (who && (store.get('al:ok') === PW_HASH || trial)) enter(); else { $('#gwho').value = who; setTimeout(() => (who ? $('#gpw') : $('#gwho')).focus(), 400); }
 $('#gform').onsubmit = async e => {
   e.preventDefault();
   const w = $('#gwho').value.trim(), pw = $('#gpw').value.trim(), ge = $('#gerr');
   const bad = m => { ge.textContent = m; ge.classList.add('on'); const f = $('#gform'); f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake'); };
   if (!w) return bad('请填写艺名');
   if (await sha('cu:' + pw) !== PW_HASH) { $('#gpw').value = ''; return bad('密码不对'); }
-  who = w; store.set('al:who', w); store.set('al:ok', PW_HASH); ge.classList.remove('on'); enter();
+  who = w; trial = false; store.set('al:who', w); store.set('al:ok', PW_HASH); store.del('al:mode'); ge.classList.remove('on'); enter();
 };
-$('#me').onclick = () => { if (busy) return; store.del('al:ok'); $('#gwho').value = who; $('#gpw').value = ''; $('#gate').classList.remove('off'); setTimeout(() => $('#gpw').focus(), 300); };
+$('#gtry').onclick = () => {
+  const w = $('#gwho').value.trim(), ge = $('#gerr');
+  if (!w) { ge.textContent = '请填写艺名'; ge.classList.add('on'); const f = $('#gform'); f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake'); $('#gwho').focus(); return; }
+  who = w; trial = true; store.set('al:who', w); store.set('al:mode', 'trial'); store.del('al:ok'); ge.classList.remove('on'); enter();
+};
+$('#me').onclick = () => { if (busy) return; store.del('al:ok'); store.del('al:mode'); trial = false; $('#gwho').value = who; $('#gpw').value = ''; $('#gate').classList.remove('off'); setTimeout(() => $('#gpw').focus(), 300); };
 
 // ── 命名识别 ──────────────────────────────────────────────────
 function guess(name) {
@@ -343,6 +383,12 @@ addEventListener('dragleave', () => { if (--dragN <= 0) { dragN = 0; B.classList
 addEventListener('dragover', e => e.preventDefault());
 addEventListener('drop', e => { e.preventDefault(); dragN = 0; B.classList.remove('dragging'); if (e.dataTransfer.files.length) add(e.dataTransfer.files); });
 
+// ── 试用：只处理前 30 秒 ─────────────────────────────────────────
+function trimTrial(au) {
+  const m = Math.round(TRIAL_SEC * au.sr); if (au.n <= m) return false;
+  au.data = au.data.map(d => d.slice(0, m)); au.n = m; return true;
+}
+
 // ── 假立体声 → 单声道 ───────────────────────────────────────────
 function monoize(au) {
   if (au.ch !== 2) return false;
@@ -365,7 +411,7 @@ go.onclick = async () => {
     const step = f => { bar.style.width = (f * 100) + '%'; goBar.style.width = ((i + f) / tracks.length * 100) + '%'; };
     step(.02);
     try {
-      const au = await decode(t.file); t.mono = monoize(au); step(.2);
+      const au = await decode(t.file); t.cut = trial && trimTrial(au); t.mono = monoize(au); step(.2);
       const r = await level(au, t.role, f => step(.2 + f * .75));
       t.res = { data: r.data, sr: au.sr, ch: au.ch, n: au.n, dur: au.n / au.sr, cuts: r.cuts || [], segsAt: r.segsAt || [] };
       t.pk = peaks(r.data, 720);
@@ -373,6 +419,7 @@ go.onclick = async () => {
       if (t.role !== 'INST') bits.push(`${r.segs} 段`);
       else bits.push(fmtT(t.res.dur));
       if (t.mono) bits.push('<em>转单声道</em>');
+      if (t.cut) bits.push('<i>前 30 秒</i>');
       if (risky) bits.push(`<i>${risky} 处待听</i>`);
       m.className = 'sub res'; m.innerHTML = bits.join(' · ');
       step(1); t.el.classList.add('done');
@@ -565,7 +612,7 @@ $('#dl').onclick = async () => {
     const files = []; for (const t of list) { files.push({ blob: render(t), name: outName(t.file.name, t.role) }); await tick(); }
     if (files.length === 1) save(files[0].blob, files[0].name); else save(await zip(files), 'Auto Level.zip');
     fetch(API + '/preset/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
-      body: JSON.stringify({ lid, who, lv: off.LV, inst: off.INST, bv: bvLevel, tracks: list.map(t => ({ n: t.file.name, r: t.role, p: t.pan, m: t.mono ? 1 : 0 })) }) }).catch(() => {});
+      body: JSON.stringify({ lid, who, trial: trial ? 1 : 0, lv: off.LV, inst: off.INST, bv: bvLevel, tracks: list.map(t => ({ n: t.file.name, r: t.role, p: t.pan, m: t.mono ? 1 : 0 })) }) }).catch(() => {});
   } finally { btn.disabled = false; btn.textContent = '下载'; }
 };
 function encodeWav(data, sr) {   // 32-bit float WAV（fmt 18 字节 + fact）
@@ -584,21 +631,46 @@ const fmtD = ts => { const d = new Date(ts); return `${d.getMonth() + 1}/${d.get
 const sg = v => v > 0 ? '+' + v : String(v);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 $('#lgBtn').onclick = async () => {
-  const sh = $('#sheet'), L = $('#lgList'); sh.classList.add('on'); L.innerHTML = '<p class="empty">读取中</p>';
+  const sh = $('#sheet'), L = $('#lgList'); B.classList.add('sheeting'); sh.classList.add('on'); L.innerHTML = '<p class="empty">读取中</p>';
   try {
     const r = await fetch(API + '/preset/logs', { headers: { Authorization: 'Bearer ' + store.get('insights:key') } });
     if (r.status === 401) { L.innerHTML = '<p class="empty">钥匙无效</p>'; return; }
-    const { rows } = await r.json();
-    L.innerHTML = rows.length ? rows.map(x => {
+    const { rows, bugs = [] } = await r.json();
+    const bh = bugs.length ? '<p class="sec">反馈</p>' + bugs.map(x => `<div class="bug"><div class="a">${esc(x.who || '—')}${x.trial ? ' · 试用' : ''}<span>${fmtD(x.ts)}${x.geo ? ' · ' + esc(x.geo) : ''}</span></div>
+      <p>${esc(x.text)}</p><small>${x.contact ? '微信 ' + esc(x.contact) + ' · ' : ''}${esc((x.ctx && x.ctx.ua) || '')}${x.ctx && x.ctx.tracks ? ' · ' + esc(x.ctx.tracks.map(t => t.r + ' ' + t.n + (t.s ? '（' + t.s + '）' : '')).join(' / ')) : ''}${x.ctx && x.ctx.errs && x.ctx.errs.length ? ' · 报错 ' + esc(x.ctx.errs.join(' | ')) : ''}</small></div>`).join('') + '<p class="sec">下载</p>' : '';
+    L.innerHTML = bh + (rows.length ? rows.map(x => {
       const n = x.tracks.length, c = { LV: 0, BV: 0, INST: 0 }; x.tracks.forEach(t => c[t.r] = (c[t.r] || 0) + 1);
       return `<div class="lgr"><div class="a">${esc(x.who || '—')}<span>${fmtD(x.ts)}${x.geo ? ' · ' + esc(x.geo) : ''}</span></div>
-        <div class="b"><i class="${x.lv ? 'on' : ''}">主人声 ${sg(x.lv)}</i><i class="${x.bv !== -9 ? 'on' : ''}">和声 ${x.bv}</i><i class="${x.inst ? 'on' : ''}">伴奏 ${sg(x.inst)}</i><i>${n} 轨 · LV ${c.LV} · BV ${c.BV} · INST ${c.INST}</i></div>
+        <div class="b"><i class="${x.lv ? 'on' : ''}">主人声 ${sg(x.lv)}</i><i class="${x.bv !== -9 ? 'on' : ''}">和声 ${x.bv}</i><i class="${x.inst ? 'on' : ''}">伴奏 ${sg(x.inst)}</i><i>${n} 轨 · LV ${c.LV} · BV ${c.BV} · INST ${c.INST}</i>${x.trial ? '<i class="t">试用</i>' : ''}</div>
         <div class="c">${esc(x.tracks.map(t => t.n).join('  ·  '))}</div></div>`;
-    }).join('') : '<p class="empty">还没有记录</p>';
+    }).join('') : '<p class="empty">还没有下载记录</p>');
   } catch { L.innerHTML = '<p class="empty">读取失败</p>'; }
 };
-$('#shClose').onclick = () => $('#sheet').classList.remove('on');
-$('#sheet').onclick = e => { if (e.target.id === 'sheet') $('#sheet').classList.remove('on'); };
+// ── 问题反馈：附上浏览器、分轨状态、最近的报错 ───────────────────────────
+const errs = [];
+addEventListener('error', e => { errs.push(String(e.message || e).slice(0, 160)); if (errs.length > 5) errs.shift(); });
+addEventListener('unhandledrejection', e => { errs.push(String((e.reason && e.reason.message) || e.reason).slice(0, 160)); if (errs.length > 5) errs.shift(); });
+$('#fbBtn').onclick = () => { B.classList.add('sheeting'); $('#fbSheet').classList.add('on'); $('#fbNote').textContent = ''; setTimeout(() => $('#fbText').focus(), 350); };
+const fbOff = () => { $('#fbSheet').classList.remove('on'); B.classList.remove('sheeting'); };
+$('#fbClose').onclick = fbOff;
+$('#fbSheet').onclick = e => { if (e.target.id === 'fbSheet') fbOff(); };
+$('#fbForm').onsubmit = async e => {
+  e.preventDefault();
+  const text = $('#fbText').value.trim(), btn = $('#fbForm .send'), note = $('#fbNote');
+  if (!text) { note.textContent = '请写下遇到的问题'; $('#fbText').focus(); return; }
+  btn.disabled = true; btn.textContent = '发送中'; note.textContent = '';
+  const ctx = { ua: navigator.userAgent.slice(0, 200), scr: `${screen.width}x${screen.height}`, mixed, errs: errs.slice(),
+    tracks: tracks.map(t => ({ n: t.file.name.slice(0, 60), r: t.role, s: t.el.querySelector('.sub').textContent.slice(0, 60) })) };
+  try {
+    const r = await fetch(API + '/preset/bug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lid, who, trial: trial ? 1 : 0, text, contact: $('#fbContact').value.trim(), ctx }) });
+    if (!r.ok) throw 0;
+    btn.classList.add('ok'); btn.textContent = '已收到';
+    setTimeout(() => { fbOff(); $('#fbText').value = ''; btn.classList.remove('ok'); btn.textContent = '发送'; btn.disabled = false; }, 1400);
+  } catch { note.textContent = '没发出去，稍后再试'; btn.disabled = false; btn.textContent = '发送'; }
+};
+const shOff = () => { $('#sheet').classList.remove('on'); B.classList.remove('sheeting'); };
+$('#shClose').onclick = shOff;
+$('#sheet').onclick = e => { if (e.target.id === 'sheet') shOff(); };
 
 // ── 核心：切段 → 每段算 LUFS → 增益 → 限峰（和混音助理 SOP 步骤 2 + 8 同一套） ──
 function biquad(type, fc, G, Q, fs) {
