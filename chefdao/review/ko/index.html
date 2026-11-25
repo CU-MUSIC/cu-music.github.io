@@ -185,6 +185,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .est{margin-top:10px;font-size:15px;font-weight:700}.est b{color:var(--o);font-size:20px}.est span{display:block;font-size:13px;color:var(--tx2);font-weight:600}
 .reg{margin-top:12px;padding-top:12px;border-top:2px dashed var(--bd);font-size:15px;font-weight:700;color:var(--tx2)}
 .reg.hot{color:var(--rt)}.reg.ok{color:var(--gt)}
+.reg .undo{float:right;font-size:13px;color:var(--tx3);font-weight:700;text-decoration:underline}
+.tier{margin-top:10px;font-size:15px;font-weight:700}.tier span{color:var(--tx2);margin-right:6px}.tier b{color:var(--b)}.tier small{display:block;font-size:13px;color:var(--tx2);font-weight:600}
+.weak{display:flex;flex-direction:column;gap:8px}
+.wk{display:flex;align-items:center;gap:10px;text-align:left;padding:12px 14px;border:2px solid var(--bd);border-bottom-width:4px;border-radius:16px;background:var(--card,#fff)}
+.wk b{flex:1;font-size:15px}.wk small{font-size:13px;color:var(--tx2);font-weight:600}.wk span{font-size:14px;font-weight:800;color:#fff;background:var(--rt,#ff4b4b);padding:6px 12px;border-radius:12px}
 .rb{display:flex;gap:10px;margin-top:10px}.rb .btn{flex:1;text-decoration:none}
 .secs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .sb{border:2px solid var(--bd);border-bottom-width:4px;border-radius:16px;padding:12px 8px;background:var(--card);text-align:center}
@@ -231,7 +236,7 @@ document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
-const { EXAM, SEC, NO, Q: TQ } = window.KO_TOPIK;
+const { EXAM, SEC, NO, TIP = {}, Q: TQ } = window.KO_TOPIK;
 const TBY = Object.fromEntries(TQ.map(q => [q.id, q]));
 const $ = id => document.getElementById(id);
 const API = 'https://stats.cumusic.work';
@@ -361,14 +366,50 @@ function buildLesson(lid) {
 }
 function dueList() { const n = Date.now(); return Object.entries(ST.srs).filter(([, v]) => v.due <= n).sort((a, b) => a[1].due - b[1].due).map(([id]) => id); }
 function buildReview() { return dueList().slice(0, 12).map(id => anyEx(id)).filter(Boolean); }
-function buildDaily() {
-  const ids = DAILY.ids.concat(DAILY.extra.map((_, i) => 'x:' + i));
+function buildDaily() {   // 今日特训里超过当前级的题，换成当前级同类型的题
+  const t = tier(), used = new Set(DAILY.ids);
+  const ids = DAILY.ids.map(id => { const q = TBY[id]; if (!q || (lvOf(q) <= t && !(q.sec === 'W' && t < 3))) return id; const r = pickFresh(q.sec === 'W' ? 'R' : q.sec, 1, used)[0]; if (!r) return null; used.add(r.id); return r.id; }).filter(Boolean).concat(DAILY.extra.map((_, i) => 'x:' + i));
   const items = ids.map(id => anyEx(id)).filter(Boolean);
-  dueList().filter(id => !ids.includes(id)).slice(0, 4).forEach(id => { const x = anyEx(id); if (x) items.push(x); });
+  dueList().filter(id => !ids.includes(id) && !(TBY[id] && lvOf(TBY[id]) > t)).slice(0, 4).forEach(id => { const x = anyEx(id); if (x) items.push(x); });
   return items;
 }
 
-function buildSec(sec, n) {   // 分项练习：先出没做过的，再出错过的，最后随机
+// ───────── 难度阶梯：tier 1 入门 → 2 初级 → 3 中级（3 级）→ 4 中高（4 级）。只出 ≤ 当前级的题，最近同级 8 题对 7 题就升一级
+const TIERS = ['', '入门 · TOPIK I 1 级', '初级 · TOPIK I 2 级', '中级 · TOPIK II 3 级', '中高 · TOPIK II 4 级'];
+const lvOf = q => q.lv || 3, maxTier = () => Math.max(...TQ.map(lvOf));
+const tier = () => Math.min(ST.tier || 1, maxTier());
+function lvPool(sec) {   // 当前级优先，低一级垫底；写作 51–52 是 3 级题型，没到 3 级不出
+  const t = tier();
+  return TQ.filter(q => (!sec || q.sec === sec) && lvOf(q) <= t && !(q.sec === 'W' && t < 3)).sort((a, b) => lvOf(b) - lvOf(a));
+}
+function pickFresh(sec, n, skip = new Set()) {
+  const seen = ST.tseen || {}, pool = lvPool(sec).filter(q => !skip.has(q.id)), t = tier();
+  const order = shuffle(pool.filter(q => !seen[q.id] && lvOf(q) === t)).concat(shuffle(pool.filter(q => !seen[q.id])), shuffle(pool.filter(q => ST.srs[q.id])), shuffle(pool));
+  return [...new Set(order)].slice(0, n);
+}
+function typeStats() {   // 每个题型的正确率（最近 10 次），用来找弱项
+  const out = {};
+  for (const [no, h] of Object.entries(ST.typ || {})) { const r = h.slice(-10); out[no] = { n: r.length, ok: r.filter(Boolean).length }; }
+  return out;
+}
+function weakTypes(min = 2) {   // 做过 ≥ min 次、正确率 < 70% 的题型，最弱的在前
+  return Object.entries(typeStats()).filter(([no, v]) => v.n >= min && v.ok / v.n < 0.7 && TQ.some(q => q.no === no && lvOf(q) <= tier())).sort((a, b) => a[1].ok / a[1].n - b[1].ok / b[1].n).map(([no]) => no);
+}
+function buildType(no) {   // 专项突破：先看解题方法，再刷这一类（当前级以内，题少就放宽一级）
+  const t = tier(), seen = ST.tseen || {};
+  let pool = TQ.filter(q => q.no === no && lvOf(q) <= t); if (pool.length < 4) pool = TQ.filter(q => q.no === no && lvOf(q) <= t + 1);
+  const order = [...new Set(shuffle(pool.filter(q => ST.srs[q.id])).concat(shuffle(pool.filter(q => !seen[q.id])), shuffle(pool)))].slice(0, 6);
+  const items = order.map(topEx);
+  if (TIP[no]) items.unshift({ kind: 'tip', id: no + '!tip', points: TIP[no], title: NO[no] || no, tag: '专项突破' });
+  return items;
+}
+function buildPlace() {   // 分级测试：1 级 4 题 → 2 级 4 题 → 3 级 4 题，由易到难不打乱
+  const out = [];
+  for (const lv of [1, 2, 3]) { const p = TQ.filter(q => lvOf(q) === lv && q.sec !== 'W'); const L = shuffle(p.filter(q => q.sec === 'L')), R = shuffle(p.filter(q => q.sec === 'R')); out.push(...L.slice(0, 2), ...R.slice(0, 2)); }
+  return out.map(topEx);
+}
+function buildSec(sec, n) {   // 分项练习：当前级没做过的 → 低级没做过的 → 错过的 → 随机
+  if (sec !== 'W') return pickFresh(sec, n).map(topEx);
   const pool = TQ.filter(q => q.sec === sec), seen = ST.tseen || {};
   const fresh = shuffle(pool.filter(q => !seen[q.id])), wrong = shuffle(pool.filter(q => ST.srs[q.id])), rest = shuffle(pool.filter(q => seen[q.id] && !ST.srs[q.id]));
   return [...new Set(fresh.concat(wrong, rest))].slice(0, n).map(topEx);
@@ -390,16 +431,19 @@ function renderHome() {
     <div class="ring" title="今日 ${dayXp}/${ST.goal} XP"><svg viewBox="0 0 38 38"><circle class="bgc" cx="19" cy="19" r="15"/><circle class="fgc" cx="19" cy="19" r="15" stroke-dasharray="${C}" stroke-dashoffset="${C}" id="ringFg"/></svg><b>${dayXp}</b></div>
   </div>
   ${topikCard()}
+  ${ST.placed ? '' : `<div class="hero today"><div class="meta">第一步 · 约 4 分钟</div><h2>分级测试</h2><p>12 题，从最简单的开始，越往后越难。测完按级别出题</p><button class="btn green" id="goPlace1">开始测试</button></div>`}
   <div class="hero today">
     <div class="meta">${DAILY.date === t ? '今天' : DAILY.date.slice(5).replace('-', '/')} · ${nDaily} 题${dailyDone ? ' · 已完成 ✓' : ''}</div>
     <h2>${esc(DAILY.title)}</h2>
-    <p>${esc(DAILY.note)}</p>
+    <p>${tier() < 3 && DAILY.ids.some(id => TBY[id] && lvOf(TBY[id]) > tier()) ? `按现在的级别（${TIERS[tier()]}）出题，约 5 分钟` : esc(DAILY.note)}</p>
     <button class="btn ${dailyDone ? 'blue' : 'green'}" id="goDaily">${dailyDone ? '再练一次' : '开始'}</button>
   </div>
   ${due ? `<div class="hero rev"><div class="meta">错题复习 · ${due} 题</div><h2>把错过的再过一遍</h2><p>答对一次，下次隔更久再出现</p><button class="btn blue" id="goRev">复习</button></div>` : ''}
+  ${(() => { const w = weakTypes(), ts = typeStats(); return w.length ? `<div class="sec">薄弱题型 · 专项突破</div><div class="weak">${w.slice(0, 3).map(no => `<button class="wk" data-no="${no}"><b>${esc(NO[no] || no)}</b><small>最近 ${ts[no].n} 题对 ${ts[no].ok} 题</small><span>突破</span></button>`).join('')}</div>` : ''; })()}
   <div class="sec">TOPIK 分项</div>
   <div class="secs">${['L', 'R', 'W'].map(k => { const all = TQ.filter(q => q.sec === k), d = all.filter(q => (ST.tseen || {})[q.id]).length; return `<button class="sb" data-s="${k}"><b>${SEC[k]}</b><small>${d}/${all.length} 题 · 目标 ${EXAM.plan[k]} 分</small></button>`; }).join('')}</div>
-  <button class="btn ghost" id="goMock" style="margin-top:6px">16 题摸底 · 估一下现在多少分</button>
+  ${tier() >= 3 ? `<button class="btn ghost" id="goMock" style="margin-top:6px">16 题摸底 · 估一下现在多少分</button>` : ''}
+  <button class="btn ghost" id="goPlace" style="margin-top:6px">${ST.placed ? '再测一次级别 · 12 题' : '分级测试 · 12 题'}</button>
   <div class="sec">基础词句</div>
   <div class="path">${LESSONS.map(l => `<button class="lc" data-l="${l.id}"><span class="lv">${['', '初级', '中级', '中高'][l.level]}</span><div class="ic">${l.icon}</div><h3>${esc(l.title)}</h3><p>${esc(l.subtitle)}</p>${dots(Math.min(5, ST.done[l.id] || 0))}</button>`).join('')}</div>
   <div class="foot"><button id="voiceBtn">换声音</button><button id="goalBtn">每日目标 ${ST.goal} XP</button></div>
@@ -407,7 +451,11 @@ function renderHome() {
   requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); }));
   $('goDaily').onclick = () => start('daily', buildDaily());
   document.querySelectorAll('.sb').forEach(b => b.onclick = () => start('sec-' + b.dataset.s, buildSec(b.dataset.s, 8)));
-  $('goMock').onclick = () => start('mock', buildMock());
+  if ($('goMock')) $('goMock').onclick = () => start('mock', buildMock());
+  $('goPlace').onclick = () => start('place', buildPlace());
+  document.querySelectorAll('.wk').forEach(b => b.onclick = () => start('type-' + b.dataset.no, buildType(b.dataset.no)));
+  if ($('goPlace1')) $('goPlace1').onclick = () => start('place', buildPlace());
+  if ($('regUndo')) $('regUndo').onclick = () => { ST.topikReg = 0; save(); push(); renderHome(); toast('已撤销：报名期间会继续提醒'); };
   if ($('regDone')) $('regDone').onclick = () => { ST.topikReg = EXAM.round; save(); push(); renderHome(); toast('已记下：不再提醒报名'); };
   if ($('goRev')) $('goRev').onclick = () => start('review', buildReview());
   document.querySelectorAll('.lc').forEach(b => b.onclick = () => start(b.dataset.l, buildLesson(b.dataset.l)));
@@ -417,13 +465,15 @@ function renderHome() {
 function topikCard() {
   const left = dleft(EXAM.date), reg = ST.topikReg === EXAM.round, t = today();
   const regOpen = t >= EXAM.regFrom && t <= EXAM.regTo, regSoon = t < EXAM.regFrom, regLeft = dleft(EXAM.regTo);
-  const est = ST.est ? `<div class="est">摸底估分 <b>${ST.est.total}</b> / 目标 ${EXAM.goalScore}<span>听 ${ST.est.L} · 读 ${ST.est.R} · 写 ${ST.est.W}（${ST.est.day.slice(5).replace('-', '/')}）</span></div>` : '';
+  const est = ST.est && (ST.tier || 1) >= 3 ? `<div class="est">摸底估分 <b>${ST.est.total}</b> / 目标 ${EXAM.goalScore}<span>听 ${ST.est.L} · 读 ${ST.est.R} · 写 ${ST.est.W}（${ST.est.day.slice(5).replace('-', '/')}）</span></div>` : '';
   let regLine = '';
   if (!reg && (regOpen || regSoon)) regLine = `<div class="reg${regOpen ? ' hot' : ''}">${regOpen ? `报名中 · 还剩 ${regLeft + 1} 天（${EXAM.regTo.slice(5).replace('-', '/')} 截止），考场先到先得` : `报名 ${EXAM.regFrom.slice(5).replace('-', '/')} 开始 · 只有 7 天`}
-    <div class="rb">${regOpen ? `<a class="btn red" href="${EXAM.url}" target="_blank" rel="noopener">去报名</a>` : ''}<button class="btn ghost" id="regDone">我已报名</button></div></div>`;
-  else if (reg) regLine = `<div class="reg ok">✓ 已报名第 ${EXAM.round} 回</div>`;
+    <div class="rb">${regOpen ? `<a class="btn red" href="${EXAM.url}" target="_blank" rel="noopener">去报名</a>` : ''}${regOpen ? '<button class="btn ghost" id="regDone">我已报名</button>' : ''}</div></div>`;
+  else if (reg) regLine = `<div class="reg ok">✓ 已报名第 ${EXAM.round} 回<button class="undo" id="regUndo">撤销</button></div>`;
+  const tn = tier(), h = (ST.lvh || []).filter(x => x.lv === tn), need = Math.max(0, 7 - h.slice(-8).filter(x => x.ok).length);
+  const tierLine = `<div class="tier"><span>现在练</span><b>${TIERS[tn]}</b>${tn < maxTier() ? `<small>同级再答对 ${need} 题升级</small>` : ''}</div>`;
   return `<div class="hero topik"><div class="meta">${EXAM.name} · 第 ${EXAM.round} 回 · ${EXAM.date.slice(5).replace('-', '/')}</div>
-    <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${est}${regLine}</div>`;
+    <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${tierLine}${est}${regLine}</div>`;
 }
 function sheet(html) { $('sheetBody').innerHTML = html; $('sheet').classList.add('on'); }
 $('sheet').onclick = e => { if (e.target.id === 'sheet') $('sheet').classList.remove('on'); };
@@ -479,7 +529,7 @@ function wireBubble(root, g) {
 document.addEventListener('click', () => document.querySelectorAll('.tip').forEach(x => x.remove()));
 
 function rTip(x, st) {
-  st.innerHTML = `<div class="tag">新课</div><div class="q">${esc(x.title)} · 先看 3 个要点</div><ul class="pts">${x.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`;
+  st.innerHTML = `<div class="tag">${x.tag || '新课'}</div><div class="q">${esc(x.title)} · 先看 3 个要点</div><ul class="pts">${x.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`;
   setGo('green', '开始'); answer = 'skip';
 }
 function rVocab(x, st) {
@@ -665,6 +715,22 @@ function finish() {
     else if (r) { if (r.box >= GAP.length) delete ST.srs[id]; else ST.srs[id] = { ...r, box: r.box + 1, due: Date.now() + GAP[r.box] * DAY }; }
   }
   let estHtml = '';
+  ST.typ = ST.typ || {};
+  S.log.forEach(x => { const q = TBY[x.id]; if (q) ST.typ[q.no] = (ST.typ[q.no] || []).concat(x.ok ? 1 : 0).slice(-10); });
+  const missNo = {}; S.log.forEach(x => { const q = TBY[x.id]; if (q && !x.ok) missNo[q.no] = (missNo[q.no] || 0) + 1; });
+  const focus = Object.entries(missNo).sort((a, b) => b[1] - a[1]).map(([no]) => no).filter(no => TQ.filter(q => q.no === no).length >= 2)[0];
+  const before = tier();
+  if (S.mode === 'place') {   // 定级：从 1 级往上，哪一级 4 题错 2 题以上就停在那一级
+    let lv = 1; for (const L of [1, 2, 3]) { const l = S.log.filter(x => TBY[x.id] && lvOf(TBY[x.id]) === L); if (l.filter(x => x.ok).length >= 3) lv = Math.min(L + 1, maxTier()); else break; }
+    ST.tier = lv; ST.placed = t; ST.lvh = [];
+    estHtml = `<div class="hero topik" style="text-align:left"><div class="meta">分级测试</div><div class="cd"><b>${lv}</b> 级题起步<span>${TIERS[lv]}　同级 8 题对 7 题自动升级</span></div></div>`;
+  } else {
+    ST.lvh = (ST.lvh || []).concat(S.log.filter(x => TBY[x.id] && TBY[x.id].sec !== 'W').map(x => ({ lv: lvOf(TBY[x.id]), ok: x.ok ? 1 : 0 }))).slice(-40);
+    const cur = ST.lvh.filter(x => x.lv === before).slice(-8), okc = cur.filter(x => x.ok).length;
+    if (cur.length >= 8 && okc >= 7 && before < maxTier()) { ST.tier = before + 1; ST.lvh = []; }
+    else if (before > 1 && cur.length >= 6 && cur.slice(-6).filter(x => x.ok).length <= 2) { ST.tier = before - 1; ST.lvh = []; }
+    if (tier() !== before) estHtml = `<div class="hero topik" style="text-align:left"><div class="meta">${tier() > before ? '升级了' : '先退一级打稳'}</div><div class="cd"><b>${tier()}</b> 级题<span>${TIERS[tier()]}</span></div></div>`;
+  }
   if (S.mode === 'mock') {   // 估分：听力 / 阅读按正确率 × 100，写作只算 51–52 的比例（满分 20）再按 53–54 同水平外推
     const acc = sec2 => { const l = S.log.filter(l => TBY[l.id] && TBY[l.id].sec === sec2); return l.length ? l.filter(x => x.ok).length / l.length : 0; };
     const L = Math.round(acc('L') * 100), R = Math.round(acc('R') * 100), W = Math.round(acc('W') * 20 + acc('W') * 25);
@@ -679,11 +745,14 @@ function finish() {
     <div class="stats"><div class="st a"><small>经验</small><b>+${xp}</b></div><div class="st b"><small>正确率</small><b>${acc}%</b></div><div class="st c"><small>用时</small><b>${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</b></div></div>
     ${estHtml}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
+    ${focus && !S.mode.startsWith('type-') ? `<div class="hero rev" style="text-align:left"><div class="meta">这组错得最多</div><h2>${esc(NO[focus] || focus)}</h2><p>先看 3 条解题方法，再专门刷这一类</p><button class="btn blue" id="goFocus">专项突破</button></div>` : ''}
     <button class="btn green" id="back">继续</button>`;
   $('back').onclick = () => { S = null; show('home'); renderHome(); };
+  if ($('goFocus')) $('goFocus').onclick = () => start('type-' + focus, buildType(focus));
   show('done'); sfx(true);
 }
 
+if (!ST.regFix) { ST.topikReg = 0; ST.regFix = 1; save(); }   // 11/25 误点「我已报名」，清掉一次
 renderHome(); pull(); if (pending.length) push();
 if (/[?&]go=daily/.test(location.search)) { history.replaceState(null, '', location.pathname); start('daily', buildDaily()); }   // 推送点进来直接开始第一题
 </script>
