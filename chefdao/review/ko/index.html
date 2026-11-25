@@ -248,7 +248,8 @@ const { EXAM, SEC, NO, TIP = {}, Q: TQ } = window.KO_TOPIK;
 const TBY = Object.fromEntries(TQ.map(q => [q.id, q]));
 const $ = id => document.getElementById(id);
 const API = 'https://stats.cumusic.work';
-const KEY = (() => { try { return localStorage.getItem('insights:key') } catch (e) { return null } })();
+// 主屏幕「韩语」App 和 Safari / Insights 的存储是分开的：没有钥匙就在底部「连接同步」粘贴（电脑上点「复制同步码」）
+let KEY = (() => { try { const m = /[#&]k=([\w-]+)/.exec(location.hash); if (m) { localStorage.setItem('insights:key', m[1]); history.replaceState(null, '', location.pathname + location.search); } return localStorage.getItem('insights:key'); } catch (e) { return null } })();
 const DAY = 864e5;
 const today = (t = Date.now()) => new Date(t + 9 * 36e5).toISOString().slice(0, 10);   // 按韩国时间算「今天」
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -263,13 +264,27 @@ const ICON_MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 let ST = { xp: 0, streak: 0, last: null, day: null, dayXp: 0, goal: 30, done: {}, seen: {}, srs: {}, noSpeak: 0, ts: 0 };
 try { const s = JSON.parse(localStorage.getItem('ko:st') || 'null'); if (s) ST = { ...ST, ...s }; } catch (e) {}
 const save = () => { ST.ts = Date.now(); try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} };
-let syncMsg = KEY ? '' : '这台设备还没打开过 Insights，学习记录只存在本机';
-async function pull() {
+let syncMsg = '';
+async function pull(force) {   // 云端更新、或本机还没学过（新设备）就用云端的
   if (!KEY) return;
   try {
-    const j = await (await fetch(API + '/ko?days=1', { headers: { Authorization: 'Bearer ' + KEY } })).json();
-    if (j.ok && j.st && (j.st.ts || 0) > (ST.ts || 0)) { ST = { ...ST, ...j.st }; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} renderHome(); }
+    const r = await fetch(API + '/ko?days=1', { headers: { Authorization: 'Bearer ' + KEY } });
+    if (r.status === 401) return false;
+    const j = await r.json();
+    if (j.ok && j.st && (force || !ST.xp || (j.st.ts || 0) > (ST.ts || 0))) { ST = { ...ST, ...j.st }; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} renderHome(); }
+    return true;
   } catch (e) {}
+}
+function syncSheet() {
+  sheet(`<h3>连接同步</h3><p style="font-size:15px;color:var(--tx2);margin:0 0 10px;line-height:1.7">电脑上打开韩语页，点最底下「复制同步码」，回到这里粘贴（同一个 Apple ID 会自动共享剪贴板）</p>
+    <input id="kin" placeholder="粘贴同步码" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:12px 14px;border:2px solid var(--bd);border-radius:12px;font-size:16px;margin-bottom:10px">
+    <button class="btn green" id="kgo">连接</button>`);
+  $('kgo').onclick = async () => {
+    const k = $('kin').value.trim().replace(/^.*[#&]k=/, ''); if (!k) return;
+    const old = KEY; KEY = k;
+    if (await pull(true)) { try { localStorage.setItem('insights:key', k); } catch (e) {} $('sheet').classList.remove('on'); if (pending.length) push(); renderHome(); toast('已连接：记录和电脑同步'); }
+    else { KEY = old; toast('同步码不对'); }
+  };
 }
 let pending = JSON.parse(localStorage.getItem('ko:pending') || '[]');   // 没网时先攒着，下次一起发
 async function push(log) {
@@ -458,8 +473,8 @@ function renderHome() {
   <button class="btn ghost" id="goPlace" style="margin-top:6px">${ST.placed ? '再测一次级别 · 12 题' : '分级测试 · 12 题'}</button>
   <div class="sec">基础词句</div>
   <div class="path">${LESSONS.map(l => `<button class="lc" data-l="${l.id}"><span class="lv">${['', '初级', '中级', '中高'][l.level]}</span><div class="ic">${l.icon}</div><h3>${esc(l.title)}</h3><p>${esc(l.subtitle)}</p>${dots(Math.min(5, ST.done[l.id] || 0))}</button>`).join('')}</div>
-  <div class="foot"><button id="voiceBtn">换声音</button><button id="goalBtn">每日目标 ${ST.goal} XP</button></div>
-  <div class="sync">${esc(syncMsg)}</div>`;
+  <div class="foot"><button id="voiceBtn">换声音</button>${KEY ? '<button id="copyKey">复制同步码</button>' : ''}<button id="goalBtn">每日目标 ${ST.goal} XP</button></div>
+  ${KEY ? `<div class="sync">${esc(syncMsg)}</div>` : '<button class="btn blue" id="syncBtn" style="margin-top:10px">连接同步 · 和电脑共用学习记录</button>'}`;
   requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); }));
   $('goDaily').onclick = () => start('daily', buildDaily());
   document.querySelectorAll('.sb').forEach(b => b.onclick = () => start('sec-' + b.dataset.s, buildSec(b.dataset.s, 8)));
@@ -473,6 +488,8 @@ function renderHome() {
   if ($('goRev')) $('goRev').onclick = () => start('review', buildReview());
   document.querySelectorAll('.lc').forEach(b => b.onclick = () => start(b.dataset.l, buildLesson(b.dataset.l)));
   $('voiceBtn').onclick = voiceSheet;
+  if ($('syncBtn')) $('syncBtn').onclick = syncSheet;
+  if ($('copyKey')) $('copyKey').onclick = () => navigator.clipboard.writeText(KEY).then(() => toast('已复制，到手机韩语 App 底部点「连接同步」粘贴'), () => sheet(`<h3>同步码</h3><p class="ko" style="word-break:break-all;user-select:all;font-size:15px">${esc(KEY)}</p>`));
   $('goalBtn').onclick = () => { const g = [10, 20, 30, 50]; ST.goal = g[(g.indexOf(ST.goal) + 1) % g.length]; save(); renderHome(); push(); };
 }
 function topikCard() {
@@ -792,7 +809,7 @@ function finish() {
 }
 
 if (!ST.regFix) { ST.topikReg = 0; ST.regFix = 1; save(); }   // 11/25 误点「我已报名」，清掉一次
-renderHome(); pull(); if (pending.length) push();
+renderHome(); pull().then(() => { if (pending.length) push(); });
 if (/[?&]go=daily/.test(location.search)) { history.replaceState(null, '', location.pathname); start('daily', buildDaily()); }   // 推送点进来直接开始第一题
 </script>
 </body>
