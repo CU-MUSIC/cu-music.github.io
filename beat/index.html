@@ -595,7 +595,7 @@ function render(){
   $('count').textContent = BEATS.length ? (filtered ? `${view.length} / ${BEATS.length}` : `${view.length}`) : '';
 
   if (!BEATS.length) { $('list').innerHTML = '<li class="empty">暂无伴奏</li>'; return; }
-  const askEnd = '<li class="ask-end"><div><b>没找到想要的？</b><span>告诉我们你想要的风格</span></div><button class="btn ghost press" data-req>求一首</button></li>';
+  const askEnd = '<li class="ask-end"><div><b>没找到想要的？</b><span>留下想要的风格，定制一首</span></div><button class="btn ghost press" data-req>求一首</button></li>';
   if (!view.length) { $('list').innerHTML = '<li class="empty">没有符合条件的伴奏<br><button class="btn ghost press" data-clearall>清除筛选</button> <button class="btn primary press" data-req>求一首</button></li>';
     $('list').querySelector('[data-clearall]').onclick = clearAll; return; }
 
@@ -789,7 +789,7 @@ function fallback(text, done){
 const rq = document.createElement('div');
 rq.className = 'lic'; rq.setAttribute('role', 'dialog'); rq.setAttribute('aria-modal', 'true'); rq.setAttribute('aria-labelledby', 'rqT');
 rq.innerHTML = `<div class="box sm" style="width:min(520px,100%)">
-  <div class="hd"><div class="tt"><h2 id="rqT">求一首</h2><p>想要什么风格的伴奏，我们来做</p></div><button class="x" id="rqX" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="hd"><div class="tt"><h2 id="rqT">求一首</h2><p>按想要的风格定制伴奏</p></div><button class="x" id="rqX" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <form class="rq" id="rqF">
     <label>想要的风格或参考艺人<textarea id="rqW" maxlength="300" placeholder="比如：Travis Scott 那种暗一点的 trap，带钢琴" required></textarea></label>
     <div class="two"><label>BPM（选填）<input id="rqB" inputmode="numeric" maxlength="3" placeholder="140"></label>
