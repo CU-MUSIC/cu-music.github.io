@@ -143,6 +143,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .heard{text-align:center;color:var(--tx2);font-size:16px;min-height:30px;margin:12px 0}
 /* 底部检查栏 + 反馈 */
 .dock{position:sticky;bottom:0;margin:0 -18px;padding:14px 18px calc(env(safe-area-inset-bottom) + 18px);border-top:2px solid var(--bd);background:var(--bg);transition:background .25s,border-color .25s}
+.ch .cz{display:block;font-size:14px;font-weight:600;color:var(--tx2);margin-top:4px;line-height:1.5;animation:fadeUp .25s ease-out}
+.ch.good .cz{color:var(--gt)}.ch.bad .cz{color:var(--rt)}
 .gorow{display:flex;gap:10px}.gorow #go{flex:1}
 #idk{flex:0 0 0;max-width:0;padding-left:0;padding-right:0;overflow:hidden;opacity:0;border-width:0;white-space:nowrap;transition:flex-basis .25s,max-width .25s,opacity .2s,padding .25s}
 #idk.on{flex:0 0 96px;max-width:96px;padding-left:12px;padding-right:12px;opacity:1;border:2px solid var(--bd);border-bottom-width:4px;border-radius:16px;color:var(--tx2);font-size:16px;letter-spacing:0;background:var(--bg)}
@@ -188,6 +190,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .est{margin-top:10px;font-size:15px;font-weight:700}.est b{color:var(--o);font-size:20px}.est span{display:block;font-size:13px;color:var(--tx2);font-weight:600}
 .reg{margin-top:12px;padding-top:12px;border-top:2px dashed var(--bd);font-size:15px;font-weight:700;color:var(--tx2)}
 .reg.hot{color:var(--rt)}.reg.ok{color:var(--gt)}
+.tier .undo{float:right;font-size:13px;color:var(--b);font-weight:800;text-decoration:underline}
 .reg .undo{float:right;font-size:13px;color:var(--tx3);font-weight:700;text-decoration:underline}
 .tier{margin-top:10px;font-size:15px;font-weight:700}.tier span{color:var(--tx2);margin-right:6px}.tier b{color:var(--b)}.tier small{display:block;font-size:13px;color:var(--tx2);font-weight:600}
 .weak{display:flex;flex-direction:column;gap:8px}
@@ -305,9 +308,10 @@ function playClips(list, el) {   // list: [{src, text, v}]，按顺序播，中�
     if (my !== auSeq) return;
     if (i >= list.length) { if (auDone) { const f = auDone; auDone = null; f(); } return; }
     const x = list[i], go = () => setTimeout(() => next(i + 1), i < list.length - 1 ? 350 : 0);
-    if (!x.src) return sysSay(x.text, x.rate, x.v, go);
-    AU.onended = go; AU.onerror = () => sysSay(x.text, x.rate, x.v, go);
-    AU.src = x.src; AU.playbackRate = 1; AU.play().catch(() => sysSay(x.text, x.rate, x.v, go));
+    const fall = () => { if (my === auSeq) sysSay(x.text, x.rate, x.v, go); };
+    if (!x.src) return fall();
+    AU.onended = () => { if (my === auSeq) go(); }; AU.onerror = fall;
+    AU.src = x.src; AU.playbackRate = 1; AU.play().catch(e => { if (e && e.name !== 'AbortError') fall(); });
   };
   next(0);
 }
@@ -352,7 +356,7 @@ function sentEx(s, kind) {
 }
 function oldEx(e) { return { kind: e.type === 'vocab' ? 'vocab' : e.type, id: e.id, e }; }
 function topEx(q) {   // 选项每次打乱（题库里正确答案多在第 1 个，不打乱会被位置记住）
-  if (q.ch) { const o = shuffle(q.ch.map((_, i) => i)); q = { ...q, ch: o.map(i => q.ch[i]), a: o.indexOf(q.a) }; }
+  if (q.ch) { const o = shuffle(q.ch.map((_, i) => i)); q = { ...q, ch: o.map(i => q.ch[i]), cz: q.cz && o.map(i => q.cz[i]), a: o.indexOf(q.a) }; }
   return { kind: q.sec === 'W' ? 'tw' : 'tq', id: q.id, q };
 }
 function anyEx(id, kind) { if (TBY[id]) return topEx(TBY[id]); if (id.includes('#')) { const e = oldById(id); return e && oldEx(e); } const s = sentById(id); return s && sentEx(s, kind); }
@@ -380,7 +384,7 @@ function buildDaily() {   // 今日特训里超过当前级的题，换成当前
 // ───────── 难度阶梯：tier 1 入门 → 2 初级 → 3 中级（3 级）→ 4 中高（4 级）。只出 ≤ 当前级的题，最近同级 8 题对 7 题就升一级
 const TIERS = ['', '入门 · TOPIK I 1 级', '初级 · TOPIK I 2 级', '中级 · TOPIK II 3 级', '中高 · TOPIK II 4 级'];
 const lvOf = q => q.lv || 3, maxTier = () => Math.max(...TQ.map(lvOf));
-const tier = () => Math.min(ST.tier || 1, maxTier());
+const tier = () => Math.min(ST.tier || 1, ST.cap || 9, maxTier());   // cap：「只练初级」锁在 2 级以内
 function lvPool(sec) {   // 当前级优先，低一级垫底；写作 51–52 是 3 级题型，没到 3 级不出
   const t = tier();
   return TQ.filter(q => (!sec || q.sec === sec) && lvOf(q) <= t && !(q.sec === 'W' && t < 3)).sort((a, b) => lvOf(b) - lvOf(a));
@@ -458,6 +462,7 @@ function renderHome() {
   $('goPlace').onclick = () => start('place', buildPlace());
   document.querySelectorAll('.wk').forEach(b => b.onclick = () => start('type-' + b.dataset.no, buildType(b.dataset.no)));
   if ($('goPlace1')) $('goPlace1').onclick = () => start('place', buildPlace());
+  if ($('capBtn')) $('capBtn').onclick = () => { if (ST.cap) delete ST.cap; else { ST.cap = 2; if ((ST.tier || 1) > 2) ST.tier = 2; } ST.lvh = []; save(); push(); renderHome(); toast(ST.cap ? '只出 TOPIK I 1–2 级的题' : '按级别自动升级'); };
   if ($('regUndo')) $('regUndo').onclick = () => { ST.topikReg = 0; save(); push(); renderHome(); toast('已撤销：报名期间会继续提醒'); };
   if ($('regDone')) $('regDone').onclick = () => { ST.topikReg = EXAM.round; save(); push(); renderHome(); toast('已记下：不再提醒报名'); };
   if ($('goRev')) $('goRev').onclick = () => start('review', buildReview());
@@ -474,7 +479,7 @@ function topikCard() {
     <div class="rb">${regOpen ? `<a class="btn red" href="${EXAM.url}" target="_blank" rel="noopener">去报名</a>` : ''}${regOpen ? '<button class="btn ghost" id="regDone">我已报名</button>' : ''}</div></div>`;
   else if (reg) regLine = `<div class="reg ok">✓ 已报名第 ${EXAM.round} 回<button class="undo" id="regUndo">撤销</button></div>`;
   const tn = tier(), h = (ST.lvh || []).filter(x => x.lv === tn), need = Math.max(0, 7 - h.slice(-8).filter(x => x.ok).length);
-  const tierLine = `<div class="tier"><span>现在练</span><b>${TIERS[tn]}</b>${tn < maxTier() ? `<small>同级再答对 ${need} 题升级</small>` : ''}</div>`;
+  const tierLine = `<div class="tier"><span>现在练</span><b>${TIERS[tn]}</b><button class="undo" id="capBtn">${ST.cap ? '解锁中级' : '只练初级'}</button>${ST.cap ? `<small>已锁定初级（TOPIK I），题库 ${TQ.filter(q => lvOf(q) <= 2).length} 题</small>` : tn < maxTier() ? `<small>同级再答对 ${need} 题升级</small>` : ''}</div>`;
   return `<div class="hero topik"><div class="meta">${EXAM.name} · 第 ${EXAM.round} 回 · ${EXAM.date.slice(5).replace('-', '/')}</div>
     <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${tierLine}${est}${regLine}</div>`;
 }
@@ -665,6 +670,7 @@ function check() {
     const q = x.q; ok = answer === q.a; right = q.ch[q.a]; said = q.ch[answer];
     document.querySelectorAll('.ch').forEach(c => { const i = +c.dataset.i; c.classList.toggle('good', i === q.a); c.classList.toggle('bad', i === answer && !ok); c.classList.remove('sel'); });
     if ($('tr')) $('tr').hidden = false;
+    if (q.cz) document.querySelectorAll('.ch').forEach(c => { const z = q.cz[+c.dataset.i]; if (!z) return; const e = document.createElement('small'); e.className = 'cz'; e.textContent = z; c.querySelector('span:last-child').appendChild(e); });
   } else if (x.kind === 'tw') {
     const q = x.q, norm = v => strip(v || '').replace(/[.。]/g, '');
     const res = q.bl.map((b, i) => [b.m].concat(b.alt || []).some(m => norm(m) === norm(answer[i])));
