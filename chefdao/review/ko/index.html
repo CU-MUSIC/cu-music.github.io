@@ -143,6 +143,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .heard{text-align:center;color:var(--tx2);font-size:16px;min-height:30px;margin:12px 0}
 /* 底部检查栏 + 反馈 */
 .dock{position:sticky;bottom:0;margin:0 -18px;padding:14px 18px calc(env(safe-area-inset-bottom) + 18px);border-top:2px solid var(--bd);background:var(--bg);transition:background .25s,border-color .25s}
+.gorow{display:flex;gap:10px}.gorow #go{flex:1}
+#idk{flex:0 0 0;max-width:0;padding-left:0;padding-right:0;overflow:hidden;opacity:0;border-width:0;white-space:nowrap;transition:flex-basis .25s,max-width .25s,opacity .2s,padding .25s}
+#idk.on{flex:0 0 96px;max-width:96px;padding-left:12px;padding-right:12px;opacity:1;border:2px solid var(--bd);border-bottom-width:4px;border-radius:16px;color:var(--tx2);font-size:16px;letter-spacing:0;background:var(--bg)}
 .dock.good{background:var(--gl);border-color:transparent}
 .dock.bad{background:var(--rl);border-color:transparent}
 .fb{display:none;margin-bottom:12px}
@@ -220,7 +223,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   <div class="stage" id="stage"></div>
   <div class="dock" id="dock">
     <div class="fb" id="fb"></div>
-    <button class="btn off" id="go">检查</button>
+    <div class="gorow"><button class="btn ghost" id="idk">不会</button><button class="btn off" id="go">检查</button></div>
   </div>
 </section>
 
@@ -505,6 +508,7 @@ function setGo(state, label) { const g = $('go'); g.className = 'btn ' + state; 
 function renderEx() {
   const x = S.items[S.i]; answer = null; checked = false;
   $('dock').className = 'dock'; $('fb').innerHTML = ''; setGo('off', '检查'); setBar();
+  $('idk').classList.toggle('on', ['tq', 'mc', 'listen', 'tw', 'k2z', 'z2k'].includes(x.kind));
   const st = $('stage'); st.classList.remove('in'); void st.offsetWidth; st.classList.add('in');
   const R = { tip: rTip, vocab: rVocab, mc: rMC, listen: rListen, k2z: rBuild, z2k: rBuild, speak: rSpeak, tq: rTQ, tw: rTW }[x.kind];
   R(x, st);
@@ -635,8 +639,14 @@ function sim(a, b) {   // 两句韩语的相似度：按字比最长公共子序
 }
 
 // 检查 → 底部反馈
+$('idk').onclick = () => {   // 不会：直接算错、看答案和解析、进错题复习（蒙对不算会）
+  const x = S.items[S.i]; if (checked || !x) return;
+  answer = x.kind === 'tw' ? x.q.bl.map(() => '') : (x.kind === 'k2z' || x.kind === 'z2k') ? [] : -1;
+  S.idk = true; check();
+};
 function check() {
   const x = S.items[S.i]; if (answer == null) return;
+  $('idk').classList.remove('on');
   if (x.kind === 'tw' && !answer.length) answer = x.q.bl.map(() => '');
   if (answer === 'skip') return next(true, true);
   checked = true; stopRec();
@@ -665,6 +675,7 @@ function check() {
   } else if (x.kind === 'speak') {
     said = answer.said; ok = answer.score >= 0.7; right = x.s.k;
   }
+  if (S.idk) { S.idk = false; ok = false; said = '不会'; }
   if (x.s) tokens(x.s.k).forEach(t => ST.seen[t] = 1);
   if (x.q) { ST.tseen = ST.tseen || {}; ST.tseen[x.q.id] = 1; }
   if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.s ? x.s.k : x.q ? (x.q.no + ' ' + (x.q.d ? x.q.d.map(l => l[1]).join(' / ') : x.q.p || x.q.q)).slice(0, 110) : (x.e.audio || x.e.q), ok, a: said || '' }); }
