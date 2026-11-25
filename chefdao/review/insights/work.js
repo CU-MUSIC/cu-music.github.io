@@ -106,14 +106,18 @@
     tracks.forEach((hit, k) => { if (!used.has(k) && hit.t.prog && hit.t.prog.s !== 5) out.push(build(null, hit)); });   // 只在审听系统里有、Notion 里没有的歌也算进来
     return out;
   }
-  function month(y, m, upto) {   // 收入按「结束日期」所在月算；工时按日志日期算
-    const pre = y + '-' + String(m + 1).padStart(2, '0') + '-'; let inc = 0, hrs = 0, mi = 0, mh = 0; const days = {}, list = [];
+  // 收入分两半记：开始日期那天收一半（定金），结束日期那天收一半（尾款）；只有一个日期就记在那天；同月开始结束就是全款
+  const halves = p => { if (nCancel(p) || !p.net) return []; if (p.sd && p.ed) return [[p.sd, p.net / 2, 'dep'], [p.ed, p.net / 2, 'fin']]; if (p.ed) return [[p.ed, p.net, 'all']]; if (p.sd) return [[p.sd, p.net / 2, 'dep']]; return []; };
+  function month(y, m, upto) {   // 收入按开始 / 结束日期各一半；工时按日志日期算
+    const pre = y + '-' + String(m + 1).padStart(2, '0') + '-'; let inc = 0, hrs = 0, mi = 0, mh = 0, n = 0; const days = {}, list = [];
     WK.rows.forEach(p => {
       for (const k in p.d) if (k.startsWith(pre) && (!upto || +k.slice(8) <= upto)) { hrs += p.d[k]; days[k] = (days[k] || 0) + p.d[k]; }
-      if (p.ed && p.ed.startsWith(pre) && !nCancel(p)) { inc += p.net; list.push(p); if (p.mix > 0 && p.net > 0) { mi += p.net; mh += p.mix; } }
+      const got = halves(p).filter(([d]) => d.startsWith(pre) && (!upto || +d.slice(8) <= upto));
+      if (got.length) { const amt = got.reduce((a, x) => a + x[1], 0), kinds = got.map(x => x[2]); inc += amt; list.push({ p, amt, tag: kinds.length === 2 || kinds[0] === 'all' ? '' : kinds[0] === 'dep' ? '定金一半' : '尾款一半' }); }
+      if (p.ed && p.ed.startsWith(pre) && !nCancel(p)) { n++; if (p.mix > 0 && p.net > 0) { mi += p.net; mh += p.mix; } }
     });
-    list.sort((a, b) => b.net - a.net);
-    return { inc, hrs, days, list, rate: mh > 0 ? mi / mh : 0, nd: Object.keys(days).length };
+    list.sort((a, b) => b.amt - a.amt);
+    return { inc, hrs, days, list, n, rate: mh > 0 ? mi / mh : 0, nd: Object.keys(days).length };
   }
 
   // ── 界面 ──
@@ -151,7 +155,7 @@
     const isNow = Y === T0.getFullYear() && M === T0.getMonth(), S = month(Y, M), pv = new Date(Y, M - 1, 1), P = month(pv.getFullYear(), pv.getMonth(), isNow ? new Date().getDate() : 0), PF = month(pv.getFullYear(), pv.getMonth());
     const tI = target('inc'), tH = target('hr'), dH = S.hrs - P.hrs;
     const cards = `<div class="wk-cards">
-      <div class="tap" data-wt="inc" title="点一下改月目标"><div class="lb">收入</div><div class="n">${yen(S.inc)}<small>/ ${yen(tI)}</small></div><div class="bar"><i style="width:${pct(S.inc, tI)}%"></i></div><div class="d">${S.list.length} 首交付${PF.inc ? ' · 上月 ' + yen(PF.inc) : ''}</div></div>
+      <div class="tap" data-wt="inc" title="点一下改月目标"><div class="lb">收入</div><div class="n">${yen(S.inc)}<small>/ ${yen(tI)}</small></div><div class="bar"><i style="width:${pct(S.inc, tI)}%"></i></div><div class="d">${S.n} 首交付${PF.inc ? ' · 上月 ' + yen(PF.inc) : ''}</div></div>
       <div class="tap" data-wt="hr" title="点一下改工时目标"><div class="lb">工时</div><div class="n">${hr(S.hrs)}<small>/ ${tH}h</small></div><div class="bar"><i style="width:${pct(S.hrs, tH)}%"></i></div><div class="d">${S.nd} 天开工${P.hrs ? ' · 比上月同期 ' + (dH >= 0 ? '+' : '') + hr(dH) : ''}</div></div>
       <div><div class="lb">混音时薪</div><div class="n">${S.rate ? yen(S.rate) : '—'}<small>/h</small></div><div class="d">${S.rate ? '按当月交付的歌算' : '还没有交付'}${PF.rate ? ' · 上月 ' + yen(PF.rate) : ''}</div></div>
       <div><div class="lb">在手</div><div class="n">${me.length + others.length}<small>首</small></div><div class="d">该你动 ${me.length} · 等别人 ${others.length}</div></div></div>`;
@@ -161,9 +165,9 @@
       cal += `<button data-wd="${k}" class="l${lv} ${k === today ? 'tdy ' : ''}${k > today ? 'fut ' : ''}${k === day ? 'on' : ''}"><b>${d}</b><i>${h ? (Math.round(h * 10) / 10) : ''}</i></button>`; }
     const dRows = day ? WK.rows.filter(p => p.d[day]).sort((a, b) => b.d[day] - a.d[day]) : [];
     const dayBox = day ? `<div class="wk-day">${dRows.length ? dRows.map(p => `<div class="wk-row"><b>${G.esc(p.n)}</b><em>${hr(p.d[day])}</em></div>`).join('') : '<div class="msg">这一天没有工时记录</div>'}</div>` : '';
-    const delivered = S.list.map(p => `<a class="wk-row" href="https://www.notion.so/${p.id}" target="_blank" rel="noopener"><b>${G.esc(p.n)}</b><em>${yen(p.net)}</em><small>${G.esc([p.ar.join('、'), p.mix ? hr(p.mix) + (p.net ? ' · ' + yen(p.net / p.mix) + '/h' : '') : '没有工时记录'].filter(Boolean).join(' · '))}</small></a>`).join('');
+    const delivered = S.list.map(({ p, amt, tag }) => `<a class="wk-row" href="https://www.notion.so/${p.id}" target="_blank" rel="noopener"><b>${G.esc(p.n)}</b><em>${yen(amt)}</em><small>${G.esc([tag ? tag + '（全款 ' + yen(p.net) + '）' : '', p.ar.join('、'), p.mix ? hr(p.mix) + (p.net ? ' · ' + yen(p.net / p.mix) + '/h' : '') : '没有工时记录'].filter(Boolean).join(' · '))}</small></a>`).join('');
     const numBody = `<div class="wk-nav"><button data-wm="-1" aria-label="上个月">‹</button><b>${Y} 年 ${M + 1} 月</b><button data-wm="1" aria-label="下个月">›</button>${isNow ? '' : '<button class="now" data-wm="0">本月</button>'}</div>${cards}
-      <div class="wk-cal">${cal}</div>${dayBox}<div class="wk-h">${isNow ? '本月' : M + 1 + ' 月'}交付 · ${S.list.length} 首 · ${yen(S.inc)}</div>${delivered || '<div class="msg">这个月还没有交付的歌</div>'}`;
+      <div class="wk-cal">${cal}</div>${dayBox}<div class="wk-h">${isNow ? '本月' : M + 1 + ' 月'}收入 · ${S.list.length} 首 · ${yen(S.inc)}</div>${delivered || '<div class="msg">这个月还没有收入</div>'}`;
     // ④ 专辑进度
     const am = {}; WK.rows.forEach(p => { if (single(p) || nCancel(p)) return; const g = am[p.al] || (am[p.al] = { name: p.al, total: 0, done: 0, last: '' }); g.total++; if (nDone(p)) g.done++; const l = last(p); if (l > g.last) g.last = l; });
     const albums = Object.values(am).filter(g => g.done < g.total).sort((a, b) => (a.last || '9') < (b.last || '9') ? -1 : 1);
