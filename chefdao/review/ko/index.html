@@ -177,6 +177,28 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .vo.on{border-color:var(--b);background:var(--bl)}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 110px);transform:translate(-50%,20px);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:60}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+.hero.topik{border-color:var(--b);background:linear-gradient(160deg,var(--bl),var(--card) 70%)}
+.hero.topik .meta{color:var(--b)}
+.cd{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-weight:800}
+.cd b{font-size:44px;line-height:1.1;color:var(--b)}
+.cd span{width:100%;font-size:14px;color:var(--tx2);font-weight:600}
+.est{margin-top:10px;font-size:15px;font-weight:700}.est b{color:var(--o);font-size:20px}.est span{display:block;font-size:13px;color:var(--tx2);font-weight:600}
+.reg{margin-top:12px;padding-top:12px;border-top:2px dashed var(--bd);font-size:15px;font-weight:700;color:var(--tx2)}
+.reg.hot{color:var(--rt)}.reg.ok{color:var(--gt)}
+.rb{display:flex;gap:10px;margin-top:10px}.rb .btn{flex:1;text-decoration:none}
+.secs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sb{border:2px solid var(--bd);border-bottom-width:4px;border-radius:16px;padding:12px 8px;background:var(--card);text-align:center}
+.sb b{display:block;font-size:17px}.sb small{display:block;font-size:12px;color:var(--tx2);line-height:1.4;margin-top:2px}
+.sb:active{transform:translateY(2px)}
+.psg{border:2px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:17px;line-height:1.9;margin-bottom:16px;background:var(--fill)}
+.tr{border-left:4px solid var(--b);padding:4px 0 4px 12px;margin:0 0 16px;font-size:16px;animation:fadeUp .3s}
+.tr p b{color:var(--b);margin-right:4px}
+.q u{text-decoration-color:var(--b);text-decoration-thickness:2px;text-underline-offset:4px}
+.wb{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.wb span{font-size:20px;font-weight:800;color:var(--b)}
+.wb input{flex:1;font-size:18px;padding:12px 14px;border:2px solid var(--bd);border-radius:14px;background:var(--fill);color:var(--tx);outline:none;transition:border-color .2s}
+.wb input:focus{border-color:var(--b)}.wb input.good{border-color:var(--g)}.wb input.bad{border-color:var(--r)}
+.exp{font-size:15px;color:var(--tx2);margin-top:6px;line-height:1.6}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -204,10 +226,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <script>
 // data.js 每天会被定时任务更新：按 10 分钟取一次新的，免得 GitHub Pages / 微信缓存住旧题
-document.write('<script src="data.js?t=' + Math.floor(Date.now() / 6e5) + '"><\/script>');
+const _t = Math.floor(Date.now() / 6e5);
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
+const { EXAM, SEC, NO, Q: TQ } = window.KO_TOPIK;
+const TBY = Object.fromEntries(TQ.map(q => [q.id, q]));
 const $ = id => document.getElementById(id);
 const API = 'https://stats.cumusic.work';
 const KEY = (() => { try { return localStorage.getItem('insights:key') } catch (e) { return null } })();
@@ -291,7 +316,11 @@ function sentEx(s, kind) {
   return { kind, id: s.id, s };
 }
 function oldEx(e) { return { kind: e.type === 'vocab' ? 'vocab' : e.type, id: e.id, e }; }
-function anyEx(id, kind) { if (id.includes('#')) { const e = oldById(id); return e && oldEx(e); } const s = sentById(id); return s && sentEx(s, kind); }
+function topEx(q) {   // 选项每次打乱（题库里正确答案多在第 1 个，不打乱会被位置记住）
+  if (q.ch) { const o = shuffle(q.ch.map((_, i) => i)); q = { ...q, ch: o.map(i => q.ch[i]), a: o.indexOf(q.a) }; }
+  return { kind: q.sec === 'W' ? 'tw' : 'tq', id: q.id, q };
+}
+function anyEx(id, kind) { if (TBY[id]) return topEx(TBY[id]); if (id.includes('#')) { const e = oldById(id); return e && oldEx(e); } const s = sentById(id); return s && sentEx(s, kind); }
 
 function buildLesson(lid) {
   const L = LBY[lid], first = !(ST.done[lid] > 0), ex = L.exercises.map((e, i) => ({ ...e, id: lid + '#' + i, lesson: lid }));
@@ -312,6 +341,15 @@ function buildDaily() {
   return items;
 }
 
+function buildSec(sec, n) {   // 分项练习：先出没做过的，再出错过的，最后随机
+  const pool = TQ.filter(q => q.sec === sec), seen = ST.tseen || {};
+  const fresh = shuffle(pool.filter(q => !seen[q.id])), wrong = shuffle(pool.filter(q => ST.srs[q.id])), rest = shuffle(pool.filter(q => seen[q.id] && !ST.srs[q.id]));
+  return [...new Set(fresh.concat(wrong, rest))].slice(0, n).map(topEx);
+}
+function buildMock() {   // 摸底：听力 6 + 阅读 8 + 写作 2，结束后估分
+  return shuffle(buildSec('L', 6)).concat(shuffle(buildSec('R', 8)), buildSec('W', 2));
+}
+const dleft = d => Math.round((Date.parse(d + 'T00:00:00+09:00') - Date.parse(today() + 'T00:00:00+09:00')) / DAY);
 // ───────── 首页 ─────────
 function dots(n) { return '<div class="dots">' + [0, 1, 2, 3, 4].map(i => `<i class="${i < n ? 'on' : ''}"></i>`).join('') + '</div>'; }
 function renderHome() {
@@ -324,6 +362,7 @@ function renderHome() {
     <span class="chip fire${ST.last === t ? '' : ' dim'}" title="连续天数">🔥 ${streak}</span>
     <div class="ring" title="今日 ${dayXp}/${ST.goal} XP"><svg viewBox="0 0 38 38"><circle class="bgc" cx="19" cy="19" r="15"/><circle class="fgc" cx="19" cy="19" r="15" stroke-dasharray="${C}" stroke-dashoffset="${C}" id="ringFg"/></svg><b>${dayXp}</b></div>
   </div>
+  ${topikCard()}
   <div class="hero today">
     <div class="meta">${DAILY.date === t ? '今天' : DAILY.date.slice(5).replace('-', '/')} · ${nDaily} 题${dailyDone ? ' · 已完成 ✓' : ''}</div>
     <h2>${esc(DAILY.title)}</h2>
@@ -331,16 +370,33 @@ function renderHome() {
     <button class="btn ${dailyDone ? 'blue' : 'green'}" id="goDaily">${dailyDone ? '再练一次' : '开始'}</button>
   </div>
   ${due ? `<div class="hero rev"><div class="meta">错题复习 · ${due} 题</div><h2>把错过的再过一遍</h2><p>答对一次，下次隔更久再出现</p><button class="btn blue" id="goRev">复习</button></div>` : ''}
-  <div class="sec">全部课程</div>
+  <div class="sec">TOPIK 分项</div>
+  <div class="secs">${['L', 'R', 'W'].map(k => { const all = TQ.filter(q => q.sec === k), d = all.filter(q => (ST.tseen || {})[q.id]).length; return `<button class="sb" data-s="${k}"><b>${SEC[k]}</b><small>${d}/${all.length} 题 · 目标 ${EXAM.plan[k]} 分</small></button>`; }).join('')}</div>
+  <button class="btn ghost" id="goMock" style="margin-top:6px">16 题摸底 · 估一下现在多少分</button>
+  <div class="sec">基础词句</div>
   <div class="path">${LESSONS.map(l => `<button class="lc" data-l="${l.id}"><span class="lv">${['', '初级', '中级', '中高'][l.level]}</span><div class="ic">${l.icon}</div><h3>${esc(l.title)}</h3><p>${esc(l.subtitle)}</p>${dots(Math.min(5, ST.done[l.id] || 0))}</button>`).join('')}</div>
   <div class="foot"><button id="voiceBtn">换声音</button><button id="goalBtn">每日目标 ${ST.goal} XP</button></div>
   <div class="sync">${esc(syncMsg)}</div>`;
   requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); }));
   $('goDaily').onclick = () => start('daily', buildDaily());
+  document.querySelectorAll('.sb').forEach(b => b.onclick = () => start('sec-' + b.dataset.s, buildSec(b.dataset.s, 8)));
+  $('goMock').onclick = () => start('mock', buildMock());
+  if ($('regDone')) $('regDone').onclick = () => { ST.topikReg = EXAM.round; save(); push(); renderHome(); toast('已记下：不再提醒报名'); };
   if ($('goRev')) $('goRev').onclick = () => start('review', buildReview());
   document.querySelectorAll('.lc').forEach(b => b.onclick = () => start(b.dataset.l, buildLesson(b.dataset.l)));
   $('voiceBtn').onclick = voiceSheet;
   $('goalBtn').onclick = () => { const g = [10, 20, 30, 50]; ST.goal = g[(g.indexOf(ST.goal) + 1) % g.length]; save(); renderHome(); push(); };
+}
+function topikCard() {
+  const left = dleft(EXAM.date), reg = ST.topikReg === EXAM.round, t = today();
+  const regOpen = t >= EXAM.regFrom && t <= EXAM.regTo, regSoon = t < EXAM.regFrom, regLeft = dleft(EXAM.regTo);
+  const est = ST.est ? `<div class="est">摸底估分 <b>${ST.est.total}</b> / 目标 ${EXAM.goalScore}<span>听 ${ST.est.L} · 读 ${ST.est.R} · 写 ${ST.est.W}（${ST.est.day.slice(5).replace('-', '/')}）</span></div>` : '';
+  let regLine = '';
+  if (!reg && (regOpen || regSoon)) regLine = `<div class="reg${regOpen ? ' hot' : ''}">${regOpen ? `报名中 · 还剩 ${regLeft + 1} 天（${EXAM.regTo.slice(5).replace('-', '/')} 截止），考场先到先得` : `报名 ${EXAM.regFrom.slice(5).replace('-', '/')} 开始 · 只有 7 天`}
+    <div class="rb">${regOpen ? `<a class="btn red" href="${EXAM.url}" target="_blank" rel="noopener">去报名</a>` : ''}<button class="btn ghost" id="regDone">我已报名</button></div></div>`;
+  else if (reg) regLine = `<div class="reg ok">✓ 已报名第 ${EXAM.round} 回</div>`;
+  return `<div class="hero topik"><div class="meta">${EXAM.name} · 第 ${EXAM.round} 回 · ${EXAM.date.slice(5).replace('-', '/')}</div>
+    <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${est}${regLine}</div>`;
 }
 function sheet(html) { $('sheetBody').innerHTML = html; $('sheet').classList.add('on'); }
 $('sheet').onclick = e => { if (e.target.id === 'sheet') $('sheet').classList.remove('on'); };
@@ -373,7 +429,7 @@ function renderEx() {
   const x = S.items[S.i]; answer = null; checked = false;
   $('dock').className = 'dock'; $('fb').innerHTML = ''; setGo('off', '检查'); setBar();
   const st = $('stage'); st.classList.remove('in'); void st.offsetWidth; st.classList.add('in');
-  const R = { tip: rTip, vocab: rVocab, mc: rMC, listen: rListen, k2z: rBuild, z2k: rBuild, speak: rSpeak }[x.kind];
+  const R = { tip: rTip, vocab: rVocab, mc: rMC, listen: rListen, k2z: rBuild, z2k: rBuild, speak: rSpeak, tq: rTQ, tw: rTW }[x.kind];
   R(x, st);
 }
 const ava = () => `<div class="ava">${AVAS[(S.i * 7 + S.total) % AVAS.length]}</div>`;
@@ -442,6 +498,38 @@ function rBuild(x, st) {
   });
   x._back = () => { if (picked.length) ans.lastChild.click(); };
 }
+// TOPIK 选择题：听力先只给播放键，做完才显示原文
+function playDialog(d, btn, rate = 0.95) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const ko = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang)), alt = ko.find(v => !voice || v.name !== voice.name);
+  if (btn) btn.classList.add('playing');
+  d.forEach(([who, line], i) => {
+    const u = new SpeechSynthesisUtterance(line); u.lang = 'ko-KR'; u.rate = rate;
+    const male = who === '남'; u.voice = (male && alt) ? alt : voice || null; u.pitch = male ? (alt ? 0.9 : 0.6) : 1.15;
+    if (i === d.length - 1 && btn) u.onend = u.onerror = () => btn.classList.remove('playing');
+    speechSynthesis.speak(u);
+  });
+}
+const nl = s => esc(s).replace(/\n/g, '<br>');
+function rTQ(x, st) {
+  const q = x.q, L = q.sec === 'L';
+  st.innerHTML = `<div class="tag" style="color:var(--b)">${esc(NO[q.no] || SEC[q.sec])}</div><div class="q${q.p || L ? '' : ' ko'}">${q.q}</div>
+    ${L ? `<div class="lis"><button class="big" id="pl">${ICON_SPK}</button><button class="slow" id="pls">🐢</button></div><div class="tr ko" id="tr" hidden>${q.d.map(([w, t]) => `<p><b>${w}</b> ${esc(t)}</p>`).join('')}</div>` : ''}
+    ${q.p ? `<div class="psg ko">${nl(q.p)}</div>` : ''}
+    <div class="chs">${q.ch.map((c, i) => `<button class="ch ko" data-i="${i}"><span class="n">${i + 1}</span><span>${esc(c)}</span></button>`).join('')}</div>`;
+  if (L) { $('pl').onclick = () => playDialog(q.d, $('pl')); $('pls').onclick = () => playDialog(q.d, $('pls'), 0.65); setTimeout(() => playDialog(q.d, $('pl')), 350); }
+  st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); });
+}
+function rTW(x, st) {
+  const q = x.q;
+  st.innerHTML = `<div class="tag" style="color:var(--b)">${esc(NO[q.no])}</div><div class="q">在 ㉠ ㉡ 写一句话</div>
+    <div class="psg ko">${nl(q.p)}</div>
+    ${q.bl.map((b, i) => `<label class="wb"><span>${'㉠㉡㉢'[i]}</span><input class="ko" data-i="${i}" autocomplete="off" autocapitalize="off" spellcheck="false" lang="ko"></label>`).join('')}`;
+  const ins = [...st.querySelectorAll('.wb input')];
+  ins.forEach(inp => inp.oninput = () => { answer = ins.some(x => x.value.trim()) ? ins.map(x => x.value.trim()) : null; setGo(answer ? 'green' : 'off', '检查'); });
+  setGo('blue', '不会写，看答案'); answer = [];
+}
 let REC = null;
 function stopRec() { try { REC && REC.abort(); } catch (e) {} REC = null; }
 function rSpeak(x, st) {
@@ -480,6 +568,7 @@ function sim(a, b) {   // 两句韩语的相似度：按字比最长公共子序
 // 检查 → 底部反馈
 function check() {
   const x = S.items[S.i]; if (answer == null) return;
+  if (x.kind === 'tw' && !answer.length) answer = x.q.bl.map(() => '');
   if (answer === 'skip') return next(true, true);
   checked = true; stopRec();
   let ok, right = '', said = '';
@@ -493,11 +582,23 @@ function check() {
     said = answer.join(''); ok = strip(said) === strip(x.s.w.join('')) || strip(said) === strip(x.s.z); right = x.s.z;
   } else if (x.kind === 'z2k') {
     said = answer.join(' '); ok = strip(said) === strip(x.s.k); right = x.s.k; setTimeout(() => say(x.s.k, 0.9), 450);
+  } else if (x.kind === 'tq') {
+    const q = x.q; ok = answer === q.a; right = q.ch[q.a]; said = q.ch[answer];
+    document.querySelectorAll('.ch').forEach(c => { const i = +c.dataset.i; c.classList.toggle('good', i === q.a); c.classList.toggle('bad', i === answer && !ok); c.classList.remove('sel'); });
+    if ($('tr')) $('tr').hidden = false;
+  } else if (x.kind === 'tw') {
+    const q = x.q, norm = v => strip(v || '').replace(/[.。]/g, '');
+    const res = q.bl.map((b, i) => [b.m].concat(b.alt || []).some(m => norm(m) === norm(answer[i])));
+    ok = res.every(Boolean); said = answer.join(' / ');
+    right = q.bl.map((b, i) => '㉠㉡㉢'[i] + ' ' + b.m).join('\n');
+    document.querySelectorAll('.wb input').forEach((inp, i) => { inp.disabled = true; inp.classList.add(res[i] ? 'good' : 'bad'); });
+    if (!ok && answer.some(Boolean)) x.self = true;   // 写了但和参考答案不完全一样：让他自己判
   } else if (x.kind === 'speak') {
     said = answer.said; ok = answer.score >= 0.7; right = x.s.k;
   }
   if (x.s) tokens(x.s.k).forEach(t => ST.seen[t] = 1);
-  if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.s ? x.s.k : (x.e.audio || x.e.q), ok, a: said || '' }); }
+  if (x.q) { ST.tseen = ST.tseen || {}; ST.tseen[x.q.id] = 1; }
+  if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.s ? x.s.k : x.q ? (x.q.no + ' ' + (x.q.d ? x.q.d.map(l => l[1]).join(' / ') : x.q.p || x.q.q)).slice(0, 110) : (x.e.audio || x.e.q), ok, a: said || '' }); }
   sfx(ok);
   if (ok) { S.combo++; S.best = Math.max(S.best, S.combo); S.ok++; }
   else { S.combo = 0; if (!S.wrongIds.includes(x.id)) { S.wrongIds.push(x.id); S.items.push({ ...x, retry: 1 }); S.total++; } }
@@ -505,7 +606,9 @@ function check() {
   const dock = $('dock'); dock.className = 'dock ' + (ok ? 'good' : 'bad');
   $('fb').innerHTML = ok
     ? `<h4>✓ ${S.combo >= 3 ? '连对 ' + S.combo + '！' : praise[Math.random() * praise.length | 0]}</h4>${x.kind === 'speak' ? `<div class="ca ko" style="color:var(--gt)">${esc(x.s.k)}</div>` : x.s && x.kind === 'k2z' ? `<div class="ca ko" style="color:var(--gt);font-size:15px">${esc(x.s.k)}</div>` : ''}`
-    : `<h4>✕ ${x.kind === 'speak' ? '再听一遍，跟着念' : '正确答案：'}</h4><div class="ca${/[가-힯]/.test(right) ? ' ko' : ''}">${esc(right)}${x.s && x.kind === 'k2z' ? `<span class="ko" style="display:block">${esc(x.s.k)}</span>` : ''}</div>`;
+    : `<h4>✕ ${x.kind === 'speak' ? '再听一遍，跟着念' : '正确答案：'}</h4><div class="ca${/[가-힯]/.test(right) ? ' ko' : ''}" style="white-space:pre-line">${esc(right)}${x.s && x.kind === 'k2z' ? `<span class="ko" style="display:block">${esc(x.s.k)}</span>` : ''}</div>`;
+  if (x.q) $('fb').insertAdjacentHTML('beforeend', `<div class="exp">${esc(x.q.ex || '')}</div>${x.self ? '<button class="btn ghost" id="selfOk" style="padding:4px;text-align:left">意思一样、语法也对？点这里算对</button>' : ''}`);
+  if (x.self) $('selfOk').onclick = () => { S.first[x.id] = true; const l = S.log.find(l => l.id === x.id); if (l) l.ok = true; S.ok++; S.combo = 1; const k = S.items.length - 1; if (S.items[k].id === x.id && S.items[k].retry) { S.items.pop(); S.total--; } S.wrongIds = S.wrongIds.filter(i => i !== x.id); $('dock').className = 'dock good'; $('fb').innerHTML = '<h4>✓ 算对</h4>'; setGo('green', '继续'); setBar(); };
   if (!ok && x.kind === 'speak') setTimeout(() => say(x.s.k, 0.8), 300);
   setGo(ok ? 'green' : 'red', '继续');
   S.done++; setBar();
@@ -534,7 +637,7 @@ function finish() {
   if (ST.day !== t) { ST.day = t; ST.dayXp = 0; }
   ST.xp += xp; ST.dayXp += xp;
   if (S.mode === 'daily') ST.dailyDone = DAILY.date;
-  else if (S.mode !== 'review') ST.done[S.mode] = (ST.done[S.mode] || 0) + 1;
+  else if (LBY[S.mode]) ST.done[S.mode] = (ST.done[S.mode] || 0) + 1;
   // 间隔复习：错了马上进复习；复习里答对一次，间隔 1→3→7→14 天，满了就移出
   const GAP = [1, 3, 7, 14];
   for (const [id, ok] of Object.entries(S.first)) {
@@ -542,12 +645,20 @@ function finish() {
     if (!ok) ST.srs[id] = { box: 0, due: Date.now(), n: (r ? r.n : 0) + 1 };
     else if (r) { if (r.box >= GAP.length) delete ST.srs[id]; else ST.srs[id] = { ...r, box: r.box + 1, due: Date.now() + GAP[r.box] * DAY }; }
   }
+  let estHtml = '';
+  if (S.mode === 'mock') {   // 估分：听力 / 阅读按正确率 × 100，写作只算 51–52 的比例（满分 20）再按 53–54 同水平外推
+    const acc = sec2 => { const l = S.log.filter(l => TBY[l.id] && TBY[l.id].sec === sec2); return l.length ? l.filter(x => x.ok).length / l.length : 0; };
+    const L = Math.round(acc('L') * 100), R = Math.round(acc('R') * 100), W = Math.round(acc('W') * 20 + acc('W') * 25);
+    ST.est = { L, R, W, total: L + R + W, day: t };
+    estHtml = `<div class="hero topik" style="text-align:left"><div class="meta">估分（16 题，只能当方向）</div><div class="cd"><b>${L + R + W}</b> 分<span>听力 ${L} · 阅读 ${R} · 写作约 ${W}　目标 ${EXAM.goalScore}</span></div></div>`;
+  }
   save();
   push({ lesson: S.mode, dur: sec, xp, items: S.log });
   const wrong = S.log.filter(l => !l.ok);
   $('done').innerHTML = `<div class="big-e">${acc === 100 ? '🏆' : acc >= 80 ? '🎉' : '💪'}</div>
     <h2>${acc === 100 ? '全对！' : '这组练完了'}</h2>
     <div class="stats"><div class="st a"><small>经验</small><b>+${xp}</b></div><div class="st b"><small>正确率</small><b>${acc}%</b></div><div class="st c"><small>用时</small><b>${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</b></div></div>
+    ${estHtml}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
     <button class="btn green" id="back">继续</button>`;
   $('back').onclick = () => { S = null; show('home'); renderHome(); };
@@ -555,6 +666,7 @@ function finish() {
 }
 
 renderHome(); pull(); if (pending.length) push();
+if (/[?&]go=daily/.test(location.search)) { history.replaceState(null, '', location.pathname); start('daily', buildDaily()); }   // 推送点进来直接开始第一题
 </script>
 </body>
 </html>

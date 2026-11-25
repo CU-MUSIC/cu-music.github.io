@@ -498,9 +498,9 @@ const SENT = {
    ids 指向句子（课名:序号）或老题（课名#序号）；extra 是当天新加的句子（格式同 SENT）。 */
 const DAILY = {
   date:'2026-11-25',
-  title:'今日特训',
-  note:'第一次：点餐 + 录音室，各来几句热身',
-  ids:['food:0','food:1','food:4','studio:0','studio:1','daily:2','food:2','studio:3'],
+  title:'今日特训 · TOPIK 热身',
+  note:'听力 2 + 阅读 3 + 写作 1，全是考试题型，约 5 分钟',
+  ids:['T1','T13','T22','T6','T18','T31'],
   extra:[],
 };
 
