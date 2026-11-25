@@ -145,6 +145,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .dock{position:sticky;bottom:0;margin:0 -18px;padding:14px 18px calc(env(safe-area-inset-bottom) + 18px);border-top:2px solid var(--bd);background:var(--bg);transition:background .25s,border-color .25s}
 .ch .cz{display:block;font-size:14px;font-weight:600;color:var(--tx2);margin-top:4px;line-height:1.5;animation:fadeUp .25s ease-out}
 .ch.good .cz{color:var(--gt)}.ch.bad .cz{color:var(--rt)}
+.psg.tu{line-height:1.9}.psg .fz{color:var(--gt);border-bottom:2px solid var(--g)}
+.tz{margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--bl);font-size:16px;line-height:1.8;color:var(--tx)}
 .gorow{display:flex;gap:10px}.gorow #go{flex:1}
 #idk{flex:0 0 0;max-width:0;padding-left:0;padding-right:0;overflow:hidden;opacity:0;border-width:0;white-space:nowrap;transition:flex-basis .25s,max-width .25s,opacity .2s,padding .25s}
 #idk.on{flex:0 0 96px;max-width:96px;padding-left:12px;padding-right:12px;opacity:1;border:2px solid var(--bd);border-bottom-width:4px;border-radius:16px;color:var(--tx2);font-size:16px;letter-spacing:0;background:var(--bg)}
@@ -359,6 +361,9 @@ function topEx(q) {   // 选项每次打乱（题库里正确答案多在第 1 �
   if (q.ch) { const o = shuffle(q.ch.map((_, i) => i)); q = { ...q, ch: o.map(i => q.ch[i]), cz: q.cz && o.map(i => q.cz[i]), a: o.indexOf(q.a) }; }
   return { kind: q.sec === 'W' ? 'tw' : 'tq', id: q.id, q };
 }
+// 理解卡：错过的 TOPIK 题再出现时不出原来的选择题（选项会被记住），只给原文，先自己翻译再对照中文
+const tuEx = q => ({ kind: 'tu', id: q.id, q });
+function revEx(id) { const q = TBY[id]; return q && q.tz && q.sec !== 'W' ? tuEx(q) : anyEx(id); }
 function anyEx(id, kind) { if (TBY[id]) return topEx(TBY[id]); if (id.includes('#')) { const e = oldById(id); return e && oldEx(e); } const s = sentById(id); return s && sentEx(s, kind); }
 
 function buildLesson(lid) {
@@ -372,12 +377,12 @@ function buildLesson(lid) {
   return items.concat(mix).slice(0, 14);
 }
 function dueList() { const n = Date.now(); return Object.entries(ST.srs).filter(([, v]) => v.due <= n).sort((a, b) => a[1].due - b[1].due).map(([id]) => id); }
-function buildReview() { return dueList().slice(0, 12).map(id => anyEx(id)).filter(Boolean); }
+function buildReview() { return dueList().slice(0, 12).map(revEx).filter(Boolean); }
 function buildDaily() {   // 今日特训里超过当前级的题，换成当前级同类型的题
   const t = tier(), used = new Set(DAILY.ids);
   const ids = DAILY.ids.map(id => { const q = TBY[id]; if (!q || (lvOf(q) <= t && !(q.sec === 'W' && t < 3))) return id; const r = pickFresh(q.sec === 'W' ? 'R' : q.sec, 1, used)[0]; if (!r) return null; used.add(r.id); return r.id; }).filter(Boolean).concat(DAILY.extra.map((_, i) => 'x:' + i));
   const items = ids.map(id => anyEx(id)).filter(Boolean);
-  dueList().filter(id => !ids.includes(id) && !(TBY[id] && lvOf(TBY[id]) > t)).slice(0, 4).forEach(id => { const x = anyEx(id); if (x) items.push(x); });
+  dueList().filter(id => !ids.includes(id) && !(TBY[id] && lvOf(TBY[id]) > t)).slice(0, 4).forEach(id => { const x = revEx(id); if (x) items.push(x); });
   return items;
 }
 
@@ -513,9 +518,10 @@ function setGo(state, label) { const g = $('go'); g.className = 'btn ' + state; 
 function renderEx() {
   const x = S.items[S.i]; answer = null; checked = false;
   $('dock').className = 'dock'; $('fb').innerHTML = ''; setGo('off', '检查'); setBar();
+  $('idk').textContent = '不会';
   $('idk').classList.toggle('on', ['tq', 'mc', 'listen', 'tw', 'k2z', 'z2k'].includes(x.kind));
   const st = $('stage'); st.classList.remove('in'); void st.offsetWidth; st.classList.add('in');
-  const R = { tip: rTip, vocab: rVocab, mc: rMC, listen: rListen, k2z: rBuild, z2k: rBuild, speak: rSpeak, tq: rTQ, tw: rTW }[x.kind];
+  const R = { tu: rTU, tip: rTip, vocab: rVocab, mc: rMC, listen: rListen, k2z: rBuild, z2k: rBuild, speak: rSpeak, tq: rTQ, tw: rTW }[x.kind];
   R(x, st);
 }
 const ava = () => `<div class="ava">${AVAS[(S.i * 7 + S.total) % AVAS.length]}</div>`;
@@ -599,6 +605,15 @@ function rTQ(x, st) {
   if (L) { $('pl').onclick = () => playDialog(q.d, $('pl')); $('pls').onclick = () => playDialog(q.d, $('pls'), 0.65); setTimeout(() => playDialog(q.d, $('pl')), 350); }
   st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); });
 }
+function rTU(x, st) {
+  const q = x.q, L = q.sec === 'L', fill = t => t.replace(/\(\s+\)/, `<b class="fz">${esc(q.ch[q.a])}</b>`);
+  const body = L ? q.d.map(([w, t]) => `<p><b>${w}</b> ${esc(t)}</p>`).join('') : q.p ? fill(nl(q.p)) : fill(q.q);
+  st.innerHTML = `<div class="tag" style="color:var(--p,#ce82ff)">理解卡 · ${esc(NO[q.no] || SEC[q.sec])}</div><div class="q">先在心里把这段翻成中文，再点「看翻译」对照</div>
+    ${L ? `<div class="lis"><button class="big" id="pl">${ICON_SPK}</button><button class="slow" id="pls">🐢</button></div>` : ''}
+    <div class="psg ko tu">${body}</div><div class="tz" id="tz" hidden>${nl(q.tz)}</div>`;
+  if (L) { $('pl').onclick = () => playDialog(q.d, $('pl')); $('pls').onclick = () => playDialog(q.d, $('pls'), 0.65); setTimeout(() => playDialog(q.d, $('pl')), 350); }
+  answer = 'reveal'; setGo('blue', '看翻译');
+}
 function rTW(x, st) {
   const q = x.q;
   st.innerHTML = `<div class="tag" style="color:var(--b)">${esc(NO[q.no])}</div><div class="q">在 ㉠ ㉡ 写一句话</div>
@@ -646,11 +661,16 @@ function sim(a, b) {   // 两句韩语的相似度：按字比最长公共子序
 // 检查 → 底部反馈
 $('idk').onclick = () => {   // 不会：直接算错、看答案和解析、进错题复习（蒙对不算会）
   const x = S.items[S.i]; if (checked || !x) return;
+  if (x.kind === 'tu') { if (answer !== 'judge') return; S.idk = true; return check(); }
   answer = x.kind === 'tw' ? x.q.bl.map(() => '') : (x.kind === 'k2z' || x.kind === 'z2k') ? [] : -1;
   S.idk = true; check();
 };
 function check() {
   const x = S.items[S.i]; if (answer == null) return;
+  if (x.kind === 'tu' && answer === 'reveal') {   // 第一下：亮出翻译，自己判懂没懂
+    const z = $('tz'); z.hidden = false; z.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'ease-out' });
+    answer = 'judge'; setGo('green', '看懂了'); $('idk').textContent = '没看懂'; $('idk').classList.add('on'); return;
+  }
   $('idk').classList.remove('on');
   if (x.kind === 'tw' && !answer.length) answer = x.q.bl.map(() => '');
   if (answer === 'skip') return next(true, true);
@@ -678,6 +698,8 @@ function check() {
     right = q.bl.map((b, i) => '㉠㉡㉢'[i] + ' ' + b.m).join('\n');
     document.querySelectorAll('.wb input').forEach((inp, i) => { inp.disabled = true; inp.classList.add(res[i] ? 'good' : 'bad'); });
     if (!ok && answer.some(Boolean)) x.self = true;   // 写了但和参考答案不完全一样：让他自己判
+  } else if (x.kind === 'tu') {
+    ok = true; right = '对照上面的翻译，逐句找出卡住的词或语法';
   } else if (x.kind === 'speak') {
     said = answer.said; ok = answer.score >= 0.7; right = x.s.k;
   }
@@ -687,12 +709,12 @@ function check() {
   if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.s ? x.s.k : x.q ? (x.q.no + ' ' + (x.q.d ? x.q.d.map(l => l[1]).join(' / ') : x.q.p || x.q.q)).slice(0, 110) : (x.e.audio || x.e.q), ok, a: said || '' }); }
   sfx(ok);
   if (ok) { S.combo++; S.best = Math.max(S.best, S.combo); S.ok++; }
-  else { S.combo = 0; if (!S.wrongIds.includes(x.id)) { S.wrongIds.push(x.id); S.items.push({ ...x, retry: 1 }); S.total++; } }
+  else { S.combo = 0; if (!S.wrongIds.includes(x.id)) { S.wrongIds.push(x.id); S.items.push(x.kind === 'tq' && x.q.tz ? { ...tuEx(TBY[x.id]), retry: 1 } : { ...x, retry: 1 }); S.total++; } }
   const praise = ['太棒了！', '答对了！', '漂亮！', '很好！', '完美！'];
   const dock = $('dock'); dock.className = 'dock ' + (ok ? 'good' : 'bad');
   $('fb').innerHTML = ok
-    ? `<h4>✓ ${S.combo >= 3 ? '连对 ' + S.combo + '！' : praise[Math.random() * praise.length | 0]}</h4>${x.kind === 'speak' ? `<div class="ca ko" style="color:var(--gt)">${esc(x.s.k)}</div>` : x.s && x.kind === 'k2z' ? `<div class="ca ko" style="color:var(--gt);font-size:15px">${esc(x.s.k)}</div>` : ''}`
-    : `<h4>✕ ${x.kind === 'speak' ? '再听一遍，跟着念' : '正确答案：'}</h4><div class="ca${/[가-힯]/.test(right) ? ' ko' : ''}" style="white-space:pre-line">${esc(right)}${x.s && x.kind === 'k2z' ? `<span class="ko" style="display:block">${esc(x.s.k)}</span>` : ''}</div>`;
+    ? x.kind === 'tu' ? '<h4>✓ 看懂了</h4>' : `<h4>✓ ${S.combo >= 3 ? '连对 ' + S.combo + '！' : praise[Math.random() * praise.length | 0]}</h4>${x.kind === 'speak' ? `<div class="ca ko" style="color:var(--gt)">${esc(x.s.k)}</div>` : x.s && x.kind === 'k2z' ? `<div class="ca ko" style="color:var(--gt);font-size:15px">${esc(x.s.k)}</div>` : ''}`
+    : `<h4>✕ ${x.kind === 'speak' ? '再听一遍，跟着念' : x.kind === 'tu' ? '没看懂，过几天再出' : '正确答案：'}</h4><div class="ca${/[가-힯]/.test(right) ? ' ko' : ''}" style="white-space:pre-line">${esc(right)}${x.s && x.kind === 'k2z' ? `<span class="ko" style="display:block">${esc(x.s.k)}</span>` : ''}</div>`;
   if (x.q) $('fb').insertAdjacentHTML('beforeend', `<div class="exp">${esc(x.q.ex || '')}</div>${x.self ? '<button class="btn ghost" id="selfOk" style="padding:4px;text-align:left">意思一样、语法也对？点这里算对</button>' : ''}`);
   if (x.self) $('selfOk').onclick = () => { S.first[x.id] = true; const l = S.log.find(l => l.id === x.id); if (l) l.ok = true; S.ok++; S.combo = 1; const k = S.items.length - 1; if (S.items[k].id === x.id && S.items[k].retry) { S.items.pop(); S.total--; } S.wrongIds = S.wrongIds.filter(i => i !== x.id); $('dock').className = 'dock good'; $('fb').innerHTML = '<h4>✓ 算对</h4>'; setGo('green', '继续'); setBar(); };
   if (!ok && x.kind === 'speak') setTimeout(() => say(x.s.k, 0.8), 300);
