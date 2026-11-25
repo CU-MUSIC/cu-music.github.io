@@ -774,7 +774,7 @@ lic.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && lic.classList.contains('show')) closeLic(); });
 $('licGo').onclick = () => {
   const b = licBeat, l = LICENSES[licI];
-  const text = `购买伴奏：《${b.title}》${ARTIST}\n授权：${l.name}（${l.price}，${l.files}）\ncumusic.work/beat#${b.id}`;
+  const text = `购买伴奏：《${b.title}》${ARTIST}\n授权：${l.name}（${l.price}，${l.files}）\nhttps://cumusic.work/beat/#${encodeURIComponent(b.id)}`;
   const done = () => { closeLic(); toast('已复制，可粘贴到微信'); };
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
   else fallback(text, done);
