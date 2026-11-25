@@ -348,6 +348,7 @@ h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.022em}
 /* ── 像 App：铃铛收通知设置、大标题、手机底部标签栏 ── */
 .ttl{flex:1 1 0;min-width:0}.ttl h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ttl .eyebrow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ttl .bv{text-transform:none;margin-left:4px}
 .top>.rfb{flex:none;margin:0 0 0 8px!important;align-self:center}
+.kofb{font-size:15px;font-weight:800;color:#fff!important;background:#58cc02!important;text-decoration:none;font-family:"Apple SD Gothic Neo",-apple-system,sans-serif;transition:transform .15s}.kofb:active{transform:scale(.9)}
 .nfb{position:relative;margin-left:auto;margin-right:8px}.nfb+.ofb{margin-left:0}.nfb.on{background:var(--fill-3);color:var(--text)}
 .nfb i{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--red);display:none}.nfb.warn i{display:block}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));z-index:60;width:max-content;max-width:calc(100% - 32px);transform:translate(-50%,12px);opacity:0;pointer-events:none;
@@ -486,7 +487,7 @@ button.av{cursor:pointer;padding:0}
 <script src="/chefdao/hook/score.js?v=261117a"></script>
 <script>
 (() => {
-const BUILD = '261125.1200';
+const BUILD = '261125.1600';
 // 主打盲听：项目 slug → 投票页（hook/），结果在项目弹窗里
 const HOOK = { '43mxcv6g': { proj: 'lchenius', url: '/chefdao/hook/', pass: '1130' } };
 const replyBox = async o => { if (!window.cuReplyBox) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../faq.js?v=20261104a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return window.cuReplyBox(o); };   // 回复框：可搜 price 页 FAQ 填进回复
@@ -845,7 +846,7 @@ function render() {
   const opened = [...root.querySelectorAll('details[open][data-id]')].map(d => d.dataset.id);
   const nNew = pdata ? pdata.orders.filter(OFILTERS[0][2]).length : 0;
   const TTL = Object.fromEntries(TABS), GR = groupOf(tab);
-  const head = `<div class="top"><div class="ttl"><div class="eyebrow">Insights <span class="bv" title="页面版本号">v${BUILD}</span></div><h1>${TTL[tab] || 'Insights'}</h1></div><button class="rfb nfb${NOPEN ? ' on' : ''}" id="nfb" aria-label="通知设置" title="通知设置"><svg viewBox="0 0 24 24"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i></i></button><button class="rfb ofb${OFF ? ' on' : ''}" id="ofb" aria-label="离线保存" title="${OFF ? '已离线保存在这台设备' : '离线保存：数据和封面存在这台设备，打开秒开'}"><svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M5 17.5c0 1.4 1.1 2.5 2.5 2.5h9c1.4 0 2.5-1.1 2.5-2.5"/></svg></button><button class="rfb" id="rfb" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></button>
+  const head = `<div class="top"><div class="ttl"><div class="eyebrow">Insights <span class="bv" title="页面版本号">v${BUILD}</span></div><h1>${TTL[tab] || 'Insights'}</h1></div><a class="rfb kofb" href="../ko/" aria-label="韩语学习" title="韩语学习">한</a><button class="rfb nfb${NOPEN ? ' on' : ''}" id="nfb" aria-label="通知设置" title="通知设置"><svg viewBox="0 0 24 24"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i></i></button><button class="rfb ofb${OFF ? ' on' : ''}" id="ofb" aria-label="离线保存" title="${OFF ? '已离线保存在这台设备' : '离线保存：数据和封面存在这台设备，打开秒开'}"><svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M5 17.5c0 1.4 1.1 2.5 2.5 2.5h9c1.4 0 2.5-1.1 2.5-2.5"/></svg></button><button class="rfb" id="rfb" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></button>
     ${tab === 'orders' || tab === 'lib' || tab === 'rlib' || tab === 'work' || tab === 'money' ? '' : `<div class="seg" id="seg">${[7, 30, 90].map(d => `<button data-d="${d}" class="${d === days ? 'on' : ''}">${d} 天</button>`).join('')}</div>`}</div>
     <div class="nbar${NOPEN ? ' open' : ''}" id="nbar" hidden></div><div class="missed" id="missed" hidden></div>
     <nav class="tabs" id="tabs">${TABS.filter(([k]) => !groupOf(k) || GROUPS[k]).map(([k, t]) => `<button data-t="${k}" class="${GROUPS[k] ? (GR === k ? 'on' : '') : tab === k ? 'on' : ''}">${TICON[k] || ''}<span class="tl">${GNAME[k] || t}</span>${k === 'orders' && nNew ? '<span class="dot">' + nNew + '</span>' : ''}</button>`).join('')}</nav>${GR ? `<div class="seg subseg">${GROUPS[GR].map(k => `<button data-t2="${k}" class="${tab === k ? 'on' : ''}">${TTL[k]}</button>`).join('')}</div>` : ''}`;
