@@ -227,7 +227,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <script>
 // data.js 每天会被定时任务更新：按 10 分钟取一次新的，免得 GitHub Pages / 微信缓存住旧题
 const _t = Math.floor(Date.now() / 6e5);
-document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script>');
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
@@ -281,12 +281,39 @@ function pickVoice() {
   voice = all.find(v => v.name === saved) || ko.find(v => /premium|enhanced|고급/i.test(v.name)) || ko.find(v => /yuna|유나/i.test(v.name)) || ko[0] || null;
 }
 if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
-function say(text, rate = 0.9, el) {
-  if (!text || !('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
+// 真人声：tools/ko-tts 预先用神经网络声音生成的 mp3（女 SunHi / 男 InJoon，慢速单独生成）；没有的才退回系统声音
+const fnv = s => { let h = 0x811c9dc5; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36); };
+function clip(text, v = 'F', slow = false) {
+  const h = fnv(`${v}${slow ? 's' : ''}|${(text || '').trim()}`);
+  return window.KO_AUDIO && KO_AUDIO[h] ? `a/${h}.mp3` : null;
+}
+const AU = new Audio(); AU.preload = 'auto'; let auDone = null, auSeq = 0;
+document.addEventListener('pointerdown', () => { if (!AU.src) { AU.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYyLjMuMTAwAAAAAAAAAAAAAAD/84TAAAAAAAAAAAAASW5mbwAAAA8AAAAFAAACoABtbW1tbW1tbW1tbW1tbW1tbW1tkpKSkpKSkpKSkpKSkpKSkpKSkpK2tra2tra2tra2tra2tra2tra2ttvb29vb29vb29vb29vb29vb29vb//////////////////////////8AAAAATGF2YzYyLjExAAAAAAAAAAAAAAAAJARQAAAAAAAAAqDr4eZeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/80TEAAAAA0gAAAAATEFNRTQuMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC7/80TEUwAAA0gAAAAAMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC7/80TEpgAAA0gAAAAAMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80TErAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80TErAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU='; AU.play().catch(() => {}); } }, { once: false, capture: true });
+function stopAudio() { auSeq++; AU.pause(); if (auDone) { const f = auDone; auDone = null; f(); } window.speechSynthesis && speechSynthesis.cancel(); }
+function playClips(list, el) {   // list: [{src, text, v}]，按顺序播，中间停 0.35 秒
+  stopAudio(); const my = auSeq;
+  if (el) { el.classList.add('playing'); auDone = () => el.classList.remove('playing'); }
+  const next = i => {
+    if (my !== auSeq) return;
+    if (i >= list.length) { if (auDone) { const f = auDone; auDone = null; f(); } return; }
+    const x = list[i], go = () => setTimeout(() => next(i + 1), i < list.length - 1 ? 350 : 0);
+    if (!x.src) return sysSay(x.text, x.rate, x.v, go);
+    AU.onended = go; AU.onerror = () => sysSay(x.text, x.rate, x.v, go);
+    AU.src = x.src; AU.playbackRate = 1; AU.play().catch(() => sysSay(x.text, x.rate, x.v, go));
+  };
+  next(0);
+}
+function sysSay(text, rate = 0.9, v = 'F', cb) {
+  if (!('speechSynthesis' in window)) return cb && cb();
   const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = rate; if (voice) u.voice = voice;
-  if (el) { el.classList.add('playing'); u.onend = u.onerror = () => el.classList.remove('playing'); }
+  if (v === 'M') u.pitch = 0.8;
+  u.onend = u.onerror = () => cb && cb();
   speechSynthesis.speak(u);
+}
+function say(text, rate = 0.9, el) {
+  if (!text) return; text = text.trim();
+  const slow = rate < 0.7;
+  playClips([{ src: clip(text, 'F', slow) || (slow && clip(text, 'F')), text, rate, v: 'F' }], el);
 }
 let AC;
 function sfx(ok) {   // 答对「叮咚」，答错一声低的
@@ -401,10 +428,10 @@ function topikCard() {
 function sheet(html) { $('sheetBody').innerHTML = html; $('sheet').classList.add('on'); }
 $('sheet').onclick = e => { if (e.target.id === 'sheet') $('sheet').classList.remove('on'); };
 function voiceSheet() {
-  const ko = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
-  if (!ko.length) return toast('这台设备没有韩语声音');
-  sheet(`<h3>韩语声音</h3>${ko.map(v => `<button class="vo${voice && voice.name === v.name ? ' on' : ''}" data-v="${esc(v.name)}">${esc(v.name)}</button>`).join('')}<p style="font-size:14px;color:var(--tx2);margin-top:6px">iPhone：设置 → 辅助功能 → 朗读内容 → 声音 → 韩语，下载「Yuna（增强）」音质最好</p>`);
-  document.querySelectorAll('.vo').forEach(b => b.onclick = () => { localStorage.setItem('ko:voice', b.dataset.v); pickVoice(); document.querySelectorAll('.vo').forEach(x => x.classList.toggle('on', x === b)); say('안녕하세요'); });
+  const ko = window.speechSynthesis ? speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang)) : [];
+  if (!ko.length) return toast('已用真人声朗读');
+  sheet(`<h3>韩语声音</h3><p style="font-size:14px;color:var(--tx2);margin:0 0 10px">题目默认用真人声（女 SunHi · 男 InJoon）。下面是备用的系统声音，只在个别没有真人录音的词上用到</p>${ko.map(v => `<button class="vo${voice && voice.name === v.name ? ' on' : ''}" data-v="${esc(v.name)}">${esc(v.name)}</button>`).join('')}`);
+  document.querySelectorAll('.vo').forEach(b => b.onclick = () => { localStorage.setItem('ko:voice', b.dataset.v); pickVoice(); document.querySelectorAll('.vo').forEach(x => x.classList.toggle('on', x === b)); sysSay('안녕하세요'); });
 }
 
 // ───────── 练习 ─────────
@@ -416,7 +443,7 @@ function start(mode, items) {
 }
 $('quit').onclick = () => {
   if (S && S.done > 2 && !confirm('现在退出，这组的进度不会保存')) return;
-  speechSynthesis && speechSynthesis.cancel(); stopRec(); S = null; show('home'); renderHome();
+  stopAudio(); stopRec(); S = null; show('home'); renderHome();
 };
 function setBar() {
   const f = $('fill'); f.style.width = (S.done / S.total * 100) + '%';
@@ -500,16 +527,8 @@ function rBuild(x, st) {
 }
 // TOPIK 选择题：听力先只给播放键，做完才显示原文
 function playDialog(d, btn, rate = 0.95) {
-  if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const ko = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang)), alt = ko.find(v => !voice || v.name !== voice.name);
-  if (btn) btn.classList.add('playing');
-  d.forEach(([who, line], i) => {
-    const u = new SpeechSynthesisUtterance(line); u.lang = 'ko-KR'; u.rate = rate;
-    const male = who === '남'; u.voice = (male && alt) ? alt : voice || null; u.pitch = male ? (alt ? 0.9 : 0.6) : 1.15;
-    if (i === d.length - 1 && btn) u.onend = u.onerror = () => btn.classList.remove('playing');
-    speechSynthesis.speak(u);
-  });
+  const slow = rate < 0.8;
+  playClips(d.map(([who, line]) => { const v = who === '남' ? 'M' : 'F'; return { src: clip(line, v, slow), text: line, rate, v }; }), btn);
 }
 const nl = s => esc(s).replace(/\n/g, '<br>');
 function rTQ(x, st) {
@@ -555,7 +574,7 @@ function rSpeak(x, st) {
     };
     R.onerror = ev => { if (ev.error === 'not-allowed') toast('没有麦克风权限'); };
     R.onend = () => { m.classList.remove('rec'); REC = null; if (best) { answer = { said: best, score }; check(); } };
-    R.start(); speechSynthesis.cancel();
+    R.start(); stopAudio();
   };
 }
 function sim(a, b) {   // 两句韩语的相似度：按字比最长公共子序列
