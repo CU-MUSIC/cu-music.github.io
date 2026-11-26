@@ -51,6 +51,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .plan .extra{display:flex;gap:8px;margin-top:8px}.plan .extra .btn{flex:1;font-size:15px;padding:12px}
 .nxt{margin:12px 0;border:2px solid var(--g);border-radius:16px;padding:12px 14px;text-align:left;background:var(--gl);animation:fadeUp .4s .2s both}
 .nxt small{font-size:13px;font-weight:800;color:var(--gt);letter-spacing:1px}.nxt b{display:block;font-size:18px;margin:2px 0}.nxt span{font-size:14px;color:var(--tx2)}
+.fzb{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:12px;border:2px solid var(--bd);background:var(--card);color:var(--tx2);font-size:14px;font-weight:800;animation:fadeUp .25s .15s both;transition:background .2s,color .2s,border-color .2s}
+.fzb.on{border-color:#ff9600;color:#ff9600;background:rgba(255,150,0,.1)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -1091,6 +1093,10 @@ function check() {
     : `<h4>✕ ${x.kind === 'speak' ? '再听一遍，跟着念' : x.kind === 'tu' ? '没看懂，过几天再出' : '正确答案：'}</h4><div class="ca${/[가-힯]/.test(right) ? ' ko' : ''}" style="white-space:pre-line">${esc(right)}${x.s && x.kind === 'k2z' ? `<span class="ko" style="display:block">${esc(x.s.k)}</span>` : ''}</div>`;
   if (x.q) $('fb').insertAdjacentHTML('beforeend', `<div class="exp">${esc(x.q.ex || '')}</div>${x.self ? '<button class="btn ghost" id="selfOk" style="padding:4px;text-align:left">意思一样、语法也对？点这里算对</button>' : ''}`);
   if (x.self) $('selfOk').onclick = () => { S.first[x.id] = true; const l = S.log.find(l => l.id === x.id); if (l) l.ok = true; S.ok++; S.combo = 1; const k = S.items.length - 1; if (S.items[k].id === x.id && S.items[k].retry) { S.items.pop(); S.total--; } S.wrongIds = S.wrongIds.filter(i => i !== x.id); $('dock').className = 'dock good'; $('fb').innerHTML = '<h4>✓ 算对</h4>'; setGo('green', '继续'); setBar(); };
+  if (ok && !x.self && x.kind !== 'speak' && x.kind !== 'tu') {   // 对了但其实是排除法 / 蒙的：点一下，分照算，明天再考
+    $('fb').insertAdjacentHTML('beforeend', '<button class="fzb" id="fzb">🤔 其实有点模糊</button>');
+    $('fzb').onclick = () => { S.fz = S.fz || {}; const on = !S.fz[x.id]; if (on) S.fz[x.id] = 1; else delete S.fz[x.id]; const l = S.log.find(l => l.id === x.id); if (l) l.fz = on ? 1 : 0; $('fzb').classList.toggle('on', on); $('fzb').textContent = on ? '✓ 记下了 · 明天再考一次' : '🤔 其实有点模糊'; };
+  }
   if (!ok && x.kind === 'speak') setTimeout(() => say(x.s.k, 0.8), 300);
   setGo(ok ? 'green' : 'red', '继续');
   S.done++; setBar();
@@ -1233,10 +1239,18 @@ function cjAnswer(b) {
   ST.cf = ST.cf || {}; ST.cf[c.f] = (ST.cf[c.f] || []).concat(ok ? 1 : 0).slice(-10);
   W.n++; W.log.push({ id: 'C:' + c.key, t: 'cj', k: (c.sent ? c.sent[0] : CJ[c.k][c.f]), ok: ok ? 1 : 0, a: (b ? b.textContent.replace(/^\d/, '') : '不会') + ' · ' + (rt / 1000).toFixed(1) + 's' });
   $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdans ${ok ? 'okc' : ''}">${esc(c.k)} → ${esc(CJ[c.k][c.f])}</div><div class="wdvs">${esc(CJR[c.f])}${c.sent ? `<br>${esc(c.sent[3])}` : ''}</div>`);
-  if (ok) { W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true); wdXp(2); W.nt = setTimeout(wdShow, c.sent ? 2200 : 1500); }
+  if (ok) { W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true); wdXp(2); $('wdFb').insertAdjacentHTML('beforeend', '<button class="fzb" id="fzb">🤔 蒙的 <small>F</small></button>'); $('fzb').onclick = wdFuzzy; W.nt = setTimeout(wdShow, c.sent ? 2600 : 1900); }
   else { W.combo = 0; sfx(false); say(c.sent ? c.sent[0] : CJ[c.k][c.f], 1); $('wdIdk').textContent = '继续'; $('wdIdk').onclick = wdShow; }
   $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}${wdDayTxt()}`; $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
   save(); if (W.n % 5 === 0) push();
+}
+function wdFuzzy() {   // 选对了但是排除法 / 蒙的：不升级，10 分钟后再考，本轮隔几张再出
+  const c = W && W.cur; if (!c || !c.done || c.fzDone) return; c.fzDone = 1; clearTimeout(W.nt);
+  if (c.cj) { const h = ST.cf[c.f]; if (h && h.length) h[h.length - 1] = 0; }
+  else if (c.fzUndo) { const { k, r } = c.fzUndo; ST.w[k] = { b: r ? Math.min(r.b, 1) : 0, due: Date.now() + WGAP[0], rt: 0 }; W.again.push({ k, at: W.n + 3 }); W.slow.push({ k, rt: 0, fz: 1 }); }
+  const l = W.log[W.log.length - 1]; if (l) l.fz = 1;
+  $('fzb').classList.add('on'); $('fzb').textContent = '✓ 记下了 · 等会再考';
+  $('wdIdk').textContent = '继续'; $('wdIdk').onclick = wdShow; save();
 }
 function wdAnswer(b) {
   if (W.cur.done) return;
@@ -1263,7 +1277,10 @@ function wdAnswer(b) {
     wdXp(1 + (W.combo % 5 === 0 ? 2 : 0) + (W.cur.chal ? 3 : 0));   // 1 个对 = 1 XP，每连对 5 个多 2 XP，挑战词多 3 XP，当场记上
     if (W.cur.chal) { W.chOk = (W.chOk || 0) + 1; const c = chResult(true); if (c) toast('挑战升档：' + CH_NAME[ST.chStep]); }
     if (W.cur.rev) say(k, 1);
-    W.nt = setTimeout(wdShow, sp === 'slow' ? 1300 : W.cur.rev ? 1100 : 750);
+    W.cur.fzUndo = { k, r: wasNew ? null : r };
+    $('wdFb').insertAdjacentHTML('beforeend', '<button class="fzb" id="fzb">🤔 蒙的 <small>F</small></button>');
+    $('fzb').onclick = wdFuzzy;
+    W.nt = setTimeout(wdShow, sp === 'fast' ? 900 : 1500);   // 留时间点「蒙的」
   } else {
     ST.w[k] = { b: 0, due: now + WGAP[0], rt }; W.again.push({ k, at: W.n }); if (!W.cur.chal) W.combo = 0; else { const c = chResult(false); if (c) toast('挑战降一档：' + CH_NAME[ST.chStep]); } sfx(false); say(k, 1);
     const pk = b && b.dataset.k, pw = pk && WBY[pk];
@@ -1293,7 +1310,7 @@ function wdEnd() {
     <div class="stats"><div class="st a"><small>经验</small><b>+${xp}</b></div><div class="st b"><small>正确率</small><b>${acc}%</b></div><div class="st c"><small>最长连对</small><b>${W.best}</b></div></div>
     <div class="reward"><div class="r"><span>认识 ${m.known} · 掌握 ${m.done} / ${m.all} 词</span><em>${W.newM ? '这轮新掌握 ' + W.newM : ''}</em></div><div class="wbar"><i class="kn" id="wmFill" style="width:${W.knB / m.all * 100}%" data-w="${m.known / m.all * 100}"></i><i class="ms" style="width:${m.done / m.all * 100}%"></i></div><div class="wleg"><span><i class="kn"></i>认识（这轮 +${m.known - W.knB}）</span><span><i class="ms"></i>掌握（隔天还记得）</span>${W.chOk ? `<span>🔥 挑战成功 ${W.chOk} 个</span>` : ''}</div>
     <div class="r" style="margin-top:8px"><span>今日 ${ST.dayXp} / ${ST.goal} XP</span><em>${ST.dayXp >= ST.goal ? '达标 ✓' : '还差 ' + (ST.goal - ST.dayXp)}</em></div></div>
-    ${(() => { const okRt = W.log.filter(x => x.ok).map(x => parseFloat(x.a.split(' · ').pop())).filter(v => v < 30), avg = okRt.length ? (okRt.reduce((a, b) => a + b, 0) / okRt.length).toFixed(1) : 0, sl = [...new Map(W.slow.map(x => [x.k, x])).values()]; return `<div class="reward"><div class="r"><span>平均反应 ${avg} 秒</span><em>秒认 = 3 秒内自己翻开</em></div>${sl.length ? `<div class="wslow">${sl.map(x => `<span><b class="ko">${esc(x.k)}</b> ${esc(WBY[x.k].z)} <i>${(x.rt / 1000).toFixed(1)}s</i></span>`).join('')}</div><small style="color:var(--tx3);font-size:13px">这些是等选项出来才想起来的，10 分钟后会再出</small>` : ''}</div>`; })()}
+    ${(() => { const okRt = W.log.filter(x => x.ok).map(x => parseFloat(x.a.split(' · ').pop())).filter(v => v < 30), avg = okRt.length ? (okRt.reduce((a, b) => a + b, 0) / okRt.length).toFixed(1) : 0, sl = [...new Map(W.slow.map(x => [x.k, x])).values()]; return `<div class="reward"><div class="r"><span>平均反应 ${avg} 秒</span><em>秒认 = 3 秒内自己翻开</em></div>${sl.length ? `<div class="wslow">${sl.map(x => `<span><b class="ko">${esc(x.k)}</b> ${esc(WBY[x.k].z)} <i>${x.fz ? '蒙的' : (x.rt / 1000).toFixed(1) + 's'}</i></span>`).join('')}</div><small style="color:var(--tx3);font-size:13px">这些是等选项出来才想起来的，10 分钟后会再出</small>` : ''}</div>`; })()}
     ${nextHtml()}
     ${planNext() && planNext().k !== 'w' ? '<button class="btn green" id="wdNx">开始下一步</button><button class="btn ghost" id="wdMore">再刷一轮词</button>' : '<button class="btn green" id="wdMore">' + (planNext() ? `再刷 ${WGOAL - Math.min(WGOAL, ST.wDay.n)} 个完成第 1 步` : '再刷一轮') + '</button>'}<button class="btn ghost" id="back">回首页</button>`;
   W = null; show('done'); sfx(true);
@@ -1307,6 +1324,7 @@ document.addEventListener('keydown', e => {   // 刷词快捷键：1–4 选，�
   else if (/^[1-4]$/.test(e.key)) { const b = document.querySelectorAll('.wo')[+e.key - 1]; if (b) { e.preventDefault(); b.click(); } }
   else if (e.key === 'Enter' || e.key === '0') { e.preventDefault(); if (W.cur.hid && e.key === 'Enter') wdReveal(); else $('wdIdk').click(); }
   else if (e.key === ' ') { e.preventDefault(); if (W.cur.done) wdShow(); else if (W.cur.hid) wdReveal(); else if (!W.cur.rev) say(W.cur.k, 1); }   // 空格：答完 = 继续，盖着 = 翻开
+  else if (e.key === 'f' || e.key === 'F') { if (W.cur.done) { e.preventDefault(); wdFuzzy(); } }
   else if (e.key === 'Escape') wdEnd();
 });
 
@@ -1329,12 +1347,14 @@ function finish() {
     if (!ok) ST.srs[id] = { box: 0, due: Date.now(), n: (r ? r.n : 0) + 1 };
     else if (r) { if (r.box >= GAP.length) delete ST.srs[id]; else ST.srs[id] = { ...r, box: r.box + 1, due: Date.now() + GAP[r.box] * DAY }; }
   }
+  const fz = Object.keys(S.fz || {}).filter(id => S.first[id]);
+  fz.forEach(id => { const r = ST.srs[id]; ST.srs[id] = { box: 0, due: Date.now() + DAY, n: (r ? r.n : 0) + 1, fz: 1 }; });
   let estHtml = '';
   const predBefore = predict();
   S.log.forEach(x => { if (x.t === 'tq') abAdd(x.id, x.ok); }); predMark();
   const predAfter = predict();
   ST.typ = ST.typ || {};
-  S.log.forEach(x => { const q = TBY[x.id]; if (q) ST.typ[q.no] = (ST.typ[q.no] || []).concat(x.ok ? 1 : 0).slice(-10); });
+  S.log.forEach(x => { const q = TBY[x.id]; if (q) ST.typ[q.no] = (ST.typ[q.no] || []).concat(x.ok && !x.fz ? 1 : 0).slice(-10); });   // 模糊的算弱项
   const missNo = {}; S.log.forEach(x => { const q = TBY[x.id]; if (q && !x.ok) missNo[q.no] = (missNo[q.no] || 0) + 1; });
   const focus = Object.entries(missNo).sort((a, b) => b[1] - a[1]).map(([no]) => no).filter(no => TQ.filter(q => q.no === no).length >= 2)[0];
   const before = tier();
@@ -1370,6 +1390,7 @@ function finish() {
     ${predAfter && predBefore && predAfter.rank.i > predBefore.rank.i ? `<div class="burst lvup">🏅 升段：${predAfter.rank.name}<small>${predAfter.rank.tag || '离考过更近一步'}</small></div>` : ''}
     ${predAfter ? (() => { const d = predBefore ? predAfter.II - predBefore.II : 0; return `<div class="pdone"><small>TOPIK II 预测分</small><b id="pdN" data-from="${predBefore ? predBefore.II : predAfter.II}" data-to="${predAfter.II}">${predBefore ? predBefore.II : predAfter.II}</b><span class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + (-d) : '持平'}</span><em>${predAfter.II >= 150 ? '已到 4 级线' : predAfter.II >= 120 ? '离 4 级还差 ' + (150 - predAfter.II) + ' 分' : '离 3 级还差 ' + (120 - predAfter.II) + ' 分'}</em></div>`; })() : ''}
     ${estHtml}
+    ${fz.length ? `<div class="sec" style="text-align:left">🤔 ${fz.length} 道模糊的题，明天再考一次</div>` : ''}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
     ${focus && !S.mode.startsWith('type-') ? `<div class="hero rev" style="text-align:left"><div class="meta">这组错得最多</div><h2>${esc(NO[focus] || focus)}</h2><p>先看 3 条解题方法，再专门刷这一类</p><button class="btn blue" id="goFocus">专项突破</button></div>` : ''}
     ${nextHtml()}
