@@ -41,7 +41,7 @@
   const ls = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
   const BAL = [['银行存款', '银行'], ['微信存款', '微信'], ['余利宝', '余利宝'], ['月利宝', '月利宝'], ['小荷包', '小荷包'], ['韩元', '韩元 ₩'], ['股票', '股票 / 基金'], ['负债', '负债'], ['借款', '借款']];
   const FLOW = [['收入·混音', '收入 · 混音'], ['收入·录音', '收入 · 录音'], ['收入·课程', '收入 · 课程'], ['收入·家里', '收入 · 家里'], ['伙食支出', '支出 · 伙食'], ['支出·房租交通', '支出 · 房租交通'], ['支出·设备订阅', '支出 · 设备订阅'], ['支出·社交娱乐', '支出 · 社交娱乐'], ['支出·生活杂类', '支出 · 生活杂类'], ['工资支出', '支出 · 工资'], ['一次性支出', '支出 · 一次性']];
-  let MD = null, loading = false, err = '', asked = false, saving = false;
+  let MD = null, loading = false, err = '', asked = false, saving = false, fresh = false;   // fresh：这次打开后从服务器读到过最新数据（没读到时 MD 只是本机缓存）
   try { MD = JSON.parse(ls.get('insights:money') || 'null'); } catch (e) { MD = null; }
   let D = null; try { D = JSON.parse(ls.get('insights:moneyDraft') || 'null'); } catch (e) { D = null; }
   if (!D || typeof D !== 'object') D = { bal: {}, flow: {}, note: '' };
@@ -54,7 +54,7 @@
     if (loading) return; loading = true; asked = true;
     try {
       const j = await (await fetch(G.API + '/money', { headers: { Authorization: 'Bearer ' + G.KEY } })).json();
-      if (j.ok) { MD = j; err = ''; ls.set('insights:money', JSON.stringify(j)); } else err = j.err || 'err';
+      if (j.ok) { MD = j; err = ''; fresh = true; ls.set('insights:money', JSON.stringify(j)); } else err = j.err || 'err';
     } catch (e) { err = 'net'; }
     loading = false; if (G.tab === 'money' && !G.typing()) G.render();
   }
@@ -66,15 +66,20 @@
   // 记录的时间：日期 + 创建时刻（本机时区），同一天两条能分开
   const stamp = r => { const t = r.le || r.ct ? new Date(r.le || r.ct) : null; return r.date.slice(5).replace('-', '/') + (t && !isNaN(t) ? ' ' + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0') : ''); };
   // 存钱进度：已存 / 目标、和计划线比领先还是落后、每月要存 vs 近 30 天实际
+  // 2026-11-27 改目标：每月攒 ¥5,000，从 11/26 的 ¥18,047 起算，2/28 自己攒到 ¥33,500；学费 ¥43,000 剩下的家里补
+  const TUITION = 43000, GOAL = 33500, MONTHLY = 5000, A0 = '2026-11-26', S0 = 18047, END = '2027-02-28';
+  const planAt = d => S0 + (GOAL - S0) * Math.max(0, Math.min(1, (Date.parse(d) - Date.parse(A0)) / (Date.parse(END) - Date.parse(A0))));
   function progCard(p) {
     if (!p) return '';
+    // Worker 还按 ¥43,000 算；这里统一换成新目标，只保留它的已存、近 30 天速度、预测
+    p = { ...p, goal: GOAL, plan: Math.round(planAt(p.asOf)), monthly: Math.round(Math.max(0, GOAL - p.saved) / Math.max(1, p.daysLeft / 30.4) / 10) * 10, decide: [(p.decide || [])[0], Math.round(planAt('2027-01-15'))] };
     const pct = Math.min(100, p.saved / p.goal * 100), pp = Math.min(100, p.plan / p.goal * 100), ahead = p.saved - p.plan, md = p.asOf.slice(5).replace('-', '/');
     const ser = p.ser || [], W = 300, H = 56;
     let spark = '';
     if (ser.length > 1) {
       const t0 = Date.parse(ser[0].d), t1 = Date.parse(ser[ser.length - 1].d) || t0 + 1, lo = Math.min(...ser.map(x => x.s)) * .97, hi = Math.max(...ser.map(x => x.s), p.plan) * 1.01;
       const X = d => (Date.parse(d) - t0) / (t1 - t0 || 1) * W, Yv = v => H - (v - lo) / (hi - lo || 1) * H;
-      const p0 = Date.parse('2026-10-23'), pv = d => 11070 + (p.goal - 11070) * Math.max(0, (Date.parse(d) - p0) / (Date.parse('2027-02-28') - p0));
+      const pv = planAt;
       spark = `<svg class="mn-sp" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline class="pl" points="${X(ser[0].d)},${Yv(pv(ser[0].d))} ${W},${Yv(pv(ser[ser.length - 1].d))}"/><polyline class="sv" points="${ser.map(x => X(x.d).toFixed(1) + ',' + Yv(x.s).toFixed(1)).join(' ')}"/></svg>`;
     }
     const need = p.monthly - p.surplus;
@@ -83,7 +88,7 @@
     // 本月已攒 = 最新已存 − 上个月最后一条的已存；本月目标按月初那一刻的缺口摊到剩下的月份（月中不会跟着变）
     const ym = p.asOf.slice(0, 7), mStart = ym + '-01', base = [...ser].reverse().find(x => x.d < mStart) || ser[0];
     const dd = (x, y) => Math.round((Date.parse(y) - Date.parse(x)) / 864e5), mSaved = base ? p.saved - base.s : 0;
-    const mTarget = base ? Math.round(Math.max(0, p.goal - base.s) / Math.max(1, dd(base.d, '2027-02-28') / 30.4) / 10) * 10 : p.monthly;
+    const mTarget = MONTHLY;
     const y0 = +ym.slice(0, 4), m0 = +ym.slice(5, 7), mEnd = new Date(Date.UTC(y0, m0, 0)).toISOString().slice(0, 10), mLeft = Math.max(0, dd(p.asOf, mEnd));
     const mPct = Math.max(0, Math.min(100, mTarget ? mSaved / mTarget * 100 : 0)), mGap = mTarget - mSaved;
     const month = `<div class="mn-top mn-mon"><div class="k">${m0} 月已攒</div><div class="n ${mSaved >= 0 ? '' : 'neg'}">${mSaved >= 0 ? '' : '−'}${yen(Math.abs(mSaved))}<small> / 本月目标 ${yen(mTarget)}</small></div>
@@ -94,7 +99,8 @@
       <div class="mn-bar"><i style="width:${pct}%"></i><em style="left:${pp}%" title="计划线"></em></div>
       <div class="d">按计划 ${md} 应到 ${yen(p.plan)} · <b class="${ahead >= 0 ? 'ok' : 'warn'}">${ahead >= 0 ? '领先 ' : '落后 '}${yen(Math.abs(ahead))}</b></div>${spark}
       <div class="mn-st"><div><span>每月要存</span><b>${yen(p.monthly)}</b></div><div><span>实际每月</span><b class="${need > 0 ? 'warn' : 'ok'}">${yen(p.surplus)}</b></div><div><span>剩</span><b>${p.daysLeft} 天</b></div></div>
-      <div class="d">照近 30 天的速度，2/28 能到 ${yen(p.projected)}${p.projected >= p.goal ? '，够了' : '，还差 ' + yen(p.goal - p.projected)} · 1/15 决策线 ${yen(p.decide[1])}</div></div>`;
+      <div class="d">照近 30 天的速度，2/28 能到 ${yen(p.projected)}${p.projected >= p.goal ? '，够了' : '，还差 ' + yen(p.goal - p.projected)} · 1/15 计划 ${yen(p.decide[1])}</div>
+      <div class="d">学费 ${yen(TUITION)} = 自己攒 ${yen(GOAL)} + 家里补 ${yen(TUITION - GOAL)}</div></div>`;
   }
   window.renderMoney = () => {
     if (!asked) load();
@@ -137,6 +143,12 @@
     const fd = q('#mnFlow'); if (fd) fd.ontoggle = () => ls.set('insights:mnflow', fd.open ? '1' : '0');
     const sv = q('#mnSave'); if (sv) sv.onclick = async () => {
       if (saving) return;
+      // 没改的余额会照上一条一起写进去，所以必须先读到服务器上的最新一条，不能拿本机缓存当基准
+      if (!fresh) { G.toast(loading ? '还在读取最新余额，读完再记' : '没读到最新余额（' + (err || '网络') + '），先刷新再记，草稿还在', 3500); if (!loading) { err = ''; load(); } return; }
+      // 金额只收数字（可带负号和小数点），别把打错的字写进账本
+      const bad = [...BAL.filter(([k]) => k in D.bal).map(([k, lb]) => [D.bal[k], lb]), ...FLOW.filter(([k]) => D.flow[k] !== undefined && D.flow[k] !== '').map(([k, lb]) => [D.flow[k], lb])]
+        .filter(([v]) => !/^[+-]?(\d+\.?\d*|\.\d+)$/.test(String(v)) || !Number.isFinite(Number(v)));
+      if (bad.length) return G.toast('这几项不是数字：' + bad.map(x => x[1]).join('、'), 3500);
       const bal = {}; BAL.forEach(([k]) => { const v = val(k); if (v !== undefined && v !== null && v !== '') bal[k] = v; });   // 没改的也一起写，今天那行才是完整的
       const flow = { ...D.flow };
       if (!Object.keys(bal).length && !Object.keys(flow).length) return G.toast('还没有可记的数', 2000);
