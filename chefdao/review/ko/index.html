@@ -1143,6 +1143,8 @@ function wdOrigin(k) {   // 答完显示词源：汉字词标汉字（像 Naver 
 function wdReveal(auto) { if (!W || !W.cur.hid) return; clearTimeout(W.rt); W.cur.hid = false; W.cur.tr = performance.now(); W.cur.auto = !!auto; $('wdCh').classList.remove('hid'); }
 // ───────── 变形卡：看到 갔어요 认出「去 · 过去」，或者在句子里认出加粗的部分 ─────────
 const CJ = window.KO_CONJ || {}, CS = window.KO_CSENT || [];
+// 选项写成自然的中文：「虽然辣」「去了」「想吃」，比「辣 · 虽然…但是」好懂
+const CJZ = { pres: v => v + '（现在）', past: v => v + '了（过去）', fut: v => '要' + v + '（将来）', prog: v => '正在' + v, neg: v => '不' + v, req: v => '请' + v, give: v => '请帮我' + v, want: v => '想' + v, if: v => '如果' + v, so: v => '因为' + v, but: v => '虽然' + v };
 const CJF = { pres: '现在', past: '过去（了）', fut: '将来 / 打算', prog: '正在', neg: '不…（否定）', req: '请… / 敬语', give: '请（帮我）…', want: '想要…', if: '如果…', so: '因为… / …然后', but: '虽然…但是' };
 const CJR = { pres: '-아/어요：现在 / 一般说法', past: '-았/었어요：过去', fut: '-(으)ㄹ 거예요：将来、打算', prog: '-고 있어요：正在做', neg: '-지 않아요：不…', req: '-(으)세요：请… / 敬语', give: '-아/어 주세요：请帮我…', want: '-고 싶어요：想…', if: '-(으)면：如果…', so: '-아/어서：因为… / …然后', but: '-지만：虽然…但是' };
 const zh1 = k => WBY[k] ? WBY[k].z.split(' / ')[0].replace(/（.*?）/g, '') : k;
@@ -1166,7 +1168,7 @@ function cjShow() {
   $('wdCard').innerHTML = `<div class="wdk ko ${sent ? 'sent' : ''}">${show}</div><button class="spk" id="wdSpk">${ICON_SPK}</button><span class="wdnew cj">变形${sent ? ' · 句子' : ''}</span><div class="wdfb" id="wdFb"></div>`;
   $('wdCard').classList.remove('in'); void $('wdCard').offsetWidth; $('wdCard').classList.add('in');
   clearTimeout(W.rt); W.cur.hid = true; $('wdCh').classList.add('hid'); W.rt = setTimeout(() => wdReveal(true), 3000);
-  $('wdCh').innerHTML = `<button class="wdthink" id="wdThink">${sent ? '加粗的部分' : '这个'}是哪个词的什么形式？<small>点这里或按回车看选项</small><i style="animation-duration:3s"></i></button>` + opts.map((o, i) => { const [ok, of] = o.split('|'); return `<button class="wo" data-k="${esc(o)}" style="animation-delay:${i * 40}ms"><span class="wn">${i + 1}</span>${esc(zh1(ok))} · ${CJF[of]}</button>`; }).join('');
+  $('wdCh').innerHTML = `<button class="wdthink" id="wdThink">${sent ? '加粗的部分' : '这个'}是哪个词的什么形式？<small>点这里或按回车看选项</small><i style="animation-duration:3s"></i></button>` + opts.map((o, i) => { const [ok, of] = o.split('|'); return `<button class="wo" data-k="${esc(o)}" style="animation-delay:${i * 40}ms"><span class="wn">${i + 1}</span>${esc(CJZ[of](zh1(ok)))}</button>`; }).join('');
   $('wdIdk').textContent = '不会'; $('wdIdk').onclick = () => wdAnswer(null);
   const text = sent ? sent[0] : form; say(text, 1); $('wdSpk').onclick = () => say(text, 1);
   document.querySelectorAll('.wo').forEach(b => b.onclick = () => wdAnswer(b));
