@@ -261,8 +261,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .pred small{display:block;font-size:12px;font-weight:800;color:var(--tx2)}
 .pred b{font-size:34px;font-weight:900;color:var(--o);line-height:1.1}.pred em{font-style:normal;font-size:13px;color:var(--tx3);font-weight:700;margin-left:4px}
 .pred span.up,.pdone span.up{color:var(--g);font-weight:900;margin-left:6px}.pred span.dn,.pdone span.dn{color:var(--r);font-weight:900;margin-left:6px}
-.spk{width:120px;height:34px;flex:none}.spk polyline{fill:none;stroke:var(--o);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
-.spk line{stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}.spk .ln3{stroke:var(--tx3)}.spk .ln4{stroke:var(--g)}
+.spkl{width:120px;height:34px;flex:none}.spkl polyline{fill:none;stroke:var(--o);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.spkl line{stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}.spkl .ln3{stroke:var(--tx3)}.spkl .ln4{stroke:var(--g)}
 .pbar{position:relative;height:12px;border-radius:99px;background:var(--bd);margin:8px 0 22px}
 .pbar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#ffc800,#ff9600);transition:width 1s cubic-bezier(.2,.8,.2,1)}
 .pbar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--tx3);text-decoration:none}.pbar u.g4{background:var(--g)}
@@ -276,6 +276,25 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .pdone small{flex-basis:100%;font-size:12px;font-weight:800;color:var(--tx2)}.pdone b{font-size:36px;font-weight:900;color:var(--o);line-height:1.1;display:inline-block;transition:transform .3s}
 .pdone b.bump{animation:bump .4s ease-out}.pdone em{flex-basis:100%;font-style:normal;font-size:14px;font-weight:700;color:var(--tx2)}
 @keyframes bump{40%{transform:scale(1.18)}}
+.wdgo{margin-top:10px;background:var(--card);border:2px solid var(--bd);border-bottom-width:4px;color:var(--tx);font-size:18px;display:flex;align-items:center;justify-content:center;gap:10px}
+.wdgo small{font-size:13px;color:var(--tx3);font-weight:700}
+#wd{min-height:100vh;min-height:100dvh;display:none;flex-direction:column}#wd.on{display:flex}
+#wd .top{display:flex;align-items:center;gap:12px}
+.wdc{flex:1;font-size:15px;font-weight:700;color:var(--tx2)}.wdc b{font-size:20px;color:var(--tx);font-weight:900}
+#wdCombo{opacity:0;transition:opacity .25s}#wdCombo.on{opacity:1}
+.wdcard{position:relative;margin:28px 0 22px;padding:40px 16px 30px;border:2px solid var(--bd);border-bottom-width:4px;border-radius:20px;text-align:center;background:var(--card)}
+.wdcard.in{animation:wdIn .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes wdIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.wdk{font-size:44px;font-weight:800;line-height:1.3;word-break:keep-all}.wdk.zh{font-size:34px}
+.wdcard .spk{margin-top:12px;width:48px;height:48px;border-radius:14px;background:var(--bl);color:var(--b);border:0;display:inline-grid;place-items:center}
+.wdcard .spk svg{width:26px;height:26px}
+.wdnew{position:absolute;top:12px;left:14px;font-size:12px;font-weight:800;color:var(--p);background:var(--pl);padding:2px 8px;border-radius:8px}
+.wdans{margin-top:14px;font-size:20px;font-weight:800;color:var(--rt);animation:fadeUp .25s ease-out}
+.wdch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.wo{border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:16px 10px;font-size:18px;font-weight:700;background:var(--card);color:var(--tx);min-height:64px;animation:fadeUp .25s ease-out both;transition:background .15s,border-color .15s,opacity .2s}
+.wo.ko{font-size:20px}.wo:active{transform:translateY(2px)}
+.wo.good{border-color:var(--g);background:var(--gl);color:var(--gt)}.wo.bad{border-color:var(--r);background:var(--rl);color:var(--rt)}.wo.dim{opacity:.4}
+#wdIdk{margin-top:auto;border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:14px;font-size:17px;font-weight:800;color:var(--tx2);background:var(--card)}
 </style>
 </head>
 <body>
@@ -297,6 +316,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <section class="screen" id="done"></section>
 
+<section class="screen" id="wd">
+  <div class="top"><button class="x" id="wdQuit" aria-label="结束">×</button><div class="wdc" id="wdc"></div><div class="cb on" id="wdCombo"></div></div>
+  <div class="wdcard" id="wdCard"></div>
+  <div class="wdch" id="wdCh"></div>
+  <button class="btn ghost" id="wdIdk">不会</button>
+</section>
+
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -305,7 +331,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 const _t = Math.floor(Date.now() / 6e5);
 // 一打开就先去拿云端进度，和题库并行下载
 try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=30', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
-document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script>');
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
@@ -361,7 +387,7 @@ function predMark() { const p = predict(); if (!p) return; const t = today(); ST
 function spark(arr) {
   if (arr.length < 2) return '';
   const vs = arr.map(x => x.v), lo = Math.min(...vs) - 10, hi = Math.max(...vs) + 10, W = 120, H = 34, X = i => i / (vs.length - 1) * W, Y = v => H - (v - lo) / (hi - lo) * H;
-  return `<svg class="spk" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${[120, 150].filter(v => v > lo && v < hi).map(v => `<line x1="0" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" class="${v === 120 ? 'ln3' : 'ln4'}"/>`).join('')}<polyline points="${vs.map((v, i) => X(i) + ',' + Y(v)).join(' ')}"/></svg>`;
+  return `<svg class="spkl" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${[120, 150].filter(v => v > lo && v < hi).map(v => `<line x1="0" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" class="${v === 120 ? 'ln3' : 'ln4'}"/>`).join('')}<polyline points="${vs.map((v, i) => X(i) + ',' + Y(v)).join(' ')}"/></svg>`;
 }
 const GOALS = [[20, '1 组'], [40, '2 组'], [60, '3 组'], [100, '5 组']];   // 一组 10 题大约 15–25 XP
 let lastSync = +localStorage.getItem('ko:sync') || 0, syncState = '';
@@ -604,6 +630,7 @@ function renderHome() {
     <h2>${TIERS[tier()].split(' · ')[0]}题</h2>
     <p>${due ? `含 ${Math.min(3, due)} 道错题` : '新题为主'}${weakTypes()[0] ? ` · 加练弱项「${esc((NO[weakTypes()[0]] || '').split(' · ').pop())}」` : ''}</p>
     <button class="btn green big-go" id="goStudy">学习</button>
+    <button class="btn wdgo" id="goWords">刷词 <small>${(() => { const m = wordStats(); return `已掌握 ${m.done} / ${m.all}${m.due ? ' · ' + m.due + ' 个该复习' : ''}`; })()}</small></button>
   </div>
   <button class="more-t" id="moreT">更多 ${ST.moreOpen ? '▴' : '▾'}</button>
   <div class="more${ST.moreOpen ? ' on' : ''}" id="more"><div>
@@ -622,6 +649,7 @@ function renderHome() {
   if ($('predB')) $('predB').onclick = predSheet;
   $('lvc').onclick = goalSheet; document.querySelector('.ring').onclick = goalSheet;
   $('goStudy').onclick = () => start('study', buildStudy());
+  $('goWords').onclick = wdStart;
   $('moreT').onclick = () => { ST.moreOpen = !ST.moreOpen; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} $('more').classList.toggle('on', ST.moreOpen); $('moreT').textContent = '更多 ' + (ST.moreOpen ? '▴' : '▾'); };
   document.querySelectorAll('.sb').forEach(b => b.onclick = () => start('sec-' + b.dataset.s, buildSec(b.dataset.s, 8)));
   if ($('goMock')) $('goMock').onclick = () => start('mock', buildMock());
@@ -930,6 +958,82 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Backspace' && x && x._back) x._back();
   else if (e.key === ' ' && !checked) { e.preventDefault(); const b = document.querySelector('[data-say]'); if (b) b.click(); else if ($('pl')) $('pl').click(); }
 });
+
+// ───────── 刷词：一直刷到自己停 ─────────
+// ST.w[韩语] = { b: 0–5 盒子, due: 下次出现时间 }。答对盒子 +1（间隔 10 分钟 → 1 → 3 → 7 → 21 天），答错回 0、本轮几张后再出。b ≥ 3 算掌握。
+const WL = (() => { const seen = new Set(); return (window.KO_WORDS || []).filter(w => !seen.has(w[0]) && seen.add(w[0])).map(([k, z, lv]) => ({ k, z, lv: lv || 1 })); })();
+const WBY = Object.fromEntries(WL.map(w => [w.k, w]));
+const WGAP = [6e5, DAY, 3 * DAY, 7 * DAY, 21 * DAY];
+function wordStats() { const w = ST.w || {}, now = Date.now(); return { all: WL.length, done: WL.filter(x => (w[x.k] || {}).b >= 3).length, due: WL.filter(x => w[x.k] && w[x.k].due <= now && w[x.k].b < 5).length }; }
+let W = null;
+function wdNext() {   // 先出到期的旧词，再出新词（1 级在前），本轮答错的隔 3 张再出
+  const w = ST.w || {}, now = Date.now(), recent = W.hist.slice(-3);
+  const back = W.again.find(a => W.n - a.at >= 3); if (back) { W.again = W.again.filter(a => a !== back); return back.k; }
+  const due = WL.filter(x => w[x.k] && w[x.k].due <= now && !recent.includes(x.k)).sort((a, b) => w[a.k].due - w[b.k].due);
+  const fresh = WL.filter(x => !w[x.k] && !recent.includes(x.k)).sort((a, b) => a.lv - b.lv);
+  const pick = (due.length && (W.n % 3 !== 2 || !fresh.length)) ? due[0] : fresh[0] || due[0] || WL.filter(x => !recent.includes(x.k))[Math.random() * (WL.length - 3) | 0];
+  return pick.k;
+}
+const cjk = s => new Set((s.match(/[\u4e00-\u9fff]/g) || []));
+function wdOpts(word) {   // 干扰项避开和正确答案共用汉字的（免得「学习」「学」两个都算对）
+  const c = cjk(word.z), pool = shuffle(WL.filter(x => x.k !== word.k && ![...cjk(x.z)].some(ch => c.has(ch)) && x.z !== word.z));
+  return shuffle([word].concat(pool.slice(0, 3)));
+}
+function wdStart() { W = { n: 0, ok: 0, combo: 0, best: 0, hist: [], again: [], newM: 0, log: [], t0: Date.now() }; ST.w = ST.w || {}; show('wd'); wdShow(); }
+function wdShow() {
+  stopAudio();
+  const k = wdNext(), word = WBY[k], r = (ST.w || {})[k], rev = r && r.b >= 1 && Math.random() < .35;   // 认识过的词偶尔反过来：看中文选韩语
+  W.cur = { k, rev, done: false }; W.hist.push(k);
+  const opts = wdOpts(word);
+  $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}`;
+  $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
+  $('wdCard').innerHTML = `<div class="wdk ${rev ? 'zh' : 'ko'}">${esc(rev ? word.z : word.k)}</div>${rev ? '' : `<button class="spk" id="wdSpk">${ICON_SPK}</button>`}${r ? '' : '<span class="wdnew">新词</span>'}`;
+  $('wdCard').classList.remove('in'); void $('wdCard').offsetWidth; $('wdCard').classList.add('in');
+  $('wdCh').innerHTML = opts.map((o, i) => `<button class="wo${rev ? ' ko' : ''}" data-k="${esc(o.k)}" style="animation-delay:${i * 40}ms">${esc(rev ? o.k : o.z)}</button>`).join('');
+  $('wdIdk').textContent = '不会'; $('wdIdk').onclick = () => wdAnswer(null);
+  if (!rev) { say(k, 1); $('wdSpk').onclick = () => say(k, 1); }
+  document.querySelectorAll('.wo').forEach(b => b.onclick = () => wdAnswer(b));
+}
+function wdAnswer(b) {
+  if (W.cur.done) return; W.cur.done = true;
+  const k = W.cur.k, word = WBY[k], ok = !!b && b.dataset.k === k, now = Date.now(), r = ST.w[k] || { b: 0 };
+  document.querySelectorAll('.wo').forEach(x => { x.classList.toggle('good', x.dataset.k === k); if (x === b && !ok) x.classList.add('bad'); if (x.dataset.k !== k && x !== b) x.classList.add('dim'); });
+  W.n++; W.log.push({ id: 'W:' + k, t: 'wd', k, ok: ok ? 1 : 0, a: b ? b.textContent : '不会' });
+  if (ok) {
+    const wasNew = !ST.w[k], nb = Math.min(5, (wasNew ? 2 : r.b + 1));   // 新词第一次就对：说明本来就会，直接跳到第 2 盒
+    if (r.b < 3 && nb >= 3) W.newM++;
+    ST.w[k] = { b: nb, due: now + WGAP[Math.min(nb, WGAP.length) - 1] };
+    W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true);
+    if (W.cur.rev) say(k, 1);
+    setTimeout(wdShow, W.cur.rev ? 1100 : 650);
+  } else {
+    ST.w[k] = { b: 0, due: now + WGAP[0] }; W.again.push({ k, at: W.n }); W.combo = 0; sfx(false); say(k, 1);
+    $('wdCard').insertAdjacentHTML('beforeend', `<div class="wdans">${esc(word.k)} = ${esc(word.z)}</div>`);
+    $('wdIdk').textContent = '继续'; $('wdIdk').onclick = wdShow;
+  }
+  $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}`; $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
+  if (W.n % 10 === 0) save();
+}
+function wdEnd() {
+  stopAudio(); if (!W || !W.n) { W = null; show('home'); renderHome(); return; }
+  const t = today(), xp = W.ok + Math.floor(W.best / 5) * 2;   // 1 个对 = 1 XP，每连对 5 个多 2 XP
+  if (ST.last !== t) { ST.streak = ST.last === today(Date.now() - DAY) ? ST.streak + 1 : 1; ST.last = t; }
+  if (ST.day !== t) { ST.day = t; ST.dayXp = 0; }
+  const dayBefore = ST.dayXp, lvBefore = lvInfo(ST.xp).lv; ST.xp += xp; ST.dayXp += xp; const L2 = lvInfo(ST.xp);
+  save(); push({ lesson: 'words', dur: Math.round((Date.now() - W.t0) / 1000), xp, items: W.log.slice(-80) });
+  const m = wordStats(), acc = Math.round(W.ok / W.n * 100);
+  $('done').innerHTML = `<div class="big-e">${acc >= 90 ? '🔥' : '📚'}</div><h2>刷了 ${W.n} 个词</h2>
+    ${L2.lv > lvBefore ? `<div class="burst lvup">⭐ 升到 Lv ${L2.lv}</div>` : ''}
+    ${dayBefore < ST.goal && ST.dayXp >= ST.goal ? `<div class="burst goal">🎯 今日目标达成<small>🔥 连续 ${ST.streak} 天</small></div>` : ''}
+    <div class="stats"><div class="st a"><small>经验</small><b>+${xp}</b></div><div class="st b"><small>正确率</small><b>${acc}%</b></div><div class="st c"><small>最长连对</small><b>${W.best}</b></div></div>
+    <div class="reward"><div class="r"><span>已掌握 ${m.done} / ${m.all} 词</span><em>${W.newM ? '这轮新掌握 ' + W.newM : ''}</em></div><div class="lbar"><i id="wmFill" style="width:${(m.done - W.newM) / m.all * 100}%" data-w="${m.done / m.all * 100}"></i></div>
+    <div class="r" style="margin-top:8px"><span>今日 ${ST.dayXp} / ${ST.goal} XP</span><em>${ST.dayXp >= ST.goal ? '达标 ✓' : '还差 ' + (ST.goal - ST.dayXp)}</em></div></div>
+    <button class="btn green" id="wdMore">再刷一轮</button><button class="btn ghost" id="back">回首页</button>`;
+  W = null; show('done'); sfx(true);
+  setTimeout(() => { const e = $('wmFill'); if (e) e.style.width = e.dataset.w + '%'; }, 300);
+  $('wdMore').onclick = wdStart; $('back').onclick = () => { show('home'); renderHome(); };
+}
+$('wdQuit').onclick = wdEnd;
 
 function finish() {
   const sec = Math.round((Date.now() - S.t0) / 1000), firstVals = Object.values(S.first), n = firstVals.length, okN = firstVals.filter(Boolean).length;
