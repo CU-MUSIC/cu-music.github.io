@@ -228,10 +228,36 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 #sy{position:fixed;top:calc(env(safe-area-inset-top) + 10px);left:50%;z-index:60;padding:5px 12px;border-radius:99px;background:var(--card,#fff);box-shadow:0 2px 10px rgba(0,0,0,.12);font-size:13px;color:var(--tx2,#777);opacity:0;transform:translate(-50%,-8px);transition:opacity .25s,transform .25s;pointer-events:none}
 #sy.on{opacity:1;transform:translate(-50%,0)}
+.lvc{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border:2px solid var(--bd);border-bottom-width:4px;border-radius:16px;padding:12px 14px;margin:0 0 12px;background:var(--card);animation:fadeUp .3s ease-out}
+.lvc .lv{flex:none;width:52px;height:52px;border-radius:14px;background:linear-gradient(150deg,#ffc800,#ff9600);color:#fff;display:grid;place-items:center;line-height:1;box-shadow:0 3px 0 #e08600}
+.lvc .lv small{font-size:10px;font-weight:800;opacity:.9;display:block;text-align:center}.lvc .lv b{font-size:22px;font-weight:900}
+.lvc .m{flex:1;min-width:0}
+.lvc .r{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;font-weight:800;color:var(--tx)}
+.lvc .r em{font-style:normal;font-size:13px;color:var(--tx3);font-weight:700}.lvc .r em.ok{color:var(--g)}
+.gbar{height:12px;border-radius:99px;background:var(--bd);overflow:hidden;margin:6px 0 5px}
+.gbar i{display:block;height:100%;width:0;border-radius:99px;background:var(--o);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.gbar.full i{background:var(--g)}
+.lbar{height:5px;border-radius:99px;background:var(--bd);overflow:hidden;margin-top:4px}.lbar i{display:block;height:100%;width:0;background:#ffc800;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.lvc .s{font-size:13px;color:var(--tx3);font-weight:600}
+.syl{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx3);font-weight:600;margin:-6px 0 10px;padding:2px 0;background:none;border:0;transition:color .3s}
+.syl i{width:8px;height:8px;border-radius:50%;background:var(--g);transition:background .3s}
+.syl.ing i{background:var(--b);animation:pulse 1s ease-in-out infinite}.syl.err i{background:var(--r)}.syl.err{color:var(--rt)}
+@keyframes pulse{50%{opacity:.3}}
+.gopt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gopt button{border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:14px 10px;background:var(--card);font-size:17px;font-weight:800;color:var(--tx);transition:background .15s,border-color .15s}
+.gopt button small{display:block;font-size:13px;color:var(--tx3);font-weight:600;margin-top:3px}
+.gopt button.on{border-color:#84d8ff;background:var(--bl);color:var(--bdk)}
+.reward{border:2px solid var(--bd);border-radius:16px;padding:14px 16px;margin:4px 0 14px;text-align:left;animation:fadeUp .35s ease-out}
+.reward .r{display:flex;justify-content:space-between;font-size:15px;font-weight:800}
+.reward .r em{font-style:normal;color:var(--tx3);font-size:13px}
+.burst{border-radius:16px;padding:14px 16px;margin:0 0 12px;font-size:18px;font-weight:900;text-align:center;opacity:0;transform:scale(.8);animation:pop .5s cubic-bezier(.3,1.6,.5,1) forwards}
+.burst small{display:block;font-size:14px;font-weight:700;margin-top:4px;opacity:.85}
+.burst.goal{background:var(--gl);color:var(--gt)}.burst.lvup{background:#fff4d6;color:#c77700}
+@media (prefers-color-scheme:dark){.burst.lvup{background:#3a2f12;color:#ffc800}}
+@keyframes pop{to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
-<div id="sy">同步中…</div>
 
 <section class="screen on" id="home"></section>
 
@@ -283,25 +309,34 @@ let ST = { xp: 0, streak: 0, last: null, day: null, dayXp: 0, goal: 30, done: {}
 try { const s = JSON.parse(localStorage.getItem('ko:st') || 'null'); if (s) ST = { ...ST, ...s }; } catch (e) {}
 const save = () => { ST.ts = Date.now(); try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} };
 let syncMsg = '';
+// 等级：Lv1→2 要 40 XP，之后每级多 20（40、60、80…），越往后越难
+function lvInfo(xp) { let lv = 1, need = 40, left = xp || 0; while (left >= need) { left -= need; lv++; need += 20; } return { lv, cur: left, need }; }
+const GOALS = [[20, '1 组'], [40, '2 组'], [60, '3 组'], [100, '5 组']];   // 一组 10 题大约 15–25 XP
+let lastSync = +localStorage.getItem('ko:sync') || 0, syncState = '';
+function ago(t) { const m = Math.floor((Date.now() - t) / 6e4); if (m < 1) return '刚刚'; if (m < 60) return m + ' 分钟前'; const d = new Date(t); return (today(t) === today() ? '今天 ' : (d.getMonth() + 1) + '/' + d.getDate() + ' ') + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function syncLine() { const e = $('syl'); if (!e) return; e.className = 'syl ' + syncState; e.innerHTML = '<i></i>' + (syncState === 'ing' ? '同步中…' : syncState === 'err' ? '没同步上 · 点这里重试' : lastSync ? '已同步 · ' + ago(lastSync) : '还没同步过'); }
+function synced() { lastSync = Date.now(); try { localStorage.setItem('ko:sync', lastSync); } catch (e) {} syncState = ''; syncLine(); }
+setInterval(syncLine, 30000);
 async function pull(force) {   // 云端更新、或本机还没学过（新设备）就用云端的
   if (!KEY) return;
   const pre = !force && window._pre; window._pre = null;
   syncDot(1);
   try {
     const r = await (pre || fetch(API + '/ko?days=1', { headers: { Authorization: 'Bearer ' + KEY }, cache: 'no-store' }));
-    if (r.status === 401) return false;
+    if (r.status === 401) { syncState = 'err'; return false; }
     const j = await r.json();
     // 谁学得多听谁：XP 只会涨，云端 XP 更高就用云端；本机更高（没网时学的）就推上去
     const sx = (j.st && j.st.xp) || 0, lx = ST.xp || 0;
     if (j.ok && j.st && (force || sx > lx || (sx === lx && (j.st.ts || 0) > (ST.ts || 0)))) { ST = { ...ST, ...j.st }; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} renderHome(); }
     else if (j.ok && lx > sx) push();
+    if (j.ok) synced();
     return true;
-  } catch (e) {} finally { syncDot(0); }
+  } catch (e) { syncState = 'err'; } finally { syncDot(0); }
 }
 let syT;
 function syncDot(on) {   // 超过 0.3 秒还没拿到才显示「同步中」，免得一闪
   clearTimeout(syT);
-  if (on) syT = setTimeout(() => $('sy').classList.add('on'), 300); else $('sy').classList.remove('on');
+  if (on) syT = setTimeout(() => { syncState = 'ing'; syncLine(); }, 300); else syncLine();
 }
 let lastPull = Date.now();
 document.addEventListener('visibilitychange', () => {   // 主屏幕 App 从后台切回来不会重新加载页面，这里补一次同步
@@ -331,7 +366,8 @@ async function push(log) {
       pending.shift(); localStorage.setItem('ko:pending', JSON.stringify(pending));
     }
     if (!log) await fetch(API + '/ko', { method: 'POST', headers: { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ st: ST }) });
-  } catch (e) {}
+    synced();
+  } catch (e) { syncState = 'err'; syncLine(); }
 }
 
 // ───────── 声音 ─────────
@@ -500,6 +536,12 @@ function renderHome() {
     <span class="chip fire${ST.last === t ? '' : ' dim'}" title="连续天数">🔥 ${streak}</span>
     <div class="ring" title="今日 ${dayXp}/${ST.goal} XP"><svg viewBox="0 0 38 38"><circle class="bgc" cx="19" cy="19" r="15"/><circle class="fgc" cx="19" cy="19" r="15" stroke-dasharray="${C}" stroke-dashoffset="${C}" id="ringFg"/></svg><b>${dayXp}</b></div>
   </div>
+  ${KEY ? '<button class="syl" id="syl"></button>' : ''}
+  ${(() => { const L = lvInfo(ST.xp), full = dayXp >= ST.goal; return `<button class="lvc" id="lvc"><div class="lv"><div><small>LV</small><b>${L.lv}</b></div></div><div class="m">
+    <div class="r"><span>今日 ${dayXp} / ${ST.goal} XP</span><em class="${full ? 'ok' : ''}">${full ? '达标 ✓' : '每日目标 ›'}</em></div>
+    <div class="gbar${full ? ' full' : ''}"><i id="gFill" data-w="${Math.min(100, dayXp / ST.goal * 100)}"></i></div>
+    <div class="s">再 ${L.need - L.cur} XP 升 Lv ${L.lv + 1} · 共 ${ST.xp || 0} XP</div>
+    <div class="lbar"><i id="lFill" data-w="${L.cur / L.need * 100}"></i></div></div></button>`; })()}
   ${topikCard()}
   <div class="hero today study">
     <div class="meta">${dailyDone ? '今天学过了 ✓ · 可以再来一组' : '10 题 · 约 5 分钟'}</div>
@@ -516,11 +558,12 @@ function renderHome() {
   <button class="btn ghost" id="capBtn" style="margin-top:6px">${ST.cap ? '现在只练初级 · 点这里解锁中级' : '按级别自动升级 · 点这里只练初级'}</button>
   ${tier() >= 3 ? `<button class="btn ghost" id="goMock">16 题摸底 · 估一下现在多少分</button>` : ''}
   <button class="btn ghost" id="goPlace">${ST.placed ? '再测一次级别 · 12 题' : '分级测试 · 12 题'}</button>
-  <div class="foot"><button id="voiceBtn">换声音</button>${KEY ? '<button id="copyKey">复制同步码</button>' : ''}<button id="goalBtn">每日目标 ${ST.goal} XP</button></div>
-  ${KEY ? `<div class="sync">${esc(syncMsg)}</div>` : ''}
+  <div class="foot"><button id="voiceBtn">换声音</button>${KEY ? '<button id="copyKey">复制同步码</button>' : ''}</div>
   </div></div>
   ${KEY ? '' : '<button class="btn blue" id="syncBtn" style="margin-top:10px">连接同步 · 和电脑共用学习记录</button>'}`;
-  requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); }));
+  requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); ['gFill', 'lFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }));
+  syncLine(); if ($('syl')) $('syl').onclick = () => { lastPull = Date.now(); pull().then(() => { if (pending.length) push(); }); };
+  $('lvc').onclick = goalSheet; document.querySelector('.ring').onclick = goalSheet;
   $('goStudy').onclick = () => start('study', buildStudy());
   $('moreT').onclick = () => { ST.moreOpen = !ST.moreOpen; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} $('more').classList.toggle('on', ST.moreOpen); $('moreT').textContent = '更多 ' + (ST.moreOpen ? '▴' : '▾'); };
   document.querySelectorAll('.sb').forEach(b => b.onclick = () => start('sec-' + b.dataset.s, buildSec(b.dataset.s, 8)));
@@ -535,7 +578,11 @@ function renderHome() {
   $('voiceBtn').onclick = voiceSheet;
   if ($('syncBtn')) $('syncBtn').onclick = syncSheet;
   if ($('copyKey')) $('copyKey').onclick = () => navigator.clipboard.writeText(KEY).then(() => toast('已复制，到手机韩语 App 底部点「连接同步」粘贴'), () => sheet(`<h3>同步码</h3><p class="ko" style="word-break:break-all;user-select:all;font-size:15px">${esc(KEY)}</p>`));
-  $('goalBtn').onclick = () => { const g = [10, 20, 30, 50]; ST.goal = g[(g.indexOf(ST.goal) + 1) % g.length]; save(); renderHome(); push(); };
+}
+function goalSheet() {
+  sheet(`<h3>每日目标</h3><p style="font-size:15px;color:var(--tx2);margin:0 0 12px;line-height:1.7">一组 10 题大约 15–25 XP，全对多 5 XP</p>
+    <div class="gopt">${GOALS.map(([g, d]) => `<button data-g="${g}" class="${ST.goal === g ? 'on' : ''}">${g} XP<small>约 ${d}</small></button>`).join('')}</div>`);
+  document.querySelectorAll('.gopt button').forEach(b => b.onclick = () => { ST.goal = +b.dataset.g; save(); push(); document.querySelectorAll('.gopt button').forEach(x => x.classList.toggle('on', x === b)); setTimeout(() => { $('sheet').classList.remove('on'); renderHome(); }, 250); toast('每日目标 ' + ST.goal + ' XP'); });
 }
 function topikCard() {
   const left = dleft(EXAM.date), reg = ST.topikReg === EXAM.round, t = today();
@@ -814,7 +861,9 @@ function finish() {
   // 连续天数
   if (ST.last !== t) { ST.streak = ST.last === today(Date.now() - DAY) ? ST.streak + 1 : 1; ST.last = t; }
   if (ST.day !== t) { ST.day = t; ST.dayXp = 0; }
+  const dayBefore = ST.dayXp, lvBefore = lvInfo(ST.xp).lv;
   ST.xp += xp; ST.dayXp += xp;
+  const L2 = lvInfo(ST.xp), goalHit = dayBefore < ST.goal && ST.dayXp >= ST.goal, lvUp = L2.lv > lvBefore;
   if (S.mode === 'daily' || S.mode === 'study') ST.dailyDone = DAILY.date;
   else if (LBY[S.mode]) ST.done[S.mode] = (ST.done[S.mode] || 0) + 1;
   // 间隔复习：错了马上进复习；复习里答对一次，间隔 1→3→7→14 天，满了就移出
@@ -852,7 +901,13 @@ function finish() {
   const wrong = S.log.filter(l => !l.ok);
   $('done').innerHTML = `<div class="big-e">${acc === 100 ? '🏆' : acc >= 80 ? '🎉' : '💪'}</div>
     <h2>${acc === 100 ? '全对！' : '这组练完了'}</h2>
-    <div class="stats"><div class="st a"><small>经验</small><b>+${xp}</b></div><div class="st b"><small>正确率</small><b>${acc}%</b></div><div class="st c"><small>用时</small><b>${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</b></div></div>
+    ${lvUp ? `<div class="burst lvup">⭐ 升到 Lv ${L2.lv}<small>下一级还要 ${L2.need} XP</small></div>` : ''}
+    ${goalHit ? `<div class="burst goal" style="animation-delay:${lvUp ? '.25s' : '0s'}">🎯 今日目标达成<small>🔥 连续 ${ST.streak} 天</small></div>` : ''}
+    <div class="stats"><div class="st a"><small>经验</small><b id="xpUp">+0</b></div><div class="st b"><small>正确率</small><b>${acc}%</b></div><div class="st c"><small>用时</small><b>${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</b></div></div>
+    <div class="reward"><div class="r"><span>今日 ${ST.dayXp} / ${ST.goal} XP</span><em>${ST.dayXp >= ST.goal ? '达标 ✓' : '还差 ' + (ST.goal - ST.dayXp)}</em></div>
+      <div class="gbar${ST.dayXp >= ST.goal ? ' full' : ''}"><i id="dgFill" style="width:${Math.min(100, dayBefore / ST.goal * 100)}%" data-w="${Math.min(100, ST.dayXp / ST.goal * 100)}"></i></div>
+      <div class="r" style="margin-top:6px"><span>Lv ${L2.lv}</span><em>${L2.cur} / ${L2.need} XP</em></div>
+      <div class="lbar"><i id="dlFill" style="width:${lvUp ? 0 : (L2.cur - xp) / L2.need * 100}%" data-w="${L2.cur / L2.need * 100}"></i></div></div>
     ${estHtml}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
     ${focus && !S.mode.startsWith('type-') ? `<div class="hero rev" style="text-align:left"><div class="meta">这组错得最多</div><h2>${esc(NO[focus] || focus)}</h2><p>先看 3 条解题方法，再专门刷这一类</p><button class="btn blue" id="goFocus">专项突破</button></div>` : ''}
@@ -860,6 +915,9 @@ function finish() {
   $('back').onclick = () => { S = null; show('home'); renderHome(); };
   if ($('goFocus')) $('goFocus').onclick = () => start('type-' + focus, buildType(focus));
   show('done'); sfx(true);
+  setTimeout(() => { ['dgFill', 'dlFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }, 300);
+  const t0 = performance.now(), up = now => { const k = Math.min(1, (now - t0) / 700), e = $('xpUp'); if (!e) return; e.textContent = '+' + Math.round(xp * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(up); };
+  requestAnimationFrame(up);
 }
 
 if (!ST.capInit) { ST.cap = 2; ST.capInit = 1; if ((ST.tier || 1) > 2) ST.tier = 2; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} }   // 不改 ts，免得盖过云端   // 11-26：先把初级做熟
