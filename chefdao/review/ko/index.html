@@ -292,6 +292,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wdans{margin-top:14px;font-size:20px;font-weight:800;color:var(--rt);animation:fadeUp .25s ease-out}
 .wdch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .wo{border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:16px 10px;font-size:18px;font-weight:700;background:var(--card);color:var(--tx);min-height:64px;animation:fadeUp .25s ease-out both;transition:background .15s,border-color .15s,opacity .2s}
+.wo{position:relative}.wo .wn{position:absolute;top:6px;left:9px;font-size:11px;font-weight:800;color:var(--tx3)}@media (hover:none){.wo .wn{display:none}}
 .wo.ko{font-size:20px}.wo:active{transform:translateY(2px)}
 .wo.good{border-color:var(--g);background:var(--gl);color:var(--gt)}.wo.bad{border-color:var(--r);background:var(--rl);color:var(--rt)}.wo.dim{opacity:.4}
 #wdIdk{margin-top:auto;border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:14px;font-size:17px;font-weight:800;color:var(--tx2);background:var(--card)}
@@ -496,11 +497,17 @@ function say(text, rate = 0.9, el) {
   playClips([{ src: clip(text, 'F', slow) || (slow && clip(text, 'F')), text, rate, v: 'F' }], el);
 }
 let AC;
-function sfx(ok) {   // 答对「叮咚」，答错一声低的
+function sfx(ok) {   // 答对：柔和的木琴两连音（像多邻国）；答错：低沉轻一声。过低通滤掉刺耳的高频
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-    const notes = ok ? [[880, 0], [1320, .09]] : [[220, 0], [196, .12]];
-    notes.forEach(([f, t]) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = ok ? 'sine' : 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0, AC.currentTime + t); g.gain.linearRampToValueAtTime(.18, AC.currentTime + t + .02); g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + t + .3); o.connect(g).connect(AC.destination); o.start(AC.currentTime + t); o.stop(AC.currentTime + t + .32); });
+    const t0 = AC.currentTime + .01, lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = ok ? 2600 : 1200; lp.connect(AC.destination);
+    const note = (f, t, len, vol, type) => [[1, vol], [2, vol * .18], [3.98, vol * .05]].forEach(([m, v]) => {   // 基音 + 一点泛音 = 木琴质感
+      const o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.value = f * m;
+      g.gain.setValueAtTime(0, t0 + t); g.gain.linearRampToValueAtTime(v, t0 + t + .012); g.gain.exponentialRampToValueAtTime(.0008, t0 + t + len / m);
+      o.connect(g).connect(lp); o.start(t0 + t); o.stop(t0 + t + len + .05);
+    });
+    if (ok) { note(659.25, 0, .35, .13); note(987.77, .085, .5, .12); }   // E5 → B5
+    else { note(196, 0, .3, .14, 'triangle'); note(155.56, .1, .38, .12, 'triangle'); }
   } catch (e) {}
 }
 function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2000); }
@@ -989,7 +996,7 @@ function wdShow() {
   $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
   $('wdCard').innerHTML = `<div class="wdk ${rev ? 'zh' : 'ko'}">${esc(rev ? word.z : word.k)}</div>${rev ? '' : `<button class="spk" id="wdSpk">${ICON_SPK}</button>`}${r ? '' : '<span class="wdnew">新词</span>'}`;
   $('wdCard').classList.remove('in'); void $('wdCard').offsetWidth; $('wdCard').classList.add('in');
-  $('wdCh').innerHTML = opts.map((o, i) => `<button class="wo${rev ? ' ko' : ''}" data-k="${esc(o.k)}" style="animation-delay:${i * 40}ms">${esc(rev ? o.k : o.z)}</button>`).join('');
+  $('wdCh').innerHTML = opts.map((o, i) => `<button class="wo${rev ? ' ko' : ''}" data-k="${esc(o.k)}" style="animation-delay:${i * 40}ms"><span class="wn">${i + 1}</span>${esc(rev ? o.k : o.z)}</button>`).join('');
   $('wdIdk').textContent = '不会'; $('wdIdk').onclick = () => wdAnswer(null);
   if (!rev) { say(k, 1); $('wdSpk').onclick = () => say(k, 1); }
   document.querySelectorAll('.wo').forEach(b => b.onclick = () => wdAnswer(b));
@@ -998,7 +1005,7 @@ function wdAnswer(b) {
   if (W.cur.done) return; W.cur.done = true;
   const k = W.cur.k, word = WBY[k], ok = !!b && b.dataset.k === k, now = Date.now(), r = ST.w[k] || { b: 0 };
   document.querySelectorAll('.wo').forEach(x => { x.classList.toggle('good', x.dataset.k === k); if (x === b && !ok) x.classList.add('bad'); if (x.dataset.k !== k && x !== b) x.classList.add('dim'); });
-  W.n++; W.log.push({ id: 'W:' + k, t: 'wd', k, ok: ok ? 1 : 0, a: b ? b.textContent : '不会' });
+  W.n++; W.log.push({ id: 'W:' + k, t: 'wd', k, ok: ok ? 1 : 0, a: b ? b.textContent.replace(/^\d/, '') : '不会' });
   if (ok) {
     const wasNew = !ST.w[k], nb = Math.min(5, (wasNew ? 2 : r.b + 1));   // 新词第一次就对：说明本来就会，直接跳到第 2 盒
     if (r.b < 3 && nb >= 3) W.newM++;
@@ -1034,6 +1041,13 @@ function wdEnd() {
   $('wdMore').onclick = wdStart; $('back').onclick = () => { show('home'); renderHome(); };
 }
 $('wdQuit').onclick = wdEnd;
+document.addEventListener('keydown', e => {   // 刷词快捷键：1–4 选，回车 / 0 = 不会或继续，空格 = 再听一遍，Esc = 结束
+  if (!W || !$('wd').classList.contains('on') || e.metaKey || e.ctrlKey) return;
+  if (/^[1-4]$/.test(e.key)) { const b = document.querySelectorAll('.wo')[+e.key - 1]; if (b) { e.preventDefault(); b.click(); } }
+  else if (e.key === 'Enter' || e.key === '0') { e.preventDefault(); $('wdIdk').click(); }
+  else if (e.key === ' ') { e.preventDefault(); if (!W.cur.rev || W.cur.done) say(W.cur.k, 1); }
+  else if (e.key === 'Escape') wdEnd();
+});
 
 function finish() {
   const sec = Math.round((Date.now() - S.t0) / 1000), firstVals = Object.values(S.first), n = firstVals.length, okN = firstVals.filter(Boolean).length;
