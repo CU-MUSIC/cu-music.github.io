@@ -145,6 +145,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .dock{position:sticky;bottom:0;margin:0 -18px;padding:14px 18px calc(env(safe-area-inset-bottom) + 18px);border-top:2px solid var(--bd);background:var(--bg);transition:background .25s,border-color .25s}
 .ch .cz{display:block;font-size:14px;font-weight:600;color:var(--tx2);margin-top:4px;line-height:1.5;animation:fadeUp .25s ease-out}
 .ch.good .cz{color:var(--gt)}.ch.bad .cz{color:var(--rt)}
+.tap{cursor:pointer;-webkit-user-select:none;user-select:none}.tap::after{content:'点原文看翻译';display:block;font-size:12px;color:var(--tx3);font-weight:700;margin-top:4px}
 .psg.tu{line-height:1.9}.psg .fz{color:var(--gt);border-bottom:2px solid var(--g)}
 .tz{margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--bl);font-size:16px;line-height:1.8;color:var(--tx)}
 .gorow{display:flex;gap:10px}.gorow #go{flex:1}
@@ -391,11 +392,12 @@ function buildLesson(lid) {
   const mix = shuffle(rest.map(oldEx).concat(sents.map(s => sentEx(s))));
   return items.concat(mix).slice(0, 14);
 }
-function dueList() { const n = Date.now(); return Object.entries(ST.srs).filter(([, v]) => v.due <= n).sort((a, b) => a[1].due - b[1].due).map(([id]) => id); }
+function dueList() { const n = Date.now(); return Object.entries(ST.srs).filter(([id, v]) => v.due <= n && TBY[id]).sort((a, b) => a[1].due - b[1].due).map(([id]) => id); }
 function buildReview() { return dueList().slice(0, 12).map(revEx).filter(Boolean); }
 function buildDaily() {   // 今日特训里超过当前级的题，换成当前级同类型的题
   const t = tier(), used = new Set(DAILY.ids);
-  const ids = DAILY.ids.map(id => { const q = TBY[id]; if (!q || (lvOf(q) <= t && !(q.sec === 'W' && t < 3))) return id; const r = pickFresh(q.sec === 'W' ? 'R' : q.sec, 1, used)[0]; if (!r) return null; used.add(r.id); return r.id; }).filter(Boolean).concat(DAILY.extra.map((_, i) => 'x:' + i));
+  const ids = DAILY.ids.map(id => { const q = TBY[id]; if (!q || (lvOf(q) <= t && !(q.sec === 'W' && t < 3))) return id; const r = pickFresh(q.sec === 'W' ? 'R' : q.sec, 1, used)[0]; if (!r) return null; used.add(r.id); return r.id; }).filter(id => id && TBY[id]);
+  pickFresh(null, Math.max(0, 8 - ids.length), new Set(ids)).forEach(q => ids.push(q.id));   // 词句题去掉后不够 8 题，用当前级的新题补
   const items = ids.map(id => anyEx(id)).filter(Boolean);
   dueList().filter(id => !ids.includes(id) && !(TBY[id] && lvOf(TBY[id]) > t)).slice(0, 4).forEach(id => { const x = revEx(id); if (x) items.push(x); });
   return items;
@@ -451,7 +453,7 @@ function renderHome() {
   const t = today(), dayXp = ST.day === t ? ST.dayXp : 0, pct = Math.min(1, dayXp / ST.goal), C = 2 * Math.PI * 15;
   const alive = ST.last === t || ST.last === today(Date.now() - DAY), streak = alive ? ST.streak : 0;
   const dailyDone = ST.dailyDone === DAILY.date, due = dueList().length;
-  const nDaily = DAILY.ids.length + DAILY.extra.length;
+  const nDaily = buildDaily().length;
   $('home').innerHTML = `
   <div class="hd"><h1 class="ko">한국어</h1>
     <span class="chip fire${ST.last === t ? '' : ' dim'}" title="连续天数">🔥 ${streak}</span>
@@ -471,8 +473,6 @@ function renderHome() {
   <div class="secs">${['L', 'R', 'W'].map(k => { const all = TQ.filter(q => q.sec === k), d = all.filter(q => (ST.tseen || {})[q.id]).length; return `<button class="sb" data-s="${k}"><b>${SEC[k]}</b><small>${d}/${all.length} 题 · 目标 ${EXAM.plan[k]} 分</small></button>`; }).join('')}</div>
   ${tier() >= 3 ? `<button class="btn ghost" id="goMock" style="margin-top:6px">16 题摸底 · 估一下现在多少分</button>` : ''}
   <button class="btn ghost" id="goPlace" style="margin-top:6px">${ST.placed ? '再测一次级别 · 12 题' : '分级测试 · 12 题'}</button>
-  <div class="sec">基础词句</div>
-  <div class="path">${LESSONS.map(l => `<button class="lc" data-l="${l.id}"><span class="lv">${['', '初级', '中级', '中高'][l.level]}</span><div class="ic">${l.icon}</div><h3>${esc(l.title)}</h3><p>${esc(l.subtitle)}</p>${dots(Math.min(5, ST.done[l.id] || 0))}</button>`).join('')}</div>
   <div class="foot"><button id="voiceBtn">换声音</button>${KEY ? '<button id="copyKey">复制同步码</button>' : ''}<button id="goalBtn">每日目标 ${ST.goal} XP</button></div>
   ${KEY ? `<div class="sync">${esc(syncMsg)}</div>` : '<button class="btn blue" id="syncBtn" style="margin-top:10px">连接同步 · 和电脑共用学习记录</button>'}`;
   requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); }));
@@ -707,6 +707,8 @@ function check() {
     const q = x.q; ok = answer === q.a; right = q.ch[q.a]; said = q.ch[answer];
     document.querySelectorAll('.ch').forEach(c => { const i = +c.dataset.i; c.classList.toggle('good', i === q.a); c.classList.toggle('bad', i === answer && !ok); c.classList.remove('sel'); });
     if ($('tr')) $('tr').hidden = false;
+    const src = $('tr') || $('stage').querySelector('.psg, .q.ko');   // 做完点原文出中文翻译
+    if (src && q.tz) { src.classList.add('tap'); src.onclick = () => { let z = src.nextElementSibling; if (z && z.classList.contains('tz')) { z.remove(); return; } z = document.createElement('div'); z.className = 'tz'; z.innerHTML = nl(q.tz); src.after(z); z.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'ease-out' }); }; }
     if (q.cz) document.querySelectorAll('.ch').forEach(c => { const z = q.cz[+c.dataset.i]; if (!z) return; const e = document.createElement('small'); e.className = 'cz'; e.textContent = z; c.querySelector('span:last-child').appendChild(e); });
   } else if (x.kind === 'tw') {
     const q = x.q, norm = v => strip(v || '').replace(/[.。]/g, '');
