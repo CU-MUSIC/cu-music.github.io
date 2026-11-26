@@ -239,6 +239,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .gbar.full i{background:var(--g)}
 .lbar{height:5px;border-radius:99px;background:var(--bd);overflow:hidden;margin-top:4px}.lbar i{display:block;height:100%;width:0;background:#ffc800;transition:width .9s cubic-bezier(.2,.8,.2,1)}
 .lvc .s{font-size:13px;color:var(--tx3);font-weight:600}
+.hrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:-6px 0 10px}.hrow .syl{margin:0}
+.ver{border:0;background:none;padding:2px 0;font-size:13px;font-weight:600;color:var(--tx3);transition:color .3s}
+.ver.new{color:#fff;background:var(--b);padding:4px 10px;border-radius:99px;font-weight:800;animation:fadeUp .3s ease-out}
 .syl{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx3);font-weight:600;margin:-6px 0 10px;padding:2px 0;background:none;border:0;transition:color .3s}
 .syl i{width:8px;height:8px;border-radius:50%;background:var(--g);transition:background .3s}
 .syl.ing i{background:var(--b);animation:pulse 1s ease-in-out infinite}.syl.err i{background:var(--r)}.syl.err{color:var(--rt)}
@@ -424,6 +427,20 @@ function ago(t) { const m = Math.floor((Date.now() - t) / 6e4); if (m < 1) retur
 function syncLine() { const e = $('syl'); if (!e) return; e.className = 'syl ' + syncState; e.innerHTML = '<i></i>' + (syncState === 'ing' ? '同步中…' : syncState === 'err' ? '没同步上 · 点这里重试' : lastSync ? '已同步 · ' + ago(lastSync) : '还没同步过'); }
 function synced() { lastSync = Date.now(); try { localStorage.setItem('ko:sync', lastSync); } catch (e) {} syncState = ''; syncLine(); }
 setInterval(syncLine, 30000);
+// 版本：这页是什么时候发布的（服务器 Last-Modified），再去问一下线上有没有更新的
+const VER = Date.parse(document.lastModified) || 0; let verNew = 0;
+function verLine() {
+  const e = $('ver'); if (!e) return;
+  const hm = t => { const d = new Date(t); return (today(t) === today() ? '' : (d.getMonth() + 1) + '/' + d.getDate() + ' ') + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  e.className = 'ver' + (verNew ? ' new' : '');
+  e.textContent = verNew ? '有新版本 ' + hm(verNew) + ' · 点这里更新' : '版本 ' + hm(VER) + ' · ' + ago(VER);
+  e.onclick = () => { location.href = location.pathname + '?v=' + Date.now(); };   // 带参数绕过 10 分钟缓存
+}
+async function verCheck() {
+  try { const r = await fetch(location.pathname + '?ck=' + Date.now(), { method: 'HEAD', cache: 'no-store' }); const t = Date.parse(r.headers.get('last-modified')); if (t && t - VER > 30000) verNew = t; verLine(); } catch (e) {}
+}
+setInterval(verLine, 30000); setTimeout(verCheck, 1500); setInterval(verCheck, 5 * 6e4);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') verCheck(); });
 async function pull(force) {   // 云端更新、或本机还没学过（新设备）就用云端的
   if (!KEY) return;
   const pre = !force && window._pre; window._pre = null;
@@ -654,7 +671,7 @@ function renderHome() {
     <span class="chip fire${ST.last === t ? '' : ' dim'}" title="连续天数">🔥 ${streak}</span>
     <div class="ring" title="今日 ${dayXp}/${ST.goal} XP"><svg viewBox="0 0 38 38"><circle class="bgc" cx="19" cy="19" r="15"/><circle class="fgc" cx="19" cy="19" r="15" stroke-dasharray="${C}" stroke-dashoffset="${C}" id="ringFg"/></svg><b>${dayXp}</b></div>
   </div>
-  ${KEY ? '<button class="syl" id="syl"></button>' : ''}
+  <div class="hrow">${KEY ? '<button class="syl" id="syl"></button>' : '<span></span>'}<button class="ver" id="ver"></button></div>
   ${(() => { const L = lvInfo(ST.xp), full = dayXp >= ST.goal; return `<button class="lvc" id="lvc"><div class="lv"><div><small>LV</small><b>${L.lv}</b></div></div><div class="m">
     <div class="r"><span>今日 ${dayXp} / ${ST.goal} XP</span><em class="${full ? 'ok' : ''}">${full ? '达标 ✓' : '每日目标 ›'}</em></div>
     <div class="gbar${full ? ' full' : ''}"><i id="gFill" data-w="${Math.min(100, dayXp / ST.goal * 100)}"></i></div>
@@ -681,7 +698,7 @@ function renderHome() {
   </div></div>
   ${KEY ? '' : '<button class="btn blue" id="syncBtn" style="margin-top:10px">连接同步 · 和电脑共用学习记录</button>'}`;
   requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); ['gFill', 'lFill', 'pFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }));
-  syncLine(); if ($('syl')) $('syl').onclick = () => { lastPull = Date.now(); pull().then(() => { if (pending.length) push(); }); };
+  verLine(); syncLine(); if ($('syl')) $('syl').onclick = () => { lastPull = Date.now(); pull().then(() => { if (pending.length) push(); }); };
   if ($('predB')) $('predB').onclick = predSheet;
   $('lvc').onclick = goalSheet; document.querySelector('.ring').onclick = goalSheet;
   $('goStudy').onclick = () => start('study', buildStudy());
