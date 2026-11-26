@@ -1022,26 +1022,28 @@ function wdShow() {
   // 先回想：选项先藏 2 秒（盖着一层「先在心里想」），想好了点一下 / 按回车马上翻开
   clearTimeout(W.rt); W.cur.hid = true;
   $('wdCh').classList.add('hid');
-  W.rt = setTimeout(wdReveal, 2000);
-  $('wdCh').innerHTML = `<button class="wdthink" id="wdThink">先在心里想${rev ? '韩语怎么说' : '是什么意思'}<small>点这里或按回车看选项</small><i style="animation-duration:2s"></i></button>` + opts.map((o, i) => `<button class="wo${rev ? ' ko' : ''}" data-k="${esc(o.k)}" style="animation-delay:${i * 40}ms"><span class="wn">${i + 1}</span>${esc(rev ? o.k : o.z)}</button>`).join('');
+  W.rt = setTimeout(() => wdReveal(true), 3000);
+  $('wdCh').innerHTML = `<button class="wdthink" id="wdThink">先在心里想${rev ? '韩语怎么说' : '是什么意思'}<small>点这里或按回车看选项</small><i style="animation-duration:3s"></i></button>` + opts.map((o, i) => `<button class="wo${rev ? ' ko' : ''}" data-k="${esc(o.k)}" style="animation-delay:${i * 40}ms"><span class="wn">${i + 1}</span>${esc(rev ? o.k : o.z)}</button>`).join('');
   $('wdIdk').textContent = '不会'; $('wdIdk').onclick = () => wdAnswer(null);
   if (!rev) { say(k, 1); $('wdSpk').onclick = () => say(k, 1); }
   document.querySelectorAll('.wo').forEach(b => b.onclick = () => wdAnswer(b));
-  $('wdThink').onclick = wdReveal;
+  $('wdThink').onclick = () => wdReveal();
 }
 function wdOrigin(k) {   // 答完显示词源：汉字词标汉字（像 Naver 한자사전），外来词标英文
   const hj = (window.KO_HJ || {})[k], en = (window.KO_EN || {})[k];
   if (!hj && !en) return;
   $('wdCard').insertAdjacentHTML('beforeend', `<div class="wdo">${hj ? `<span class="hj">${esc(hj)}</span>` : ''}${en ? `<span class="en">${esc(en)}</span>` : ''}</div>`);
 }
-function wdReveal() { if (!W || !W.cur.hid) return; clearTimeout(W.rt); W.cur.hid = false; $('wdCh').classList.remove('hid'); }
+function wdReveal(auto) { if (!W || !W.cur.hid) return; clearTimeout(W.rt); W.cur.hid = false; W.cur.tr = performance.now(); W.cur.auto = !!auto; $('wdCh').classList.remove('hid'); }
 function wdAnswer(b) {
   if (W.cur.done) return;
   if (W.cur.hid && b) return wdReveal(); W.cur.done = true;
   const k = W.cur.k, word = WBY[k], ok = !!b && b.dataset.k === k, now = Date.now(), r = ST.w[k] || { b: 0 };
   document.querySelectorAll('.wo').forEach(x => { x.classList.toggle('good', x.dataset.k === k); if (x === b && !ok) x.classList.add('bad'); if (x.dataset.k !== k && x !== b) x.classList.add('dim'); });
-  // 反应时间：从出词到选中。≤2.5 秒 = 秒认；2.5–5 秒 = 想了一下；>5 秒 = 看了选项才想起来，算「慢」
-  const rt = Math.round(performance.now() - W.cur.t0), sp = rt <= 2500 ? 'fast' : rt <= 5000 ? 'mid' : 'slow';
+  // 反应分两段：想起来（出词 → 自己翻开选项）+ 找选项（翻开 → 选中）。
+  // 秒认 = 3 秒内自己翻开、4 秒内选中；慢 = 没自己翻开（等它自动出）且找了 4 秒以上，或者总共超过 10 秒
+  const now2 = performance.now(), tr = W.cur.tr || now2, think = Math.round(tr - W.cur.t0), find = Math.round(now2 - tr), rt = think + find;
+  const sp = !W.cur.auto && think <= 3000 && find <= 4000 ? 'fast' : (W.cur.auto && find > 4000) || rt > 10000 ? 'slow' : 'mid';
   W.n++; W.log.push({ id: 'W:' + k, t: 'wd', k, ok: ok ? 1 : 0, a: (b ? b.textContent.replace(/^\d/, '') : '不会') + ' · ' + (rt / 1000).toFixed(1) + 's' });
   wdOrigin(k);
   if (ok) {
@@ -1051,7 +1053,7 @@ function wdAnswer(b) {
     if (r.b < 3 && nb >= 3) W.newM++;
     ST.w[k] = { b: nb, due: now + (sp === 'slow' ? WGAP[0] : WGAP[Math.min(nb, WGAP.length) - 1]), rt };
     if (sp === 'slow') { W.slow.push({ k, rt }); W.again.push({ k, at: W.n + 3 }); }   // 慢的本轮隔几张再考一次
-    $('wdCard').insertAdjacentHTML('beforeend', `<div class="wdrt ${sp}">${(rt / 1000).toFixed(1)} 秒${sp === 'fast' ? ' ⚡' : sp === 'slow' ? ' · 有点慢，等会再考' : ''}</div>`);
+    $('wdCard').insertAdjacentHTML('beforeend', `<div class="wdrt ${sp}">${W.cur.auto ? '没自己想起' : '想起 ' + (think / 1000).toFixed(1) + ' 秒'} · 选 ${(find / 1000).toFixed(1)} 秒${sp === 'fast' ? ' ⚡' : sp === 'slow' ? ' · 有点慢，等会再考' : ''}</div>`);
     W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true);
     wdXp(1 + (W.combo % 5 === 0 ? 2 : 0));   // 1 个对 = 1 XP，每连对 5 个多 2 XP，当场记上
     if (W.cur.rev) say(k, 1);
@@ -1082,7 +1084,7 @@ function wdEnd() {
     <div class="stats"><div class="st a"><small>经验</small><b>+${xp}</b></div><div class="st b"><small>正确率</small><b>${acc}%</b></div><div class="st c"><small>最长连对</small><b>${W.best}</b></div></div>
     <div class="reward"><div class="r"><span>认识 ${m.known} · 掌握 ${m.done} / ${m.all} 词</span><em>${W.newM ? '这轮新掌握 ' + W.newM : ''}</em></div><div class="lbar"><i id="wmFill" style="width:${(m.done - W.newM) / m.all * 100}%" data-w="${m.done / m.all * 100}"></i></div>
     <div class="r" style="margin-top:8px"><span>今日 ${ST.dayXp} / ${ST.goal} XP</span><em>${ST.dayXp >= ST.goal ? '达标 ✓' : '还差 ' + (ST.goal - ST.dayXp)}</em></div></div>
-    ${(() => { const okRt = W.log.filter(x => x.ok).map(x => parseFloat(x.a.split(' · ').pop())), avg = okRt.length ? (okRt.reduce((a, b) => a + b, 0) / okRt.length).toFixed(1) : 0, sl = [...new Map(W.slow.map(x => [x.k, x])).values()]; return `<div class="reward"><div class="r"><span>平均反应 ${avg} 秒</span><em>秒认 ≤2.5 秒</em></div>${sl.length ? `<div class="wslow">${sl.map(x => `<span><b class="ko">${esc(x.k)}</b> ${esc(WBY[x.k].z)} <i>${(x.rt / 1000).toFixed(1)}s</i></span>`).join('')}</div><small style="color:var(--tx3);font-size:13px">这些是看了选项才想起来的，10 分钟后会再出</small>` : ''}</div>`; })()}
+    ${(() => { const okRt = W.log.filter(x => x.ok).map(x => parseFloat(x.a.split(' · ').pop())), avg = okRt.length ? (okRt.reduce((a, b) => a + b, 0) / okRt.length).toFixed(1) : 0, sl = [...new Map(W.slow.map(x => [x.k, x])).values()]; return `<div class="reward"><div class="r"><span>平均反应 ${avg} 秒</span><em>秒认 = 3 秒内自己翻开</em></div>${sl.length ? `<div class="wslow">${sl.map(x => `<span><b class="ko">${esc(x.k)}</b> ${esc(WBY[x.k].z)} <i>${(x.rt / 1000).toFixed(1)}s</i></span>`).join('')}</div><small style="color:var(--tx3);font-size:13px">这些是等选项出来才想起来的，10 分钟后会再出</small>` : ''}</div>`; })()}
     <button class="btn green" id="wdMore">再刷一轮</button><button class="btn ghost" id="back">回首页</button>`;
   W = null; show('done'); sfx(true);
   setTimeout(() => { const e = $('wmFill'); if (e) e.style.width = e.dataset.w + '%'; }, 300);
