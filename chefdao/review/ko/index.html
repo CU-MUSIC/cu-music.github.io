@@ -53,6 +53,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .nxt small{font-size:13px;font-weight:800;color:var(--gt);letter-spacing:1px}.nxt b{display:block;font-size:18px;margin:2px 0}.nxt span{font-size:14px;color:var(--tx2)}
 .fzb{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:12px;border:2px solid var(--bd);background:var(--card);color:var(--tx2);font-size:14px;font-weight:800;animation:fadeUp .25s .15s both;transition:background .2s,color .2s,border-color .2s}
 .fzb.on{border-color:#ff9600;color:#ff9600;background:rgba(255,150,0,.1)}
+.gname{font-size:30px;font-weight:900;margin:6px 0 2px}.gzh{font-size:17px;font-weight:800;color:var(--b);margin-bottom:10px}
+.gexp{font-size:16px;line-height:1.75;color:var(--tx2);margin-bottom:14px}
+.gex>div{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--bd);animation:fadeUp .35s both}
+.gex>div:nth-child(2){animation-delay:.08s}.gex>div:nth-child(3){animation-delay:.16s}
+.gex .spk{flex:none;width:36px;height:36px}.gex b{display:block;font-size:18px;line-height:1.6}.gex small{display:block;font-size:14px;color:var(--tx3)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -396,7 +401,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 const _t = Math.floor(Date.now() / 6e5);
 // 一打开就先去拿云端进度，和题库并行下载
 try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=30', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
-document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script>');
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script><script src="grammar.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
@@ -688,6 +693,17 @@ function typeStats() {   // 每个题型的正确率（最近 10 次），用来
 function weakTypes(min = 2) {   // 做过 ≥ min 次、正确率 < 70% 的题型，最弱的在前
   return Object.entries(typeStats()).filter(([no, v]) => v.n >= min && v.ok / v.n < 0.7 && TQ.some(q => q.no === no && lvOf(q) <= tier())).sort((a, b) => a[1].ok / a[1].n - b[1].ok / b[1].n).map(([no]) => no);
 }
+// ───────── 3 级语法：一课一个语法，知识卡 + 9 题（3 道陷阱），首次 9 题对 7 题算过关，再加 2 道旧语法复习 ─────────
+const GR = () => window.KO_GRAM || [];
+const gNext = () => GR().find(g => !(ST.gmPass || []).includes(g.id)) || null;
+function gq(g, i, tag) { const q = g.qs[i], ord = shuffle(q.o.map((_, k) => k)); return { kind: 'tq', id: 'G:' + g.id + ':' + i, tag, q: { id: 'G:' + g.id + ':' + i, sec: 'R', no: 'G', q: esc(q.s).replace(/\(\s*\)/, '<b class="fz">(　　)</b>'), ch: ord.map(k => q.o[k]), a: ord.indexOf(0), ex: q.e } }; }
+function buildGram() {
+  const g = gNext() || shuffle(GR().slice())[0]; if (!g) return [];
+  const n = GR().indexOf(g) + 1, items = [{ kind: 'gcard', id: 'G:' + g.id + '!card', g, n }].concat(shuffle(g.qs.map((_, i) => gq(g, i, g.name + ' · ' + (g.qs[i].t ? '陷阱题' : '第 ' + n + ' 课')))));
+  const old = GR().filter(x => (ST.gmPass || []).includes(x.id) && x.id !== g.id);
+  shuffle(old).slice(0, 2).forEach(o => items.push(gq(o, Math.random() * o.qs.length | 0, o.name + ' · 复习')));
+  return items;
+}
 function buildType(no) {   // 专项突破：先看解题方法，再刷这一类（当前级以内，题少就放宽一级）
   const t = tier(), seen = ST.tseen || {};
   let pool = TQ.filter(q => q.no === no && lvOf(q) <= t); if (pool.length < 4) pool = TQ.filter(q => q.no === no && lvOf(q) <= t + 1);
@@ -722,7 +738,14 @@ function buildMock() {   // 摸底：听力 6 + 阅读 8 + 写作 2，结束后�
 const dleft = d => Math.round((Date.parse(d + 'T00:00:00+09:00') - Date.parse(today() + 'T00:00:00+09:00')) / DAY);
 // ───────── 首页 ─────────
 function dots(n) { return '<div class="dots">' + [0, 1, 2, 3, 4].map(i => `<i class="${i < n ? 'on' : ''}"></i>`).join('') + '</div>'; }
+function capLift() {   // 初级 1–2 级题最近正确率 ≥ 80%（至少 30 题）：自动解锁中级。云端拉下来的旧状态也会再检查一次
+  const ab = ST.ab || {}, h = (ab.L2 || []).concat(ab.R2 || []);
+  if (!ST.cap || ST.capKeep || h.length < 30 || h.filter(Boolean).length / h.length < 0.8) return;
+  delete ST.cap; ST.tier = Math.max(ST.tier || 1, 3); ST.lvh = []; ST.capLift = today(); save(); push();
+  setTimeout(() => toast('初级题正确率 ' + Math.round(h.filter(Boolean).length / h.length * 100) + '%，解锁中级（TOPIK II 3 级）'), 600);
+}
 function renderHome() {
+  capLift();
   const t = today(), dayXp = ST.day === t ? ST.dayXp : 0, pct = Math.min(1, dayXp / ST.goal), C = 2 * Math.PI * 15;
   const alive = ST.last === t || ST.last === today(Date.now() - DAY), streak = alive ? ST.streak : 0;
   const dailyDone = ST.dailyDone === DAILY.date, due = dueList().length;
@@ -762,7 +785,7 @@ function renderHome() {
   if ($('goMock')) $('goMock').onclick = () => start('mock', buildMock());
   $('goPlace').onclick = () => start('place', buildPlace());
   document.querySelectorAll('.wk').forEach(b => b.onclick = () => start('type-' + b.dataset.no, buildType(b.dataset.no)));
-  if ($('capBtn')) $('capBtn').onclick = () => { if (ST.cap) delete ST.cap; else { ST.cap = 2; if ((ST.tier || 1) > 2) ST.tier = 2; } ST.lvh = []; save(); push(); renderHome(); toast(ST.cap ? '只出 TOPIK I 1–2 级的题' : '按级别自动升级'); };
+  if ($('capBtn')) $('capBtn').onclick = () => { if (ST.cap) { delete ST.cap; delete ST.capKeep; } else { ST.cap = 2; ST.capKeep = 1; if ((ST.tier || 1) > 2) ST.tier = 2; } ST.lvh = []; save(); push(); renderHome(); toast(ST.cap ? '只出 TOPIK I 1–2 级的题' : '按级别自动升级'); };
   if ($('regUndo')) $('regUndo').onclick = () => { ST.topikReg = 0; save(); push(); renderHome(); toast('已撤销：报名期间会继续提醒'); };
   if ($('regDone')) $('regDone').onclick = () => { ST.topikReg = EXAM.round; save(); push(); renderHome(); toast('已记下：不再提醒报名'); };
   if ($('goRev')) $('goRev').onclick = () => start('review', buildReview());
@@ -773,6 +796,8 @@ function renderHome() {
 }
 // ───────── 今天的 3 步：按顺序做，做完一步自动接下一步 ─────────
 const WGOAL = 30;
+function mAdd(sec) { const t = today(); if (!ST.mDay || ST.mDay.d !== t) ST.mDay = { d: t, s: 0 }; ST.mDay.s += Math.min(sec, 1800); }   // 今天学了多久（单组最多算 30 分钟，挂机不算）
+const mToday = () => ST.mDay && ST.mDay.d === today() ? Math.round(ST.mDay.s / 60) : 0;
 function pDay() { const t = today(); if (!ST.pDay || ST.pDay.d !== t) ST.pDay = { d: t, s: ST.dailyDone === DAILY.date && DAILY.date === t ? 1 : 0, x: 0 }; return ST.pDay; }
 function planSteps() {
   const t = today(), wn = ST.wDay && ST.wDay.d === t ? ST.wDay.n : 0, pd = pDay(), ws = wordStats(), due = dueList().length, p = predict();
@@ -782,6 +807,7 @@ function planSteps() {
   else { const s = p ? p.weak : 'R', o = s === 'L' ? 'R' : 'L', d = p ? p[o].II - p[s].II : 0; x = { name: '补' + SEC[s] + ' · 8 题', why: d > 0 ? `${SEC[s]}比${SEC[o]}低 ${d} 分，补它涨分最快` : `${SEC[s]}是现在最拖分的一项`, go: () => start('sec-' + s, buildSec(s, 8)) }; }
   return [
     { k: 'w', name: '刷词 ' + WGOAL + ' 个', why: ws.due ? `${ws.due} 个词到期，今天不复习就会忘` : '新词加复习，先把脑子热起来', cur: Math.min(wn, WGOAL), need: WGOAL, min: 5, go: wdStart },
+    ...(GR().length ? [(() => { const g = gNext(), r = g && (ST.gm || {})[g.id]; return { k: 'g', name: g ? '3 级语法：' + g.name : '3 级语法 · 复习', why: g ? (r ? `上次 ${r}，对 7 题过关` : g.zh + ' · TOPIK II 必考') : '10 个语法都过了，随机复习一课', cur: Math.min(pd.g || 0, 1), need: 1, min: 5, go: () => start('gram', buildGram()) }; })()] : []),
     { k: 's', name: TIERS[tier()].split(' · ')[0] + '题 · 10 题', why: due ? `含 ${Math.min(3, due)} 道之前错的题，再做一遍才算会` : '新题，做完更新预测分', cur: Math.min(pd.s, 1), need: 1, min: 6, go: () => start('study', buildStudy()) },
     { k: 'x', ...x, cur: Math.min(pd.x, 1), need: 1, min: 5 }
   ].map(o => ({ ...o, done: o.cur >= o.need }));
@@ -789,7 +815,7 @@ function planSteps() {
 function planNext() { return planSteps().find(o => !o.done); }
 function planCard() {
   const st = planSteps(), n = st.filter(o => o.done).length, nx = st.find(o => !o.done), left = st.filter(o => !o.done).reduce((a, o) => a + o.min, 0);
-  return `<div class="plan" id="plan"><div class="ph"><h2>今天的 3 步</h2><span>${nx ? `<b>${n}</b> / 3 · 还要约 ${left} 分钟` : '<b>全部完成 ✓</b>'}</span></div>
+  return `<div class="plan" id="plan"><div class="ph"><h2>今天的 ${st.length} 步</h2><span>${nx ? `<b>${n}</b> / ${st.length} · 还要约 ${left} 分钟` : `<b>全部完成 ✓</b> · 学了 ${mToday()} 分钟`}</span></div>
     ${st.map((o, i) => `<button class="pst${o.done ? ' ok' : o === nx ? ' cur' : ''}" data-i="${i}"><span class="n">${o.done ? '✓' : i + 1}</span><span class="m"><b>${esc(o.name)}</b><small>${esc(o.why)}</small>${o.need > 1 && !o.done ? `<div class="pbar2"><i data-w="${o.cur / o.need * 100}"></i></div>` : ''}</span><em>${o.done ? '' : o.need > 1 ? o.cur + '/' + o.need : '约 ' + o.min + ' 分'}</em></button>`).join('')}
     ${nx ? `<button class="btn green big-go" id="planGo">开始第 ${st.indexOf(nx) + 1} 步</button>`
       : `<div class="allok">🎉 今天该学的都学完了，明天见</div><div class="extra"><button class="btn ghost" id="exW">再刷一轮词</button><button class="btn ghost" id="exS">再做一组题</button></div>`}</div>`;
@@ -804,8 +830,8 @@ function bindPlan() {
 }
 function nextHtml() {   // 结束页：告诉下一步是什么
   const st = planSteps(), nx = st.find(o => !o.done), n = st.filter(o => o.done).length;
-  if (!nx) return `<div class="nxt"><small>今天的 3 步</small><b>全部完成 ✓</b><span>可以休息了，想多练就回首页再来</span></div>`;
-  return `<div class="nxt"><small>今天 ${n} / 3 · 下一步</small><b>第 ${st.indexOf(nx) + 1} 步：${esc(nx.name)}</b><span>${esc(nx.why)}</span></div>`;
+  if (!nx) return `<div class="nxt"><small>今天的 ${st.length} 步 · 学了 ${mToday()} 分钟</small><b>全部完成 ✓</b><span>可以休息了，想多练就回首页再来</span></div>`;
+  return `<div class="nxt"><small>今天 ${n} / ${st.length} · 下一步</small><b>第 ${st.indexOf(nx) + 1} 步：${esc(nx.name)}</b><span>${esc(nx.why)}</span></div>`;
 }
 function bindNext(primary) {   // primary = 结束页主按钮：有下一步就直接开始下一步
   const nx = planNext(); if (!nx) return;
@@ -895,7 +921,7 @@ function renderEx() {
   $('idk').textContent = '不会';
   $('idk').classList.toggle('on', ['tq', 'mc', 'listen', 'tw', 'k2z', 'z2k'].includes(x.kind));
   const st = $('stage'); st.classList.remove('in'); void st.offsetWidth; st.classList.add('in');
-  const R = { tu: rTU, tip: rTip, vocab: rVocab, mc: rMC, listen: rListen, k2z: rBuild, z2k: rBuild, speak: rSpeak, tq: rTQ, tw: rTW }[x.kind];
+  const R = { gcard: rGCard, tu: rTU, tip: rTip, vocab: rVocab, mc: rMC, listen: rListen, k2z: rBuild, z2k: rBuild, speak: rSpeak, tq: rTQ, tw: rTW }[x.kind];
   R(x, st);
 }
 const ava = () => `<div class="ava">${AVAS[(S.i * 7 + S.total) % AVAS.length]}</div>`;
@@ -917,6 +943,13 @@ function wireBubble(root, g) {
 }
 document.addEventListener('click', () => document.querySelectorAll('.tip').forEach(x => x.remove()));
 
+function rGCard(x, st) {   // 语法知识卡：意思 + 用法 + 3 个例句（点喇叭听）
+  const g = x.g;
+  st.innerHTML = `<div class="tag" style="color:var(--b)">3 级语法 · 第 ${x.n} 课</div><div class="gname ko">${esc(g.name)}</div><div class="gzh">${esc(g.zh)}</div><p class="gexp">${esc(g.explain)}</p>
+    <div class="gex">${g.ex.map(([k, z]) => `<div><button class="spk" data-say="${esc(k)}">${ICON_SPK}</button><div><b class="ko">${esc(k)}</b><small>${esc(z)}</small></div></div>`).join('')}</div>`;
+  st.querySelectorAll('[data-say]').forEach(b => b.onclick = () => say(b.dataset.say, 0.9, b));
+  setGo('green', '看懂了，开始做题'); answer = 'skip';
+}
 function rTip(x, st) {
   st.innerHTML = `<div class="tag">${x.tag || '新课'}</div><div class="q">${esc(x.title)} · 先看 3 个要点</div><ul class="pts">${x.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`;
   setGo('green', '开始'); answer = 'skip';
@@ -972,7 +1005,7 @@ function playDialog(d, btn, rate = 0.95) {
 const nl = s => esc(s).replace(/\n/g, '<br>');
 function rTQ(x, st) {
   const q = x.q, L = q.sec === 'L';
-  st.innerHTML = `<div class="tag" style="color:var(--b)">${esc(NO[q.no] || SEC[q.sec])}</div><div class="q${q.p || L ? '' : ' ko'}">${q.q}</div>
+  st.innerHTML = `<div class="tag" style="color:var(--b)">${esc(x.tag || NO[q.no] || SEC[q.sec])}</div><div class="q${q.p || L ? '' : ' ko'}">${q.q}</div>
     ${L ? `<div class="lis"><button class="big" id="pl">${ICON_SPK}</button><button class="slow" id="pls">🐢</button></div><div class="tr ko" id="tr" hidden>${q.d.map(([w, t]) => `<p><b>${w}</b> ${esc(t)}</p>`).join('')}</div>` : ''}
     ${q.p ? `<div class="psg ko">${nl(q.p)}</div>` : ''}
     <div class="chs">${q.ch.map((c, i) => `<button class="ch ko" data-i="${i}"><span class="n">${i + 1}</span><span class="tx">${esc(c)}</span><span class="x" title="排除这个选项" aria-label="排除">✕</span></button>`).join('')}</div>`;
@@ -1302,7 +1335,7 @@ function wdXp(x) {
 function wdEnd() {
   stopAudio(); if (W) { clearTimeout(W.rt); clearTimeout(W.nt); } if (!W || !W.n) { W = null; show('home'); renderHome(); return; }
   const xp = W.xp, dayBefore = W.dayB, lvBefore = W.lvB, L2 = lvInfo(ST.xp);   // XP 答题时已经记上了
-  save(); push({ lesson: 'words', dur: Math.round((Date.now() - W.t0) / 1000), xp, items: W.log.slice(-80) });
+  mAdd(Math.round((Date.now() - W.t0) / 1000)); save(); push({ lesson: 'words', dur: Math.round((Date.now() - W.t0) / 1000), xp, items: W.log.slice(-80) });
   const m = wordStats(), acc = Math.round(W.ok / W.n * 100);
   $('done').innerHTML = `<div class="big-e">${acc >= 90 ? '🔥' : '📚'}</div><h2>刷了 ${W.n} 个词</h2>
     ${L2.lv > lvBefore ? `<div class="burst lvup">⭐ 升到 Lv ${L2.lv}</div>` : ''}
@@ -1339,7 +1372,13 @@ function finish() {
   const L2 = lvInfo(ST.xp), goalHit = dayBefore < ST.goal && ST.dayXp >= ST.goal, lvUp = L2.lv > lvBefore;
   if (S.mode === 'daily' || S.mode === 'study') { ST.dailyDone = DAILY.date; pDay().s++; }
   else if (/^(sec|type)-/.test(S.mode)) pDay().x++;
+  else if (S.mode === 'gram') {
+    pDay().g = (pDay().g || 0) + 1;
+    const g = S.items[0] && S.items[0].g;
+    if (g) { const own = Object.entries(S.first).filter(([id]) => id.startsWith('G:' + g.id + ':')), okc = own.filter(([, v]) => v).length; ST.gm = ST.gm || {}; ST.gm[g.id] = okc + '/' + own.length; if (own.length && okc >= 7 && !(ST.gmPass || []).includes(g.id)) { ST.gmPass = (ST.gmPass || []).concat(g.id); S.gPassed = g.name; } }
+  }
   else if (LBY[S.mode]) ST.done[S.mode] = (ST.done[S.mode] || 0) + 1;
+  mAdd(sec);
   // 间隔复习：错了马上进复习；复习里答对一次，间隔 1→3→7→14 天，满了就移出
   const GAP = [1, 3, 7, 14];
   for (const [id, ok] of Object.entries(S.first)) {
@@ -1390,6 +1429,7 @@ function finish() {
     ${predAfter && predBefore && predAfter.rank.i > predBefore.rank.i ? `<div class="burst lvup">🏅 升段：${predAfter.rank.name}<small>${predAfter.rank.tag || '离考过更近一步'}</small></div>` : ''}
     ${predAfter ? (() => { const d = predBefore ? predAfter.II - predBefore.II : 0; return `<div class="pdone"><small>TOPIK II 预测分</small><b id="pdN" data-from="${predBefore ? predBefore.II : predAfter.II}" data-to="${predAfter.II}">${predBefore ? predBefore.II : predAfter.II}</b><span class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + (-d) : '持平'}</span><em>${predAfter.II >= 150 ? '已到 4 级线' : predAfter.II >= 120 ? '离 4 级还差 ' + (150 - predAfter.II) + ' 分' : '离 3 级还差 ' + (120 - predAfter.II) + ' 分'}</em></div>`; })() : ''}
     ${estHtml}
+    ${S.gPassed ? `<div class="burst lvup">📘 语法过关：<span class="ko">${esc(S.gPassed)}</span><small>3 级语法 ${(ST.gmPass || []).length} / ${GR().length} · 明天学下一个</small></div>` : S.mode === 'gram' && S.items[0] && S.items[0].g ? `<div class="sec" style="text-align:left">这课 ${ST.gm[S.items[0].g.id]}，对 7 题才算过关，明天再来一次</div>` : ''}
     ${fz.length ? `<div class="sec" style="text-align:left">🤔 ${fz.length} 道模糊的题，明天再考一次</div>` : ''}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
     ${focus && !S.mode.startsWith('type-') ? `<div class="hero rev" style="text-align:left"><div class="meta">这组错得最多</div><h2>${esc(NO[focus] || focus)}</h2><p>先看 3 条解题方法，再专门刷这一类</p><button class="btn blue" id="goFocus">专项突破</button></div>` : ''}
