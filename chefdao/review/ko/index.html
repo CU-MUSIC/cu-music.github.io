@@ -117,6 +117,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .chs{display:flex;flex-direction:column;gap:10px;margin-top:auto}
 .ch{border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:12px 16px;font-size:18px;font-weight:600;text-align:left;display:flex;gap:12px;align-items:center;background:var(--card);transition:background .15s,border-color .15s}
 .ch .n{width:28px;height:28px;border:2px solid var(--bd);border-radius:8px;display:grid;place-items:center;font-size:13px;color:var(--tx3);flex:none}
+.ch .tx{flex:1;min-width:0}
+.ch .x{flex:none;width:30px;height:30px;margin:-4px -6px -4px 0;border-radius:50%;display:grid;place-items:center;font-size:14px;color:var(--tx3);opacity:.55;transition:opacity .2s,background .2s,transform .2s}
+.ch .x:hover{opacity:1;background:var(--bd)}
+.ch .x:active{transform:scale(.85)}
+.ch .tx{transition:opacity .25s,color .25s;text-decoration:line-through;text-decoration-color:transparent;transition:opacity .25s,text-decoration-color .25s}
+.ch.out .tx{opacity:.4;text-decoration-color:currentColor}
+.ch.out .n{opacity:.4}
+.ch.out .x{opacity:1}
+.ch.good .x,.ch.bad .x,.chs.done .x{opacity:0;pointer-events:none}
 .ch.sel{border-color:#84d8ff;background:var(--bl);color:var(--bdk)}
 .ch.sel .n{border-color:#84d8ff;color:var(--bdk)}
 .ch.good{border-color:var(--g);background:var(--gl);color:var(--gt)}
@@ -552,6 +561,13 @@ function voiceSheet() {
 
 // ───────── 练习 ─────────
 let S = null;
+function bindStrike(st) {   // 点选项右边的 ✕ 划掉（排除法），再点一次恢复；划掉的选项点它本身也会恢复并选中
+  st.querySelectorAll('.ch .x').forEach(x => x.onclick = ev => {
+    ev.stopPropagation(); if (checked) return;
+    const b = x.closest('.ch'), on = b.classList.toggle('out');
+    if (on && b.classList.contains('sel')) { b.classList.remove('sel'); answer = null; setGo('off', '检查'); }
+  });
+}
 function start(mode, items) {
   if (!items.length) return toast('这里暂时没有题');
   S = { mode, items, i: 0, total: items.length, done: 0, combo: 0, best: 0, ok: 0, first: {}, log: [], t0: Date.now(), wrongIds: [] };
@@ -609,10 +625,10 @@ function rMC(x, st, listen) {
   const e = x.e, kq = (e.q.match(/「([^」]+)」/) || [])[1];
   st.innerHTML = `<div class="q">${listen ? esc(e.q) : esc(e.q).replace(/「([^」]+)」/, (m, k) => `「<span class="ko tk" data-t="${esc(k)}" style="color:var(--b)">${esc(k)}</span>」`)}</div>
     ${listen ? `<div class="lis"><button class="big" id="pl">${ICON_SPK}</button><button class="slow" id="pls">🐢</button></div>` : ''}
-    <div class="chs">${e.ch.map((c, i) => `<button class="ch${/[가-힯]/.test(c) ? ' ko' : ''}" data-i="${i}"><span class="n">${i + 1}</span><span>${esc(c)}</span></button>`).join('')}</div>`;
+    <div class="chs">${e.ch.map((c, i) => `<button class="ch${/[가-힯]/.test(c) ? ' ko' : ''}" data-i="${i}"><span class="n">${i + 1}</span><span class="tx">${esc(c)}</span><span class="x" title="排除这个选项" aria-label="排除">✕</span></button>`).join('')}</div>`;
   if (listen) { $('pl').onclick = () => say(e.audio, 0.9, $('pl')); $('pls').onclick = () => say(e.audio, 0.55, $('pls')); setTimeout(() => say(e.audio, 0.9, $('pl')), 300); }
   else if (kq && /[가-힯]/.test(kq)) wireBubble(st);
-  st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); if (/[가-힯]/.test(e.ch[answer])) say(e.ch[answer], 0.9); });
+  bindStrike(st); st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; b.classList.remove('out'); st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); if (/[가-힯]/.test(e.ch[answer])) say(e.ch[answer], 0.9); });
 }
 function rListen(x, st) { rMC(x, st, true); }
 function rBuild(x, st) {
@@ -654,9 +670,9 @@ function rTQ(x, st) {
   st.innerHTML = `<div class="tag" style="color:var(--b)">${esc(NO[q.no] || SEC[q.sec])}</div><div class="q${q.p || L ? '' : ' ko'}">${q.q}</div>
     ${L ? `<div class="lis"><button class="big" id="pl">${ICON_SPK}</button><button class="slow" id="pls">🐢</button></div><div class="tr ko" id="tr" hidden>${q.d.map(([w, t]) => `<p><b>${w}</b> ${esc(t)}</p>`).join('')}</div>` : ''}
     ${q.p ? `<div class="psg ko">${nl(q.p)}</div>` : ''}
-    <div class="chs">${q.ch.map((c, i) => `<button class="ch ko" data-i="${i}"><span class="n">${i + 1}</span><span>${esc(c)}</span></button>`).join('')}</div>`;
+    <div class="chs">${q.ch.map((c, i) => `<button class="ch ko" data-i="${i}"><span class="n">${i + 1}</span><span class="tx">${esc(c)}</span><span class="x" title="排除这个选项" aria-label="排除">✕</span></button>`).join('')}</div>`;
   if (L) { $('pl').onclick = () => playDialog(q.d, $('pl')); $('pls').onclick = () => playDialog(q.d, $('pls'), 0.65); setTimeout(() => playDialog(q.d, $('pl')), 350); }
-  st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); });
+  bindStrike(st); st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; b.classList.remove('out'); st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); });
 }
 function rTU(x, st) {
   const q = x.q, L = q.sec === 'L', fill = t => t.replace(/\(\s+\)/, `<b class="fz">${esc(q.ch[q.a])}</b>`);
@@ -731,7 +747,7 @@ function check() {
   let ok, right = '', said = '';
   if (x.kind === 'mc' || x.kind === 'listen') {
     ok = answer === x.e.a; right = x.e.ch[x.e.a];
-    document.querySelectorAll('.ch').forEach(c => { const i = +c.dataset.i; c.classList.toggle('good', i === x.e.a); c.classList.toggle('bad', i === answer && !ok); c.classList.remove('sel'); });
+    document.querySelectorAll('.ch').forEach(c => { const i = +c.dataset.i; c.classList.toggle('good', i === x.e.a); c.classList.toggle('bad', i === answer && !ok); c.classList.remove('sel', 'out'); });
     said = x.e.ch[answer];
     const kr = /[가-힯]/.test(right) ? right : x.kind === 'listen' ? x.e.audio : (x.e.q.match(/「([^」]+)」/) || [])[1];
     if (kr && /[가-힯]/.test(kr)) setTimeout(() => say(kr, 0.9), 450);
@@ -741,11 +757,11 @@ function check() {
     said = answer.join(' '); ok = strip(said) === strip(x.s.k); right = x.s.k; setTimeout(() => say(x.s.k, 0.9), 450);
   } else if (x.kind === 'tq') {
     const q = x.q; ok = answer === q.a; right = q.ch[q.a]; said = q.ch[answer];
-    document.querySelectorAll('.ch').forEach(c => { const i = +c.dataset.i; c.classList.toggle('good', i === q.a); c.classList.toggle('bad', i === answer && !ok); c.classList.remove('sel'); });
+    document.querySelectorAll('.ch').forEach(c => { const i = +c.dataset.i; c.classList.toggle('good', i === q.a); c.classList.toggle('bad', i === answer && !ok); c.classList.remove('sel', 'out'); });
     if ($('tr')) $('tr').hidden = false;
     const src = $('tr') || $('stage').querySelector('.psg, .q.ko');   // 做完点原文出中文翻译
     if (src && q.tz) { src.classList.add('tap'); src.onclick = () => { let z = src.nextElementSibling; if (z && z.classList.contains('tz')) { z.remove(); return; } z = document.createElement('div'); z.className = 'tz'; z.innerHTML = nl(q.tz); src.after(z); z.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'ease-out' }); }; }
-    if (q.cz) document.querySelectorAll('.ch').forEach(c => { const z = q.cz[+c.dataset.i]; if (!z) return; const e = document.createElement('small'); e.className = 'cz'; e.textContent = z; c.querySelector('span:last-child').appendChild(e); });
+    if (q.cz) document.querySelectorAll('.ch').forEach(c => { const z = q.cz[+c.dataset.i]; if (!z) return; const e = document.createElement('small'); e.className = 'cz'; e.textContent = z; c.querySelector('.tx').appendChild(e); });
   } else if (x.kind === 'tw') {
     const q = x.q, norm = v => strip(v || '').replace(/[.。]/g, '');
     const res = q.bl.map((b, i) => [b.m].concat(b.alt || []).some(m => norm(m) === norm(answer[i])));
