@@ -148,6 +148,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .tap{cursor:pointer;-webkit-user-select:none;user-select:none}.tap::after{content:'点原文看翻译';display:block;font-size:12px;color:var(--tx3);font-weight:700;margin-top:4px}
 .psg.tu{line-height:1.9}.psg .fz{color:var(--gt);border-bottom:2px solid var(--g)}
 .tz{margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--bl);font-size:16px;line-height:1.8;color:var(--tx)}
+.study h2{font-size:24px}.big-go{font-size:20px;padding:18px}
+.more-t{display:block;margin:14px auto 0;font-size:14px;font-weight:800;color:var(--tx3);padding:8px 16px}
+.more{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .3s ease,opacity .25s}.more>div{overflow:hidden}.more.on{grid-template-rows:1fr;opacity:1}
 .gorow{display:flex;gap:10px}.gorow #go{flex:1}
 #idk{flex:0 0 0;max-width:0;padding-left:0;padding-right:0;overflow:hidden;opacity:0;border-width:0;white-space:nowrap;transition:flex-basis .25s,max-width .25s,opacity .2s,padding .25s}
 #idk.on{flex:0 0 96px;max-width:96px;padding-left:12px;padding-right:12px;opacity:1;border:2px solid var(--bd);border-bottom-width:4px;border-radius:16px;color:var(--tx2);font-size:16px;letter-spacing:0;background:var(--bg)}
@@ -432,6 +435,15 @@ function buildType(no) {   // 专项突破：先看解题方法，再刷这一�
   if (TIP[no]) items.unshift({ kind: 'tip', id: no + '!tip', points: TIP[no], title: NO[no] || no, tag: '专项突破' });
   return items;
 }
+function buildStudy() {
+  const t = tier(), ids = [], add = id => { if (id && TBY[id] && !ids.includes(id)) ids.push(id); }, seen = ST.tseen || {};
+  const ok = q => lvOf(q) <= t && !(q.sec === 'W' && t < 3);
+  const due = dueList().filter(id => ok(TBY[id])).slice(0, 3);
+  DAILY.ids.filter(id => TBY[id] && ok(TBY[id]) && !seen[id]).slice(0, 3).forEach(add);
+  const w = weakTypes()[0]; if (w) shuffle(TQ.filter(q => q.no === w && ok(q) && !seen[q.id] && !due.includes(q.id))).slice(0, 2).forEach(q => add(q.id));
+  pickFresh(null, 10, new Set(ids.concat(due))).forEach(q => { if (ids.length + due.length < 10) add(q.id); });
+  return due.map(revEx).concat(shuffle(ids).map(id => topEx(TBY[id]))).filter(Boolean);
+}
 function buildPlace() {   // 分级测试：1 级 4 题 → 2 级 4 题 → 3 级 4 题，由易到难不打乱
   const out = [];
   for (const lv of [1, 2, 3]) { const p = TQ.filter(q => lvOf(q) === lv && q.sec !== 'W'); const L = shuffle(p.filter(q => q.sec === 'L')), R = shuffle(p.filter(q => q.sec === 'R')); out.push(...L.slice(0, 2), ...R.slice(0, 2)); }
@@ -460,28 +472,32 @@ function renderHome() {
     <div class="ring" title="今日 ${dayXp}/${ST.goal} XP"><svg viewBox="0 0 38 38"><circle class="bgc" cx="19" cy="19" r="15"/><circle class="fgc" cx="19" cy="19" r="15" stroke-dasharray="${C}" stroke-dashoffset="${C}" id="ringFg"/></svg><b>${dayXp}</b></div>
   </div>
   ${topikCard()}
-  ${ST.placed ? '' : `<div class="hero today"><div class="meta">第一步 · 约 4 分钟</div><h2>分级测试</h2><p>12 题，从最简单的开始，越往后越难。测完按级别出题</p><button class="btn green" id="goPlace1">开始测试</button></div>`}
-  <div class="hero today">
-    <div class="meta">${DAILY.date === t ? '今天' : DAILY.date.slice(5).replace('-', '/')} · ${nDaily} 题${dailyDone ? ' · 已完成 ✓' : ''}</div>
-    <h2>${esc(DAILY.title)}</h2>
-    <p>${tier() < 3 && DAILY.ids.some(id => TBY[id] && lvOf(TBY[id]) > tier()) ? `按现在的级别（${TIERS[tier()]}）出题，约 5 分钟` : esc(DAILY.note)}</p>
-    <button class="btn ${dailyDone ? 'blue' : 'green'}" id="goDaily">${dailyDone ? '再练一次' : '开始'}</button>
+  <div class="hero today study">
+    <div class="meta">${dailyDone ? '今天学过了 ✓ · 可以再来一组' : '10 题 · 约 5 分钟'}</div>
+    <h2>${TIERS[tier()].split(' · ')[0]}题</h2>
+    <p>${due ? `含 ${Math.min(3, due)} 道错题` : '新题为主'}${weakTypes()[0] ? ` · 加练弱项「${esc((NO[weakTypes()[0]] || '').split(' · ').pop())}」` : ''}</p>
+    <button class="btn green big-go" id="goStudy">学习</button>
   </div>
-  ${due ? `<div class="hero rev"><div class="meta">错题复习 · ${due} 题</div><h2>把错过的再过一遍</h2><p>答对一次，下次隔更久再出现</p><button class="btn blue" id="goRev">复习</button></div>` : ''}
+  <button class="more-t" id="moreT">更多 ${ST.moreOpen ? '▴' : '▾'}</button>
+  <div class="more${ST.moreOpen ? ' on' : ''}" id="more"><div>
   ${(() => { const w = weakTypes(), ts = typeStats(); return w.length ? `<div class="sec">薄弱题型 · 专项突破</div><div class="weak">${w.slice(0, 3).map(no => `<button class="wk" data-no="${no}"><b>${esc(NO[no] || no)}</b><small>最近 ${ts[no].n} 题对 ${ts[no].ok} 题</small><span>突破</span></button>`).join('')}</div>` : ''; })()}
+  ${due ? `<button class="btn blue" id="goRev" style="margin-top:10px">错题复习 · ${due} 题</button>` : ''}
   <div class="sec">TOPIK 分项</div>
-  <div class="secs">${['L', 'R', 'W'].map(k => { const all = TQ.filter(q => q.sec === k), d = all.filter(q => (ST.tseen || {})[q.id]).length; return `<button class="sb" data-s="${k}"><b>${SEC[k]}</b><small>${d}/${all.length} 题 · 目标 ${EXAM.plan[k]} 分</small></button>`; }).join('')}</div>
-  ${tier() >= 3 ? `<button class="btn ghost" id="goMock" style="margin-top:6px">16 题摸底 · 估一下现在多少分</button>` : ''}
-  <button class="btn ghost" id="goPlace" style="margin-top:6px">${ST.placed ? '再测一次级别 · 12 题' : '分级测试 · 12 题'}</button>
+  <div class="secs">${['L', 'R', 'W'].map(k => { const all = TQ.filter(q => q.sec === k && lvOf(q) <= tier()), d = all.filter(q => (ST.tseen || {})[q.id]).length; return `<button class="sb" data-s="${k}"><b>${SEC[k]}</b><small>${d}/${all.length} 题</small></button>`; }).join('')}</div>
+  <button class="btn ghost" id="capBtn" style="margin-top:6px">${ST.cap ? '现在只练初级 · 点这里解锁中级' : '按级别自动升级 · 点这里只练初级'}</button>
+  ${tier() >= 3 ? `<button class="btn ghost" id="goMock">16 题摸底 · 估一下现在多少分</button>` : ''}
+  <button class="btn ghost" id="goPlace">${ST.placed ? '再测一次级别 · 12 题' : '分级测试 · 12 题'}</button>
   <div class="foot"><button id="voiceBtn">换声音</button>${KEY ? '<button id="copyKey">复制同步码</button>' : ''}<button id="goalBtn">每日目标 ${ST.goal} XP</button></div>
-  ${KEY ? `<div class="sync">${esc(syncMsg)}</div>` : '<button class="btn blue" id="syncBtn" style="margin-top:10px">连接同步 · 和电脑共用学习记录</button>'}`;
+  ${KEY ? `<div class="sync">${esc(syncMsg)}</div>` : ''}
+  </div></div>
+  ${KEY ? '' : '<button class="btn blue" id="syncBtn" style="margin-top:10px">连接同步 · 和电脑共用学习记录</button>'}`;
   requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); }));
-  $('goDaily').onclick = () => start('daily', buildDaily());
+  $('goStudy').onclick = () => start('study', buildStudy());
+  $('moreT').onclick = () => { ST.moreOpen = !ST.moreOpen; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} $('more').classList.toggle('on', ST.moreOpen); $('moreT').textContent = '更多 ' + (ST.moreOpen ? '▴' : '▾'); };
   document.querySelectorAll('.sb').forEach(b => b.onclick = () => start('sec-' + b.dataset.s, buildSec(b.dataset.s, 8)));
   if ($('goMock')) $('goMock').onclick = () => start('mock', buildMock());
   $('goPlace').onclick = () => start('place', buildPlace());
   document.querySelectorAll('.wk').forEach(b => b.onclick = () => start('type-' + b.dataset.no, buildType(b.dataset.no)));
-  if ($('goPlace1')) $('goPlace1').onclick = () => start('place', buildPlace());
   if ($('capBtn')) $('capBtn').onclick = () => { if (ST.cap) delete ST.cap; else { ST.cap = 2; if ((ST.tier || 1) > 2) ST.tier = 2; } ST.lvh = []; save(); push(); renderHome(); toast(ST.cap ? '只出 TOPIK I 1–2 级的题' : '按级别自动升级'); };
   if ($('regUndo')) $('regUndo').onclick = () => { ST.topikReg = 0; save(); push(); renderHome(); toast('已撤销：报名期间会继续提醒'); };
   if ($('regDone')) $('regDone').onclick = () => { ST.topikReg = EXAM.round; save(); push(); renderHome(); toast('已记下：不再提醒报名'); };
@@ -501,7 +517,7 @@ function topikCard() {
     <div class="rb">${regOpen ? `<a class="btn red" href="${EXAM.url}" target="_blank" rel="noopener">去报名</a>` : ''}${regOpen ? '<button class="btn ghost" id="regDone">我已报名</button>' : ''}</div></div>`;
   else if (reg) regLine = `<div class="reg ok">✓ 已报名第 ${EXAM.round} 回<button class="undo" id="regUndo">撤销</button></div>`;
   const tn = tier(), h = (ST.lvh || []).filter(x => x.lv === tn), need = Math.max(0, 7 - h.slice(-8).filter(x => x.ok).length);
-  const tierLine = `<div class="tier"><span>现在练</span><b>${TIERS[tn]}</b><button class="undo" id="capBtn">${ST.cap ? '解锁中级' : '只练初级'}</button>${ST.cap ? `<small>已锁定初级（TOPIK I），题库 ${TQ.filter(q => lvOf(q) <= 2).length} 题</small>` : tn < maxTier() ? `<small>同级再答对 ${need} 题升级</small>` : ''}</div>`;
+  const tierLine = `<div class="tier"><span>现在练</span><b>${TIERS[tn]}</b>${ST.cap ? `<small>只练初级 · 题库 ${TQ.filter(q => lvOf(q) <= 2).length} 题，做过 ${TQ.filter(q => lvOf(q) <= 2 && (ST.tseen || {})[q.id]).length} 题</small>` : tn < maxTier() ? `<small>同级再答对 ${need} 题升级</small>` : ''}</div>`;
   return `<div class="hero topik"><div class="meta">${EXAM.name} · 第 ${EXAM.round} 回 · ${EXAM.date.slice(5).replace('-', '/')}</div>
     <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${tierLine}${est}${regLine}</div>`;
 }
@@ -533,7 +549,7 @@ function setBar() {
 let answer = null, checked = false;
 function setGo(state, label) { const g = $('go'); g.className = 'btn ' + state; g.textContent = label; }
 function renderEx() {
-  const x = S.items[S.i]; answer = null; checked = false;
+  stopAudio(); const x = S.items[S.i]; answer = null; checked = false;
   $('dock').className = 'dock'; $('fb').innerHTML = ''; setGo('off', '检查'); setBar();
   $('idk').textContent = '不会';
   $('idk').classList.toggle('on', ['tq', 'mc', 'listen', 'tw', 'k2z', 'z2k'].includes(x.kind));
@@ -688,7 +704,7 @@ function check() {
     const z = $('tz'); z.hidden = false; z.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'ease-out' });
     answer = 'judge'; setGo('green', '看懂了'); $('idk').textContent = '没看懂'; $('idk').classList.add('on'); return;
   }
-  $('idk').classList.remove('on');
+  $('idk').classList.remove('on'); stopAudio();
   if (x.kind === 'tw' && !answer.length) answer = x.q.bl.map(() => '');
   if (answer === 'skip') return next(true, true);
   checked = true; stopRec();
@@ -763,7 +779,7 @@ function finish() {
   if (ST.last !== t) { ST.streak = ST.last === today(Date.now() - DAY) ? ST.streak + 1 : 1; ST.last = t; }
   if (ST.day !== t) { ST.day = t; ST.dayXp = 0; }
   ST.xp += xp; ST.dayXp += xp;
-  if (S.mode === 'daily') ST.dailyDone = DAILY.date;
+  if (S.mode === 'daily' || S.mode === 'study') ST.dailyDone = DAILY.date;
   else if (LBY[S.mode]) ST.done[S.mode] = (ST.done[S.mode] || 0) + 1;
   // 间隔复习：错了马上进复习；复习里答对一次，间隔 1→3→7→14 天，满了就移出
   const GAP = [1, 3, 7, 14];
@@ -810,9 +826,10 @@ function finish() {
   show('done'); sfx(true);
 }
 
+if (!ST.capInit) { ST.cap = 2; ST.capInit = 1; if ((ST.tier || 1) > 2) ST.tier = 2; save(); }   // 11-26：先把初级做熟
 if (!ST.regFix) { ST.topikReg = 0; ST.regFix = 1; save(); }   // 11/25 误点「我已报名」，清掉一次
 renderHome(); pull().then(() => { if (pending.length) push(); });
-if (/[?&]go=daily/.test(location.search)) { history.replaceState(null, '', location.pathname); start('daily', buildDaily()); }   // 推送点进来直接开始第一题
+if (/[?&]go=daily/.test(location.search)) { history.replaceState(null, '', location.pathname); start('study', buildStudy()); }   // 推送点进来直接开始第一题
 </script>
 </body>
 </html>
