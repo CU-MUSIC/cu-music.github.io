@@ -282,7 +282,10 @@ async function pull(force) {   // 云端更新、或本机还没学过（新设�
     const r = await (pre || fetch(API + '/ko?days=1', { headers: { Authorization: 'Bearer ' + KEY }, cache: 'no-store' }));
     if (r.status === 401) return false;
     const j = await r.json();
-    if (j.ok && j.st && (force || !ST.xp || (j.st.ts || 0) > (ST.ts || 0))) { ST = { ...ST, ...j.st }; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} renderHome(); }
+    // 谁学得多听谁：XP 只会涨，云端 XP 更高就用云端；本机更高（没网时学的）就推上去
+    const sx = (j.st && j.st.xp) || 0, lx = ST.xp || 0;
+    if (j.ok && j.st && (force || sx > lx || (sx === lx && (j.st.ts || 0) > (ST.ts || 0)))) { ST = { ...ST, ...j.st }; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} renderHome(); }
+    else if (j.ok && lx > sx) push();
     return true;
   } catch (e) {} finally { syncDot(0); }
 }
