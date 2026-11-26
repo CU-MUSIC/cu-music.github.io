@@ -327,6 +327,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wo.ko{font-size:20px}.wo:active{transform:translateY(2px)}
 .wo.good{border-color:var(--g);background:var(--gl);color:var(--gt)}.wo.bad{border-color:var(--r);background:var(--rl);color:var(--rt)}.wo.dim{opacity:.4}
 #wdIdk{border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:14px;font-size:17px;font-weight:800;color:var(--tx2);background:var(--card)}
+.rkl{display:flex;align-items:center;gap:8px;margin-bottom:6px}.rkl em{font-style:normal;font-size:13px;font-weight:700;color:var(--tx2);margin-left:auto}
+.rk{display:inline-block;font-size:13px;font-weight:900;padding:3px 10px;border-radius:8px;color:#fff;background:#9aa4ad}
+.rk.r1{background:#8bc34a}.rk.r2{background:#43a047}.rk.r3{background:#1cb0f6}.rk.r4{background:#7c4dff}.rk.r5{background:#ff9600}.rk.r6{background:#e53935}
+.rkl .rst{color:#ffc800;font-size:15px;letter-spacing:1px}
+.lch{width:100%;height:auto;display:block}.lch .ax{font-size:10px;fill:var(--tx3);font-weight:700}
+.lch .lcl{stroke-dasharray:1000;stroke-dashoffset:1000;animation:draw 1.2s ease-out forwards}@keyframes draw{to{stroke-dashoffset:0}}
+.chs2{border:2px solid var(--bd);border-radius:14px;padding:10px 12px 6px;margin-bottom:10px}.cht b{font-size:15px;font-weight:800}.cht small{display:block;font-size:12px;color:var(--tx3);font-weight:600}
+.ladder{display:flex;flex-direction:column-reverse;gap:6px}.ladder div{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:12px;opacity:.5}.ladder div.past{opacity:.75}.ladder div.on{opacity:1;background:var(--bl);box-shadow:inset 0 0 0 2px #84d8ff}
+.ladder small{font-size:13px;color:var(--tx2);font-weight:600}.ladder b{margin-left:auto;color:#ffc800}
 </style>
 </head>
 <body>
@@ -398,24 +407,52 @@ function predict(ab) {
   ab = ab || ST.ab || {};
   const P = k => .25 + .75 * Math.max(0, Math.min(1, k)), out = { n: 0, n34: 0 };
   for (const sec of ['L', 'R']) {
-    const ks = [1, 2, 3, 4].map(l => { const a = ab[sec + l] || []; out.n += a.length; if (l >= 3) out.n34 += a.length; return a.length ? Math.max(0, ((a.reduce((x, y) => x + y, 0) + .5) / (a.length + 2) - .25) / .75) : null; });
+    const ks = [1, 2, 3, 4].map(l => { const a = ab[sec + l] || []; out.n += a.length; if (l >= 3) out.n34 += a.length; return a.length ? Math.max(0, ((a.reduce((x, y) => x + y, 0) + .5) / (a.length + 2) - .25) / .75) * (l >= 3 ? .75 : 1) : null; });   // 题库的 3 级题比真题短、简单，打 75 折
     if (ks.every(k => k === null)) return null;
     if (ks[0] === null) ks[0] = Math.min(1, ks.find(k => k !== null) * 1.3 + .1);
     if (ks[1] === null) ks[1] = ks[0] * .55;
-    if (ks[2] === null) ks[2] = (.3 * ks[0] + .7 * ks[1]) * .55;   // 1 级题也算一点：基础越稳，往上推得越高
-    if (ks[3] === null) ks[3] = ks[2] * .55;
-    out[sec] = { k: ks, I: Math.round(100 * (.5 * P(ks[0]) + .5 * P(ks[1]))), II: Math.round(100 * (.4 * P(ks[2]) + .35 * P(ks[3]) + .25 * P(ks[3] * .6))) };
+    if (ks[2] === null) ks[2] = (.3 * ks[0] + .7 * ks[1]) * .45;   // 1 级题也算一点：基础越稳，往上推得越高
+    if (ks[3] === null) ks[3] = ks[2] * .5;
+    // 保守版：真题 3 级 40% · 4 级 30% · 5–6 级 30%，有时间压力、长文章，宁可估低
+    out[sec] = { k: ks, I: Math.round(100 * (.5 * P(ks[0]) + .5 * P(ks[1]))), II: Math.round(100 * (.4 * P(ks[2]) + .3 * P(ks[3]) + .3 * P(ks[3] * .5))) };
   }
   const k3 = (out.L.k[2] + out.R.k[2]) / 2, k4 = (out.L.k[3] + out.R.k[3]) / 2;
-  out.W = Math.round(20 * k3 + 30 * k3 * .7 + 50 * k4 * .5);
+  out.W = Math.round(20 * k3 * .8 + 30 * k3 * .45 + 50 * k4 * .3);
   out.II = out.L.II + out.R.II + out.W; out.I = out.L.I + out.R.I;
   out.pm = Math.min(35, Math.max(6, Math.round(45 / Math.sqrt(1 + out.n34 + out.n / 4))) + (out.n34 < 10 ? 15 : 0));   // 3 级以上没怎么做过，误差加大
   out.g2 = (GRADE2.find(([s]) => out.II >= s) || [0, 0])[1]; out.g1 = (GRADE1.find(([s]) => out.I >= s) || [0, 0])[1];
+  out.rank = rankOf(out.II);
   out.weak = out.L.k[1] + out.L.k[0] < out.R.k[1] + out.R.k[0] ? 'L' : 'R';
   return out;
 }
+// 段位：直接跟 TOPIK II 预测分走，每段分 3 星。升段 = 离考过更近
+const RANKS = [[0, '入门'], [60, '初级 Ⅰ'], [90, '初级 Ⅱ'], [120, '中级 Ⅲ'], [150, '中级 Ⅳ'], [190, '高级 Ⅴ'], [230, '高级 Ⅵ'], [300, '']];
+function rankOf(v) {
+  let i = 0; while (i < RANKS.length - 2 && v >= RANKS[i + 1][0]) i++;
+  const lo = RANKS[i][0], hi = RANKS[i + 1][0], star = Math.min(3, 1 + Math.floor((v - lo) / ((hi - lo) / 3)));
+  return { i, name: RANKS[i][1], star, next: RANKS[i + 1][1], need: hi - v, lo, hi, tag: i === 3 ? '3 级线' : i === 4 ? '目标 4 级' : '' };
+}
+const stars = n => '★'.repeat(n) + '☆'.repeat(3 - n);
+function dayMark() {   // 每天一条：预测分、认识的词、当天 XP —— 看自己每天的进步
+  const t = today(), p = predict(), w = ST.w || {}, wk = Object.values(w).filter(x => x.b >= 2).length;
+  ST.hist = (ST.hist || []).filter(x => x.d !== t).concat({ d: t, v: p ? p.II : null, wk, xp: ST.day === t ? ST.dayXp : 0 }).slice(-120);
+}
+function lineChart(rows, key, opt) {   // 简单折线：x = 日期，y = 数值，可画参考线
+  const pts = rows.filter(r => r[key] != null); if (!pts.length) return '<p class="pt">还没有数据</p>';
+  const W = 320, H = 120, L = 30, B = 18, vs = pts.map(r => r[key]), lines = (opt.lines || []);
+  let lo = Math.min(...vs, ...lines.map(x => x[0])), hi = Math.max(...vs, ...lines.map(x => x[0])); if (hi - lo < 10) { hi += 5; lo -= 5; } lo = Math.max(0, Math.floor(lo - (hi - lo) * .1)); hi = Math.ceil(hi + (hi - lo) * .1);
+  const X = i => L + (pts.length === 1 ? (W - L) / 2 : i / (pts.length - 1) * (W - L - 8)), Y = v => 6 + (1 - (v - lo) / (hi - lo)) * (H - B - 6);
+  const lab = pts.length <= 7 ? pts.map((r, i) => i) : [0, Math.floor((pts.length - 1) / 2), pts.length - 1];
+  return `<svg class="lch" viewBox="0 0 ${W} ${H}">
+    ${lines.map(([v, c, t]) => `<line x1="${L}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-dasharray="4 4" stroke-width="1"/><text x="${W - 2}" y="${Y(v) - 3}" text-anchor="end" fill="${c}" font-size="10" font-weight="700">${t}</text>`).join('')}
+    <text x="${L - 4}" y="${Y(hi) + 4}" text-anchor="end" class="ax">${hi}</text><text x="${L - 4}" y="${Y(lo)}" text-anchor="end" class="ax">${lo}</text>
+    <polyline points="${pts.map((r, i) => X(i) + ',' + Y(r[key])).join(' ')}" fill="none" stroke="${opt.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" class="lcl"/>
+    ${pts.map((r, i) => `<circle cx="${X(i)}" cy="${Y(r[key])}" r="${i === pts.length - 1 ? 4.5 : 3}" fill="${opt.color}"/>`).join('')}
+    <text x="${X(pts.length - 1)}" y="${Y(vs[vs.length - 1]) - 9}" text-anchor="middle" font-size="12" font-weight="900" fill="${opt.color}">${vs[vs.length - 1]}</text>
+    ${lab.map(i => `<text x="${X(i)}" y="${H - 3}" text-anchor="${i === pts.length - 1 && pts.length > 1 ? 'end' : i === 0 && pts.length > 1 ? 'start' : 'middle'}" class="ax">${pts[i].d.slice(5).replace('-', '/')}</text>`).join('')}</svg>`;
+}
 function abAdd(id, ok) { const q = TBY[id]; if (!q || q.sec === 'W') return; ST.ab = ST.ab || {}; const k = q.sec + Math.min(4, lvOf(q)); ST.ab[k] = (ST.ab[k] || []).concat(ok ? 1 : 0).slice(-30); }
-function predMark() { const p = predict(); if (!p) return; const t = today(); ST.pred = (ST.pred || []).filter(x => x.d !== t).concat({ d: t, v: p.II }).slice(-60); }
+function predMark() { const p = predict(); dayMark(); if (!p) return; const t = today(); ST.pred = (ST.pred || []).filter(x => x.d !== t).concat({ d: t, v: p.II }).slice(-60); }
 function spark(arr) {
   if (arr.length < 2) return '';
   const vs = arr.map(x => x.v), lo = Math.min(...vs) - 10, hi = Math.max(...vs) + 10, W = 120, H = 34, X = i => i / (vs.length - 1) * W, Y = v => H - (v - lo) / (hi - lo) * H;
@@ -720,13 +757,19 @@ function renderHome() {
 function predSheet() {
   const p = predict(); if (!p) return;
   const row = (n, v, sub) => `<div class="prow"><span>${n}</span><b>${v}</b><small>${sub}</small></div>`, pct = k => Math.round((.25 + .75 * k) * 100) + '%';
-  sheet(`<h3>TOPIK 预测分</h3>
+  dayMark(); const H = ST.hist || [], rk = p.rank;
+  sheet(`<h3>每天的进步</h3>
+    <div class="chs2"><div class="cht"><b>TOPIK II 预测分</b><small>每天最后一次做题后的分数</small></div>${lineChart(H, 'v', { color: '#ff9600', lines: [[120, '#8a8a8a', '3 级 120'], [150, '#58a700', '4 级 150']] })}</div>
+    <div class="chs2"><div class="cht"><b>认识的词</b><small>刷词答对过的词数</small></div>${lineChart(H, 'wk', { color: '#1cb0f6' })}</div>
+    <h3 style="margin-top:18px">段位</h3>
+    <div class="ladder">${RANKS.slice(0, -1).map(([v, n], i) => `<div class="${i === rk.i ? 'on' : i < rk.i ? 'past' : ''}"><span class="rk r${i}">${n}</span><small>${v}${RANKS[i + 1][0] < 300 ? '–' + (RANKS[i + 1][0] - 1) : '+'} 分${i === 3 ? ' · 3 级线' : i === 4 ? ' · 目标' : ''}</small>${i === rk.i ? `<b>${stars(rk.star)}</b>` : ''}</div>`).join('')}</div>
+    <h3 style="margin-top:18px">分数拆开看</h3>
     <div class="prow main"><span>TOPIK II</span><b>${p.II} <em>±${p.pm}</em></b><small>${p.g2 ? p.g2 + ' 级' : '未到 3 级'} · 3 级 120 / 4 级 150</small></div>
     ${row('听力', p.L.II + ' / 100', '1 级题 ' + pct(p.L.k[0]) + ' · 2 级题 ' + pct(p.L.k[1]))}
     ${row('阅读', p.R.II + ' / 100', '1 级题 ' + pct(p.R.k[0]) + ' · 2 级题 ' + pct(p.R.k[1]))}
     ${row('写作', '约 ' + p.W + ' / 100', '按阅读听力水平推算')}
     <div class="prow"><span>TOPIK I</span><b>${p.I} / 200</b><small>${p.g1 ? p.g1 + ' 级' : '未到 1 级'} · 1 级 80 / 2 级 140</small></div>
-    <p style="font-size:14px;color:var(--tx2);line-height:1.7;margin:12px 0">正确率先扣掉蒙对的 25%，还没练到的 3、4 级题按 1–2 级的水平往下推，所以现在偏粗（±${p.pm}）。做的题越多、开始做 3 级题后越准。</p>
+    <p style="font-size:14px;color:var(--tx2);line-height:1.7;margin:12px 0">这是<b>保守估计</b>：正确率先扣掉蒙对的 25%；题库的 3 级题比真题短、没有时间压力，打 75 折；没练到的 4–6 级按下面的水平往下推。宁可估低，考场上才不慌。误差 ±${p.pm}，做的 3 级题越多越准。</p>
     <button class="btn blue" id="pWeak">先补${SEC[p.weak]} · 8 题</button>`);
   $('pWeak').onclick = () => { $('sheet').classList.remove('on'); start('sec-' + p.weak, buildSec(p.weak, 8)); };
 }
@@ -747,9 +790,10 @@ function topikCard() {
   const tierLine = `<div class="tier"><span>现在练</span><b>${TIERS[tn]}</b>${ST.cap ? `<small>只练初级 · 题库 ${TQ.filter(q => lvOf(q) <= 2).length} 题，做过 ${TQ.filter(q => lvOf(q) <= 2 && (ST.tseen || {})[q.id]).length} 题</small>` : tn < maxTier() ? `<small>同级再答对 ${need} 题升级</small>` : ''}</div>`;
   const p = predict(), pr = ST.pred || [], prev = pr.filter(x => x.d !== today()).pop(), yd = p && prev ? p.II - prev.v : 0;
   const pos = v => Math.max(0, Math.min(100, v / 300 * 100 / .7));   // 条只画到 210 分，3、4 级线看得清
-  const pred = p ? `<button class="pred" id="predB"><div class="pr"><div><small>TOPIK II 预测分</small><b>${p.II}</b><em>±${p.pm}</em>${yd ? `<span class="${yd > 0 ? 'up' : 'dn'}">${yd > 0 ? '↑' : '↓'} ${Math.abs(yd)}</span>` : ''}</div>${spark(pr)}</div>
+  const rk = p && p.rank;
+  const pred = p ? `<button class="pred" id="predB"><div class="rkl"><span class="rk r${rk.i}">${rk.name}</span><span class="rst">${stars(rk.star)}</span>${rk.next ? `<em>再 ${rk.need} 分升 ${rk.next}</em>` : ''}</div><div class="pr"><div><small>TOPIK II 预测分</small><b>${p.II}</b><em>±${p.pm}</em>${yd ? `<span class="${yd > 0 ? 'up' : 'dn'}">${yd > 0 ? '↑' : '↓'} ${Math.abs(yd)}</span>` : ''}</div>${spark(pr)}</div>
     <div class="pbar"><i id="pFill" data-w="${pos(p.II)}"></i><u style="left:${pos(120)}%"><s>3 级 120</s></u><u class="g4" style="left:${pos(150)}%"><s>4 级 150</s></u></div>
-    <div class="pt">${p.II >= 150 ? '已到 4 级线，保持住' : p.II >= 120 ? `离 4 级还差 <b>${150 - p.II}</b> 分` : `离 3 级还差 <b>${120 - p.II}</b> 分 · 4 级差 ${150 - p.II}`}　·　先补${SEC[p.weak]} ›</div></button>`
+    <div class="pt">${p.II >= 150 ? '已到 4 级线，保持住' : p.II >= 120 ? `离 4 级还差 <b>${150 - p.II}</b> 分` : `离 3 级还差 <b>${120 - p.II}</b> 分 · 4 级差 ${150 - p.II}`}　·　点开看每天进步 ›</div></button>`
     : `<div class="pt" style="margin-top:10px">做完一组题就出 TOPIK 预测分</div>`;
   return `<div class="hero topik"><div class="meta">${EXAM.name} · 第 ${EXAM.round} 回 · ${EXAM.date.slice(5).replace('-', '/')}</div>
     <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${pred}${tierLine}${est}${regLine}</div>`;
@@ -1105,7 +1149,7 @@ function wdAnswer(b) {
   }
   $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}<small>今天共 ${(ST.wDay || {}).n || 0} 个</small>`; $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
   const t = today(); ST.wDay = ST.wDay && ST.wDay.d === t ? ST.wDay : { d: t, n: 0 }; ST.wDay.n++;
-  save(); if (W.n % 5 === 0) push();   // 每答一个就存本机，每 5 个同步一次：直接关页面也不丢
+  if (W.n % 5 === 0) dayMark(); save(); if (W.n % 5 === 0) push();   // 每答一个就存本机，每 5 个同步一次：直接关页面也不丢
 }
 function wdXp(x) {
   const t = today();
@@ -1196,6 +1240,7 @@ function finish() {
       <div class="gbar${ST.dayXp >= ST.goal ? ' full' : ''}"><i id="dgFill" style="width:${Math.min(100, dayBefore / ST.goal * 100)}%" data-w="${Math.min(100, ST.dayXp / ST.goal * 100)}"></i></div>
       <div class="r" style="margin-top:6px"><span>Lv ${L2.lv}</span><em>${L2.cur} / ${L2.need} XP</em></div>
       <div class="lbar"><i id="dlFill" style="width:${lvUp ? 0 : (L2.cur - xp) / L2.need * 100}%" data-w="${L2.cur / L2.need * 100}"></i></div></div>
+    ${predAfter && predBefore && predAfter.rank.i > predBefore.rank.i ? `<div class="burst lvup">🏅 升段：${predAfter.rank.name}<small>${predAfter.rank.tag || '离考过更近一步'}</small></div>` : ''}
     ${predAfter ? (() => { const d = predBefore ? predAfter.II - predBefore.II : 0; return `<div class="pdone"><small>TOPIK II 预测分</small><b id="pdN" data-from="${predBefore ? predBefore.II : predAfter.II}" data-to="${predAfter.II}">${predBefore ? predBefore.II : predAfter.II}</b><span class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + (-d) : '持平'}</span><em>${predAfter.II >= 150 ? '已到 4 级线' : predAfter.II >= 120 ? '离 4 级还差 ' + (150 - predAfter.II) + ' 分' : '离 3 级还差 ' + (120 - predAfter.II) + ' 分'}</em></div>`; })() : ''}
     ${estHtml}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
@@ -1212,6 +1257,8 @@ function finish() {
 
 if (!ST.capInit) { ST.cap = 2; ST.capInit = 1; if ((ST.tier || 1) > 2) ST.tier = 2; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} }   // 不改 ts，免得盖过云端   // 11-26：先把初级做熟
 if (!ST.regFix) { ST.topikReg = 0; ST.regFix = 1; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} }   // 11/25 误点「我已报名」，清掉一次
+if (ST.predV !== 2) { ST.predV = 2; ST.pred = []; }   // 11-26 预测分换成保守版，旧的曲线作废
+predMark(); try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {}
 renderHome(); pull().then(() => { if (pending.length) push(); });
 if (/[?&]go=daily/.test(location.search)) { history.replaceState(null, '', location.pathname); start('study', buildStudy()); }   // 推送点进来直接开始第一题
 </script>
