@@ -109,8 +109,10 @@ const vlabs = list => { let M = 0, k = 0, L = 0, b = -1; const out = []; list.fo
   else { if (t === 1 && M) k++; else { M++; k = 0; } L = 0; b = i; out[i] = k ? M + '.' + k : String(M); } }); return out; };
 const isRough = v => !!(v.rough && stageOf(v) === 'mix');   // Rough Mix：先定方向的混音版，不占混音序号
 const vnum = v => { const st = stageOf(v), list = V.filter(x => stageOf(x) === st && !isRough(x)), i = list.indexOf(v); return i < 0 ? '' : vlabs(list)[i]; };
-const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; if (v.fin) return 'Final'; if (isRough(v)) return 'Rough'; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || vnum(v); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
-const vname = v => v.fin && STAGE[stageOf(v)] ? (stageOf(v) === 'master' ? 'Final Master' : 'Final Mix') : isRough(v) ? 'Rough Mix' : (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);   // 定稿叫 Final Mix（行业说法），按钮上只写 Final
+// Rough 自己一套序号：只有一版叫 Rough；并列 1A/1B/1C 叫 Rough A/B/C；第二轮 Rough 2（和 worker verDisplay 同规则）
+const roughSuf = v => { const rl = V.filter(isRough); if (rl.length < 2) return ''; const l = vlabs(rl)[rl.indexOf(v)] || ''; return l.replace(/^1(?=[A-Z])/, ''); };
+const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; if (v.fin) return 'Final'; if (isRough(v)) return ('Rough ' + roughSuf(v)).trim(); const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || vnum(v); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
+const vname = v => v.fin && STAGE[stageOf(v)] ? (stageOf(v) === 'master' ? 'Final Master' : 'Final Mix') : isRough(v) ? ('Rough Mix ' + roughSuf(v)).trim() : (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);   // 定稿叫 Final Mix（行业说法），按钮上只写 Final
 const multiStage = new Set(V.map(stageOf)).size > 1;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
 const dataKey = i => 'review:' + S.slug + ':' + V[i].ver.toLowerCase();
@@ -185,7 +187,7 @@ document.body.innerHTML = `
     const RK = { '': 0, demo: 1, edit: 2, mix: 3, master: 4 }, top = Math.max(...groups.map(g => RK[g.st]));
     const row = (i, t) => `<button class="vrow press${V[i].hide ? ' hid' : ''}" data-i="${i}"><span class="vn">${esc(t)}</span><span class="hasdot"></span></button>`;
     // 并列备选（12A、12B）合成一颗「12 [A|B]」：同一轮的两个方案，切换时接着原位置播
-    const rows = items => { const runs = []; items.forEach(i => { const m = /^(.*\d)([A-Z])$/.exec(vlab(V[i])), l = runs[runs.length - 1];
+    const rows = items => { const runs = []; items.forEach(i => { const m = /^(.*\d|Rough) ?([A-Z])$/.exec(vlab(V[i])), l = runs[runs.length - 1];
       if (m && l && l.b === m[1]) l.items.push(i); else runs.push({ b: m ? m[1] : null, items: [i] }); });
       return runs.map(r => r.b && r.items.length > 1 ? `<span class="vabx"><span class="vabn">${esc(r.b)}</span>${r.items.map(i => row(i, vlab(V[i]).slice(-1))).join('')}</span>` : r.items.map(i => row(i, vlab(V[i]))).join('')).join(''); };
     return groups.map(g => { const old = STAGE[g.st] && RK[g.st] < top && g.items.length > 1;   // 只有一版的旧阶段（如 Demo 1）不收起，直接显示
@@ -1852,9 +1854,9 @@ function ownerTools() {
   const editVer = async v => {
     const names = { edit: 1, mix: 2, master: 3, demo: 4 }, cs = stageOf(v);
     const a = prompt('《' + S.title + '》' + vname(v) + ' 的类别\n1 编辑　2 混音　3 母带　4 Demo　0 不分类\n5 Rough Mix（先定方向，不占混音序号）', String(isRough(v) ? 5 : names[cs] || 0)); if (a === null) return;
-    if (a.trim() === '5') {   // Rough Mix 排在混音最前面
-      const mixes = V.filter(x => x !== v && stageOf(x) === 'mix');
-      try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: [{ ver: v.ver, stage: 'mix', rough: 1, fin: 0, minor: 0, ord: 1 }].concat(mixes.map((x, i) => ({ ver: x.ver, ord: i + 2 }))) }); softReload(); }
+    if (a.trim() === '5') {   // Rough Mix 排在混音最前面（已有的 Rough 后面，保持上传先后）；并列 A/B/C 关系不动
+      const mixes = V.filter(x => stageOf(x) === 'mix' || x === v), rs = mixes.filter(x => isRough(x) || x === v), rest = mixes.filter(x => !rs.includes(x));
+      try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: rs.concat(rest).map((x, i) => x === v ? { ver: x.ver, stage: 'mix', rough: 1, fin: 0, ord: i + 1 } : { ver: x.ver, ord: i + 1 }) }); softReload(); }
       catch (err) { busy('没保存上，检查网络再试'); } return;
     }
     const st = { 0: 'none', 1: 'edit', 2: 'mix', 3: 'master', 4: 'demo' }[a.trim()]; if (!st) { busy('类别只能填 0 到 5'); return; }
@@ -1883,7 +1885,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126c'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2364,7 +2366,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126c'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
