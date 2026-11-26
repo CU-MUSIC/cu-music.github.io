@@ -280,6 +280,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wdgo small{font-size:13px;color:var(--tx3);font-weight:700}
 #wd{min-height:100vh;min-height:100dvh;display:none;flex-direction:column}#wd.on{display:flex}
 #wd .top{display:flex;align-items:center;gap:12px}
+.wdo{margin-top:12px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;animation:fadeUp .2s ease-out}.wdo .hj{font-size:22px;font-weight:700;color:#1a6fd1;background:#e8f1ff;padding:2px 12px;border-radius:8px;font-family:'PingFang TC','Noto Serif TC',serif}.wdo .en{font-size:16px;font-style:italic;color:var(--tx2);padding:4px 6px}
+@media (prefers-color-scheme:dark){.wdo .hj{background:#16304f;color:#7fb6ff}}
 .wdrt{margin-top:10px;font-size:14px;font-weight:800;color:var(--tx3);animation:fadeUp .2s ease-out}.wdrt.fast{color:var(--g)}.wdrt.slow{color:var(--o)}
 .wslow{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 6px}.wslow span{background:#fff4d6;color:#8a5a00;border-radius:10px;padding:4px 10px;font-size:14px;font-weight:700}.wslow i{font-style:normal;opacity:.7;margin-left:2px}
 @media (prefers-color-scheme:dark){.wslow span{background:#3a2f12;color:#ffc800}}
@@ -343,7 +345,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 const _t = Math.floor(Date.now() / 6e5);
 // 一打开就先去拿云端进度，和题库并行下载
 try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=30', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
-document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script>');
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
@@ -1027,6 +1029,11 @@ function wdShow() {
   document.querySelectorAll('.wo').forEach(b => b.onclick = () => wdAnswer(b));
   $('wdThink').onclick = wdReveal;
 }
+function wdOrigin(k) {   // 答完显示词源：汉字词标汉字（像 Naver 한자사전），外来词标英文
+  const hj = (window.KO_HJ || {})[k], en = (window.KO_EN || {})[k];
+  if (!hj && !en) return;
+  $('wdCard').insertAdjacentHTML('beforeend', `<div class="wdo">${hj ? `<span class="hj">${esc(hj)}</span>` : ''}${en ? `<span class="en">${esc(en)}</span>` : ''}</div>`);
+}
 function wdReveal() { if (!W || !W.cur.hid) return; clearTimeout(W.rt); W.cur.hid = false; $('wdCh').classList.remove('hid'); }
 function wdAnswer(b) {
   if (W.cur.done) return;
@@ -1036,6 +1043,7 @@ function wdAnswer(b) {
   // 反应时间：从出词到选中。≤2.5 秒 = 秒认；2.5–5 秒 = 想了一下；>5 秒 = 看了选项才想起来，算「慢」
   const rt = Math.round(performance.now() - W.cur.t0), sp = rt <= 2500 ? 'fast' : rt <= 5000 ? 'mid' : 'slow';
   W.n++; W.log.push({ id: 'W:' + k, t: 'wd', k, ok: ok ? 1 : 0, a: (b ? b.textContent.replace(/^\d/, '') : '不会') + ' · ' + (rt / 1000).toFixed(1) + 's' });
+  wdOrigin(k);
   if (ok) {
     const wasNew = !ST.w[k];
     // 秒认才升盒；想了一下：新词只进 1 盒、旧词照升；慢：不升，10 分钟后再考
