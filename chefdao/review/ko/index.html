@@ -282,7 +282,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #wd .top{display:flex;align-items:center;gap:12px}
 .wdo{margin-top:12px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;animation:fadeUp .2s ease-out}.wdo .hj{font-size:22px;font-weight:700;color:#1a6fd1;background:#e8f1ff;padding:2px 12px;border-radius:8px;font-family:'PingFang TC','Noto Serif TC',serif}.wdo .en{font-size:16px;font-style:italic;color:var(--tx2);padding:4px 6px}
 @media (prefers-color-scheme:dark){.wdo .hj{background:#16304f;color:#7fb6ff}}
-.wdvs{margin-top:8px;font-size:15px;font-weight:700;color:var(--tx2);animation:fadeUp .25s ease-out}.wdvs b{font-size:18px;color:var(--tx)}
+.wdvs{margin-top:8px;font-size:14px;line-height:1.5;font-weight:700;color:var(--tx2);animation:fadeUp .25s ease-out}.wdvs b{font-size:18px;color:var(--tx)}
+@media (min-width:601px){#wdIdk{margin-top:auto}}
+.wdfb{height:150px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;overflow:hidden}
+.wdfb>*{margin-top:8px!important}
+/* 手机：选项改成 4 条横排、贴在下面拇指够得着的地方；卡片在上 */
+@media (max-width:600px){
+  #wd .wdcard{margin:16px 0 12px;padding:28px 14px 6px}
+  #wd .wdk{font-size:40px}
+  #wd .wdch{grid-template-columns:1fr;gap:8px;margin-top:auto;margin-bottom:10px}
+  #wd .wo{min-height:54px;padding:12px 16px 12px 44px;text-align:left;font-size:19px}
+  #wd .wo .wn{display:grid!important;place-items:center;top:50%;left:12px;transform:translateY(-50%);width:22px;height:22px;border:2px solid var(--bd);border-radius:7px;font-size:12px}
+  #wd #wdIdk{margin-top:0;padding:12px}
+}
 .wdrt{margin-top:10px;font-size:14px;font-weight:800;color:var(--tx3);animation:fadeUp .2s ease-out}.wdrt.fast{color:var(--g)}.wdrt.slow{color:var(--o)}
 .wslow{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 6px}.wslow span{background:#fff4d6;color:#8a5a00;border-radius:10px;padding:4px 10px;font-size:14px;font-weight:700}.wslow i{font-style:normal;opacity:.7;margin-left:2px}
 @media (prefers-color-scheme:dark){.wslow span{background:#3a2f12;color:#ffc800}}
@@ -306,10 +318,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wdch.hid .wdthink{opacity:1;pointer-events:auto}
 .wdch.hid .wo{visibility:hidden;animation:none}
 @keyframes shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-.wo{position:relative}.wo .wn{position:absolute;top:6px;left:9px;font-size:11px;font-weight:800;color:var(--tx3)}@media (hover:none){.wo .wn{display:none}}
+.wo{position:relative}.wo .wn{position:absolute;top:6px;left:9px;font-size:11px;font-weight:800;color:var(--tx3)}
 .wo.ko{font-size:20px}.wo:active{transform:translateY(2px)}
 .wo.good{border-color:var(--g);background:var(--gl);color:var(--gt)}.wo.bad{border-color:var(--r);background:var(--rl);color:var(--rt)}.wo.dim{opacity:.4}
-#wdIdk{margin-top:auto;border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:14px;font-size:17px;font-weight:800;color:var(--tx2);background:var(--card)}
+#wdIdk{border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;padding:14px;font-size:17px;font-weight:800;color:var(--tx2);background:var(--card)}
 </style>
 </head>
 <body>
@@ -1023,7 +1035,7 @@ function wdShow() {
   const opts = wdOpts(word);
   $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}<small>今天共 ${ST.wDay && ST.wDay.d === today() ? ST.wDay.n : 0} 个</small>`;
   $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
-  $('wdCard').innerHTML = `<div class="wdk ${rev ? 'zh' : 'ko'}">${esc(rev ? word.z : word.k)}</div>${rev ? '' : `<button class="spk" id="wdSpk">${ICON_SPK}</button>`}${r ? '' : '<span class="wdnew">新词</span>'}`;
+  $('wdCard').innerHTML = `<div class="wdk ${rev ? 'zh' : 'ko'}">${esc(rev ? word.z : word.k)}</div>${rev ? '' : `<button class="spk" id="wdSpk">${ICON_SPK}</button>`}${r ? '' : '<span class="wdnew">新词</span>'}<div class="wdfb" id="wdFb"></div>`;   // 答完的反馈放进固定高度的格子，卡片不变高、选项不挪
   $('wdCard').classList.remove('in'); void $('wdCard').offsetWidth; $('wdCard').classList.add('in');
   // 先回想：选项先藏 2 秒（盖着一层「先在心里想」），想好了点一下 / 按回车马上翻开
   clearTimeout(W.rt); W.cur.hid = true;
@@ -1038,7 +1050,7 @@ function wdShow() {
 function wdOrigin(k) {   // 答完显示词源：汉字词标汉字（像 Naver 한자사전），外来词标英文
   const hj = (window.KO_HJ || {})[k], en = (window.KO_EN || {})[k];
   if (!hj && !en) return;
-  $('wdCard').insertAdjacentHTML('beforeend', `<div class="wdo">${hj ? `<span class="hj">${esc(hj)}</span>` : ''}${en ? `<span class="en">${esc(en)}</span>` : ''}</div>`);
+  $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdo">${hj ? `<span class="hj">${esc(hj)}</span>` : ''}${en ? `<span class="en">${esc(en)}</span>` : ''}</div>`);
 }
 function wdReveal(auto) { if (!W || !W.cur.hid) return; clearTimeout(W.rt); W.cur.hid = false; W.cur.tr = performance.now(); W.cur.auto = !!auto; $('wdCh').classList.remove('hid'); }
 function wdAnswer(b) {
@@ -1060,7 +1072,7 @@ function wdAnswer(b) {
     if (r.b < 3 && nb >= 3) W.newM++;
     ST.w[k] = { b: nb, due: now + (sp === 'slow' ? WGAP[0] : WGAP[Math.min(nb, WGAP.length) - 1]), rt };
     if (sp === 'slow') { W.slow.push({ k, rt }); W.again.push({ k, at: W.n + 3 }); }   // 慢的本轮隔几张再考一次
-    $('wdCard').insertAdjacentHTML('beforeend', `<div class="wdrt ${sp}">${W.cur.auto ? '没自己想起' : '想起 ' + (think / 1000).toFixed(1) + ' 秒'} · 选 ${(find / 1000).toFixed(1)} 秒${sp === 'fast' ? ' ⚡' : sp === 'slow' ? ' · 有点慢，等会再考' : ''}</div>`);
+    $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdrt ${sp}">${W.cur.auto ? '没自己想起' : '想起 ' + (think / 1000).toFixed(1) + ' 秒'} · 选 ${(find / 1000).toFixed(1)} 秒${sp === 'fast' ? ' ⚡' : sp === 'slow' ? ' · 有点慢，等会再考' : ''}</div>`);
     W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true);
     wdXp(1 + (W.combo % 5 === 0 ? 2 : 0));   // 1 个对 = 1 XP，每连对 5 个多 2 XP，当场记上
     if (W.cur.rev) say(k, 1);
@@ -1069,7 +1081,7 @@ function wdAnswer(b) {
     ST.w[k] = { b: 0, due: now + WGAP[0], rt }; W.again.push({ k, at: W.n }); W.combo = 0; sfx(false); say(k, 1);
     const pk = b && b.dataset.k, pw = pk && WBY[pk];
     if (pw) { ST.wc = ST.wc || {}; [[k, pk], [pk, k]].forEach(([a, c]) => { ST.wc[a] = [c].concat((ST.wc[a] || []).filter(x => x !== c)).slice(0, 3); }); }   // 记下混淆对，下次放一起考
-    $('wdCard').insertAdjacentHTML('beforeend', `<div class="wdans">${esc(word.k)} = ${esc(word.z)}</div>${pw && !W.cur.rev ? `<div class="wdvs">你选的是 <b class="ko">${esc(pw.k)}</b> = ${esc(pw.z)}　别和 <b class="ko">${esc(word.k)}</b> 搞混</div>` : ''}`);
+    $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdans">${esc(word.k)} = ${esc(word.z)}</div>${pw && !W.cur.rev ? `<div class="wdvs">你选的是 <b class="ko">${esc(pw.k)}</b> = ${esc(pw.z)}　别和 <b class="ko">${esc(word.k)}</b> 搞混</div>` : ''}`);
     $('wdIdk').textContent = '继续'; $('wdIdk').onclick = wdShow;
   }
   $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}<small>今天共 ${(ST.wDay || {}).n || 0} 个</small>`; $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
