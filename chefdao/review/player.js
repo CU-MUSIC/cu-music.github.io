@@ -107,9 +107,10 @@ const vkind = v => { if (v.minor !== undefined) return +v.minor === 2 ? 2 : v.mi
 const vlabs = list => { let M = 0, k = 0, L = 0, b = -1; const out = []; list.forEach((x, i) => { const t = vkind(x);
   if (t === 2 && M) { if (!L) { L = 1; out[b] += 'A'; } L++; out[i] = out[b].slice(0, -1) + String.fromCharCode(64 + L); }
   else { if (t === 1 && M) k++; else { M++; k = 0; } L = 0; b = i; out[i] = k ? M + '.' + k : String(M); } }); return out; };
-const vnum = v => { const st = stageOf(v), list = V.filter(x => stageOf(x) === st), i = list.indexOf(v); return i < 0 ? '' : vlabs(list)[i]; };
-const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; if (v.fin) return 'Final'; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || vnum(v); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
-const vname = v => v.fin && STAGE[stageOf(v)] ? (stageOf(v) === 'master' ? 'Final Master' : 'Final Mix') : (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);   // 定稿叫 Final Mix（行业说法），按钮上只写 Final
+const isRough = v => !!(v.rough && stageOf(v) === 'mix');   // Rough Mix：先定方向的混音版，不占混音序号
+const vnum = v => { const st = stageOf(v), list = V.filter(x => stageOf(x) === st && !isRough(x)), i = list.indexOf(v); return i < 0 ? '' : vlabs(list)[i]; };
+const vlab = v => { const st = stageOf(v); if (!STAGE[st]) return v.ver; if (v.fin) return 'Final'; if (isRough(v)) return 'Rough'; const n = v.dn && v.dn.startsWith(STAGE[st] + ' ') ? v.dn.slice(STAGE[st].length + 1) : ''; return n || vnum(v); };   // 服务端按完整列表给的序号优先：客户那边隐藏了几版，序号也和你的一样
+const vname = v => v.fin && STAGE[stageOf(v)] ? (stageOf(v) === 'master' ? 'Final Master' : 'Final Mix') : isRough(v) ? 'Rough Mix' : (STAGE[stageOf(v)] ? STAGE[stageOf(v)] + ' ' : '') + vlab(v);   // 定稿叫 Final Mix（行业说法），按钮上只写 Final
 const multiStage = new Set(V.map(stageOf)).size > 1;
 let vi = V.length - 1, cur = V[vi];                       // 当前版本，默认最新
 const dataKey = i => 'review:' + S.slug + ':' + V[i].ver.toLowerCase();
@@ -1850,8 +1851,13 @@ function ownerTools() {
   // 改类别和序号：类别 1 编辑 2 混音 3 母带 0 无；序号 = 在这个类别里排第几（别的版本自动顺延）
   const editVer = async v => {
     const names = { edit: 1, mix: 2, master: 3, demo: 4 }, cs = stageOf(v);
-    const a = prompt('《' + S.title + '》' + vname(v) + ' 的类别\n1 编辑　2 混音　3 母带　4 Demo　0 不分类', String(names[cs] || 0)); if (a === null) return;
-    const st = { 0: 'none', 1: 'edit', 2: 'mix', 3: 'master', 4: 'demo' }[a.trim()]; if (!st) { busy('类别只能填 0 到 4'); return; }
+    const a = prompt('《' + S.title + '》' + vname(v) + ' 的类别\n1 编辑　2 混音　3 母带　4 Demo　0 不分类\n5 Rough Mix（先定方向，不占混音序号）', String(isRough(v) ? 5 : names[cs] || 0)); if (a === null) return;
+    if (a.trim() === '5') {   // Rough Mix 排在混音最前面
+      const mixes = V.filter(x => x !== v && stageOf(x) === 'mix');
+      try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: [{ ver: v.ver, stage: 'mix', rough: 1, fin: 0, minor: 0, ord: 1 }].concat(mixes.map((x, i) => ({ ver: x.ver, ord: i + 2 }))) }); softReload(); }
+      catch (err) { busy('没保存上，检查网络再试'); } return;
+    }
+    const st = { 0: 'none', 1: 'edit', 2: 'mix', 3: 'master', 4: 'demo' }[a.trim()]; if (!st) { busy('类别只能填 0 到 5'); return; }
     const inStage = V.filter(x => x !== v && stageOf(x) === (st === 'none' ? '' : st));
     const cur = cs === (st === 'none' ? '' : st) ? V.filter(x => stageOf(x) === cs).indexOf(v) + 1 : inStage.length + 1;
     const b = prompt('在「' + (st === 'none' ? '不分类' : STAGE[st]) + '」里的序号\n填 3 = 第 3 个大版本；填 2.1 = 第 2 个的小修（接在 2 后面）；填 2B = 和 2 并列给客户选（原来的 2 变 2A）', cs === (st === 'none' ? '' : st) ? vlab(v) : String(cur)); if (b === null) return;
@@ -1865,7 +1871,7 @@ function ownerTools() {
       if (end < 0) { busy('「' + STAGE[st] + ' ' + base + '」不存在'); return; } pos = end + 2;
     } else pos = Math.max(1, Math.min(inStage.length + 1, Math.round(+mm[1]) || cur));
     inStage.splice(pos - 1, 0, v);
-    try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: inStage.map((x, i) => ({ ver: x.ver, stage: x === v ? st : undefined, minor: x === v ? minor : undefined, ord: i + 1 })) }); softReload(); }
+    try { busy('正在保存…'); await post('/radm/ver', { slug: S.slug, set: inStage.map((x, i) => ({ ver: x.ver, stage: x === v ? st : undefined, minor: x === v ? minor : undefined, rough: x === v ? 0 : undefined, ord: i + 1 })) }); softReload(); }
     catch (err) { busy('没保存上，检查网络再试'); }
   };
   if (V.length < 2) $('#seg').hidden = true;   // 只剩一版时列表本来就不显示，删除按钮放到上传条里
@@ -1877,7 +1883,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -2358,7 +2364,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126b'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
