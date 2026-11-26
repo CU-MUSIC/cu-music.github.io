@@ -300,6 +300,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   #wd{padding-bottom:calc(env(safe-area-inset-bottom) + 11vh)}   /* 选项整体抬高：拇指常放在屏幕中下部，不在最底下 */
   #wd .wdfb{height:132px}
 }
+.wdnew.cj{color:#fff;background:#7c4dff}.wdk.sent{font-size:24px;line-height:1.6;font-weight:600;padding:0 6px}.wdk.sent b{color:#7c4dff;font-weight:900;border-bottom:3px solid #c9b6ff}.wdans.okc{color:var(--gt)}
 .wdnew.ch{color:#fff;background:linear-gradient(90deg,#ff9600,#ff4b4b)}
 .wbar{position:relative;height:12px;border-radius:99px;background:var(--bd);overflow:hidden;margin:8px 0 6px}.wbar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transition:width 1s cubic-bezier(.2,.8,.2,1)}.wbar .kn{background:#84d8ff}.wbar .ms{background:var(--b)}
 .wleg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;font-weight:700;color:var(--tx3)}.wleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}.wleg i.kn{background:#84d8ff}.wleg i.ms{background:var(--b)}
@@ -375,7 +376,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 const _t = Math.floor(Date.now() / 6e5);
 // 一打开就先去拿云端进度，和题库并行下载
 try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=30', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
-document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script>');
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
@@ -1066,17 +1067,29 @@ const WBY = Object.fromEntries(WL.map(w => [w.k, w]));
 const WGAP = [6e5, DAY, 3 * DAY, 7 * DAY, 21 * DAY];
 function wordStats() { const w = ST.w || {}, now = Date.now(); return { all: WL.length, done: WL.filter(x => (w[x.k] || {}).b >= 3).length, known: WL.filter(x => (w[x.k] || {}).b >= 2).length, due: WL.filter(x => w[x.k] && w[x.k].due <= now && w[x.k].b < 5).length }; }
 let W = null;
+// 挑战难度自适应：ST.chStep 1–4。最近 8 次挑战对 7 次以上 → 升一档；对 3 次以下 → 降一档
+// 1 = 3 级词·看韩语选中文　2 = 3 级词·看中文选韩语　3 = 4 级词（没有就 3 级）·看韩语　4 = 4 级词·看中文
+const CH_NAME = ['', '3 级词', '3 级词 · 反着考', '更难的词', '更难的词 · 反着考'];
+function chLevel() { const st = ST.chStep || 1, has4 = WL.some(x => x.lv >= 4); return { st, lv: st >= 3 && has4 ? 4 : 3, rev: st % 2 === 0 }; }
+function chResult(ok) {
+  ST.chH = (ST.chH || []).concat(ok ? 1 : 0).slice(-8); const h = ST.chH, n = h.filter(Boolean).length;
+  if (h.length >= 8 && n >= 7 && (ST.chStep || 1) < 4) { ST.chStep = (ST.chStep || 1) + 1; ST.chH = []; return 'up'; }
+  if (h.length >= 6 && h.slice(-6).filter(Boolean).length <= 2 && (ST.chStep || 1) > 1) { ST.chStep = ST.chStep - 1; ST.chH = []; return 'down'; }
+}
 function wdChallenge() {
-  const w = ST.w || {}, recent = W.hist.slice(-8), fresh = WL.filter(x => !w[x.k] && !recent.includes(x.k));
-  if (fresh.length) { const top = Math.max(...fresh.map(x => x.lv)); return shuffle(fresh.filter(x => x.lv === top))[0].k; }
-  return shuffle(WL.filter(x => !recent.includes(x.k)))[0].k;
+  const w = ST.w || {}, recent = W.hist.slice(-8), { lv } = chLevel();
+  let pool = WL.filter(x => !w[x.k] && !recent.includes(x.k) && x.lv === lv);
+  if (!pool.length) pool = WL.filter(x => !recent.includes(x.k) && x.lv >= 3 && (!w[x.k] || w[x.k].b < 3));
+  if (!pool.length) pool = WL.filter(x => !recent.includes(x.k) && x.lv >= 2);
+  return shuffle(pool)[0].k;
 }
 function wdNext() {   // 先出到期的旧词，再出新词（1 级在前），本轮答错的隔 3 张再出
   const w = ST.w || {}, now = Date.now(), recent = W.hist.slice(-3);
   const back = W.again.find(a => W.n - a.at >= 3); if (back) { W.again = W.again.filter(a => a !== back); return back.k; }
   const due = WL.filter(x => w[x.k] && w[x.k].due <= now && !recent.includes(x.k)).sort((a, b) => w[a.k].due - w[b.k].due);
   const near8 = W.hist.slice(-8).map(k => WBY[k]).filter(Boolean), clash = x => near8.some(h => Math.abs(h.i - x.i) <= 3 || (ANT[h.k] || []).includes(x.k));
-  const fresh0 = WL.filter(x => !w[x.k] && !recent.includes(x.k));   // 新词：整个词库没学过的随机挑，1、2 级混着出   // 新词：在接下来 40 个里随机挑，同主题 / 反义词不挨着出
+  const maxLv = (ST.chStep || 1) >= 3 ? 3 : 2;   // 3 级词先只在挑战里出，挑战稳了才放进平时
+  const fresh0 = WL.filter(x => !w[x.k] && !recent.includes(x.k) && x.lv <= maxLv);   // 新词：整个词库没学过的随机挑，1、2 级混着出   // 新词：在接下来 40 个里随机挑，同主题 / 反义词不挨着出
   const fresh = shuffle(fresh0.filter(x => !clash(x))).concat(shuffle(fresh0.filter(clash)));
   const pick = (due.length && (W.n % 3 !== 2 || !fresh.length)) ? due[0] : fresh[0] || due[0] || WL.filter(x => !recent.includes(x.k))[Math.random() * (WL.length - 3) | 0];
   return pick.k;
@@ -1104,12 +1117,13 @@ function wdShow() {
   // 连对每满 5 个，下一张是「挑战词」：挑最高级别的新词，而且反过来考（看中文选韩语），对了 +3 XP，错了不断连对
   const chal = W.combo > 0 && W.combo % 5 === 0 && W.lastCh !== W.n;
   if (chal) W.lastCh = W.n;
-  const k = chal ? wdChallenge() : wdNext(), word = WBY[k], r = (ST.w || {})[k], rev = chal || (r && r.b >= 1 && Math.random() < .35);   // 认识过的词偶尔反过来：看中文选韩语
+  if (!chal && W.n >= 2 && W.n % 4 === 2 && W.lastCj !== W.n && cjPool().length >= 4) { W.lastCj = W.n; return cjShow(); }   // 每 4 张插一张「变形」：认出时态 / 句型
+  const k = chal ? wdChallenge() : wdNext(), word = WBY[k], r = (ST.w || {})[k], rev = chal ? chLevel().rev : (r && r.b >= 1 && Math.random() < .35);   // 认识过的词偶尔反过来：看中文选韩语
   W.cur = { k, rev, chal, done: false, t0: performance.now() }; W.hist.push(k);
   const opts = wdOpts(word);
   $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}<small>今天共 ${ST.wDay && ST.wDay.d === today() ? ST.wDay.n : 0} 个</small>`;
   $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
-  $('wdCard').innerHTML = `<div class="wdk ${rev ? 'zh' : 'ko'}">${esc(rev ? word.z : word.k)}</div>${rev ? '' : `<button class="spk" id="wdSpk">${ICON_SPK}</button>`}${chal ? '<span class="wdnew ch">🔥 挑战 +3</span>' : r ? '' : '<span class="wdnew">新词</span>'}<div class="wdfb" id="wdFb"></div>`;   // 答完的反馈放进固定高度的格子，卡片不变高、选项不挪
+  $('wdCard').innerHTML = `<div class="wdk ${rev ? 'zh' : 'ko'}">${esc(rev ? word.z : word.k)}</div>${rev ? '' : `<button class="spk" id="wdSpk">${ICON_SPK}</button>`}${chal ? `<span class="wdnew ch">🔥 挑战 +3 · ${CH_NAME[chLevel().st]}</span>` : r ? '' : '<span class="wdnew">新词</span>'}<div class="wdfb" id="wdFb"></div>`;   // 答完的反馈放进固定高度的格子，卡片不变高、选项不挪
   $('wdCard').classList.remove('in'); void $('wdCard').offsetWidth; $('wdCard').classList.add('in');
   // 先回想：选项先藏 2 秒（盖着一层「先在心里想」），想好了点一下 / 按回车马上翻开
   clearTimeout(W.rt); W.cur.hid = true;
@@ -1127,8 +1141,52 @@ function wdOrigin(k) {   // 答完显示词源：汉字词标汉字（像 Naver 
   $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdo">${hj ? `<span class="hj">${esc(hj)}</span>` : ''}${en ? `<span class="en">${esc(en)}</span>` : ''}</div>`);
 }
 function wdReveal(auto) { if (!W || !W.cur.hid) return; clearTimeout(W.rt); W.cur.hid = false; W.cur.tr = performance.now(); W.cur.auto = !!auto; $('wdCh').classList.remove('hid'); }
+// ───────── 变形卡：看到 갔어요 认出「去 · 过去」，或者在句子里认出加粗的部分 ─────────
+const CJ = window.KO_CONJ || {}, CS = window.KO_CSENT || [];
+const CJF = { pres: '现在', past: '过去（了）', fut: '将来 / 打算', prog: '正在', neg: '不…（否定）', req: '请… / 敬语', give: '请（帮我）…', want: '想要…', if: '如果…', so: '因为… / …然后', but: '虽然…但是' };
+const CJR = { pres: '-아/어요：现在 / 一般说法', past: '-았/었어요：过去', fut: '-(으)ㄹ 거예요：将来、打算', prog: '-고 있어요：正在做', neg: '-지 않아요：不…', req: '-(으)세요：请… / 敬语', give: '-아/어 주세요：请帮我…', want: '-고 싶어요：想…', if: '-(으)면：如果…', so: '-아/어서：因为… / …然后', but: '-지만：虽然…但是' };
+const zh1 = k => WBY[k] ? WBY[k].z.split(' / ')[0].replace(/（.*?）/g, '') : k;
+function cjPool() { const w = ST.w || {}; return Object.keys(CJ).filter(k => w[k] && w[k].b >= 1 && WBY[k]); }
+function cjShow() {
+  const pool = cjPool(), cf = ST.cf || {}, acc = f => { const h = cf[f] || []; return h.length ? h.filter(Boolean).length / h.length : .5; };
+  let k, f, sent = null;
+  const sents = CS.filter(x => (ST.w || {})[x[1]] || Math.random() < .3);
+  if (sents.length && Math.random() < .45) { sent = shuffle(sents)[0]; [, k, f] = sent; }
+  else {   // 选错得多的形式更常出
+    k = shuffle(pool)[0]; const fs = Object.keys(CJ[k]).sort((a, b) => acc(a) - acc(b) + (Math.random() - .5) * .4); f = fs[0];
+  }
+  const form = CJ[k][f], key = k + '|' + f;
+  const fsOther = shuffle(Object.keys(CJ[k]).filter(x => x !== f && CJ[k][x] !== form)).slice(0, 2);
+  const near = (ANT[k] || []).concat((ST.wc || {})[k] || []).filter(x => CJ[x] && CJ[x][f] && x !== k);
+  const ok2 = near[0] || shuffle(pool.filter(x => x !== k && CJ[x][f] && zh1(x) !== zh1(k)))[0];
+  const opts = shuffle([key].concat(fsOther.map(x => k + '|' + x), ok2 ? [ok2 + '|' + f] : [])).slice(0, 4);
+  W.cur = { cj: true, k, f, key, sent, done: false, t0: performance.now() }; W.hist.push(k);
+  const show = sent ? esc(sent[0]).replace(esc(sent[4]), `<b>${esc(sent[4])}</b>`) : esc(form);
+  $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}<small>今天共 ${ST.wDay && ST.wDay.d === today() ? ST.wDay.n : 0} 个</small>`;
+  $('wdCard').innerHTML = `<div class="wdk ko ${sent ? 'sent' : ''}">${show}</div><button class="spk" id="wdSpk">${ICON_SPK}</button><span class="wdnew cj">变形${sent ? ' · 句子' : ''}</span><div class="wdfb" id="wdFb"></div>`;
+  $('wdCard').classList.remove('in'); void $('wdCard').offsetWidth; $('wdCard').classList.add('in');
+  clearTimeout(W.rt); W.cur.hid = true; $('wdCh').classList.add('hid'); W.rt = setTimeout(() => wdReveal(true), 3000);
+  $('wdCh').innerHTML = `<button class="wdthink" id="wdThink">${sent ? '加粗的部分' : '这个'}是哪个词的什么形式？<small>点这里或按回车看选项</small><i style="animation-duration:3s"></i></button>` + opts.map((o, i) => { const [ok, of] = o.split('|'); return `<button class="wo" data-k="${esc(o)}" style="animation-delay:${i * 40}ms"><span class="wn">${i + 1}</span>${esc(zh1(ok))} · ${CJF[of]}</button>`; }).join('');
+  $('wdIdk').textContent = '不会'; $('wdIdk').onclick = () => wdAnswer(null);
+  const text = sent ? sent[0] : form; say(text, 1); $('wdSpk').onclick = () => say(text, 1);
+  document.querySelectorAll('.wo').forEach(b => b.onclick = () => wdAnswer(b));
+  $('wdThink').onclick = () => wdReveal();
+}
+function cjAnswer(b) {
+  W.cur.done = true; const c = W.cur, ok = !!b && b.dataset.k === c.key;
+  const now2 = performance.now(), rt = Math.round(now2 - c.t0);
+  document.querySelectorAll('.wo').forEach(x => { x.classList.toggle('good', x.dataset.k === c.key); if (x === b && !ok) x.classList.add('bad'); if (x.dataset.k !== c.key && x !== b) x.classList.add('dim'); });
+  ST.cf = ST.cf || {}; ST.cf[c.f] = (ST.cf[c.f] || []).concat(ok ? 1 : 0).slice(-10);
+  W.n++; W.log.push({ id: 'C:' + c.key, t: 'cj', k: (c.sent ? c.sent[0] : CJ[c.k][c.f]), ok: ok ? 1 : 0, a: (b ? b.textContent.replace(/^\d/, '') : '不会') + ' · ' + (rt / 1000).toFixed(1) + 's' });
+  $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdans ${ok ? 'okc' : ''}">${esc(c.k)} → ${esc(CJ[c.k][c.f])}</div><div class="wdvs">${esc(CJR[c.f])}${c.sent ? `<br>${esc(c.sent[3])}` : ''}</div>`);
+  if (ok) { W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true); wdXp(2); W.nt = setTimeout(wdShow, c.sent ? 2200 : 1500); }
+  else { W.combo = 0; sfx(false); say(c.sent ? c.sent[0] : CJ[c.k][c.f], 1); $('wdIdk').textContent = '继续'; $('wdIdk').onclick = wdShow; }
+  $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}<small>今天共 ${ST.wDay && ST.wDay.d === today() ? ST.wDay.n : 0} 个</small>`; $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
+  save(); if (W.n % 5 === 0) push();
+}
 function wdAnswer(b) {
   if (W.cur.done) return;
+  if (W.cur.cj) { if (W.cur.hid && b) return wdReveal(); return cjAnswer(b); }
   if (W.cur.hid && b) return wdReveal(); W.cur.done = true;
   const k = W.cur.k, word = WBY[k], ok = !!b && b.dataset.k === k, now = Date.now(), r = ST.w[k] || { b: 0 };
   document.querySelectorAll('.wo').forEach(x => { x.classList.toggle('good', x.dataset.k === k); if (x === b && !ok) x.classList.add('bad'); if (x.dataset.k !== k && x !== b) x.classList.add('dim'); });
@@ -1149,11 +1207,11 @@ function wdAnswer(b) {
     $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdrt ${sp}">${W.cur.chal ? '🔥 挑战成功 +3 · ' : ''}${W.cur.auto ? '没自己想起' : '想起 ' + (think / 1000).toFixed(1) + ' 秒'} · 选 ${(find / 1000).toFixed(1)} 秒${sp === 'fast' ? ' ⚡' : sp === 'slow' ? ' · 有点慢，等会再考' : ''}</div>`);
     W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true);
     wdXp(1 + (W.combo % 5 === 0 ? 2 : 0) + (W.cur.chal ? 3 : 0));   // 1 个对 = 1 XP，每连对 5 个多 2 XP，挑战词多 3 XP，当场记上
-    if (W.cur.chal) W.chOk = (W.chOk || 0) + 1;
+    if (W.cur.chal) { W.chOk = (W.chOk || 0) + 1; const c = chResult(true); if (c) toast('挑战升档：' + CH_NAME[ST.chStep]); }
     if (W.cur.rev) say(k, 1);
     W.nt = setTimeout(wdShow, sp === 'slow' ? 1300 : W.cur.rev ? 1100 : 750);
   } else {
-    ST.w[k] = { b: 0, due: now + WGAP[0], rt }; W.again.push({ k, at: W.n }); if (!W.cur.chal) W.combo = 0; sfx(false); say(k, 1);
+    ST.w[k] = { b: 0, due: now + WGAP[0], rt }; W.again.push({ k, at: W.n }); if (!W.cur.chal) W.combo = 0; else { const c = chResult(false); if (c) toast('挑战降一档：' + CH_NAME[ST.chStep]); } sfx(false); say(k, 1);
     const pk = b && b.dataset.k, pw = pk && WBY[pk];
     if (pw) { ST.wc = ST.wc || {}; [[k, pk], [pk, k]].forEach(([a, c]) => { ST.wc[a] = [c].concat((ST.wc[a] || []).filter(x => x !== c)).slice(0, 3); }); }   // 记下混淆对，下次放一起考
     $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdans">${esc(word.k)} = ${esc(word.z)}</div>${pw && !W.cur.rev ? `<div class="wdvs">你选的是 <b class="ko">${esc(pw.k)}</b> = ${esc(pw.z)}　别和 <b class="ko">${esc(word.k)}</b> 搞混</div>` : ''}`);
