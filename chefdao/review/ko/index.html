@@ -217,9 +217,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wb input:focus{border-color:var(--b)}.wb input.good{border-color:var(--g)}.wb input.bad{border-color:var(--r)}
 .exp{font-size:15px;color:var(--tx2);margin-top:6px;line-height:1.6}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#sy{position:fixed;top:calc(env(safe-area-inset-top) + 10px);left:50%;z-index:60;padding:5px 12px;border-radius:99px;background:var(--card,#fff);box-shadow:0 2px 10px rgba(0,0,0,.12);font-size:13px;color:var(--tx2,#777);opacity:0;transform:translate(-50%,-8px);transition:opacity .25s,transform .25s;pointer-events:none}
+#sy.on{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
+<div id="sy">同步中…</div>
 
 <section class="screen on" id="home"></section>
 
@@ -244,6 +247,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <script>
 // data.js 每天会被定时任务更新：按 10 分钟取一次新的，免得 GitHub Pages / 微信缓存住旧题
 const _t = Math.floor(Date.now() / 6e5);
+// 一打开就先去拿云端进度，和题库并行下载
+try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=1', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
 document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script>');
 </script>
 <script>
@@ -271,14 +276,26 @@ const save = () => { ST.ts = Date.now(); try { localStorage.setItem('ko:st', JSO
 let syncMsg = '';
 async function pull(force) {   // 云端更新、或本机还没学过（新设备）就用云端的
   if (!KEY) return;
+  const pre = !force && window._pre; window._pre = null;
+  syncDot(1);
   try {
-    const r = await fetch(API + '/ko?days=1', { headers: { Authorization: 'Bearer ' + KEY } });
+    const r = await (pre || fetch(API + '/ko?days=1', { headers: { Authorization: 'Bearer ' + KEY }, cache: 'no-store' }));
     if (r.status === 401) return false;
     const j = await r.json();
     if (j.ok && j.st && (force || !ST.xp || (j.st.ts || 0) > (ST.ts || 0))) { ST = { ...ST, ...j.st }; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} renderHome(); }
     return true;
-  } catch (e) {}
+  } catch (e) {} finally { syncDot(0); }
 }
+let syT;
+function syncDot(on) {   // 超过 0.3 秒还没拿到才显示「同步中」，免得一闪
+  clearTimeout(syT);
+  if (on) syT = setTimeout(() => $('sy').classList.add('on'), 300); else $('sy').classList.remove('on');
+}
+let lastPull = Date.now();
+document.addEventListener('visibilitychange', () => {   // 主屏幕 App 从后台切回来不会重新加载页面，这里补一次同步
+  if (document.visibilityState !== 'visible' || S || Date.now() - lastPull < 5000) return;
+  lastPull = Date.now(); pull().then(() => { if (pending.length) push(); });
+});
 function syncSheet() {
   sheet(`<h3>连接同步</h3><p style="font-size:15px;color:var(--tx2);margin:0 0 10px;line-height:1.7">电脑上打开韩语页，点最底下「复制同步码」，回到这里粘贴（同一个 Apple ID 会自动共享剪贴板）</p>
     <input id="kin" placeholder="粘贴同步码" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:12px 14px;border:2px solid var(--bd);border-radius:12px;font-size:16px;margin-bottom:10px">
@@ -826,8 +843,8 @@ function finish() {
   show('done'); sfx(true);
 }
 
-if (!ST.capInit) { ST.cap = 2; ST.capInit = 1; if ((ST.tier || 1) > 2) ST.tier = 2; save(); }   // 11-26：先把初级做熟
-if (!ST.regFix) { ST.topikReg = 0; ST.regFix = 1; save(); }   // 11/25 误点「我已报名」，清掉一次
+if (!ST.capInit) { ST.cap = 2; ST.capInit = 1; if ((ST.tier || 1) > 2) ST.tier = 2; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} }   // 不改 ts，免得盖过云端   // 11-26：先把初级做熟
+if (!ST.regFix) { ST.topikReg = 0; ST.regFix = 1; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} }   // 11/25 误点「我已报名」，清掉一次
 renderHome(); pull().then(() => { if (pending.length) push(); });
 if (/[?&]go=daily/.test(location.search)) { history.replaceState(null, '', location.pathname); start('study', buildStudy()); }   // 推送点进来直接开始第一题
 </script>
