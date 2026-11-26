@@ -255,6 +255,27 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .burst.goal{background:var(--gl);color:var(--gt)}.burst.lvup{background:#fff4d6;color:#c77700}
 @media (prefers-color-scheme:dark){.burst.lvup{background:#3a2f12;color:#ffc800}}
 @keyframes pop{to{opacity:1;transform:none}}
+.pred{display:block;width:100%;text-align:left;background:rgba(255,255,255,.6);border:2px solid #bfe8fd;border-radius:14px;padding:10px 12px;margin-top:12px;animation:fadeUp .35s ease-out}
+@media (prefers-color-scheme:dark){.pred{background:rgba(0,0,0,.15);border-color:#1d3a4a}}
+.pred .pr{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.pred small{display:block;font-size:12px;font-weight:800;color:var(--tx2)}
+.pred b{font-size:34px;font-weight:900;color:var(--o);line-height:1.1}.pred em{font-style:normal;font-size:13px;color:var(--tx3);font-weight:700;margin-left:4px}
+.pred span.up,.pdone span.up{color:var(--g);font-weight:900;margin-left:6px}.pred span.dn,.pdone span.dn{color:var(--r);font-weight:900;margin-left:6px}
+.spk{width:120px;height:34px;flex:none}.spk polyline{fill:none;stroke:var(--o);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.spk line{stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}.spk .ln3{stroke:var(--tx3)}.spk .ln4{stroke:var(--g)}
+.pbar{position:relative;height:12px;border-radius:99px;background:var(--bd);margin:8px 0 22px}
+.pbar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#ffc800,#ff9600);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.pbar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--tx3);text-decoration:none}.pbar u.g4{background:var(--g)}
+.pbar u s{position:absolute;top:18px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:800;color:var(--tx3);text-decoration:none}.pbar u.g4 s{color:var(--g)}
+.pt{font-size:14px;font-weight:700;color:var(--tx2)}.pt b{color:var(--o);font-size:16px}
+.prow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.prow span{font-weight:800;width:72px}.prow b{font-size:18px;font-weight:900}.prow small{flex-basis:100%;font-size:13px;color:var(--tx2);padding-left:82px}
+.prow.big b{font-size:28px;color:var(--o)}.prow em{font-style:normal;font-size:14px;color:var(--tx3)}
+.pdone{border:2px solid #ffd58a;background:#fff7e6;border-radius:16px;padding:12px 16px;margin:0 0 12px;text-align:left;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;animation:fadeUp .4s ease-out}
+@media (prefers-color-scheme:dark){.pdone{background:#33270f;border-color:#6b4d12}}
+.pdone small{flex-basis:100%;font-size:12px;font-weight:800;color:var(--tx2)}.pdone b{font-size:36px;font-weight:900;color:var(--o);line-height:1.1;display:inline-block;transition:transform .3s}
+.pdone b.bump{animation:bump .4s ease-out}.pdone em{flex-basis:100%;font-style:normal;font-size:14px;font-weight:700;color:var(--tx2)}
+@keyframes bump{40%{transform:scale(1.18)}}
 </style>
 </head>
 <body>
@@ -283,7 +304,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 // data.js 每天会被定时任务更新：按 10 分钟取一次新的，免得 GitHub Pages / 微信缓存住旧题
 const _t = Math.floor(Date.now() / 6e5);
 // 一打开就先去拿云端进度，和题库并行下载
-try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=1', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
+try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=30', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
 document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script>');
 </script>
 <script>
@@ -311,6 +332,37 @@ const save = () => { ST.ts = Date.now(); try { localStorage.setItem('ko:st', JSO
 let syncMsg = '';
 // 等级：Lv1→2 要 40 XP，之后每级多 20（40、60、80…），越往后越难
 function lvInfo(xp) { let lv = 1, need = 40, left = xp || 0; while (left >= need) { left -= need; lv++; need += 20; } return { lv, cur: left, need }; }
+// ───────── 预测分 ─────────
+// ST.ab：听力 / 阅读 × 1–4 级题，各记最近 30 次对错（「不会」算错）。先扣掉 4 选 1 蒙对的 25%，得到「真会」的比例 k；
+// 没做过的高一级按低一级 × 0.55 推。TOPIK II 题大致 3 级 40% · 4 级 35% · 5–6 级 25%；TOPIK I 1 级、2 级各一半。
+const GRADE2 = [[230, 6], [190, 5], [150, 4], [120, 3]], GRADE1 = [[140, 2], [80, 1]];
+function predict(ab) {
+  ab = ab || ST.ab || {};
+  const P = k => .25 + .75 * Math.max(0, Math.min(1, k)), out = { n: 0, n34: 0 };
+  for (const sec of ['L', 'R']) {
+    const ks = [1, 2, 3, 4].map(l => { const a = ab[sec + l] || []; out.n += a.length; if (l >= 3) out.n34 += a.length; return a.length ? Math.max(0, ((a.reduce((x, y) => x + y, 0) + .5) / (a.length + 2) - .25) / .75) : null; });
+    if (ks.every(k => k === null)) return null;
+    if (ks[0] === null) ks[0] = Math.min(1, ks.find(k => k !== null) * 1.3 + .1);
+    if (ks[1] === null) ks[1] = ks[0] * .55;
+    if (ks[2] === null) ks[2] = (.3 * ks[0] + .7 * ks[1]) * .55;   // 1 级题也算一点：基础越稳，往上推得越高
+    if (ks[3] === null) ks[3] = ks[2] * .55;
+    out[sec] = { k: ks, I: Math.round(100 * (.5 * P(ks[0]) + .5 * P(ks[1]))), II: Math.round(100 * (.4 * P(ks[2]) + .35 * P(ks[3]) + .25 * P(ks[3] * .6))) };
+  }
+  const k3 = (out.L.k[2] + out.R.k[2]) / 2, k4 = (out.L.k[3] + out.R.k[3]) / 2;
+  out.W = Math.round(20 * k3 + 30 * k3 * .7 + 50 * k4 * .5);
+  out.II = out.L.II + out.R.II + out.W; out.I = out.L.I + out.R.I;
+  out.pm = Math.min(35, Math.max(6, Math.round(45 / Math.sqrt(1 + out.n34 + out.n / 4))) + (out.n34 < 10 ? 15 : 0));   // 3 级以上没怎么做过，误差加大
+  out.g2 = (GRADE2.find(([s]) => out.II >= s) || [0, 0])[1]; out.g1 = (GRADE1.find(([s]) => out.I >= s) || [0, 0])[1];
+  out.weak = out.L.k[1] + out.L.k[0] < out.R.k[1] + out.R.k[0] ? 'L' : 'R';
+  return out;
+}
+function abAdd(id, ok) { const q = TBY[id]; if (!q || q.sec === 'W') return; ST.ab = ST.ab || {}; const k = q.sec + Math.min(4, lvOf(q)); ST.ab[k] = (ST.ab[k] || []).concat(ok ? 1 : 0).slice(-30); }
+function predMark() { const p = predict(); if (!p) return; const t = today(); ST.pred = (ST.pred || []).filter(x => x.d !== t).concat({ d: t, v: p.II }).slice(-60); }
+function spark(arr) {
+  if (arr.length < 2) return '';
+  const vs = arr.map(x => x.v), lo = Math.min(...vs) - 10, hi = Math.max(...vs) + 10, W = 120, H = 34, X = i => i / (vs.length - 1) * W, Y = v => H - (v - lo) / (hi - lo) * H;
+  return `<svg class="spk" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${[120, 150].filter(v => v > lo && v < hi).map(v => `<line x1="0" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" class="${v === 120 ? 'ln3' : 'ln4'}"/>`).join('')}<polyline points="${vs.map((v, i) => X(i) + ',' + Y(v)).join(' ')}"/></svg>`;
+}
 const GOALS = [[20, '1 组'], [40, '2 组'], [60, '3 组'], [100, '5 组']];   // 一组 10 题大约 15–25 XP
 let lastSync = +localStorage.getItem('ko:sync') || 0, syncState = '';
 function ago(t) { const m = Math.floor((Date.now() - t) / 6e4); if (m < 1) return '刚刚'; if (m < 60) return m + ' 分钟前'; const d = new Date(t); return (today(t) === today() ? '今天 ' : (d.getMonth() + 1) + '/' + d.getDate() + ' ') + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
@@ -322,7 +374,7 @@ async function pull(force) {   // 云端更新、或本机还没学过（新设�
   const pre = !force && window._pre; window._pre = null;
   syncDot(1);
   try {
-    const r = await (pre || fetch(API + '/ko?days=1', { headers: { Authorization: 'Bearer ' + KEY }, cache: 'no-store' }));
+    const r = await (pre || fetch(API + '/ko?days=30', { headers: { Authorization: 'Bearer ' + KEY }, cache: 'no-store' }));
     if (r.status === 401) { syncState = 'err'; return false; }
     const j = await r.json();
     // 谁学得多听谁：XP 只会涨，云端 XP 更高就用云端；本机更高（没网时学的）就推上去
@@ -330,6 +382,10 @@ async function pull(force) {   // 云端更新、或本机还没学过（新设�
     if (j.ok && j.st && (force || sx > lx || (sx === lx && (j.st.ts || 0) > (ST.ts || 0)))) { ST = { ...ST, ...j.st }; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} renderHome(); }
     else if (j.ok && lx > sx) push();
     if (j.ok) synced();
+    if (j.ok && !ST.abInit && Array.isArray(j.logs)) {   // 第一次：用云端 30 天的做题记录补出预测分
+      ST.ab = {}; j.logs.slice().reverse().forEach(l => { try { JSON.parse(l.items).forEach(x => { if (x.t === 'tq') abAdd(x.id, x.ok); }); } catch (e) {} });
+      ST.abInit = 1; predMark(); save(); renderHome(); push();
+    }
     return true;
   } catch (e) { syncState = 'err'; } finally { syncDot(0); }
 }
@@ -561,8 +617,9 @@ function renderHome() {
   <div class="foot"><button id="voiceBtn">换声音</button>${KEY ? '<button id="copyKey">复制同步码</button>' : ''}</div>
   </div></div>
   ${KEY ? '' : '<button class="btn blue" id="syncBtn" style="margin-top:10px">连接同步 · 和电脑共用学习记录</button>'}`;
-  requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); ['gFill', 'lFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }));
+  requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); ['gFill', 'lFill', 'pFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }));
   syncLine(); if ($('syl')) $('syl').onclick = () => { lastPull = Date.now(); pull().then(() => { if (pending.length) push(); }); };
+  if ($('predB')) $('predB').onclick = predSheet;
   $('lvc').onclick = goalSheet; document.querySelector('.ring').onclick = goalSheet;
   $('goStudy').onclick = () => start('study', buildStudy());
   $('moreT').onclick = () => { ST.moreOpen = !ST.moreOpen; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} $('more').classList.toggle('on', ST.moreOpen); $('moreT').textContent = '更多 ' + (ST.moreOpen ? '▴' : '▾'); };
@@ -579,6 +636,19 @@ function renderHome() {
   if ($('syncBtn')) $('syncBtn').onclick = syncSheet;
   if ($('copyKey')) $('copyKey').onclick = () => navigator.clipboard.writeText(KEY).then(() => toast('已复制，到手机韩语 App 底部点「连接同步」粘贴'), () => sheet(`<h3>同步码</h3><p class="ko" style="word-break:break-all;user-select:all;font-size:15px">${esc(KEY)}</p>`));
 }
+function predSheet() {
+  const p = predict(); if (!p) return;
+  const row = (n, v, sub) => `<div class="prow"><span>${n}</span><b>${v}</b><small>${sub}</small></div>`, pct = k => Math.round((.25 + .75 * k) * 100) + '%';
+  sheet(`<h3>TOPIK 预测分</h3>
+    <div class="prow big"><span>TOPIK II</span><b>${p.II} <em>±${p.pm}</em></b><small>${p.g2 ? p.g2 + ' 级' : '未到 3 级'} · 3 级 120 / 4 级 150</small></div>
+    ${row('听力', p.L.II + ' / 100', '1 级题 ' + pct(p.L.k[0]) + ' · 2 级题 ' + pct(p.L.k[1]))}
+    ${row('阅读', p.R.II + ' / 100', '1 级题 ' + pct(p.R.k[0]) + ' · 2 级题 ' + pct(p.R.k[1]))}
+    ${row('写作', '约 ' + p.W + ' / 100', '按阅读听力水平推算')}
+    <div class="prow"><span>TOPIK I</span><b>${p.I} / 200</b><small>${p.g1 ? p.g1 + ' 级' : '未到 1 级'} · 1 级 80 / 2 级 140</small></div>
+    <p style="font-size:14px;color:var(--tx2);line-height:1.7;margin:12px 0">正确率先扣掉蒙对的 25%，还没练到的 3、4 级题按 1–2 级的水平往下推，所以现在偏粗（±${p.pm}）。做的题越多、开始做 3 级题后越准。</p>
+    <button class="btn blue" id="pWeak">先补${SEC[p.weak]} · 8 题</button>`);
+  $('pWeak').onclick = () => { $('sheet').classList.remove('on'); start('sec-' + p.weak, buildSec(p.weak, 8)); };
+}
 function goalSheet() {
   sheet(`<h3>每日目标</h3><p style="font-size:15px;color:var(--tx2);margin:0 0 12px;line-height:1.7">一组 10 题大约 15–25 XP，全对多 5 XP</p>
     <div class="gopt">${GOALS.map(([g, d]) => `<button data-g="${g}" class="${ST.goal === g ? 'on' : ''}">${g} XP<small>约 ${d}</small></button>`).join('')}</div>`);
@@ -594,8 +664,14 @@ function topikCard() {
   else if (reg) regLine = `<div class="reg ok">✓ 已报名第 ${EXAM.round} 回<button class="undo" id="regUndo">撤销</button></div>`;
   const tn = tier(), h = (ST.lvh || []).filter(x => x.lv === tn), need = Math.max(0, 7 - h.slice(-8).filter(x => x.ok).length);
   const tierLine = `<div class="tier"><span>现在练</span><b>${TIERS[tn]}</b>${ST.cap ? `<small>只练初级 · 题库 ${TQ.filter(q => lvOf(q) <= 2).length} 题，做过 ${TQ.filter(q => lvOf(q) <= 2 && (ST.tseen || {})[q.id]).length} 题</small>` : tn < maxTier() ? `<small>同级再答对 ${need} 题升级</small>` : ''}</div>`;
+  const p = predict(), pr = ST.pred || [], prev = pr.filter(x => x.d !== today()).pop(), yd = p && prev ? p.II - prev.v : 0;
+  const pos = v => Math.max(0, Math.min(100, v / 300 * 100 / .7));   // 条只画到 210 分，3、4 级线看得清
+  const pred = p ? `<button class="pred" id="predB"><div class="pr"><div><small>TOPIK II 预测分</small><b>${p.II}</b><em>±${p.pm}</em>${yd ? `<span class="${yd > 0 ? 'up' : 'dn'}">${yd > 0 ? '↑' : '↓'} ${Math.abs(yd)}</span>` : ''}</div>${spark(pr)}</div>
+    <div class="pbar"><i id="pFill" data-w="${pos(p.II)}"></i><u style="left:${pos(120)}%"><s>3 级 120</s></u><u class="g4" style="left:${pos(150)}%"><s>4 级 150</s></u></div>
+    <div class="pt">${p.II >= 150 ? '已到 4 级线，保持住' : p.II >= 120 ? `离 4 级还差 <b>${150 - p.II}</b> 分` : `离 3 级还差 <b>${120 - p.II}</b> 分 · 4 级差 ${150 - p.II}`}　·　先补${SEC[p.weak]} ›</div></button>`
+    : `<div class="pt" style="margin-top:10px">做完一组题就出 TOPIK 预测分</div>`;
   return `<div class="hero topik"><div class="meta">${EXAM.name} · 第 ${EXAM.round} 回 · ${EXAM.date.slice(5).replace('-', '/')}</div>
-    <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${tierLine}${est}${regLine}</div>`;
+    <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${pred}${tierLine}${est}${regLine}</div>`;
 }
 function sheet(html) { $('sheetBody').innerHTML = html; $('sheet').classList.add('on'); }
 $('sheet').onclick = e => { if (e.target.id === 'sheet') $('sheet').classList.remove('on'); };
@@ -874,6 +950,9 @@ function finish() {
     else if (r) { if (r.box >= GAP.length) delete ST.srs[id]; else ST.srs[id] = { ...r, box: r.box + 1, due: Date.now() + GAP[r.box] * DAY }; }
   }
   let estHtml = '';
+  const predBefore = predict();
+  S.log.forEach(x => { if (x.t === 'tq') abAdd(x.id, x.ok); }); predMark();
+  const predAfter = predict();
   ST.typ = ST.typ || {};
   S.log.forEach(x => { const q = TBY[x.id]; if (q) ST.typ[q.no] = (ST.typ[q.no] || []).concat(x.ok ? 1 : 0).slice(-10); });
   const missNo = {}; S.log.forEach(x => { const q = TBY[x.id]; if (q && !x.ok) missNo[q.no] = (missNo[q.no] || 0) + 1; });
@@ -908,6 +987,7 @@ function finish() {
       <div class="gbar${ST.dayXp >= ST.goal ? ' full' : ''}"><i id="dgFill" style="width:${Math.min(100, dayBefore / ST.goal * 100)}%" data-w="${Math.min(100, ST.dayXp / ST.goal * 100)}"></i></div>
       <div class="r" style="margin-top:6px"><span>Lv ${L2.lv}</span><em>${L2.cur} / ${L2.need} XP</em></div>
       <div class="lbar"><i id="dlFill" style="width:${lvUp ? 0 : (L2.cur - xp) / L2.need * 100}%" data-w="${L2.cur / L2.need * 100}"></i></div></div>
+    ${predAfter ? (() => { const d = predBefore ? predAfter.II - predBefore.II : 0; return `<div class="pdone"><small>TOPIK II 预测分</small><b id="pdN" data-from="${predBefore ? predBefore.II : predAfter.II}" data-to="${predAfter.II}">${predBefore ? predBefore.II : predAfter.II}</b><span class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + (-d) : '持平'}</span><em>${predAfter.II >= 150 ? '已到 4 级线' : predAfter.II >= 120 ? '离 4 级还差 ' + (150 - predAfter.II) + ' 分' : '离 3 级还差 ' + (120 - predAfter.II) + ' 分'}</em></div>`; })() : ''}
     ${estHtml}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
     ${focus && !S.mode.startsWith('type-') ? `<div class="hero rev" style="text-align:left"><div class="meta">这组错得最多</div><h2>${esc(NO[focus] || focus)}</h2><p>先看 3 条解题方法，再专门刷这一类</p><button class="btn blue" id="goFocus">专项突破</button></div>` : ''}
@@ -918,6 +998,7 @@ function finish() {
   setTimeout(() => { ['dgFill', 'dlFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }, 300);
   const t0 = performance.now(), up = now => { const k = Math.min(1, (now - t0) / 700), e = $('xpUp'); if (!e) return; e.textContent = '+' + Math.round(xp * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(up); };
   requestAnimationFrame(up);
+  const pd = $('pdN'); if (pd && pd.dataset.from !== pd.dataset.to) { const a = +pd.dataset.from, b = +pd.dataset.to; setTimeout(() => { const t1 = performance.now(), f = now => { const k = Math.min(1, (now - t1) / 900); pd.textContent = Math.round(a + (b - a) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(f); else pd.classList.add('bump'); }; requestAnimationFrame(f); }, 500); }
 }
 
 if (!ST.capInit) { ST.cap = 2; ST.capInit = 1; if ((ST.tier || 1) > 2) ST.tier = 2; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} }   // 不改 ts，免得盖过云端   // 11-26：先把初级做熟
