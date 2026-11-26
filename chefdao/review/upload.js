@@ -141,8 +141,8 @@ async function cuUpload(o) {
   // 文件名里的 _V10_ 是这个阶段的第 10 个，不是页面里的 V10：新版本一律接在最后（下一个空号），不按文件名编号填空位，也不覆盖。
   // 只有歌曲页里你确认过「覆盖」（overwrite）或助理重交自己的待确认版本才用指定的号。
   // 2026-11-21：看板上传 Mix V10 填进了删掉的旧空号 V10，排在混音 4 和混音 6 中间，后面版本的编号全错开一位
-  if (ver !== 'REF' && !o.overwrite && !String(o.key || '').startsWith('hp_')) ver = prep.next;
-  if (!/^(V\d{1,3}|REF)$/.test(ver)) throw new Error('版本要写成 V1、V2 这样');
+  if (!/^REF[23]?$/.test(ver) && !o.overwrite && !String(o.key || '').startsWith('hp_')) ver = prep.next;
+  if (!/^(V\d{1,3}|REF[23]?)$/.test(ver)) throw new Error('版本要写成 V1、V2 这样');
   const fname = ver.toLowerCase() + '-' + [...crypto.getRandomValues(new Uint8Array(8))].map(b => 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 55]).join('') + '.bin';
   step(nParts > 1 ? '上传（' + Math.round(blob.length / 1048576) + 'MB，分 ' + nParts + ' 块）…' : '上传…'); bar(.7);
   for (let pi = 0; pi < nParts; pi++) {

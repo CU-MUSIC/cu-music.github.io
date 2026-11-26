@@ -44,8 +44,11 @@ const relTime = (ts, date) => {
   return (d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '年' : '') + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + hm;
 };
 const cdate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? (+m[2]) + '月' + (+m[3]) + '日' : d; };
-const REFV = S.versions.find(v => v.ver === 'REF') || null;   // 你发给客户的参考曲
-const V = S.versions.filter(v => v.ver !== 'REF');
+const isRefV = v => /^REF[23]?$/.test(v || '');
+const REFVS = S.versions.filter(v => isRefV(v.ver)).sort((x, y) => x.ver.localeCompare(y.ver));   // 你发给客户的参考曲：REF / REF2 / REF3，最多 3 首
+let REFV = REFVS[0] || null;   // 当前选中的那首
+const refTitle = v => String(v.file || v.ver).replace(/\.[^.]+$/, '');
+const V = S.versions.filter(v => !isRefV(v.ver));
 // 版本名精简：「舞步 Edit @ChefDao_V2_1018」→「编辑 V2」；按文件名里的 Edit / Mix / Master 分阶段，编辑在前、混音在后
 const STAGE = { demo: 'Demo', edit: '编辑', mix: '混音', master: '母带' };
 // 预计时间：下一版什么时候出（大字），下面一排各环节预计完成日。都按北京时间、工作日（周一到周五）、20:00 前
@@ -214,6 +217,7 @@ document.body.innerHTML = `
     <div class="ab" id="ab"><button class="press on" id="abMix">混音</button><button class="press" id="abRef">REF</button></div>
     <button class="loud press" id="cmp"${V.length < 2 ? ' hidden' : ''}>对比上一版</button><button class="loud press" id="refPick">＋ 加 REF</button><button class="loud press" id="loopBtn" aria-pressed="false">循环</button><button class="loud press" id="snapBtn" aria-pressed="false" title="点波形、设循环都落在小节线上；点段落只循环这一段">吸附</button><button class="loud press" id="mstBtn" aria-pressed="false">数据</button><input type="file" id="refFile" accept="audio/*,.m4a,.mp3,.wav,.aif,.aiff" hidden></div>
   <div class="refname" id="refName" hidden></div>
+  <div class="refsw" id="refSw" hidden></div>
   <div class="refx" id="refx" hidden><div class="rxw"><canvas id="refWave"></canvas><i id="refHint">点 REF 波形：从那里开始对比</i></div><div class="rxb"><span id="refPos"></span><button class="press" id="raAdd">记住这个对应</button></div><div class="rxl" id="raList"></div></div>
   <div class="cmpat" id="cmpAt" hidden><span id="cmpAtT"></span><input id="cmpAtIn" inputmode="decimal" autocomplete="off" placeholder="0:40"><button class="press" id="cmpAtGo" type="button">对齐</button></div>
   <section class="mst" id="mst" hidden></section>
@@ -1136,7 +1140,7 @@ async function liveCheck() {
       const np = j.song.prog;
       if (np && S.prog && JSON.stringify(np) !== JSON.stringify(S.prog)) { S.prog = np; const sp = document.querySelector('.sprog'); if (sp) sp.outerHTML = progHtml(S.prog); try { renderOk(); renderFee(); } catch (e) {} }
     } catch (e) {}
-    const nv = (j.song.versions || []).filter(v => v.ver !== 'REF'), fresh = nv.filter(v => !V.some(x => x.ver === v.ver) && !liveSeen.has(v.ver));
+    const nv = (j.song.versions || []).filter(v => !isRefV(v.ver)), fresh = nv.filter(v => !V.some(x => x.ver === v.ver) && !liveSeen.has(v.ver));
     if (fresh.length && !$('#newsb')) {
       const v = fresh[fresh.length - 1];
       fresh.forEach(x => liveSeen.add(x.ver));
@@ -1873,7 +1877,7 @@ function ownerTools() {
     const ed = document.createElement('button'); ed.className = 'press'; ed.textContent = '改类别'; ed.onclick = () => editVer(V[0]); own.appendChild(ed);
   }
   let loading = null;
-  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122x'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
+  const lib = () => loading || (loading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }));
   // 一次拖多个（如 _V13A_ + _V13B_）：按文件名排好，问一次，依次传，传完一起刷新
   async function upMany(list) {
     const fs = [...(list || [])].filter(f => /\.(m4a|mp3|wav|aiff?)$/i.test(f.name) || /^audio\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -1915,21 +1919,21 @@ function ownerTools() {
     } catch (e) { own.classList.remove('busy'); busy(/HTTP|^[a-z]+$/.test(e.message) ? '没传成功（' + e.message + '），再试一次' : e.message); }
   }
   // 发给客户的 REF：和版本一样加密上传，客户的审听页就能直接切换对比
-  const rb = document.createElement('button'); rb.className = 'press'; rb.textContent = REFV ? '换 REF（客户可见）' : '上传 REF 给客户';
+  const rb = document.createElement('button'); rb.className = 'press'; rb.textContent = REFVS.length < 3 ? '上传 REF 给客户（' + REFVS.length + ' / 3）' : '换 REF（客户可见）';
   const rf = document.createElement('input'); rf.type = 'file'; rf.accept = 'audio/*,.m4a,.mp3,.wav,.aif,.aiff'; rf.hidden = true;
   rb.onclick = () => rf.click(); own.appendChild(rb); own.appendChild(rf);
   rf.onchange = async () => {
-    const f = rf.files[0]; if (!f || own.classList.contains('busy')) return;
-    if (!confirm('把「' + f.name + '」作为《' + S.title + '》的 REF 发给客户？')) return;
+    const f = rf.files[0]; rf.value = ''; if (!f || own.classList.contains('busy')) return;
+    const ver = refSlotPick('add', f.name); if (!ver) return;
     try { await lib(); own.classList.add('busy');
-      await cuUpload({ api: live.api, key, file: f, slug: S.slug, ver: 'REF', step: busy, bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
+      await cuUpload({ api: live.api, key, file: f, slug: S.slug, ver, step: busy, bar: p => own.style.setProperty('--p', Math.round(p * 100) + '%') });
       busy('REF 已上线'); setTimeout(() => softReload(), 300);
     } catch (e) { own.classList.remove('busy'); busy(e.message); }
   };
-  if (REFV) {
+  if (REFVS.length) {
     const xb = document.createElement('button'); xb.className = 'press'; xb.textContent = '删除 REF';
-    xb.onclick = async () => { if (!confirm('删除发给客户的 REF？')) return;
-      try { await post('/radm/del', { slug: S.slug, ver: 'REF' }); softReload(); } catch (e) { busy('没删掉，检查网络再试'); } };
+    xb.onclick = async () => { const ver = refSlotPick('del'); if (!ver) return;
+      try { await post('/radm/del', { slug: S.slug, ver }); softReload(); } catch (e) { busy('没删掉，检查网络再试'); } };
     own.appendChild(xb);
   }
   iconize(); new MutationObserver(() => iconize()).observe(own, { childList: true });   // 后加进来的按钮（费用、REF、删除）也换成图标
@@ -2203,7 +2207,7 @@ async function setRef(buf, name, lufs) {
 function setAB(x) {
   if (x === 'ref' && !REF) return;
   if (!graph()) return;
-  AB = x; applyGains(); if (typeof rlpSlots === 'function') rlpSlots();
+  AB = x; applyGains(); if (typeof rlpSlots === 'function') rlpSlots(); refSwUi();
 }
 /* ───────── 对比版本：把另一个版本当作 B，和当前版本（A）无缝来回切 ─────────
    复用 REF 的同步播放：B 解码进内存，跟着 A 的位置播，切换只是两路音量交叉淡变，不中断。
@@ -2211,7 +2215,7 @@ function setAB(x) {
 let CMP = -1, loudBefore = null;
 const abLabels = () => {
   $('#abMix').textContent = CMP >= 0 ? vname(V[vi]) : '混音'; $('#abRef').textContent = CMP >= 0 ? vname(V[CMP]) : 'REF';
-  $('#cmp').textContent = CMP >= 0 ? '退出对比' : '对比上一版'; $('#cmp').classList.toggle('on', CMP >= 0);
+  $('#cmp').textContent = CMP >= 0 ? '退出对比' : '对比上一版'; $('#cmp').classList.toggle('on', CMP >= 0); refSwUi();
 };
 
 /* 片段对齐：把短音频放到长音频的时间轴上。
@@ -2354,7 +2358,7 @@ $('#refPick').onclick = () => { graph(); IS_OWNER ? rlpToggle(true) : $('#refFil
 const RMAX = 3, rslKey = 'review:rsl:' + S.slug;
 let RLIB = null, RLAT = 0, RLHAVE = new Set(), rlPre = null, rlibP = null, RSL = [], RSA = -1, rlpG = '', rlUpG = store.get('review:rlupg') || '', RLQ = [], rlBusy = false;
 const rlibLoad = () => rlibP || (rlibP = new Promise((ok, no) => { if (window.cuRefLib) return ok(); const sc = document.createElement('script'); sc.src = '../reflib.js?v=20261109p'; sc.onload = ok; sc.onerror = () => { rlibP = null; no(new Error('reflib')); }; document.head.appendChild(sc); }));
-const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261122x'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+const upLoad = () => window.cuEnc ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '../upload.js?v=20261126a'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
 const rlName = x => (x.artist ? x.artist + ' - ' : '') + String(x.title).replace(/\s*\(\d+\.\d+-\d+\.\d+\)$/, '');
 const rlKey = () => store.get('insights:key');
 function rslSave() { store.set(rslKey, JSON.stringify(RSL.filter(x => x.lib).map(x => x.id))); }
@@ -2383,7 +2387,7 @@ function rlpBuild() {
   $('#rlpS').onclick = e => {
     const it = e.target.closest('[data-s]'); if (!it) return; const i = +it.dataset.s;
     if (e.target.closest('.rs-x')) return dropSlot(i);
-    if (i === -9) return useShared();
+    if (i <= -9) return useShared(-9 - i);
     useSlot(i);
   };
   const ug = $('#rlpUG');
@@ -2514,7 +2518,7 @@ function rlpSlots() {
   const S0 = $('#rlpS'); if (!S0) return;
   const act = i => REF && !RX_SHARED && CMP < 0 && RSA === i;
   S0.innerHTML = RSL.map((s, i) => `<div class="rs-i${act(i) ? ' on' : ''}${act(i) && AB === 'ref' ? ' live' : ''}" data-s="${i}"><button class="rs-go press"><em>${i + 1}</em><b>${esc(s.name)}</b></button><button class="rs-x press" aria-label="移除">×</button></div>`).join('')
-    + (REFV ? `<div class="rs-i${REF && RX_SHARED ? ' on' : ''}${REF && RX_SHARED && AB === 'ref' ? ' live' : ''}" data-s="-9"><button class="rs-go press"><em>客</em><b>发给客户的 REF</b></button></div>` : '')
+    + REFVS.map((v, k) => { const on = REF && RX_SHARED && REFV === v; return `<div class="rs-i${on ? ' on' : ''}${on && AB === 'ref' ? ' live' : ''}" data-s="${-9 - k}"><button class="rs-go press"><em>客${REFVS.length > 1 ? k + 1 : ''}</em><b>${esc(refTitle(v))}</b></button></div>`; }).join('')
     + (RSL.length < RMAX ? `<div class="rs-e">${RSL.length ? '还能再挂 ' + (RMAX - RSL.length) + ' 首' : '从下面点一首挂上来，最多 3 首'}</div>` : '');
   const el = $('#rlp'); if (el) el.querySelectorAll('.rlp-ab [data-ab]').forEach(b => b.classList.toggle('on', b.dataset.ab === (REF && AB === 'ref' ? 'ref' : 'mix')));
   const t = $('#rlpTab'); if (t) t.textContent = REF && AB === 'ref' ? 'REF ●' : 'REF';
@@ -2553,11 +2557,28 @@ function dropSlot(i) {
   if (was) clearRef();
   rslSave(); rlpSlots(); rlpList();
 }
-function useShared() {
-  if (!REFV) return; if (CMP >= 0) stopCmp();
-  if (REF && RX_SHARED) { setAB(AB === 'ref' ? 'mix' : 'ref'); return; }
-  REF = null; refBuf = null; refStop(); RSA = -1; loadShared().then(rlpSlots);
+function useShared(k) {
+  const nv = REFVS[k] || REFV; if (!nv) return; if (CMP >= 0) stopCmp();
+  if (REF && RX_SHARED && nv === REFV) { setAB(AB === 'ref' ? 'mix' : 'ref'); return; }
+  REFV = nv; REF = null; refBuf = null; refStop(); RSA = -1; refSwUi(); loadShared().then(() => { rlpSlots(); refSwUi(); });
 }
+// 发给客户的 REF 选哪个位置：还有空位就加新的；满 3 首 / 删除时问第几首
+function refSlotPick(act, name) {
+  const free = ['REF', 'REF2', 'REF3'].find(n => !REFVS.some(v => v.ver === n));
+  if (act === 'add' && free) return confirm('把「' + name + '」作为《' + S.title + '》的第 ' + (REFVS.length + 1) + ' 首 REF 发给客户？\n会用这首歌的审听密码加密上传，客户能听到。') ? free : null;
+  if (REFVS.length === 1 && act === 'del') return confirm('删除发给客户的 REF「' + refTitle(REFVS[0]) + '」？') ? REFVS[0].ver : null;
+  const s = prompt((act === 'del' ? '删除' : '已经 3 首了，替换') + '第几首？\n' + REFVS.map((v, i) => (i + 1) + '. ' + refTitle(v)).join('\n'), '');
+  const v = REFVS[(+s || 0) - 1]; return v ? v.ver : null;
+}
+// 客户页：发了不止一首 REF 时，在 REF 名字下面列出来切换
+function refSwUi() {
+  const el = $('#refSw'); if (!el) return;
+  if (REFVS.length < 2) { el.hidden = true; return; }
+  el.hidden = false;
+  let sh = false; try { sh = !!(REF && RX_SHARED); } catch (e) {}   // 初始化早于 RX_SHARED 声明时
+  el.innerHTML = REFVS.map((v, k) => `<button class="press${sh && REFV === v ? ' on' : ''}" data-k="${k}"><em>${k + 1}</em>${esc(refTitle(v))}</button>`).join('');
+}
+$('#refSw').onclick = e => { const b = e.target.closest('[data-k]'); if (b) { graph(); useShared(+b.dataset.k); } };
 // REF 按钮 / R 键：没载入时，优先打开上次用的槽位，其次第一个槽位，再其次你发给客户的 REF
 function refOn() { if (REF) return setAB('ref'); if (RSL.length) return useSlot(Math.max(0, Math.min(RSA, RSL.length - 1))); if (REFV) return useShared(); if (IS_OWNER) rlpToggle(true); }
 async function rlpUpload(files, entries) {
@@ -2584,13 +2605,13 @@ async function rlpUploadPairs(items) {
 async function rlibSend(x) {
   const live = window.SONG_LIVE, key = rlKey(); if (!live || !key) return;
   const name = rlName(x);
-  if (!confirm((REFV ? '替换现在发给客户的 REF，' : '') + '把「' + name + '」作为《' + S.title + '》的 REF 发给客户？\n会用这首歌的审听密码重新加密上传，客户能听到。')) return;
+  const ver = refSlotPick('add', name); if (!ver) return;
   hud('准备上传 REF…', 60000);
   try {
     await Promise.all([rlibLoad(), upLoad()]);
     const plain = await cuRefLib.open(API_BASE, key, x);
     const file = new File([plain], name.replace(/[\\/:*?"<>|]/g, ' ') + (x.mime === 'audio/mpeg' ? '.mp3' : '.m4a'), { type: x.mime || 'audio/mp4' });
-    await cuUpload({ api: live.api, key, file, slug: S.slug, ver: 'REF', step: t => hud(t, 60000), bar: () => {} });
+    await cuUpload({ api: live.api, key, file, slug: S.slug, ver, step: t => hud(t, 60000), bar: () => {} });
     hud('REF 已发给客户'); setTimeout(() => softReload(), 400);
   } catch (e) { hud('没传成功：' + (e.message || '检查网络'), 5000); }
 }
@@ -2604,7 +2625,7 @@ async function loadShared() {   // 你发给客户的 REF：和版本一样加�
   try { const r = await fetch(REFV.audio); const plain = await open(KEY, new Uint8Array(await r.arrayBuffer()));
     RX_SHARED = true; await setRef(plain, REFV.file || 'REF', REFV.lufs); setAB('ref'); } catch (e) { $('#refName').textContent = 'REF 载入失败，刷新再试'; }
 }
-if (REFV) { $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; }
+if (REFV) { $('#ab').classList.add('has'); $('#refPick').textContent = '换 REF'; refSwUi(); }
 if (IS_OWNER) setTimeout(() => { if (store.get('review:rlp') === '1' && !matchMedia('(max-width:899px)').matches) rlpToggle(true); else { rlpBuild(); rlpLoad(); } }, 600);
 document.addEventListener('keydown', e => {
   if (/TEXTAREA|INPUT|SELECT/.test(e.target.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;   // Shift+1/2/3 切 REF 槽位
@@ -2616,17 +2637,19 @@ document.addEventListener('keydown', e => {
    存了以后：混音播到哪一段，REF 自动跳到对应的地方，段内按同样的相对位置走；循环一段时 REF 也跟着循环那一段。
    你发给客户的 REF：你在自己设备上存的对应点所有人都能用；客户自己存的只在他那台设备上。本地选的 REF 只存在本机 */
 let RX_SHARED = false, RA = [], raMan = null, raZone = -2, rxPk = null;
-const rxKey = () => 'review:ra:' + S.slug + ':' + (RX_SHARED ? 'shared' : (REF ? REF.name : '') + '|' + (refBuf ? Math.round(refBuf.duration) : 0));
+// 对应点存服务器的只有第 1 首客户 REF（REF）；REF2 / REF3 先存本机
+const rxSrv = () => RX_SHARED && REFV && REFV.ver === 'REF';
+const rxKey = () => 'review:ra:' + S.slug + ':' + (RX_SHARED ? 'shared' + (REFV && REFV.ver !== 'REF' ? REFV.ver : '') : (REF ? REF.name : '') + '|' + (refBuf ? Math.round(refBuf.duration) : 0));
 const rxOn = () => !!(REF && refBuf && CMP < 0);
 function raLoad() {
   let mine = null; try { mine = JSON.parse(store.get(rxKey()) || 'null'); } catch (e) {}
-  const srv = RX_SHARED && Array.isArray(S.refcues) ? S.refcues : [];
+  const srv = rxSrv() && Array.isArray(S.refcues) ? S.refcues : [];
   RA = (Array.isArray(mine) ? mine : srv).filter(x => Number.isFinite(+x.p) && Number.isFinite(+x.t)).map(x => ({ p: +x.p, t: +x.t, n: String(x.n || '') })).sort((x, y) => x.p - y.p);
 }
 async function raSave() {
   RA.sort((x, y) => x.p - y.p);
   const key = store.get('insights:key'), live = window.SONG_LIVE;
-  if (RX_SHARED && IS_OWNER && key && live) {   // 你的设备：存到服务器，客户打开就是你对好的
+  if (rxSrv() && IS_OWNER && key && live) {   // 你的设备：存到服务器，客户打开就是你对好的
     try { const r = await fetch(live.api + '/radm/meta', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: S.slug, refcues: RA }) });
       if (!(await r.json()).ok) throw 0; S.refcues = RA.slice(); store.del(rxKey()); return; } catch (e) {}
   }

@@ -462,7 +462,7 @@ async function epFetch(t) {   // → { url 解密后的音频, plain, ver, title
   if (EP.pre[t.slug]) return EP.pre[t.slug];
   return EP.pre[t.slug] = (async () => {
     const j = await (await fetch(API + '/rs?s=' + t.slug + '&tok=' + tok, { cache: 'no-store', headers: ls.get('insights:key') ? { Authorization: 'Bearer ' + ls.get('insights:key') } : {} })).json();
-    if (!j.ok) throw new Error('song'); const S = j.song, v = S.versions.filter(x => x.ver !== 'REF').pop(); if (!v) throw new Error('empty');
+    if (!j.ok) throw new Error('song'); const S = j.song, v = S.versions.filter(x => !/^REF[23]?$/.test(x.ver)).pop(); if (!v) throw new Error('empty');
     const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(ls.get('review:pw:' + t.slug) || 'cu-open'), 'PBKDF2', false, ['deriveKey']);
     const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: ub64(S.salt), iterations: S.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
     const au = await (await fetch(v.audio.startsWith('/') ? API + v.audio : v.audio)).arrayBuffer();
@@ -737,6 +737,6 @@ const saved = P.auto || (P.open ? '' : ls.get('review:pj:' + slug)), sk = saved 
 if (sk) open(saved, sk); else setTimeout(focus, 300);
 })();
 </script>
-<script>try { if (window.top === window && !document.getElementById('cuStage') && localStorage.getItem('insights:key') && /[?&]noshell\b/.test(location.search)) { const s = document.createElement('script'); s.src = '../side.js?v=20261123h'; document.body.appendChild(s); } } catch (e) {}</script>
+<script>try { if (window.top === window && !document.getElementById('cuStage') && localStorage.getItem('insights:key') && /[?&]noshell\b/.test(location.search)) { const s = document.createElement('script'); s.src = '../side.js?v=20261126a'; document.body.appendChild(s); } } catch (e) {}</script>
 </body>
 </html>

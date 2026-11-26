@@ -1191,7 +1191,7 @@ body.rlp-on .rlp-tab{display:none}
 .clipb svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linejoin:round}
 .clipb:hover,.clipb.on{color:var(--text)}
 .clipb[hidden]{display:none}
-.cliptip{position:absolute;right:-6px;bottom:calc(100% + 10px);white-space:nowrap;padding:6px 11px;border-radius:10px;background:var(--pearl,#ecebe6);color:var(--ink,#16171a);font-size:13px;font-weight:500;line-height:1.3;pointer-events:none;animation:ctip .5s cubic-bezier(.2,.8,.2,1) both}
+.cliptip{position:absolute;right:-6px;bottom:calc(100% + 10px);white-space:nowrap;padding:6px 11px;border-radius:10px;background:var(--pearl,#ecebe6);color:var(--ink,var(--bg));font-size:13px;font-weight:500;line-height:1.3;pointer-events:none;animation:ctip .5s cubic-bezier(.2,.8,.2,1) both}
 .cliptip::after{content:'';position:absolute;right:16px;top:100%;border:6px solid transparent;border-top-color:var(--pearl,#ecebe6)}
 .cliptip[hidden]{display:none}
 @keyframes ctip{from{opacity:0;transform:translateY(6px)}}
@@ -1323,3 +1323,10 @@ html.tune-on{overflow:hidden}
 .rfbtn button{flex:1;min-height:46px;border-radius:14px;font:inherit;font-size:15px;font-weight:600;border:.5px solid var(--hair);background:transparent;color:var(--text-2)}
 .rfbtn .rfok{border:1px solid rgba(143,199,162,.5);background:rgba(143,199,162,.08);color:#9fd2b0;font-weight:700}
 .rfbtn .rfok:disabled{opacity:.4}
+/* 客户 REF 不止一首：名字下面一排切换 */
+.refsw{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:-2px 0 10px;animation:cuIn .32s cubic-bezier(.2,.8,.2,1)}
+.refsw[hidden]{display:none}
+.refsw button{display:inline-flex;align-items:center;gap:6px;max-width:220px;padding:5px 11px 5px 6px;border-radius:999px;border:.5px solid var(--fill-3);background:transparent;color:var(--text-2);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .2s,color .2s,border-color .2s}
+.refsw button em{font-style:normal;display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--fill-3);font-size:10.5px;flex:none;transition:background .2s,color .2s}
+.refsw button.on{background:var(--text);color:var(--bg);border-color:transparent}
+.refsw button.on em{background:var(--bg);color:var(--text)}
