@@ -270,7 +270,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .pt{font-size:14px;font-weight:700;color:var(--tx2)}.pt b{color:var(--o);font-size:16px}
 .prow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--bd)}
 .prow span{font-weight:800;width:72px}.prow b{font-size:18px;font-weight:900}.prow small{flex-basis:100%;font-size:13px;color:var(--tx2);padding-left:82px}
-.prow.big b{font-size:28px;color:var(--o)}.prow em{font-style:normal;font-size:14px;color:var(--tx3)}
+.prow.main b{font-size:28px;color:var(--o)}.prow em{font-style:normal;font-size:14px;color:var(--tx3)}
 .pdone{border:2px solid #ffd58a;background:#fff7e6;border-radius:16px;padding:12px 16px;margin:0 0 12px;text-align:left;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;animation:fadeUp .4s ease-out}
 @media (prefers-color-scheme:dark){.pdone{background:#33270f;border-color:#6b4d12}}
 .pdone small{flex-basis:100%;font-size:12px;font-weight:800;color:var(--tx2)}.pdone b{font-size:36px;font-weight:900;color:var(--o);line-height:1.1;display:inline-block;transition:transform .3s}
@@ -675,7 +675,7 @@ function predSheet() {
   const p = predict(); if (!p) return;
   const row = (n, v, sub) => `<div class="prow"><span>${n}</span><b>${v}</b><small>${sub}</small></div>`, pct = k => Math.round((.25 + .75 * k) * 100) + '%';
   sheet(`<h3>TOPIK 预测分</h3>
-    <div class="prow big"><span>TOPIK II</span><b>${p.II} <em>±${p.pm}</em></b><small>${p.g2 ? p.g2 + ' 级' : '未到 3 级'} · 3 级 120 / 4 级 150</small></div>
+    <div class="prow main"><span>TOPIK II</span><b>${p.II} <em>±${p.pm}</em></b><small>${p.g2 ? p.g2 + ' 级' : '未到 3 级'} · 3 级 120 / 4 级 150</small></div>
     ${row('听力', p.L.II + ' / 100', '1 级题 ' + pct(p.L.k[0]) + ' · 2 级题 ' + pct(p.L.k[1]))}
     ${row('阅读', p.R.II + ' / 100', '1 级题 ' + pct(p.R.k[0]) + ' · 2 级题 ' + pct(p.R.k[1]))}
     ${row('写作', '约 ' + p.W + ' / 100', '按阅读听力水平推算')}
