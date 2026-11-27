@@ -417,7 +417,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 const _t = Math.floor(Date.now() / 6e5);
 // 一打开就先去拿云端进度，和题库并行下载
 try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=30', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
-document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script><script src="grammar.js?t=' + _t + '"><\/script><script src="freq.js?t=' + _t + '"><\/script><script src="ex.js?t=' + _t + '"><\/script><script src="ask.js?t=' + _t + '"><\/script>');
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script><script src="grammar.js?t=' + _t + '"><\/script><script src="freq.js?t=' + _t + '"><\/script><script src="ex.js?t=' + _t + '"><\/script><script src="ask.js?t=' + _t + '"><\/script><script src="exd.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
@@ -716,18 +716,19 @@ function lvPool(sec) {   // 当前级优先，低一级垫底；写作 51–52 �
   const t = tier();
   return TQ.filter(q => (!sec || q.sec === sec) && lvOf(q) <= t && !(q.sec === 'W' && t < 3)).sort((a, b) => lvOf(b) - lvOf(a));
 }
-function pickFresh(sec, n, skip = new Set()) {
-  const seen = ST.tseen || {}, pool = lvPool(sec).filter(q => !skip.has(q.id)), t = tier();
+function pickFresh(sec, n, skip = new Set()) {   // 顺序：没做过的 / 到期该复习的 → 全做完了才重复，先出最久没见的
+  const seen = ST.tseen || {}, pool = lvPool(sec).filter(q => !skip.has(q.id)), t = tier(), now = Date.now();
+  const fresh = q => !seen[q.id] || (ST.srs[q.id] && ST.srs[q.id].due <= now);
+  const by = f => { const p = pool.filter(f); return shuffle(p.filter(q => !seen[q.id])).concat(shuffle(p.filter(q => seen[q.id] && fresh(q)))); };
+  const used = new Set(), out = [], take = (arr, k) => arr.filter(q => !used.has(q)).slice(0, Math.max(0, Math.min(k, n - out.length))).forEach(q => { used.add(q); out.push(q); });
   if ((sec === 'L' || sec === 'R') && t >= 3) {   // 听力 / 阅读梯子：中级看不懂时多出过渡题（lv 2.5），中级题按最近正确率慢慢加量
     const h = ((ST.ab || {})[sec + '3'] || []).slice(-10), acc = h.length >= 4 ? h.filter(Boolean).length / h.length : 0;
-    const n3 = Math.round(n * (acc < .5 ? .25 : acc < .7 ? .5 : acc < .85 ? .75 : 1)), nb = Math.round((n - n3) * .75);
-    const by = f => { const p = pool.filter(f); return shuffle(p.filter(q => !seen[q.id])).concat(shuffle(p.filter(q => ST.srs[q.id])), shuffle(p)); };
-    const used = new Set(), out = [];
-    [[by(q => lvOf(q) >= 3), n3], [by(q => lvOf(q) === 2.5), nb], [by(q => lvOf(q) === 2).concat(by(q => lvOf(q) < 2)), n]].forEach(([arr, k]) => [...new Set(arr)].filter(q => !used.has(q)).slice(0, Math.max(0, Math.min(k, n - out.length))).forEach(q => { used.add(q); out.push(q); }));
-    return shuffle(out);
-  }
-  const order = shuffle(pool.filter(q => !seen[q.id] && lvOf(q) === t)).concat(shuffle(pool.filter(q => !seen[q.id])), shuffle(pool.filter(q => ST.srs[q.id])), shuffle(pool));
-  return [...new Set(order)].slice(0, n);
+    const r = acc < .5 ? .25 : acc < .7 ? .5 : acc < .85 ? .75 : 1, n3 = Math.floor(n * r + Math.random()), nb = Math.floor((n - n3) * .75 + Math.random());   // 只抽 1 题时也按比例
+    take(by(q => lvOf(q) >= 3), n3); take(by(q => lvOf(q) === 2.5), nb);
+    [q => lvOf(q) === 2.5, q => lvOf(q) === 2, q => lvOf(q) >= 3, q => lvOf(q) < 2].forEach(f => take(by(f), n));
+  } else { take(by(q => lvOf(q) === t), n); take(by(() => true), n); }
+  take(shuffle(pool.slice()).sort((a, b) => (+seen[a.id] || 0) - (+seen[b.id] || 0)), n);
+  return shuffle(out);
 }
 function typeStats() {   // 每个题型的正确率（最近 10 次），用来找弱项
   const out = {};
@@ -827,7 +828,9 @@ function eCorpus() {   // 有中文翻译的句子库：例句 + 课文 + 变形
 function eSent(w) {   // 找一句含这个词的句子，返回 {k, z, f(句子里的样子)}
   const C = eCorpus(), own = C.filter(x => x.w === w);
   const hits = own.length ? own : C.filter(x => x.toks && x.toks.some(([, b]) => b === w)).map(x => ({ ...x, f: x.toks.find(([, b]) => b === w)[0] }));
-  return hits.length ? shuffle(hits.slice())[0] : null;
+  const D = window.KO_EXD || {}, dOf = x => D[w + '|' + x.k], real = hits.filter(x => !(dOf(x) || {}).skip), good = real.filter(dOf);   // skip = 同形词误匹配；优先用配了干扰项的句子
+  const pool = good.length ? good : real;
+  return pool.length ? shuffle(pool.slice())[0] : null;
 }
 function eAcc() { const l = S && S.log ? S.log.slice(-12) : []; return l.length < 4 ? .75 : l.filter(x => x.ok).length / l.length; }
 function eRound() {
@@ -844,23 +847,23 @@ function eRound() {
     const W0 = WBY[k], ws = wdOpts(W0), st = eSent(k);
     items.push({ kind: 'tq', id: 'E:w:' + k + ':' + R, wk: k, wnew: 1, tag: tag('新词'), q: { id: 'E:w:' + k, sec: 'R', no: 'E', q: `<div class="enw"><button class="spk" data-say="${esc(k)}">${ICON_SPK}</button><b class="ko">${esc(k)}</b></div><small class="qz">这个词是什么意思？${(F[k] || 0) >= 3 ? ' · 真题出现 ' + F[k] + ' 次' : ''}</small>`, ch: ws.map(x => x.z), a: ws.indexOf(W0), ex: [hjInfo(k) ? '汉字 ' + KO_HJ[k].split(' / ')[0] + '：' + hjInfo(k).txt : (window.KO_HJ || {})[k] && '汉字：' + KO_HJ[k], (window.KO_EN || {})[k] && '来自英语：' + KO_EN[k]].filter(Boolean).join(' · '), say: k, tz: hjInfo(k) ? '汉字：' + hjInfo(k).pairs.map(p => p.y + '=' + p.s).join(' + ') + '（中文写作「' + hjInfo(k).word + '」，意思可能不一样）' : '' } });   // 💡 提示 = 先看汉字自己猜
     if (st && acc >= .8) items.push(eFill(k, st, tag('在句子里用出来')));   // 对得多：新词直接在句子里填空（要自己想起来）
-    else if (st) { const ds = ePairs(k, st, ws); if (ds.length === 3) { const ch = shuffle([st.z].concat(ds)); items.push({ kind: 'tq', id: 'E:s:' + k + ':' + R, wk: k, tag: tag('在句子里认出它'), q: { id: 'E:s:' + k, sec: 'R', no: 'E', q: `<div class="ko esent">${esc(st.k).replace(esc(st.f), '<b class="hl">' + esc(st.f) + '</b>')}</div><small class="qz">整句是什么意思？看加粗的词</small>`, ch, a: ch.indexOf(st.z), ex: '', say: st.k } }); } }
+    else if (st) { const ds = ePairs(k, st); if (ds.length < 3) items.push(eFill(k, st, tag('在句子里用出来'))); else { const ch = shuffle([st.z].concat(ds)); items.push({ kind: 'tq', id: 'E:s:' + k + ':' + R, wk: k, tag: tag('在句子里认出它'), q: { id: 'E:s:' + k, sec: 'R', no: 'E', q: `<div class="ko esent">${esc(st.k).replace(esc(st.f), '<b class="hl">' + esc(st.f) + '</b>')}</div><small class="qz">整句是什么意思？看加粗的词，也看语法</small>`, ch, a: ch.indexOf(st.z), ex: '', say: st.k } }); } }
   });
   rev.forEach(k => items.push(eFill(k, eSent(k), tag('复习 · 句子填空'))));
-  const sec = R % 2 ? 'R' : 'L', q = pickFresh(sec, 1)[0]; if (q) items.push({ ...topEx(q), tag: tag(sec === 'R' ? '阅读' : '听力') });
+  const sec = R % 2 ? 'R' : 'L', q = pickFresh(sec, 1, new Set(((S && S.items) || []).map(x => x.q && x.q.id)))[0]; if (q) items.push({ ...topEx(q), tag: tag(sec === 'R' ? '阅读' : '听力') });
   if (S) { S.eRound = R; S.eUsed = [...used, ...news, ...rev]; }
   return items;
 }
-function ePairs(k, st, ws) {   // 干扰项 = 同一句中文，只把这个词换成别的词的意思（要真认识这个词才选得对）；换不了就退回别的句子
-  const W0 = WBY[k], parts = W0.z.split(/\s*[\/、]\s*|（.*?）/).map(x => x.trim()).filter(Boolean), p = parts.find(x => st.z.includes(x));
-  const out = [];
-  if (p) ws.filter(x => x !== W0).forEach(x => { const r = x.z.split(/\s*[\/、]\s*|（.*?）/).map(y => y.trim()).filter(Boolean)[0]; const t = r && st.z.replace(p, r); if (t && t !== st.z && !out.includes(t)) out.push(t); });
-  if (out.length < 3) { const C = eCorpus(), L = st.z.length; shuffle(C.filter(x => x.z !== st.z && Math.abs(x.z.length - L) <= Math.max(6, L * .5))).slice(0, 3 - out.length).forEach(x => out.push(x.z)); }
-  return out.slice(0, 3);
+function ePairs(k, st) {   // 干扰项是 exd.js 里逐句写好的通顺中文：g = 同一个词换语法意思，w = 换词的意思。没配好的句子返回空（改出填空题）
+  const d = (window.KO_EXD || {})[k + '|' + st.k]; if (!d || d.skip) return [];
+  const g = shuffle((d.g || []).slice()), w = shuffle((d.w || []).slice()), n = Math.random() < .5 ? 1 : 2;   // 语法 1 或 2 个轮着来，免得看「多数派」就能猜
+  return g.slice(0, n).concat(w, g.slice(n)).slice(0, 3);
 }
-function eFill(k, st, tg) {   // 句子填空：给整句中文，空里选哪个词（选项是原形）
-  const W0 = WBY[k], ws = wdOpts(W0);
-  return { kind: 'tq', id: 'E:f:' + k + ':' + ((S && S.eRound) || 0), wk: k, tag: tg, q: { id: 'E:f:' + k, sec: 'R', no: 'E', q: `<div class="ko esent">${esc(st.k).replace(esc(st.f), '<b class="fz">(　　)</b>')}</div><small class="qz">${esc(st.z)}<br>空里是哪个词？（选项是原形）</small>`, ch: ws.map(x => x.k), cz: ws.map(x => x.z), a: ws.indexOf(W0), ex: `${k} = ${W0.z}，句子里变成了「${st.f}」`, say: st.k } };
+function eFill(k, st, tg) {   // 句子填空：选项直接是填进空里的形式（exd.js 的 f = [形式, 原形, 中文]），不用从原形转换；没配 f 的句子才退回原形选项
+  const W0 = WBY[k], d = (window.KO_EXD || {})[k + '|' + st.k] || {};
+  const opts = (d.f || []).length >= 3 ? shuffle([[st.f, k, W0.z]].concat(shuffle(d.f.slice()).slice(0, 3))) : null;
+  const ws = opts ? null : wdOpts(W0);
+  return { kind: 'tq', id: 'E:f:' + k + ':' + ((S && S.eRound) || 0), wk: k, tag: tg, q: { id: 'E:f:' + k, sec: 'R', no: 'E', q: `<div class="ko esent">${esc(st.k).replace(esc(st.f), '<b class="fz">(　　)</b>')}</div><small class="qz">${esc(st.z)}<br>空里填哪个？${opts ? '' : '（选项是原形）'}</small>`, ch: opts ? opts.map(o => o[0]) : ws.map(x => x.k), cz: opts ? opts.map(o => o[0] === o[1] ? o[2] : o[1] + '：' + o[2]) : ws.map(x => x.z), a: opts ? opts.findIndex(o => o[1] === k) : ws.indexOf(W0), ex: st.f === k ? `${k} = ${W0.z}` : `${st.f} ← ${k}（${W0.z}）`, say: st.k } };
 }
 function startEndless() { ST.covB = wCover(); const it = eRound(); start('endless', it); S.eRound = 1; S.eUsed = it.filter(x => x.wk).map(x => x.wk); }
 function eWord(k, ok, fresh) {   // 无尽模式里的词也进刷词的复习表
@@ -873,7 +876,7 @@ function eWord(k, ok, fresh) {   // 无尽模式里的词也进刷词的复习�
 function buildType(no) {   // 专项突破：先看解题方法，再刷这一类（当前级以内，题少就放宽一级）
   const t = tier(), seen = ST.tseen || {};
   let pool = TQ.filter(q => q.no === no && lvOf(q) <= t); if (pool.length < 4) pool = TQ.filter(q => q.no === no && lvOf(q) <= t + 1);
-  const order = [...new Set(shuffle(pool.filter(q => ST.srs[q.id])).concat(shuffle(pool.filter(q => !seen[q.id])), shuffle(pool)))].slice(0, 6);
+  const order = [...new Set(shuffle(pool.filter(q => ST.srs[q.id])).concat(shuffle(pool.filter(q => !seen[q.id])), shuffle(pool.slice()).sort((a, b) => (+seen[a.id] || 0) - (+seen[b.id] || 0))))].slice(0, 6);
   const items = order.map(topEx);
   if (TIP[no]) items.unshift({ kind: 'tip', id: no + '!tip', points: TIP[no], title: NO[no] || no, tag: '专项突破' });
   return items;
@@ -1352,7 +1355,7 @@ function check() {
   }
   if (S.idk) { S.idk = false; ok = false; said = '不会'; }
   if (x.s) tokens(x.s.k).forEach(t => ST.seen[t] = 1);
-  if (x.q) { ST.tseen = ST.tseen || {}; ST.tseen[x.q.id] = 1; }
+  if (x.q) { ST.tseen = ST.tseen || {}; ST.tseen[x.q.id] = Date.now(); }
   if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.wk ? x.wk + ' = ' + ((WBY[x.wk] || {}).z || '') : x.s ? x.s.k : x.q ? (x.q.no + ' ' + (x.q.d ? x.q.d.map(l => l[1]).join(' / ') : x.q.p || x.q.q)).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 110) : (x.e.audio || x.e.q), ok, a: said || '' }); }
   sfx(ok, ok && (S.combo + 1) % 5 === 0 ? 'combo' : 0);
   if (x.wk && !(x.id in (S.wDone || {}))) { S.wDone = S.wDone || {}; S.wDone[x.id] = 1; eWord(x.wk, ok, x.wnew); }
