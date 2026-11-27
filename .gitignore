@@ -19,4 +19,3 @@ serve.json
 
 # 审听页推送 token（明文，不上传）
 _secret/
-tools/ko-tts/exd-missing.json
