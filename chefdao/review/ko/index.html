@@ -1356,7 +1356,7 @@ function check() {
   if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.wk ? x.wk + ' = ' + ((WBY[x.wk] || {}).z || '') : x.s ? x.s.k : x.q ? (x.q.no + ' ' + (x.q.d ? x.q.d.map(l => l[1]).join(' / ') : x.q.p || x.q.q)).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 110) : (x.e.audio || x.e.q), ok, a: said || '' }); }
   sfx(ok, ok && (S.combo + 1) % 5 === 0 ? 'combo' : 0);
   if (x.wk && !(x.id in (S.wDone || {}))) { S.wDone = S.wDone || {}; S.wDone[x.id] = 1; eWord(x.wk, ok, x.wnew); }
-  if (x.q && x.q.say) setTimeout(() => say(x.q.say, 0.9), 250);
+  if (x.q && x.q.say && clip(x.q.say, 'F')) setTimeout(() => say(x.q.say, 0.9), 250);   // 只放真人录音，没录的句子不用系统机器声（听着怪）
   if (ok) { S.combo++; S.best = Math.max(S.best, S.combo); S.ok++; }
   else { S.combo = 0; if (!S.wrongIds.includes(x.id)) { S.wrongIds.push(x.id); S.items.push(x.kind === 'tq' && x.q.tz && TBY[x.id] ? { ...tuEx(TBY[x.id]), retry: 1 } : { ...x, retry: 1 }); /* 题库题错了换成理解卡；无尽 / 真题 / 语法题原样再来 */ S.total++; } }
   const praise = ['太棒了！', '答对了！', '漂亮！', '很好！', '完美！'];
