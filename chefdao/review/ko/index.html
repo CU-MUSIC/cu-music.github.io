@@ -412,7 +412,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 const _t = Math.floor(Date.now() / 6e5);
 // 一打开就先去拿云端进度，和题库并行下载
 try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=30', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
-document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script><script src="grammar.js?t=' + _t + '"><\/script>');
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script><script src="grammar.js?t=' + _t + '"><\/script><script src="freq.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
@@ -718,7 +718,7 @@ function pickFresh(sec, n, skip = new Set()) {
     const n3 = Math.round(n * (acc < .5 ? .25 : acc < .7 ? .5 : acc < .85 ? .75 : 1)), nb = Math.round((n - n3) * .75);
     const by = f => { const p = pool.filter(f); return shuffle(p.filter(q => !seen[q.id])).concat(shuffle(p.filter(q => ST.srs[q.id])), shuffle(p)); };
     const used = new Set(), out = [];
-    [[by(q => lvOf(q) >= 3), n3], [by(q => lvOf(q) === 2.5), nb], [by(q => lvOf(q) <= 2), n]].forEach(([arr, k]) => [...new Set(arr)].filter(q => !used.has(q)).slice(0, Math.max(0, Math.min(k, n - out.length))).forEach(q => { used.add(q); out.push(q); }));
+    [[by(q => lvOf(q) >= 3), n3], [by(q => lvOf(q) === 2.5), nb], [by(q => lvOf(q) === 2).concat(by(q => lvOf(q) < 2)), n]].forEach(([arr, k]) => [...new Set(arr)].filter(q => !used.has(q)).slice(0, Math.max(0, Math.min(k, n - out.length))).forEach(q => { used.add(q); out.push(q); }));
     return shuffle(out);
   }
   const order = shuffle(pool.filter(q => !seen[q.id] && lvOf(q) === t)).concat(shuffle(pool.filter(q => !seen[q.id])), shuffle(pool.filter(q => ST.srs[q.id])), shuffle(pool));
@@ -1340,7 +1340,9 @@ function wdNext() {   // 先出到期的旧词，再出新词（1 级在前）�
   const near8 = W.hist.slice(-8).map(k => WBY[k]).filter(Boolean), clash = x => near8.some(h => Math.abs(h.i - x.i) <= 3 || (ANT[h.k] || []).includes(x.k));
   const maxLv = (ST.chStep || 1) >= 3 ? 3 : 2;   // 3 级词先只在挑战里出，挑战稳了才放进平时
   const fresh0 = WL.filter(x => !w[x.k] && !recent.includes(x.k) && x.lv <= maxLv);   // 新词：整个词库没学过的随机挑，1、2 级混着出   // 新词：在接下来 40 个里随机挑，同主题 / 反义词不挨着出
-  const fresh = shuffle(fresh0.filter(x => !clash(x))).concat(shuffle(fresh0.filter(clash)));
+  // 新词优先出真题里常见的（KO_FREQ = 在 12 套真题里出现的次数），前 30 个里随机挑，学了在阅读里就认得
+  const F = window.KO_FREQ || {}, top = fresh0.slice().sort((a, b) => (F[b.k] || 0) - (F[a.k] || 0) + (Math.random() - .5) * 4).slice(0, 30);
+  const fresh = shuffle(top.filter(x => !clash(x))).concat(shuffle(top.filter(clash)));
   const pick = (due.length && (W.n % 3 !== 2 || !fresh.length)) ? due[0] : fresh[0] || due[0] || WL.filter(x => !recent.includes(x.k))[Math.random() * (WL.length - 3) | 0];
   return pick.k;
 }
@@ -1374,7 +1376,7 @@ function wdShow() { if (!W) return; if (W.endNow) { W.endNow = 0; return wdEnd()
   const opts = wdOpts(word);
   $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}${wdDayTxt()}`;
   $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
-  $('wdCard').innerHTML = `<div class="wdk ${rev ? 'zh' : 'ko'}">${esc(rev ? word.z : word.k)}</div>${rev ? '' : `<button class="spk" id="wdSpk">${ICON_SPK}</button>`}${chal ? `<span class="wdnew ch">🔥 挑战 +3 · ${CH_NAME[chLevel().st]}</span>` : r ? '' : '<span class="wdnew">新词</span>'}<div class="wdfb" id="wdFb"></div>`;   // 答完的反馈放进固定高度的格子，卡片不变高、选项不挪
+  $('wdCard').innerHTML = `<div class="wdk ${rev ? 'zh' : 'ko'}">${esc(rev ? word.z : word.k)}</div>${rev ? '' : `<button class="spk" id="wdSpk">${ICON_SPK}</button>`}${chal ? `<span class="wdnew ch">🔥 挑战 +3 · ${CH_NAME[chLevel().st]}</span>` : r ? '' : `<span class="wdnew">新词${(window.KO_FREQ || {})[k] >= 3 ? ' · 真题出现 ' + window.KO_FREQ[k] + ' 次' : ''}</span>`}<div class="wdfb" id="wdFb"></div>`;   // 答完的反馈放进固定高度的格子，卡片不变高、选项不挪
   $('wdCard').classList.remove('in'); void $('wdCard').offsetWidth; $('wdCard').classList.add('in');
   // 先回想：选项先藏 2 秒（盖着一层「先在心里想」），想好了点一下 / 按回车马上翻开
   clearTimeout(W.rt); W.cur.hid = true;
