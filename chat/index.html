@@ -161,6 +161,7 @@ button.send:active{transform:scale(.88)}
 </div>
 
 <script src="/chat/tapback.js?v=1"></script>
+<script src="/chat/fx.js?v=1"></script>
 <script src="/chat/typing.js?v=1"></script>
 <script>
 (function () {
@@ -224,6 +225,8 @@ button.send:active{transform:scale(.88)}
     }
     if (i < text.length) b.appendChild(document.createTextNode(text.slice(i)));
   }
+  // 刀大厨发的消息可能带特效（隐形墨水 / 刀门邀请卡）；访客自己打的字原样显示
+  function put(b, m) { if (!(m.who === 'o' && window.ChatFx && ChatFx.render(b, m.text, fill))) fill(b, m.text); }
   var FAQ = [], HI = '', asked = {};
   // 从哪进来的：链接里的 ?from= 优先；否则看上一页（本站哪一页 / 外站域名）；在微信里打开的加「微信」。服务端只记第一次的
   var SRC = (function () {
@@ -261,7 +264,7 @@ button.send:active{transform:scale(.88)}
     var side = m.who === 'v' ? 'me' : 'o', prev = before ? before.previousElementSibling : log.lastElementChild;
     if (before) {   // 插到你刚发、还在路上的那条前面：时间顺序不乱
       var r0 = document.createElement('div'), b0 = document.createElement('div');
-      r0.className = 'm ' + side + ' tail'; b0.className = 'b'; fill(b0, m.text); r0.appendChild(b0);
+      r0.className = 'm ' + side + ' tail'; b0.className = 'b'; put(b0, m); r0.appendChild(b0);
       if (prev && prev.classList.contains('m')) prev.classList.toggle('tail', !prev.classList.contains(side));
       log.insertBefore(r0, before); return r0;
     }
@@ -274,7 +277,7 @@ button.send:active{transform:scale(.88)}
     if (prev && prev.classList.contains('m') && prev.classList.contains(side)) prev.classList.remove('tail');
     var row = document.createElement('div'), b = document.createElement('div');
     row.className = 'm ' + side + ' tail' + (cls ? ' ' + cls : '');
-    b.className = 'b'; fill(b, m.text); row.appendChild(b); log.appendChild(row);
+    b.className = 'b'; put(b, m); row.appendChild(b); log.appendChild(row);
     return row;
   }
   // 收到的消息：从左下角弹出来

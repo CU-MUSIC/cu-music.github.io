@@ -148,6 +148,7 @@ button.send:active{transform:scale(.88)}
 </section>
 <script src="/chat/typing.js?v=1"></script>
 <script src="/chat/tapback.js?v=1"></script>
+<script src="/chat/fx.js?v=1"></script>
 <script>
 (function () {
   // iPhone 键盘弹出时：页面高度跟着可见区域缩、滚动归零，不让 Safari 把整页往上推（推上去会把标题和对话顶出屏幕，只剩输入框和一片白）
@@ -183,7 +184,7 @@ button.send:active{transform:scale(.88)}
         b.appendChild(el('span', 'av emo', t.emo || '👤'));
         var x = el('span', 'tx'), l1 = el('span', 'l1');
         l1.appendChild(el('b', '', (t.name || t.alias || '匿名访客') + (t.src ? ' · ' + t.src : '') + (t.geo ? ' · ' + t.geo : ''))); l1.appendChild(el('em', '', listTime(t.last)));   // 名字后面跟大致地区（只记城市，不存 IP）
-        x.appendChild(l1); x.appendChild(el('span', 'pv', (t.last_who === 'o' ? '我：' : '') + (t.lt || '')));
+        x.appendChild(l1); x.appendChild(el('span', 'pv', (t.last_who === 'o' ? '我：' : '') + (window.ChatFx ? ChatFx.preview(t.lt) : t.lt || '')));
         b.appendChild(x);
         b.onclick = function () { open(t.tid); };
         ls.appendChild(b);
@@ -228,7 +229,7 @@ button.send:active{transform:scale(.88)}
     }
     lastTs = m.ts;
     if (prev && prev.classList.contains('m') && prev.classList.contains(m.who)) prev.classList.remove('tail');
-    var row = el('div', 'm ' + m.who + ' tail' + (cls ? ' ' + cls : '')), bb = el('div', 'b'); fill(bb, m.text); row.appendChild(bb); log.appendChild(row);
+    var row = el('div', 'm ' + m.who + ' tail' + (cls ? ' ' + cls : '')), bb = el('div', 'b'); if (!(m.who === 'o' && window.ChatFx && ChatFx.render(bb, m.text, fill))) fill(bb, m.text); row.appendChild(bb); log.appendChild(row);
     return row;
   }
   function popIn(row) {
@@ -259,7 +260,7 @@ button.send:active{transform:scale(.88)}
         if (m.id > last) last = m.id;
         if (seen[m.id]) return; seen[m.id] = 1;
         if (m.who === 'o') {   // 自己刚发、还没拿到编号的那条：认领，不重复画
-          var mine = [].slice.call(log.querySelectorAll('.m.o:not([data-id])')).filter(function (x) { return x.firstChild.textContent === m.text; })[0];
+          var mine = [].slice.call(log.querySelectorAll('.m.o:not([data-id])')).filter(function (x) { return (window.ChatFx ? ChatFx.raw(x) : x.firstChild.textContent) === m.text; })[0];
           if (mine) { mine.dataset.id = m.id; mine.dataset.ts = m.ts; mine.classList.remove('pend'); return; }
         }
         var r = add(m); r.dataset.id = m.id; r.dataset.ts = m.ts; fresh.push(r);
@@ -300,9 +301,13 @@ button.send:active{transform:scale(.88)}
   document.getElementById('go').addEventListener('mousedown', function (e) { e.preventDefault(); });
   $('f').addEventListener('submit', function (e) {
     e.preventDefault(); var text = tx.value.trim(); if (!text || !cur || busy) return;
-    busy = true;
     var rc = tx.getBoundingClientRect(), from = { left: rc.left, top: rc.top - 1 };
     tx.value = ''; fit(); tx.focus();
+    post(text, from, text);
+  });
+  // draft = 发送失败后放回输入框的字
+  function post(text, from, draft) {
+    busy = true;
     if (ty) { ty.detach(); ty.sent(); }
     var r = add({ who: 'o', text: text, ts: Date.now() }, 'pend');
     if (ty) ty.reattach();
@@ -314,14 +319,31 @@ button.send:active{transform:scale(.88)}
     }).catch(function () {
       busy = false; r.classList.remove('pend');
       var s = el('div', 'st red', '未送达，轻点重试'); r.after(s);
-      r.onclick = function () { s.remove(); r.remove(); tx.value = text; fit(); tx.focus(); };
+      r.onclick = function () { s.remove(); r.remove(); if (draft) { tx.value = draft; fit(); tx.focus(); } };
     });
-  });
+  }
+  // 闪电菜单最上面两项：隐形墨水发送、刀门邀请卡
+  function fxItems(qm) {
+    if (!window.ChatFx) return;
+    function item(title, note, fn) {
+      var b = el('button'); b.type = 'button'; b.appendChild(el('b', '', title)); b.appendChild(el('span', '', note));
+      b.onclick = function () { qm.classList.remove('on'); if (!cur || busy) return; fn(b); }; qm.appendChild(b);
+    }
+    var draft = tx.value.trim();
+    item('✨ 用隐形墨水发送', draft ? draft.replace(/\n/g, ' ') : '先在输入框打好字，再点这里', function () {
+      var text = tx.value.trim(); if (!text) { tx.focus(); return; }
+      var rc = tx.getBoundingClientRect(); tx.value = ''; fit();
+      post(ChatFx.INK + text, { left: rc.left, top: rc.top - 1 }, text);
+    });
+    item('💌 发送刀门邀请卡', '系统样式卡片，点了直接发出', function () {
+      if (confirm('向当前会话发送刀门邀请卡？')) post(ChatFx.INVITE, null, '');
+    });
+  }
 
   // ── 快捷回复：常见问题的标准回答（和访客页按钮同一份，Worker 里改），后面数字 = 访客点过几次 ──
   function loadQr() {
     api('/chat/faq').then(function (j) {
-      var qm = $('qm'); qm.textContent = '';
+      var qm = $('qm'); qm.textContent = ''; fxItems(qm);
       (j.list || []).forEach(function (q) {
         var b = el('button'); b.type = 'button';
         var t = el('b', '', q.q); t.appendChild(el('i', '', q.n ? '点过 ' + q.n + ' 次' : '')); b.appendChild(t); b.appendChild(el('span', '', q.a.replace(/\n/g, ' ')));
