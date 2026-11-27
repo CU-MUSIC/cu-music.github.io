@@ -163,7 +163,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .lis{display:flex;justify-content:center;gap:16px;margin:10px 0 26px}
 .big{width:120px;height:110px;border-radius:20px;background:var(--b);box-shadow:0 5px 0 var(--bdk);color:#fff;display:grid;place-items:center}
 .big svg{width:56px;height:56px}
-.slow{width:76px;height:76px;align-self:flex-end;font-size:34px;border-radius:18px;background:var(--b);box-shadow:0 5px 0 var(--bdk)}
+.lis .slow{width:76px;height:76px;align-self:flex-end;font-size:34px;border-radius:18px;background:var(--b);box-shadow:0 5px 0 var(--bdk)}
 .big:active,.slow:active{transform:translateY(5px);box-shadow:none}
 /* 词卡 */
 .vc{border:2px solid var(--bd);border-radius:22px;padding:26px 20px;text-align:center;margin:auto 0;background:var(--card)}
@@ -317,7 +317,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wdvs{margin-top:8px;font-size:14px;line-height:1.5;font-weight:700;color:var(--tx2);animation:fadeUp .25s ease-out}.wdvs b{font-size:18px;color:var(--tx)}
 @media (min-width:601px){#wdIdk{margin-top:auto}}
 .wdfb{height:150px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;overflow:hidden}
-.wdfb>*{margin-top:8px!important}
+.wdfb>*{margin-top:8px!important;flex-shrink:0;max-width:100%}
 /* 手机：选项改成 4 条横排、贴在下面拇指够得着的地方；卡片在上 */
 @media (max-width:600px){
   #wd .wdcard{margin:16px 0 12px;padding:28px 14px 6px}
@@ -1302,14 +1302,16 @@ function cjShow() {
   const fsOther = shuffle(Object.keys(CJ[k]).filter(x => x !== f && CJ[k][x] !== form)).slice(0, 2);
   const near = (ANT[k] || []).concat((ST.wc || {})[k] || []).filter(x => CJ[x] && CJ[x][f] && x !== k);
   const ok2 = near[0] || shuffle(pool.filter(x => x !== k && CJ[x][f] && zh1(x) !== zh1(k)))[0];
-  const opts = shuffle([key].concat(fsOther.map(x => k + '|' + x), ok2 ? [ok2 + '|' + f] : [])).slice(0, 4);
+  // 句子卡：4 个选项都是同一句话换成不同形式后的中文整句，直接比语法；单词卡照旧
+  const alt = sent && sent[5], opts = alt ? shuffle([key].concat(Object.keys(alt).map(g => k + '|' + g))) : shuffle([key].concat(fsOther.map(x => k + '|' + x), ok2 ? [ok2 + '|' + f] : [])).slice(0, 4);
+  const lab = (ok, of) => alt ? (ok === k && of === f ? sent[3] : alt[of]) : CJZ[of](zh1(ok));
   W.cur = { cj: true, k, f, key, sent, done: false, t0: performance.now() }; W.hist.push(k);
   const show = sent ? esc(sent[0]).replace(esc(sent[4]), `<b>${esc(sent[4])}</b>`) : esc(form);
   $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}${wdDayTxt()}`;
   $('wdCard').innerHTML = `<div class="wdk ko ${sent ? 'sent' : ''}">${show}</div><button class="spk" id="wdSpk">${ICON_SPK}</button><span class="wdnew cj">变形${sent ? ' · 句子' : ''}</span><div class="wdfb" id="wdFb"></div>`;
   $('wdCard').classList.remove('in'); void $('wdCard').offsetWidth; $('wdCard').classList.add('in');
   clearTimeout(W.rt); W.cur.hid = true; $('wdCh').classList.add('hid'); W.rt = setTimeout(() => wdReveal(true), 3000);
-  $('wdCh').innerHTML = `<button class="wdthink" id="wdThink">${sent ? '加粗的部分' : '这个'}是哪个词的什么形式？<small>点这里或按回车看选项</small><i style="animation-duration:3s"></i></button>` + opts.map((o, i) => { const [ok, of] = o.split('|'); return `<button class="wo" data-k="${esc(o)}" style="animation-delay:${i * 40}ms"><span class="wn">${i + 1}</span>${esc(CJZ[of](zh1(ok)))}</button>`; }).join('');
+  $('wdCh').innerHTML = `<button class="wdthink" id="wdThink">${sent ? '这句话是什么意思？看加粗的部分' : '这个是哪个词的什么形式？'}<small>点这里或按回车看选项</small><i style="animation-duration:3s"></i></button>` + opts.map((o, i) => { const [ok, of] = o.split('|'); return `<button class="wo" data-k="${esc(o)}" style="animation-delay:${i * 40}ms"><span class="wn">${i + 1}</span>${esc(lab(ok, of))}</button>`; }).join('');
   $('wdIdk').textContent = '不会'; $('wdIdk').onclick = () => wdAnswer(null);
   const text = sent ? sent[0] : form; say(text, 1); $('wdSpk').onclick = () => say(text, 1);
   document.querySelectorAll('.wo').forEach(b => b.onclick = () => wdAnswer(b));
