@@ -719,9 +719,9 @@ const gNext = () => GR().find(g => !(ST.gmPass || []).includes(g.id)) || null;
 function gq(g, i, tag) { const q = g.qs[i], ord = shuffle(q.o.map((_, k) => k)); return { kind: 'tq', id: 'G:' + g.id + ':' + i, tag, q: { id: 'G:' + g.id + ':' + i, sec: 'R', no: 'G', q: esc(q.s).replace(/\(\s*\)/, '<b class="fz">(　　)</b>'), ch: ord.map(k => q.o[k]), a: ord.indexOf(0), ex: q.e } }; }
 function buildGram() {
   const g = gNext() || shuffle(GR().slice())[0]; if (!g) return [];
-  const n = GR().indexOf(g) + 1, items = [{ kind: 'gcard', id: 'G:' + g.id + '!card', g, n }].concat(shuffle(g.qs.map((_, i) => gq(g, i, g.name + ' · ' + (g.qs[i].t ? '陷阱题' : '第 ' + n + ' 课')))));
+  const n = GR().indexOf(g) + 1, items = [{ kind: 'gcard', id: 'G:' + g.id + '!card', g, n }].concat(shuffle(g.qs.map((_, i) => gq(g, i, '3 级语法 · 第 ' + n + ' 课'))));
   const old = GR().filter(x => (ST.gmPass || []).includes(x.id) && x.id !== g.id);
-  shuffle(old).slice(0, 2).forEach(o => items.push(gq(o, Math.random() * o.qs.length | 0, o.name + ' · 复习')));
+  shuffle(old).slice(0, 2).forEach(o => items.push(gq(o, Math.random() * o.qs.length | 0, '3 级语法 · 复习')));
   return items;
 }
 function buildType(no) {   // 专项突破：先看解题方法，再刷这一类（当前级以内，题少就放宽一级）
