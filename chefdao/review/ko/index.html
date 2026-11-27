@@ -859,7 +859,7 @@ function eFill(k, st, tg) {   // 句子填空：给整句中文，空里选哪�
   const W0 = WBY[k], ws = wdOpts(W0);
   return { kind: 'tq', id: 'E:f:' + k + ':' + ((S && S.eRound) || 0), wk: k, tag: tg, q: { id: 'E:f:' + k, sec: 'R', no: 'E', q: `<div class="ko esent">${esc(st.k).replace(esc(st.f), '<b class="fz">(　　)</b>')}</div><small class="qz">${esc(st.z)}<br>空里是哪个词？（选项是原形）</small>`, ch: ws.map(x => x.k), cz: ws.map(x => x.z), a: ws.indexOf(W0), ex: `${k} = ${W0.z}，句子里变成了「${st.f}」`, say: st.k } };
 }
-function startEndless() { const it = eRound(); start('endless', it); S.eRound = 1; S.eUsed = it.filter(x => x.wk).map(x => x.wk); }
+function startEndless() { ST.covB = wCover(); const it = eRound(); start('endless', it); S.eRound = 1; S.eUsed = it.filter(x => x.wk).map(x => x.wk); }
 function eWord(k, ok, fresh) {   // 无尽模式里的词也进刷词的复习表
   const r = (ST.w || {})[k], now = Date.now(); ST.w = ST.w || {};
   const t = today(); ST.wDay = ST.wDay && ST.wDay.d === t ? ST.wDay : { d: t, n: 0 }; ST.wDay.n++;   // 算进今天的刷词数（第 1 步）
@@ -1053,7 +1053,7 @@ function topikCard() {
   const rk = p && p.rank;
   const pred = p ? `<button class="pred" id="predB"><div class="rkl"><span class="rk r${rk.i}">${rk.name}</span><span class="rst">${stars(rk.star)}</span>${rk.next ? `<em>再 ${rk.need} 分升 ${rk.next}</em>` : ''}</div><div class="pr"><div><small>TOPIK II 预测分</small><b>${p.II}</b><em>±${p.pm}</em>${yd ? `<span class="${yd > 0 ? 'up' : 'dn'}">${yd > 0 ? '↑' : '↓'} ${Math.abs(yd)}</span>` : ''}</div>${spark(pr)}</div>
     <div class="pbar"><i id="pFill" data-w="${pos(p.II)}"></i><u style="left:${pos(120)}%"><s>3 级 120</s></u><u class="g4" style="left:${pos(150)}%"><s>4 级 150</s></u></div>
-    <div class="pt">${p.II >= 150 ? '已到 4 级线，保持住' : p.II >= 120 ? `离 4 级还差 <b>${150 - p.II}</b> 分` : `离 3 级还差 <b>${120 - p.II}</b> 分 · 4 级差 ${150 - p.II}`}　·　点开看每天进步 ›</div></button>`
+    <div class="pt">${p.II >= 150 ? '已到 4 级线，保持住' : p.II >= 120 ? `离 4 级还差 <b>${150 - p.II}</b> 分` : `离 3 级还差 <b>${120 - p.II}</b> 分 · 4 级差 ${150 - p.II}`}　·　点开看每天进步 ›</div><div class="pt" style="margin-top:2px">真题词汇覆盖率 <b>${wCover()}%</b>（无尽模式和刷词会涨）</div></button>`
     : `<div class="pt" style="margin-top:10px">做完一组题就出 TOPIK 预测分</div>`;
   return `<div class="hero topik"><div class="meta">${EXAM.name} · 第 ${EXAM.round} 回 · ${EXAM.date.slice(5).replace('-', '/')}</div>
     <div class="cd"><b>${left}</b> 天<span>冲 ${EXAM.goal} 级（${EXAM.goalScore} 分）· 保底 ${EXAM.floor} 级（${EXAM.floorScore}）</span></div>${pred}${tierLine}${est}${regLine}</div>`;
@@ -1338,12 +1338,12 @@ function check() {
   if (S.idk) { S.idk = false; ok = false; said = '不会'; }
   if (x.s) tokens(x.s.k).forEach(t => ST.seen[t] = 1);
   if (x.q) { ST.tseen = ST.tseen || {}; ST.tseen[x.q.id] = 1; }
-  if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.s ? x.s.k : x.q ? (x.q.no + ' ' + (x.q.d ? x.q.d.map(l => l[1]).join(' / ') : x.q.p || x.q.q)).slice(0, 110) : (x.e.audio || x.e.q), ok, a: said || '' }); }
+  if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.wk ? x.wk + ' = ' + ((WBY[x.wk] || {}).z || '') : x.s ? x.s.k : x.q ? (x.q.no + ' ' + (x.q.d ? x.q.d.map(l => l[1]).join(' / ') : x.q.p || x.q.q)).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 110) : (x.e.audio || x.e.q), ok, a: said || '' }); }
   sfx(ok, ok && (S.combo + 1) % 5 === 0 ? 'combo' : 0);
   if (x.wk && !(x.id in (S.wDone || {}))) { S.wDone = S.wDone || {}; S.wDone[x.id] = 1; eWord(x.wk, ok, x.wnew); }
   if (x.q && x.q.say) setTimeout(() => say(x.q.say, 0.9), 250);
   if (ok) { S.combo++; S.best = Math.max(S.best, S.combo); S.ok++; }
-  else { S.combo = 0; if (!S.wrongIds.includes(x.id)) { S.wrongIds.push(x.id); S.items.push(x.kind === 'tq' && x.q.tz ? { ...tuEx(TBY[x.id]), retry: 1 } : { ...x, retry: 1 }); S.total++; } }
+  else { S.combo = 0; if (!S.wrongIds.includes(x.id)) { S.wrongIds.push(x.id); S.items.push(x.kind === 'tq' && x.q.tz && TBY[x.id] ? { ...tuEx(TBY[x.id]), retry: 1 } : { ...x, retry: 1 }); /* 题库题错了换成理解卡；无尽 / 真题 / 语法题原样再来 */ S.total++; } }
   const praise = ['太棒了！', '答对了！', '漂亮！', '很好！', '完美！'];
   const dock = $('dock'); dock.className = 'dock ' + (ok ? 'good' : 'bad');
   $('fb').innerHTML = ok
@@ -1455,6 +1455,11 @@ function wdShow() { if (!W) return; if (W.endNow) { W.endNow = 0; return wdEnd()
   $('wdThink').onclick = () => wdReveal();
 }
 // 汉字词拆开看：每个音节对应哪个汉字、中文写成什么、和韩语意思一不一样、同一个汉字还出现在哪些词里（学会了就能自己猜词）
+function wCover(w) {   // 真题词汇覆盖率：12 套真题里出现的词（按次数加权），你认识的占多少
+  const F = window.KO_FREQ || {}, W = w || ST.w || {}; let a = 0, b = 0;
+  for (const [k, n] of Object.entries(F)) { a += n; if (W[k] && W[k].b >= 1) b += n; }
+  return a ? Math.round(b / a * 1000) / 10 : 0;
+}
 function hjInfo(k) {
   const raw = ((window.KO_HJ || {})[k] || '').split(' / ')[0]; if (!raw) return null;
   const S2 = window.KO_HJS || {}, simp = t => [...t].map(c => S2[c] || c).join('');
@@ -1680,11 +1685,12 @@ function finish() {
     ${predAfter && predBefore && predAfter.rank.i > predBefore.rank.i ? `<div class="burst lvup">🏅 升段：${predAfter.rank.name}<small>${predAfter.rank.tag || '离考过更近一步'}</small></div>` : ''}
     ${predAfter ? (() => { const d = predBefore ? predAfter.II - predBefore.II : 0; return `<div class="pdone"><small>TOPIK II 预测分</small><b id="pdN" data-from="${predBefore ? predBefore.II : predAfter.II}" data-to="${predAfter.II}">${predBefore ? predBefore.II : predAfter.II}</b><span class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + (-d) : '持平'}</span><em>${predAfter.II >= 150 ? '已到 4 级线' : predAfter.II >= 120 ? '离 4 级还差 ' + (150 - predAfter.II) + ' 分' : '离 3 级还差 ' + (120 - predAfter.II) + ' 分'}</em></div>`; })() : ''}
     ${estHtml}
+    ${S.mode === 'endless' ? (() => { const c = wCover(), d = Math.round((c - (ST.covB || c)) * 10) / 10; return `<div class="pdone"><small>真题词汇覆盖率</small><b>${c}%</b><span class="${d > 0 ? 'up' : ''}">${d > 0 ? '↑ ' + d + '%' : '持平'}</span><em>真题里出现的词，你认识的比例（按出现次数算）</em></div>`; })() : ''}
     ${S.rDone ? `<div class="sec" style="text-align:left">真题第 ${S.rDone.n} 回 · 阅读 ${RCH[S.rDone.c][0]}–${RCH[S.rDone.c][1]} 题：对 ${S.rDone.s}</div>` : ''}
     ${S.gPassed ? `<div class="burst lvup">📘 语法过关：<span class="ko">${esc(S.gPassed)}</span><small>3 级语法 ${(ST.gmPass || []).length} / ${GR().length} · 明天学下一个</small></div>` : S.mode === 'gram' && S.items[0] && S.items[0].g ? `<div class="sec" style="text-align:left">这课 ${ST.gm[S.items[0].g.id]}，八成对才算过关，明天再来一次</div>` : ''}
     ${S.mk && Object.keys(S.mk).length ? `<div class="sec" style="text-align:left">📌 标了 ${Object.keys(S.mk).length} 个生词：${Object.keys(S.mk).map(esc).join('、')}</div>` : ''}
     ${fz.length ? `<div class="sec" style="text-align:left">🤔 ${fz.length} 道模糊的题，明天再考一次</div>` : ''}
-    ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
+    ${wrong.length ? `<div class="sec" style="text-align:left">${S.mode === 'endless' ? '这几个词答错了，已放进刷词复习' : '这几题进了错题复习'}</div><div class="wl">${[...new Set(wrong.map(w => w.k))].map(k => `<div class="ko">${esc(k)}</div>`).join('')}</div>` : ''}
     ${focus && !S.mode.startsWith('type-') ? `<div class="hero rev" style="text-align:left"><div class="meta">这组错得最多</div><h2>${esc(NO[focus] || focus)}</h2><p>先看 3 条解题方法，再专门刷这一类</p><button class="btn blue" id="goFocus">专项突破</button></div>` : ''}
     ${nextHtml()}
     <button class="btn green" id="back">继续</button>${planNext() ? '<button class="btn ghost" id="backH">回首页</button>' : ''}`;
