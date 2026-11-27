@@ -59,6 +59,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .gex>div:nth-child(2){animation-delay:.08s}.gex>div:nth-child(3){animation-delay:.16s}
 .gex .spk{flex:none;width:36px;height:36px}.gex b{display:block;font-size:18px;line-height:1.6}.gex small{display:block;font-size:14px;color:var(--tx3)}
 .gpz{font-size:20px;font-weight:800;line-height:1.7}.gpk{display:flex;gap:10px;align-items:center;font-size:20px;font-weight:700;margin-top:12px}.gpk .spk{flex:none;width:36px;height:36px}.gpk[hidden]{display:none}
+.gqs{font-size:22px;line-height:1.7;margin-bottom:8px}.ul{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px;text-decoration-color:var(--b)}
+.qi{font-size:18px;font-weight:800}.qi small{display:block;font-size:15px;font-weight:700;color:var(--tx3);margin-top:2px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -717,7 +719,18 @@ function weakTypes(min = 2) {   // 做过 ≥ min 次、正确率 < 70% 的题�
 // ───────── 3 级语法：一课一个语法，知识卡 + 9 题（3 道陷阱），首次 9 题对 7 题算过关，再加 2 道旧语法复习 ─────────
 const GR = () => window.KO_GRAM || [];
 const gNext = () => GR().find(g => !(ST.gmPass || []).includes(g.id)) || null;
-function gq(g, i, tag) { const q = g.qs[i], ord = shuffle(q.o.map((_, k) => k)); return { kind: 'tq', id: 'G:' + g.id + ':' + i, tag, q: { id: 'G:' + g.id + ':' + i, sec: 'R', no: 'G', q: esc(q.s).replace(/\(\s*\)/, '<b class="fz">(　　)</b>'), ch: ord.map(k => q.o[k]), a: ord.indexOf(0), ex: q.e } }; }
+// 题干里的韩语指令配中文，「밑줄」题把要比较的部分加下划线（不然不知道在问什么）
+const GQI = [[/다음 중 맞는 문장은\?/, '下面哪一句是对的？'], [/다음 중 틀린 문장은\?/, '下面哪一句是错的？'], [/밑줄과 비슷한 것은\?/, '和划线部分意思最接近的是？'], [/무슨 뜻입니까\?/, '这句话是什么意思？']];
+function gStem(s) {
+  if (/^[“"]/.test(s)) return `<div class="gqs">${esc(s.replace(/[“”"]/g, ''))}</div><div class="qi">哪一句韩语是这个意思？</div>`;
+  const hit = GQI.find(([re]) => re.test(s));
+  if (!hit) return esc(s).replace(/\(\s*\)/, '<b class="fz">(　　)</b>');
+  const ins = s.match(hit[0])[0], sent = s.replace(ins, '').trim();
+  let h = esc(sent);
+  if (/밑줄/.test(ins)) h = h.replace(/(\S+\s+(?:바람에|위해서|동안|않도록)|\S+(?:자마자|도록))/, '<u class="ul">$1</u>');
+  return `${sent ? `<div class="ko gqs">${h}</div>` : ''}<div class="qi"><span class="ko">${esc(ins)}</span><small>${hit[1]}</small></div>`;
+}
+function gq(g, i, tag) { const q = g.qs[i], ord = shuffle(q.o.map((_, k) => k)); return { kind: 'tq', id: 'G:' + g.id + ':' + i, tag, q: { id: 'G:' + g.id + ':' + i, sec: 'R', no: 'G', q: gStem(q.s), ch: ord.map(k => q.o[k]), a: ord.indexOf(0), ex: q.e } }; }
 function gpEx(g, e, tag) { return { kind: 'tu', id: 'GP:' + g.id + ':' + e[0], gp: { k: e[0], z: e[1], name: g.name }, e: { q: e[0] }, tag }; }   // 说出来：看中文，自己说韩语，再翻牌
 function buildGram() {
   // 学进去的顺序：知识卡 → 混着考（正确答案只有约一半是今天的语法，靠「眼熟」选会错）→ 最后看中文自己说出整句（最难、最记得住）
