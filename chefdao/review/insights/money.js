@@ -10,7 +10,13 @@
 .mn-top .n small{font-size:15px;font-weight:500;color:var(--text-3);letter-spacing:0}
 .mn-bar{position:relative;height:6px;border-radius:3px;background:var(--fill-3);margin:10px 0 8px}.mn-bar i{display:block;height:100%;border-radius:3px;background:#7fb894}
 .mn-bar em{position:absolute;top:-4px;width:2px;height:14px;margin-left:-1px;background:var(--pearl);border-radius:1px}
-.mn-sp{display:block;width:100%;height:56px;margin:10px 0 4px;overflow:visible}.mn-sp polyline{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.mn-rg{display:flex;gap:6px;margin:12px 0 2px;flex-wrap:wrap}.mn-rg button{padding:5px 12px;border-radius:99px;background:var(--fill-3);color:var(--text-2);font-size:13px;font-variant-numeric:tabular-nums;transition:background .2s,color .2s}
+.mn-rg button.on{background:var(--pearl);color:var(--ink);font-weight:600}
+.mn-ch{animation:mnIn .32s cubic-bezier(.22,.8,.25,1)}@keyframes mnIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mn-ch{animation:none}}
+.mn-cd{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--text-3);font-variant-numeric:tabular-nums}.mn-cd b{font-weight:600}.mn-cd b.ok{color:#7fb894}.mn-cd b.warn{color:var(--red)}
+.mn-sp .dot{fill:#7fb894}
+.mn-sp{display:block;width:100%;height:72px;margin:10px 0 4px;overflow:visible}.mn-sp polyline{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .mn-sp .sv{stroke:#7fb894;stroke-width:2}.mn-sp .pl{stroke:var(--text-3);stroke-width:1;stroke-dasharray:3 4}
 .mn-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 8px}.mn-st>div{background:var(--fill);border-radius:12px;padding:8px 10px;min-width:0}
 .mn-st span{display:block;font-size:12px;color:var(--text-3)}.mn-st b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}.mn-st b.ok{color:#7fb894}.mn-st b.warn{color:var(--red)}
@@ -69,19 +75,35 @@
   // 2026-11-27 改目标：每月攒 ¥5,000，从 11/26 的 ¥18,047 起算，2/28 自己攒到 ¥33,500；学费 ¥43,000 剩下的家里补
   const TUITION = 43000, GOAL = 33500, MONTHLY = 5000, A0 = '2026-11-26', S0 = 18047, END = '2027-02-28';
   const planAt = d => S0 + (GOAL - S0) * Math.max(0, Math.min(1, (Date.parse(d) - Date.parse(A0)) / (Date.parse(END) - Date.parse(A0))));
+  // 曲线时间范围：一周 / 一月 / 3 个月 / 一年 / 全部，从最新一条往回数；选哪个记在本机
+  const RANGES = [['w', '一周', 7], ['m', '一月', 30], ['q', '3 个月', 91], ['y', '一年', 365], ['a', '全部', Infinity]];
+  let RG = ls.get('insights:mnrange') || 'm'; if (!RANGES.some(r => r[0] === RG)) RG = 'm';
+  let SER = [];
+  function chart() {
+    const ser = SER; if (ser.length < 2) return '<div class="mn-cd"><span>记录还不够画曲线</span></div>';
+    const days = RANGES.find(r => r[0] === RG)[2], tEnd = Date.parse(ser[ser.length - 1].d);
+    const cut = Number.isFinite(days) ? new Date(tEnd - days * 864e5).toISOString().slice(0, 10) : '';
+    // 起点取范围开始那天或之前最近的一条，曲线从范围左边就有值
+    let i0 = ser.findIndex(x => x.d >= cut); if (i0 < 0) i0 = ser.length - 1; if (i0 > 0 && ser[i0].d > cut && cut) i0--;
+    const S = ser.slice(i0); if (S.length < 2) return '<div class="mn-cd"><span>这个范围里记录不够</span></div>';
+    const W = 300, H = 72, t0 = Date.parse(S[0].d), t1 = Date.parse(S[S.length - 1].d) || t0 + 1;
+    // 计划线只画 11/26 之后（之前没有计划）
+    const pS = S[0].d > A0 ? S[0].d : A0, hasPlan = pS < S[S.length - 1].d;
+    const vals = S.map(x => x.s).concat(hasPlan ? [planAt(pS), planAt(S[S.length - 1].d)] : []);
+    const mn = Math.min(...vals), mx = Math.max(...vals), pad = (mx - mn) * .08 || 1, lo = mn - pad, hi = mx + pad;
+    const X = d => Math.max(0, (Date.parse(d) - t0) / (t1 - t0 || 1) * W), Yv = v => H - (v - lo) / (hi - lo) * H;
+    const last = S[S.length - 1], dv = last.s - S[0].s, md = d => d.slice(5).replace('-', '/');
+    return `<svg class="mn-sp" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${hasPlan ? `<polyline class="pl" points="${X(pS).toFixed(1)},${Yv(planAt(pS)).toFixed(1)} ${W},${Yv(planAt(last.d)).toFixed(1)}"/>` : ''}<polyline class="sv" points="${S.map(x => X(x.d).toFixed(1) + ',' + Yv(x.s).toFixed(1)).join(' ')}"/></svg>
+      <div class="mn-cd"><span>${md(S[0].d)} ${yen(S[0].s)}</span><span>${RANGES.find(r => r[0] === RG)[1]}${cut && i0 === 0 && ser[0].d > cut ? '（记录从 ' + md(ser[0].d) + ' 起）' : ''} <b class="${dv >= 0 ? 'ok' : 'warn'}">${dv >= 0 ? '+' : '−'}${yen(Math.abs(dv))}</b></span><span>${md(last.d)} ${yen(last.s)}</span></div>`;
+  }
+  const rangeBar = () => `<div class="mn-rg" role="group" aria-label="曲线范围">${RANGES.map(([k, lb]) => `<button type="button" data-rg="${k}" class="${k === RG ? 'on' : ''}" aria-pressed="${k === RG}">${lb}</button>`).join('')}</div>`;
   function progCard(p) {
     if (!p) return '';
     // Worker 还按 ¥43,000 算；这里统一换成新目标，只保留它的已存、近 30 天速度、预测
     p = { ...p, goal: GOAL, plan: Math.round(planAt(p.asOf)), monthly: Math.round(Math.max(0, GOAL - p.saved) / Math.max(1, p.daysLeft / 30.4) / 10) * 10, decide: [(p.decide || [])[0], Math.round(planAt('2027-01-15'))] };
     const pct = Math.min(100, p.saved / p.goal * 100), pp = Math.min(100, p.plan / p.goal * 100), ahead = p.saved - p.plan, md = p.asOf.slice(5).replace('-', '/');
-    const ser = p.ser || [], W = 300, H = 56;
-    let spark = '';
-    if (ser.length > 1) {
-      const t0 = Date.parse(ser[0].d), t1 = Date.parse(ser[ser.length - 1].d) || t0 + 1, lo = Math.min(...ser.map(x => x.s)) * .97, hi = Math.max(...ser.map(x => x.s), p.plan) * 1.01;
-      const X = d => (Date.parse(d) - t0) / (t1 - t0 || 1) * W, Yv = v => H - (v - lo) / (hi - lo || 1) * H;
-      const pv = planAt;
-      spark = `<svg class="mn-sp" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline class="pl" points="${X(ser[0].d)},${Yv(pv(ser[0].d))} ${W},${Yv(pv(ser[ser.length - 1].d))}"/><polyline class="sv" points="${ser.map(x => X(x.d).toFixed(1) + ',' + Yv(x.s).toFixed(1)).join(' ')}"/></svg>`;
-    }
+    const ser = p.ser || []; SER = ser;
+    const spark = ser.length > 1 ? rangeBar() + `<div id="mnCh">${chart()}</div>` : '';
     const need = p.monthly - p.surplus;
     // 比上一条：直接拿最近两条有余额的记录比（同一天记两次也能看出差多少），不按天
     const R = (MD && MD.recent) || [], a = R[0], b = R[1], dv = a && b && a.saved != null && b.saved != null ? a.saved - b.saved : null;
@@ -127,6 +149,12 @@
 
   window.bindMoney = () => {
     const q = s => G.root.querySelector(s), rt = q('#mnRetry'); if (rt) rt.onclick = () => { err = ''; load(); G.render(); };
+    // 切范围只换曲线那一块，不重画整页（淡入上移）
+    G.root.querySelectorAll('[data-rg]').forEach(b => b.onclick = () => {
+      if (b.dataset.rg === RG) return; RG = b.dataset.rg; ls.set('insights:mnrange', RG);
+      G.root.querySelectorAll('[data-rg]').forEach(x => { const on = x.dataset.rg === RG; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+      const ch = q('#mnCh'); if (ch) { ch.innerHTML = chart(); ch.classList.remove('mn-ch'); void ch.offsetWidth; ch.classList.add('mn-ch'); }
+    });
     G.root.querySelectorAll('[data-mg]').forEach(el => {
       el.oninput = () => { const g = el.dataset.mg, k = el.dataset.mk, v = el.value.replace(/[,，\s¥₩]/g, '');
         if (g === 'bal') { if (v === '' || Number(v) === base(k)) delete D.bal[k]; else D.bal[k] = v; } else { if (v === '') delete D.flow[k]; else D.flow[k] = v; }
