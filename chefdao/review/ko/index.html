@@ -70,6 +70,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .hintc{margin:10px 0;padding:12px 14px;border-radius:14px;background:var(--fill);font-size:16px;line-height:1.8}.hintc[hidden]{display:none}.hzz{color:var(--tx2);white-space:pre-line;margin-top:6px;font-size:15px}
 .mw{cursor:pointer;border-radius:4px;transition:background .2s,box-shadow .2s}.mw:hover{background:var(--fill)}.mw.mk{background:rgba(255,150,0,.16);box-shadow:inset 0 -2px 0 #ff9600}
 .enw{display:flex;align-items:center;gap:10px;font-size:34px;margin:6px 0}.esent{font-size:22px;line-height:1.7;font-weight:600}.esent .hl{color:#7c4dff;border-bottom:3px solid #c9b6ff}.endb{margin-top:12px}
+.wdhj{font-size:13px;font-weight:700;color:var(--tx2);line-height:1.5;animation:fadeUp .25s ease-out}.wdhj b{color:#ff9600}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -838,14 +839,21 @@ function eRound() {
   const zhOpts = st => { const L = st.z.length, others = shuffle(C.filter(x => x.z !== st.z && x.k !== st.k && Math.abs(x.z.length - L) <= Math.max(6, L * .5))).slice(0, 3).map(x => x.z); return others; };
   news.forEach(k => {
     const W0 = WBY[k], ws = wdOpts(W0), st = eSent(k);
-    items.push({ kind: 'tq', id: 'E:w:' + k + ':' + R, wk: k, wnew: 1, tag: tag('新词'), q: { id: 'E:w:' + k, sec: 'R', no: 'E', q: `<div class="enw"><button class="spk" data-say="${esc(k)}">${ICON_SPK}</button><b class="ko">${esc(k)}</b></div><small class="qz">这个词是什么意思？${(F[k] || 0) >= 3 ? ' · 真题出现 ' + F[k] + ' 次' : ''}</small>`, ch: ws.map(x => x.z), a: ws.indexOf(W0), ex: [(window.KO_HJ || {})[k] && '汉字：' + KO_HJ[k], (window.KO_EN || {})[k] && '来自：' + KO_EN[k]].filter(Boolean).join(' · '), say: k } });
+    items.push({ kind: 'tq', id: 'E:w:' + k + ':' + R, wk: k, wnew: 1, tag: tag('新词'), q: { id: 'E:w:' + k, sec: 'R', no: 'E', q: `<div class="enw"><button class="spk" data-say="${esc(k)}">${ICON_SPK}</button><b class="ko">${esc(k)}</b></div><small class="qz">这个词是什么意思？${(F[k] || 0) >= 3 ? ' · 真题出现 ' + F[k] + ' 次' : ''}</small>`, ch: ws.map(x => x.z), a: ws.indexOf(W0), ex: [hjInfo(k) ? '汉字 ' + KO_HJ[k].split(' / ')[0] + '：' + hjInfo(k).txt : (window.KO_HJ || {})[k] && '汉字：' + KO_HJ[k], (window.KO_EN || {})[k] && '来自英语：' + KO_EN[k]].filter(Boolean).join(' · '), say: k } });
     if (st && acc >= .8) items.push(eFill(k, st, tag('在句子里用出来')));   // 对得多：新词直接在句子里填空（要自己想起来）
-    else if (st) { const ds = zhOpts(st); if (ds.length === 3) { const ch = shuffle([st.z].concat(ds)); items.push({ kind: 'tq', id: 'E:s:' + k + ':' + R, wk: k, tag: tag('在句子里认出它'), q: { id: 'E:s:' + k, sec: 'R', no: 'E', q: `<div class="ko esent">${esc(st.k).replace(esc(st.f), '<b class="hl">' + esc(st.f) + '</b>')}</div><small class="qz">整句是什么意思？（加粗的是 ${esc(k)} = ${esc(W0.z)}）</small>`, ch, a: ch.indexOf(st.z), ex: '', say: st.k } }); } }
+    else if (st) { const ds = ePairs(k, st, ws); if (ds.length === 3) { const ch = shuffle([st.z].concat(ds)); items.push({ kind: 'tq', id: 'E:s:' + k + ':' + R, wk: k, tag: tag('在句子里认出它'), q: { id: 'E:s:' + k, sec: 'R', no: 'E', q: `<div class="ko esent">${esc(st.k).replace(esc(st.f), '<b class="hl">' + esc(st.f) + '</b>')}</div><small class="qz">整句是什么意思？看加粗的词</small>`, ch, a: ch.indexOf(st.z), ex: '', say: st.k } }); } }
   });
   rev.forEach(k => items.push(eFill(k, eSent(k), tag('复习 · 句子填空'))));
   const sec = R % 2 ? 'R' : 'L', q = pickFresh(sec, 1)[0]; if (q) items.push({ ...topEx(q), tag: tag(sec === 'R' ? '阅读' : '听力') });
   if (S) { S.eRound = R; S.eUsed = [...used, ...news, ...rev]; }
   return items;
+}
+function ePairs(k, st, ws) {   // 干扰项 = 同一句中文，只把这个词换成别的词的意思（要真认识这个词才选得对）；换不了就退回别的句子
+  const W0 = WBY[k], parts = W0.z.split(/\s*[\/、]\s*|（.*?）/).map(x => x.trim()).filter(Boolean), p = parts.find(x => st.z.includes(x));
+  const out = [];
+  if (p) ws.filter(x => x !== W0).forEach(x => { const r = x.z.split(/\s*[\/、]\s*|（.*?）/).map(y => y.trim()).filter(Boolean)[0]; const t = r && st.z.replace(p, r); if (t && t !== st.z && !out.includes(t)) out.push(t); });
+  if (out.length < 3) { const C = eCorpus(), L = st.z.length; shuffle(C.filter(x => x.z !== st.z && Math.abs(x.z.length - L) <= Math.max(6, L * .5))).slice(0, 3 - out.length).forEach(x => out.push(x.z)); }
+  return out.slice(0, 3);
 }
 function eFill(k, st, tg) {   // 句子填空：给整句中文，空里选哪个词（选项是原形）
   const W0 = WBY[k], ws = wdOpts(W0);
@@ -1446,10 +1454,23 @@ function wdShow() { if (!W) return; if (W.endNow) { W.endNow = 0; return wdEnd()
   document.querySelectorAll('.wo').forEach(b => b.onclick = () => wdAnswer(b));
   $('wdThink').onclick = () => wdReveal();
 }
+// 汉字词拆开看：每个音节对应哪个汉字、中文写成什么、和韩语意思一不一样、同一个汉字还出现在哪些词里（学会了就能自己猜词）
+function hjInfo(k) {
+  const raw = ((window.KO_HJ || {})[k] || '').split(' / ')[0]; if (!raw) return null;
+  const S2 = window.KO_HJS || {}, simp = t => [...t].map(c => S2[c] || c).join('');
+  const hz = [...raw.replace(/[^一-鿿]/g, '')], lead = raw.startsWith('-') ? k.length - hz.length - (k.endsWith('하다') ? 2 : 0) : 0;
+  const syl = [...k].slice(lead, lead + hz.length); if (syl.length !== hz.length) return null;
+  const pairs = hz.map((c, i) => ({ c, s: simp(c), y: syl[i] })), word = simp(hz.join('')), z = (WBY[k] || {}).z || '';
+  const same = z.split(/[\/、，（）() ]/).some(x => x && (x.includes(word) || word.includes(x)));
+  const rel = [];
+  pairs.forEach(p => { for (const [w2, h2] of Object.entries(window.KO_HJ || {})) { if (rel.length >= 3 || w2 === k || w2 === k.replace(/하다$/, '') || w2.replace(/하다$/, '') === k.replace(/하다$/, '') || !WBY[w2] || rel.some(r => r.startsWith(w2 + ' '))) continue; const i = h2.indexOf(p.c); if (i >= 0 && h2.split(' / ')[0].replace(/[^一-鿿]/g, '').length === [...w2.replace(/하다$|님$/, '')].length && [...w2][i] === p.y) rel.push(`${w2} ${simp(h2.replace(/[^一-鿿]/g, ''))}`); } });
+  return { pairs, word, same, z, rel, txt: `${pairs.map(p => `${p.y}=${p.s}`).join(' + ')} → 中文「${word}」${same ? '，意思和中文一样' : `，韩语里的意思是「${z}」`}${rel.length ? ' · 同字的词：' + rel.join('、') : ''}` };
+}
 function wdOrigin(k) {   // 答完显示词源：汉字词标汉字（像 Naver 한자사전），外来词标英文
   const hj = (window.KO_HJ || {})[k], en = (window.KO_EN || {})[k];
   if (!hj && !en) return;
-  $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdo">${hj ? `<span class="hj">${esc(hj)}</span>` : ''}${en ? `<span class="en">${esc(en)}</span>` : ''}</div>`);
+  const hi = hj && hjInfo(k);
+  $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdo">${hj ? `<span class="hj">${esc(hj)}</span>` : ''}${en ? `<span class="en">${esc(en)}</span>` : ''}</div>${hi ? `<div class="wdhj">${esc(hi.pairs.map(p => p.y + '=' + p.s).join(' + '))} → 中文「${esc(hi.word)}」${hi.same ? '' : '<b>，韩语意思不一样</b>'}</div>` : ''}`);
 }
 function wdReveal(auto) { if (!W || !W.cur.hid) return; clearTimeout(W.rt); W.cur.hid = false; W.cur.tr = performance.now(); W.cur.auto = !!auto; $('wdCh').classList.remove('hid'); }
 // ───────── 变形卡：看到 갔어요 认出「去 · 过去」，或者在句子里认出加粗的部分 ─────────
