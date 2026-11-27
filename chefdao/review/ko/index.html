@@ -58,6 +58,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .gex>div{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--bd);animation:fadeUp .35s both}
 .gex>div:nth-child(2){animation-delay:.08s}.gex>div:nth-child(3){animation-delay:.16s}
 .gex .spk{flex:none;width:36px;height:36px}.gex b{display:block;font-size:18px;line-height:1.6}.gex small{display:block;font-size:14px;color:var(--tx3)}
+.gpz{font-size:20px;font-weight:800;line-height:1.7}.gpk{display:flex;gap:10px;align-items:center;font-size:20px;font-weight:700;margin-top:12px}.gpk .spk{flex:none;width:36px;height:36px}.gpk[hidden]{display:none}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -717,12 +718,19 @@ function weakTypes(min = 2) {   // 做过 ≥ min 次、正确率 < 70% 的题�
 const GR = () => window.KO_GRAM || [];
 const gNext = () => GR().find(g => !(ST.gmPass || []).includes(g.id)) || null;
 function gq(g, i, tag) { const q = g.qs[i], ord = shuffle(q.o.map((_, k) => k)); return { kind: 'tq', id: 'G:' + g.id + ':' + i, tag, q: { id: 'G:' + g.id + ':' + i, sec: 'R', no: 'G', q: esc(q.s).replace(/\(\s*\)/, '<b class="fz">(　　)</b>'), ch: ord.map(k => q.o[k]), a: ord.indexOf(0), ex: q.e } }; }
+function gpEx(g, e, tag) { return { kind: 'tu', id: 'GP:' + g.id + ':' + e[0], gp: { k: e[0], z: e[1], name: g.name }, e: { q: e[0] }, tag }; }   // 说出来：看中文，自己说韩语，再翻牌
 function buildGram() {
+  // 学进去的顺序：知识卡 → 混着考（正确答案只有约一半是今天的语法，靠「眼熟」选会错）→ 最后看中文自己说出整句（最难、最记得住）
+  // 已过关的语法：再说一句 + 再考一题（隔天复习）
   const g = gNext() || shuffle(GR().slice())[0]; if (!g) return [];
-  const n = GR().indexOf(g) + 1, items = [{ kind: 'gcard', id: 'G:' + g.id + '!card', g, n }].concat(shuffle(g.qs.map((_, i) => gq(g, i, '3 级语法 · 第 ' + n + ' 课'))));
-  const old = GR().filter(x => (ST.gmPass || []).includes(x.id) && x.id !== g.id);
-  shuffle(old).slice(0, 2).forEach(o => items.push(gq(o, Math.random() * o.qs.length | 0, '3 级语法 · 复习')));
-  return items;
+  const n = GR().indexOf(g) + 1, tag = '3 级语法 · 第 ' + n + ' 课', ix = g.qs.map((q, i) => i);
+  const core = shuffle(ix.filter(i => !g.qs[i].t)).slice(0, 4), traps = ix.filter(i => g.qs[i].t);
+  const others = shuffle(GR().filter(x => x.id !== g.id).flatMap(x => x.qs.map((q, i) => q.t ? [x, i] : null).filter(Boolean))).slice(0, 3);
+  const quiz = shuffle(core.map(i => gq(g, i, tag)).concat(traps.map(i => gq(g, i, tag)), others.map(([x, i]) => gq(x, i, tag))));
+  const prod = shuffle(g.ex.slice()).slice(0, 2).map(e => gpEx(g, e, tag));
+  const old = shuffle(GR().filter(x => (ST.gmPass || []).includes(x.id) && x.id !== g.id)).slice(0, 2);
+  const rev = old.flatMap(o => [gpEx(o, o.ex[Math.random() * o.ex.length | 0], '3 级语法 · 复习'), gq(o, Math.random() * o.qs.length | 0, '3 级语法 · 复习')]);
+  return [{ kind: 'gcard', id: 'G:' + g.id + '!card', g, n }].concat(quiz, prod, rev);
 }
 function buildType(no) {   // 专项突破：先看解题方法，再刷这一类（当前级以内，题少就放宽一级）
   const t = tier(), seen = ST.tseen || {};
@@ -828,7 +836,7 @@ function planSteps() {
   else { const s = p ? p.weak : 'R', o = s === 'L' ? 'R' : 'L', d = p ? p[o].II - p[s].II : 0; x = { name: '补' + SEC[s] + ' · 8 题', why: d > 0 ? `${SEC[s]}比${SEC[o]}低 ${d} 分，补它涨分最快` : `${SEC[s]}是现在最拖分的一项`, go: () => start('sec-' + s, buildSec(s, 8)) }; }
   return [
     { k: 'w', name: '刷词 ' + WGOAL + ' 个', why: ws.due ? `${ws.due} 个词到期，今天不复习就会忘` : '新词加复习，先把脑子热起来', cur: Math.min(wn, WGOAL), need: WGOAL, min: 5, go: wdStart },
-    ...(GR().length ? [(() => { const g = gNext(), r = g && (ST.gm || {})[g.id]; return { k: 'g', name: g ? '3 级语法：' + g.name : '3 级语法 · 复习', why: g ? (r ? `上次 ${r}，对 7 题过关` : g.zh + ' · TOPIK II 必考') : '10 个语法都过了，随机复习一课', cur: Math.min(pd.g || 0, 1), need: 1, min: 5, go: () => start('gram', buildGram()) }; })()] : []),
+    ...(GR().length ? [(() => { const g = gNext(), r = g && (ST.gm || {})[g.id]; return { k: 'g', name: g ? '3 级语法：' + g.name : '3 级语法 · 复习', why: g ? (r ? `上次 ${r}，八成对过关` : g.zh + ' · TOPIK II 必考') : '10 个语法都过了，随机复习一课', cur: Math.min(pd.g || 0, 1), need: 1, min: 5, go: () => start('gram', buildGram()) }; })()] : []),
     { k: 's', name: TIERS[tier()].split(' · ')[0] + '题 · 10 题', why: due ? `含 ${Math.min(3, due)} 道之前错的题，再做一遍才算会` : '新题，做完更新预测分', cur: Math.min(pd.s, 1), need: 1, min: 6, go: () => start('study', buildStudy()) },
     { k: 'x', ...x, cur: Math.min(pd.x, 1), need: 1, min: 5 }
   ].map(o => ({ ...o, done: o.cur >= o.need }));
@@ -1034,6 +1042,12 @@ function rTQ(x, st) {
   bindStrike(st); st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; b.classList.remove('out'); st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); });
 }
 function rTU(x, st) {
+  if (x.gp) {
+    st.innerHTML = `<div class="tag" style="color:var(--b)">${esc(x.tag)} · 说出来</div><div class="q">看中文，用 <b class="ko">${esc(x.gp.name)}</b> 在心里（或小声）说出整句韩语，再翻牌对答案</div>
+      <div class="psg gpz">${esc(x.gp.z)}</div><div class="tz ko gpk" id="tz" hidden><button class="spk" data-say="${esc(x.gp.k)}">${ICON_SPK}</button>${esc(x.gp.k)}</div>`;
+    st.querySelector('[data-say]').onclick = e => { e.stopPropagation(); say(x.gp.k, 0.9, e.currentTarget); };
+    answer = 'reveal'; setGo('blue', '翻牌'); return;
+  }
   const q = x.q, L = q.sec === 'L', fill = t => t.replace(/\(\s+\)/, `<b class="fz">${esc(q.ch[q.a])}</b>`);
   const body = L ? q.d.map(([w, t]) => `<p><b>${w}</b> ${esc(t)}</p>`).join('') : q.p ? fill(nl(q.p)) : fill(q.q);
   st.innerHTML = `<div class="tag" style="color:var(--p,#ce82ff)">理解卡 · ${esc(NO[q.no] || SEC[q.sec])}</div><div class="q">先在心里把这段翻成中文，再点「看翻译」对照</div>
@@ -1097,7 +1111,8 @@ function check() {
   const x = S.items[S.i]; if (answer == null) return;
   if (x.kind === 'tu' && answer === 'reveal') {   // 第一下：亮出翻译，自己判懂没懂
     const z = $('tz'); z.hidden = false; z.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'ease-out' });
-    answer = 'judge'; setGo('green', '看懂了'); $('idk').textContent = '没看懂'; $('idk').classList.add('on'); return;
+    if (x.gp) say(x.gp.k, 0.9);
+    answer = 'judge'; setGo('green', x.gp ? '说对了' : '看懂了'); $('idk').textContent = x.gp ? '没说出来' : '没看懂'; $('idk').classList.add('on'); return;
   }
   $('idk').classList.remove('on'); stopAudio();
   if (x.kind === 'tw' && !answer.length) answer = x.q.bl.map(() => '');
@@ -1129,7 +1144,7 @@ function check() {
     document.querySelectorAll('.wb input').forEach((inp, i) => { inp.disabled = true; inp.classList.add(res[i] ? 'good' : 'bad'); });
     if (!ok && answer.some(Boolean)) x.self = true;   // 写了但和参考答案不完全一样：让他自己判
   } else if (x.kind === 'tu') {
-    ok = true; right = '对照上面的翻译，逐句找出卡住的词或语法';
+    ok = true; right = x.gp ? x.gp.k : '对照上面的翻译，逐句找出卡住的词或语法';
   } else if (x.kind === 'speak') {
     said = answer.said; ok = answer.score >= 0.7; right = x.s.k;
   }
@@ -1143,8 +1158,8 @@ function check() {
   const praise = ['太棒了！', '答对了！', '漂亮！', '很好！', '完美！'];
   const dock = $('dock'); dock.className = 'dock ' + (ok ? 'good' : 'bad');
   $('fb').innerHTML = ok
-    ? x.kind === 'tu' ? '<h4>✓ 看懂了</h4>' : `<h4>✓ ${S.combo >= 3 ? '连对 ' + S.combo + '！' : praise[Math.random() * praise.length | 0]}</h4>${x.kind === 'speak' ? `<div class="ca ko" style="color:var(--gt)">${esc(x.s.k)}</div>` : x.s && x.kind === 'k2z' ? `<div class="ca ko" style="color:var(--gt);font-size:15px">${esc(x.s.k)}</div>` : ''}`
-    : `<h4>✕ ${x.kind === 'speak' ? '再听一遍，跟着念' : x.kind === 'tu' ? '没看懂，过几天再出' : '正确答案：'}</h4><div class="ca${/[가-힯]/.test(right) ? ' ko' : ''}" style="white-space:pre-line">${esc(right)}${x.s && x.kind === 'k2z' ? `<span class="ko" style="display:block">${esc(x.s.k)}</span>` : ''}</div>`;
+    ? x.kind === 'tu' ? (x.gp ? '<h4>✓ 说出来了</h4>' : '<h4>✓ 看懂了</h4>') : `<h4>✓ ${S.combo >= 3 ? '连对 ' + S.combo + '！' : praise[Math.random() * praise.length | 0]}</h4>${x.kind === 'speak' ? `<div class="ca ko" style="color:var(--gt)">${esc(x.s.k)}</div>` : x.s && x.kind === 'k2z' ? `<div class="ca ko" style="color:var(--gt);font-size:15px">${esc(x.s.k)}</div>` : ''}`
+    : `<h4>✕ ${x.kind === 'speak' ? '再听一遍，跟着念' : x.kind === 'tu' ? (x.gp ? '这句等会再说一次' : '没看懂，过几天再出') : '正确答案：'}</h4><div class="ca${/[가-힯]/.test(right) ? ' ko' : ''}" style="white-space:pre-line">${esc(right)}${x.s && x.kind === 'k2z' ? `<span class="ko" style="display:block">${esc(x.s.k)}</span>` : ''}</div>`;
   if (x.q) $('fb').insertAdjacentHTML('beforeend', `<div class="exp">${esc(x.q.ex || '')}</div>${x.self ? '<button class="btn ghost" id="selfOk" style="padding:4px;text-align:left">意思一样、语法也对？点这里算对</button>' : ''}`);
   if (x.self) $('selfOk').onclick = () => { S.first[x.id] = true; const l = S.log.find(l => l.id === x.id); if (l) l.ok = true; S.ok++; S.combo = 1; const k = S.items.length - 1; if (S.items[k].id === x.id && S.items[k].retry) { S.items.pop(); S.total--; } S.wrongIds = S.wrongIds.filter(i => i !== x.id); $('dock').className = 'dock good'; $('fb').innerHTML = '<h4>✓ 算对</h4>'; setGo('green', '继续'); setBar(); };
   if (ok && !x.self && x.kind !== 'speak' && x.kind !== 'tu') {   // 对了但其实是排除法 / 蒙的：点一下，分照算，明天再考
@@ -1396,7 +1411,7 @@ function finish() {
   else if (S.mode === 'gram') {
     pDay().g = (pDay().g || 0) + 1;
     const g = S.items[0] && S.items[0].g;
-    if (g) { const own = Object.entries(S.first).filter(([id]) => id.startsWith('G:' + g.id + ':')), okc = own.filter(([, v]) => v).length; ST.gm = ST.gm || {}; ST.gm[g.id] = okc + '/' + own.length; if (own.length && okc >= 7 && !(ST.gmPass || []).includes(g.id)) { ST.gmPass = (ST.gmPass || []).concat(g.id); S.gPassed = g.name; } }
+    if (g) { const own = Object.entries(S.first).filter(([id]) => id.startsWith('G:' + g.id + ':')), okc = own.filter(([, v]) => v).length; ST.gm = ST.gm || {}; ST.gm[g.id] = okc + '/' + own.length; if (own.length && okc / own.length >= 0.8 && !(ST.gmPass || []).includes(g.id)) { ST.gmPass = (ST.gmPass || []).concat(g.id); S.gPassed = g.name; } }
   }
   else if (LBY[S.mode]) ST.done[S.mode] = (ST.done[S.mode] || 0) + 1;
   mAdd(sec);
@@ -1450,7 +1465,7 @@ function finish() {
     ${predAfter && predBefore && predAfter.rank.i > predBefore.rank.i ? `<div class="burst lvup">🏅 升段：${predAfter.rank.name}<small>${predAfter.rank.tag || '离考过更近一步'}</small></div>` : ''}
     ${predAfter ? (() => { const d = predBefore ? predAfter.II - predBefore.II : 0; return `<div class="pdone"><small>TOPIK II 预测分</small><b id="pdN" data-from="${predBefore ? predBefore.II : predAfter.II}" data-to="${predAfter.II}">${predBefore ? predBefore.II : predAfter.II}</b><span class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + (-d) : '持平'}</span><em>${predAfter.II >= 150 ? '已到 4 级线' : predAfter.II >= 120 ? '离 4 级还差 ' + (150 - predAfter.II) + ' 分' : '离 3 级还差 ' + (120 - predAfter.II) + ' 分'}</em></div>`; })() : ''}
     ${estHtml}
-    ${S.gPassed ? `<div class="burst lvup">📘 语法过关：<span class="ko">${esc(S.gPassed)}</span><small>3 级语法 ${(ST.gmPass || []).length} / ${GR().length} · 明天学下一个</small></div>` : S.mode === 'gram' && S.items[0] && S.items[0].g ? `<div class="sec" style="text-align:left">这课 ${ST.gm[S.items[0].g.id]}，对 7 题才算过关，明天再来一次</div>` : ''}
+    ${S.gPassed ? `<div class="burst lvup">📘 语法过关：<span class="ko">${esc(S.gPassed)}</span><small>3 级语法 ${(ST.gmPass || []).length} / ${GR().length} · 明天学下一个</small></div>` : S.mode === 'gram' && S.items[0] && S.items[0].g ? `<div class="sec" style="text-align:left">这课 ${ST.gm[S.items[0].g.id]}，八成对才算过关，明天再来一次</div>` : ''}
     ${fz.length ? `<div class="sec" style="text-align:left">🤔 ${fz.length} 道模糊的题，明天再考一次</div>` : ''}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
     ${focus && !S.mode.startsWith('type-') ? `<div class="hero rev" style="text-align:left"><div class="meta">这组错得最多</div><h2>${esc(NO[focus] || focus)}</h2><p>先看 3 条解题方法，再专门刷这一类</p><button class="btn blue" id="goFocus">专项突破</button></div>` : ''}
