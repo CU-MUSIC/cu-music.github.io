@@ -609,7 +609,25 @@ function say(text, rate = 0.9, el) {
   playClips([{ src: clip(text, 'F', slow) || (slow && clip(text, 'F')), text, rate, v: 'F' }], el);
 }
 let AC;
-function sfx(ok) {   // 答对：柔和的木琴两连音（像多邻国）；答错：低沉轻一声。过低通滤掉刺耳的高频
+// ───────── 震动（像多邻国）：安卓用 navigator.vibrate；iPhone 网页没有震动接口，用 iOS 18 的「开关」控件，每拨一下系统给一次轻震 ─────────
+let HAP = localStorage.getItem('ko:hap') !== '0', hapSw = null;
+const HAPS = {   // 安卓：[震, 停, 震…] 毫秒；iPhone：几下、间隔多少毫秒
+  tap: [[8], 1, 0], ok: [[14], 1, 0], combo: [[12, 50, 12, 50, 18], 3, 60], bad: [[28, 70, 28], 2, 90],
+  win: [[12, 60, 12, 60, 30], 3, 80], big: [[15, 50, 15, 50, 15, 80, 45], 4, 70]
+};
+function iosTick() {
+  if (!hapSw) { const l = document.createElement('label'); l.style.cssText = 'position:fixed;left:-99px;top:0;opacity:0;pointer-events:none'; l.innerHTML = '<input type="checkbox" switch>'; document.body.appendChild(l); hapSw = l; }
+  hapSw.click();
+}
+function hap(k) {
+  if (!HAP) return; const h = HAPS[k]; if (!h) return;
+  try { if (navigator.vibrate) { navigator.vibrate(h[0]); return; } } catch (e) {}
+  if (!/iP(hone|ad|od)/.test(navigator.userAgent) && !(navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform))) return;
+  for (let i = 0; i < h[1]; i++) i ? setTimeout(iosTick, i * h[2]) : iosTick();
+}
+document.addEventListener('click', e => { if (e.target.closest('.ch, .ch .x, .wdthink, .fzb, .gopt button, .pst, #planGo, .wk, .sb')) hap('tap'); }, true);
+function sfx(ok, hk) {
+  hap(hk || (ok ? 'ok' : 'bad'));   // 答对：柔和的木琴两连音（像多邻国）；答错：低沉轻一声。过低通滤掉刺耳的高频
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     const t0 = AC.currentTime + .01, lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = ok ? 2600 : 1200; lp.connect(AC.destination);
@@ -772,7 +790,7 @@ function renderHome() {
   <button class="btn ghost" id="capBtn" style="margin-top:6px">${ST.cap ? '现在只练初级 · 点这里解锁中级' : '按级别自动升级 · 点这里只练初级'}</button>
   ${tier() >= 3 ? `<button class="btn ghost" id="goMock">16 题摸底 · 估一下现在多少分</button>` : ''}
   <button class="btn ghost" id="goPlace">${ST.placed ? '再测一次级别 · 12 题' : '分级测试 · 12 题'}</button>
-  <div class="foot"><button id="voiceBtn">换声音</button>${KEY ? '<button id="copyKey">复制同步码</button>' : ''}</div>
+  <div class="foot"><button id="voiceBtn">换声音</button><button id="hapBtn">震动：${HAP ? '开' : '关'}</button>${KEY ? '<button id="copyKey">复制同步码</button>' : ''}</div>
   </div></div>
   ${KEY ? '' : '<button class="btn blue" id="syncBtn" style="margin-top:10px">连接同步 · 和电脑共用学习记录</button>'}`;
   requestAnimationFrame(() => requestAnimationFrame(() => { const r = $('ringFg'); if (r) r.style.strokeDashoffset = C * (1 - pct); ['gFill', 'lFill', 'pFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }));
@@ -791,6 +809,7 @@ function renderHome() {
   if ($('goRev')) $('goRev').onclick = () => start('review', buildReview());
   document.querySelectorAll('.lc').forEach(b => b.onclick = () => start(b.dataset.l, buildLesson(b.dataset.l)));
   $('voiceBtn').onclick = voiceSheet;
+  $('hapBtn').onclick = () => { HAP = !HAP; localStorage.setItem('ko:hap', HAP ? '1' : '0'); $('hapBtn').textContent = '震动：' + (HAP ? '开' : '关'); hap('ok'); };
   if ($('syncBtn')) $('syncBtn').onclick = syncSheet;
   if ($('copyKey')) $('copyKey').onclick = () => navigator.clipboard.writeText(KEY).then(() => toast('已复制，到手机韩语 App 底部点「连接同步」粘贴'), () => sheet(`<h3>同步码</h3><p class="ko" style="word-break:break-all;user-select:all;font-size:15px">${esc(KEY)}</p>`));
 }
@@ -1116,7 +1135,7 @@ function check() {
   if (x.s) tokens(x.s.k).forEach(t => ST.seen[t] = 1);
   if (x.q) { ST.tseen = ST.tseen || {}; ST.tseen[x.q.id] = 1; }
   if (!(x.id in S.first)) { S.first[x.id] = ok; S.log.push({ id: x.id, t: x.kind, k: x.s ? x.s.k : x.q ? (x.q.no + ' ' + (x.q.d ? x.q.d.map(l => l[1]).join(' / ') : x.q.p || x.q.q)).slice(0, 110) : (x.e.audio || x.e.q), ok, a: said || '' }); }
-  sfx(ok);
+  sfx(ok, ok && (S.combo + 1) % 5 === 0 ? 'combo' : 0);
   if (ok) { S.combo++; S.best = Math.max(S.best, S.combo); S.ok++; }
   else { S.combo = 0; if (!S.wrongIds.includes(x.id)) { S.wrongIds.push(x.id); S.items.push(x.kind === 'tq' && x.q.tz ? { ...tuEx(TBY[x.id]), retry: 1 } : { ...x, retry: 1 }); S.total++; } }
   const praise = ['太棒了！', '答对了！', '漂亮！', '很好！', '完美！'];
@@ -1272,7 +1291,7 @@ function cjAnswer(b) {
   ST.cf = ST.cf || {}; ST.cf[c.f] = (ST.cf[c.f] || []).concat(ok ? 1 : 0).slice(-10);
   W.n++; W.log.push({ id: 'C:' + c.key, t: 'cj', k: (c.sent ? c.sent[0] : CJ[c.k][c.f]), ok: ok ? 1 : 0, a: (b ? b.textContent.replace(/^\d/, '') : '不会') + ' · ' + (rt / 1000).toFixed(1) + 's' });
   $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdans ${ok ? 'okc' : ''}">${esc(c.k)} → ${esc(CJ[c.k][c.f])}</div><div class="wdvs">${esc(CJR[c.f])}${c.sent ? `<br>${esc(c.sent[3])}` : ''}</div>`);
-  if (ok) { W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true); wdXp(2); $('wdFb').insertAdjacentHTML('beforeend', '<button class="fzb" id="fzb">🤔 蒙的 <small>F</small></button>'); $('fzb').onclick = wdFuzzy; W.nt = setTimeout(wdShow, c.sent ? 2600 : 1900); }
+  if (ok) { W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true, W.combo % 5 === 0 ? 'combo' : 0); wdXp(2); $('wdFb').insertAdjacentHTML('beforeend', '<button class="fzb" id="fzb">🤔 蒙的 <small>F</small></button>'); $('fzb').onclick = wdFuzzy; W.nt = setTimeout(wdShow, c.sent ? 2600 : 1900); }
   else { W.combo = 0; sfx(false); say(c.sent ? c.sent[0] : CJ[c.k][c.f], 1); $('wdIdk').textContent = '继续'; $('wdIdk').onclick = wdShow; }
   $('wdc').innerHTML = `<b>${W.n}</b> 个 · 对 ${W.ok}${wdDayTxt()}`; $('wdCombo').textContent = W.combo >= 3 ? '连对 ' + W.combo : ''; $('wdCombo').classList.toggle('on', W.combo >= 3);
   save(); if (W.n % 5 === 0) push();
@@ -1306,7 +1325,7 @@ function wdAnswer(b) {
     ST.w[k] = { b: nb, due: now + (sp === 'slow' ? WGAP[0] : WGAP[Math.min(nb, WGAP.length) - 1]), rt };
     if (sp === 'slow') { W.slow.push({ k, rt }); W.again.push({ k, at: W.n + 3 }); }   // 慢的本轮隔几张再考一次
     $('wdFb').insertAdjacentHTML('beforeend', `<div class="wdrt ${sp}">${W.cur.chal ? '🔥 挑战成功 +3 · ' : ''}${W.cur.auto ? '没自己想起' : '想起 ' + (think / 1000).toFixed(1) + ' 秒'} · 选 ${(find / 1000).toFixed(1)} 秒${sp === 'fast' ? ' ⚡' : sp === 'slow' ? ' · 有点慢，等会再考' : ''}</div>`);
-    W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true);
+    W.ok++; W.combo++; W.best = Math.max(W.best, W.combo); sfx(true, W.combo % 5 === 0 ? 'combo' : 0);
     wdXp(1 + (W.combo % 5 === 0 ? 2 : 0) + (W.cur.chal ? 3 : 0));   // 1 个对 = 1 XP，每连对 5 个多 2 XP，挑战词多 3 XP，当场记上
     if (W.cur.chal) { W.chOk = (W.chOk || 0) + 1; const c = chResult(true); if (c) toast('挑战升档：' + CH_NAME[ST.chStep]); }
     if (W.cur.rev) say(k, 1);
@@ -1346,7 +1365,7 @@ function wdEnd() {
     ${(() => { const okRt = W.log.filter(x => x.ok).map(x => parseFloat(x.a.split(' · ').pop())).filter(v => v < 30), avg = okRt.length ? (okRt.reduce((a, b) => a + b, 0) / okRt.length).toFixed(1) : 0, sl = [...new Map(W.slow.map(x => [x.k, x])).values()]; return `<div class="reward"><div class="r"><span>平均反应 ${avg} 秒</span><em>秒认 = 3 秒内自己翻开</em></div>${sl.length ? `<div class="wslow">${sl.map(x => `<span><b class="ko">${esc(x.k)}</b> ${esc(WBY[x.k].z)} <i>${x.fz ? '蒙的' : (x.rt / 1000).toFixed(1) + 's'}</i></span>`).join('')}</div><small style="color:var(--tx3);font-size:13px">这些是等选项出来才想起来的，10 分钟后会再出</small>` : ''}</div>`; })()}
     ${nextHtml()}
     ${planNext() && planNext().k !== 'w' ? '<button class="btn green" id="wdNx">开始下一步</button><button class="btn ghost" id="wdMore">再刷一轮词</button>' : '<button class="btn green" id="wdMore">' + (planNext() ? `再刷 ${WGOAL - Math.min(WGOAL, ST.wDay.n)} 个完成第 1 步` : '再刷一轮') + '</button>'}<button class="btn ghost" id="back">回首页</button>`;
-  W = null; show('done'); sfx(true);
+  W = null; show('done'); sfx(true, L2.lv > lvBefore || (dayBefore < ST.goal && ST.dayXp >= ST.goal) ? 'big' : 'win');
   setTimeout(() => { const e = $('wmFill'); if (e) e.style.width = e.dataset.w + '%'; }, 300);
   $('wdMore').onclick = wdStart; if ($('wdNx')) $('wdNx').onclick = () => planNext().go(); $('back').onclick = () => { show('home'); renderHome(); };
 }
@@ -1438,7 +1457,7 @@ function finish() {
   $('back').onclick = () => { S = null; show('home'); renderHome(); };
   bindNext($('back')); if ($('backH')) $('backH').onclick = () => { S = null; show('home'); renderHome(); };
   if ($('goFocus')) $('goFocus').onclick = () => start('type-' + focus, buildType(focus));
-  show('done'); sfx(true);
+  show('done'); sfx(true, lvUp || goalHit || S.gPassed ? 'big' : 'win');
   setTimeout(() => { ['dgFill', 'dlFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }, 300);
   const t0 = performance.now(), up = now => { const k = Math.min(1, (now - t0) / 700), e = $('xpUp'); if (!e) return; e.textContent = '+' + Math.round(xp * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(up); };
   requestAnimationFrame(up);
