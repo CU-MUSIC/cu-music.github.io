@@ -71,6 +71,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mw{cursor:pointer;border-radius:4px;transition:background .2s,box-shadow .2s}.mw:hover{background:var(--fill)}.mw.mk{background:rgba(255,150,0,.16);box-shadow:inset 0 -2px 0 #ff9600}
 .enw{display:flex;align-items:center;gap:10px;font-size:34px;margin:6px 0}.esent{font-size:22px;line-height:1.7;font-weight:600}.esent .hl{color:#7c4dff;border-bottom:3px solid #c9b6ff}.endb{margin-top:12px}
 .wdhj{font-size:13px;font-weight:700;color:var(--tx2);line-height:1.5;animation:fadeUp .25s ease-out}.wdhj b{color:#ff9600}
+.askb{margin-left:8px}.askb.on{border-color:#1cb0f6;color:#1cb0f6;background:rgba(28,176,246,.1)}
+.askw{font-size:14px;font-weight:700;color:var(--tx3);margin:0 0 10px}.askc{display:block;width:100%;text-align:left;border-color:#1cb0f6}.askc small{font-size:14px;color:var(--tx2)}
+.aski{padding:12px 0;border-bottom:1px solid var(--bd)}.akq{font-size:17px;line-height:1.7}.akm{font-size:14px;color:var(--tx2);margin:4px 0}.aka{font-size:16px;line-height:1.8;background:var(--fill);border-radius:12px;padding:10px 12px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -414,7 +417,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 const _t = Math.floor(Date.now() / 6e5);
 // 一打开就先去拿云端进度，和题库并行下载
 try { const k = (/[#&]k=([\w-]+)/.exec(location.hash) || [])[1] || localStorage.getItem('insights:key'); if (k) window._pre = fetch('https://stats.cumusic.work/ko?days=30', { headers: { Authorization: 'Bearer ' + k }, cache: 'no-store' }); } catch (e) {}
-document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script><script src="grammar.js?t=' + _t + '"><\/script><script src="freq.js?t=' + _t + '"><\/script><script src="ex.js?t=' + _t + '"><\/script>');
+document.write('<script src="data.js?t=' + _t + '"><\/script><script src="topik.js?t=' + _t + '"><\/script><script src="a/index.js?t=' + _t + '"><\/script><script src="words.js?t=' + _t + '"><\/script><script src="words-origin.js?t=' + _t + '"><\/script><script src="conj.js?t=' + _t + '"><\/script><script src="grammar.js?t=' + _t + '"><\/script><script src="freq.js?t=' + _t + '"><\/script><script src="ex.js?t=' + _t + '"><\/script><script src="ask.js?t=' + _t + '"><\/script>');
 </script>
 <script>
 const { LESSONS, INTRO, SENT, DAILY } = window.KO;
@@ -924,6 +927,7 @@ function renderHome() {
     <div class="ring" title="今日 ${dayXp}/${ST.goal} XP"><svg viewBox="0 0 38 38"><circle class="bgc" cx="19" cy="19" r="15"/><circle class="fgc" cx="19" cy="19" r="15" stroke-dasharray="${C}" stroke-dashoffset="${C}" id="ringFg"/></svg><b>${dayXp}</b></div>
   </div>
   <div class="hrow">${KEY ? '<button class="syl" id="syl"></button>' : '<span></span>'}<button class="ver" id="ver"></button></div>
+  ${askCard()}
   ${planCard()}
   ${(() => { const L = lvInfo(ST.xp), full = dayXp >= ST.goal; return `<button class="lvc" id="lvc"><div class="lv"><div><small>LV</small><b>${L.lv}</b></div></div><div class="m">
     <div class="r"><span>今日 ${dayXp} / ${ST.goal} XP</span><em class="${full ? 'ok' : ''}">${full ? '达标 ✓' : '每日目标 ›'}</em></div>
@@ -949,7 +953,7 @@ function renderHome() {
   verLine(); syncLine(); if ($('syl')) $('syl').onclick = () => { lastPull = Date.now(); pull().then(() => { if (pending.length) push(); }); };
   if ($('predB')) $('predB').onclick = predSheet;
   $('lvc').onclick = goalSheet; document.querySelector('.ring').onclick = goalSheet;
-  bindPlan();
+  bindPlan(); if ($('askC')) $('askC').onclick = () => { askSheet(); setTimeout(renderHome, 400); };
   $('moreT').onclick = () => { ST.moreOpen = !ST.moreOpen; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} $('more').classList.toggle('on', ST.moreOpen); $('moreT').textContent = '更多 ' + (ST.moreOpen ? '▴' : '▾'); };
   document.querySelectorAll('.sb').forEach(b => b.onclick = () => start('sec-' + b.dataset.s, buildSec(b.dataset.s, 8)));
   if ($('goReal')) $('goReal').onclick = () => startReal();
@@ -985,6 +989,17 @@ function planSteps() {
   ].map(o => ({ ...o, done: o.cur >= o.need }));
 }
 function planNext() { return planSteps().find(o => !o.done); }
+function askCard() {   // 老师答疑：有新讲解时显示在首页最上面，看过就收起
+  const A = window.KO_ASK || {}, mine = ST.ask || {}, seen = ST.askSeen || {};
+  const fresh = Object.keys(A).filter(id => mine[id] && !seen[id]), wait = Object.keys(mine).filter(id => !A[id]).length;
+  if (!fresh.length) return wait ? `<div class="askw">❓ ${wait} 个问题等今晚讲解</div>` : '';
+  return `<button class="plan askc" id="askC"><div class="ph"><h2>🧑‍🏫 老师答疑</h2><span><b>${fresh.length}</b> 个新讲解 ›</span></div><small>${esc(mine[fresh[0]].q.slice(0, 40))}…</small></button>`;
+}
+function askSheet() {
+  const A = window.KO_ASK || {}, mine = ST.ask || {}, ids = Object.keys(A).filter(id => mine[id]).sort((a, b) => (mine[b].d || '').localeCompare(mine[a].d || ''));
+  sheet(`<h3>老师答疑</h3>${ids.map(id => { const m = mine[id]; return `<div class="aski"><div class="ko akq">${esc(m.q)}</div><div class="akm">你选：${esc(m.my || '不会')} · 正确：<b>${esc(m.right)}</b></div><div class="aka">${esc(A[id].a).replace(/\n/g, '<br>')}</div></div>`; }).join('') || '<p>还没有讲解</p>'}`);
+  ST.askSeen = ST.askSeen || {}; ids.forEach(id => ST.askSeen[id] = 1); save(); push();
+}
 function planCard() {
   const st = planSteps(), n = st.filter(o => o.done).length, nx = st.find(o => !o.done), left = st.filter(o => !o.done).reduce((a, o) => a + o.min, 0);
   return `<div class="plan" id="plan"><div class="ph"><h2>今天的 ${st.length} 步</h2><span>${nx ? `<b>${n}</b> / ${st.length} · 还要约 ${left} 分钟` : `<b>全部完成 ✓</b> · 学了 ${mToday()} 分钟`}</span></div>
@@ -1354,6 +1369,16 @@ function check() {
   if (ok && !x.self && x.kind !== 'speak' && x.kind !== 'tu') {   // 对了但其实是排除法 / 蒙的：点一下，分照算，明天再考
     $('fb').insertAdjacentHTML('beforeend', '<button class="fzb" id="fzb">🤔 其实有点模糊</button>');
     $('fzb').onclick = () => { S.fz = S.fz || {}; const on = !S.fz[x.id]; if (on) S.fz[x.id] = 1; else delete S.fz[x.id]; const l = S.log.find(l => l.id === x.id); if (l) l.fz = on ? 1 : 0; $('fzb').classList.toggle('on', on); $('fzb').textContent = on ? '✓ 记下了 · 明天再考一次' : '🤔 其实有点模糊'; };
+  }
+  // ❓ 没看懂：对错都能点，记下题目、你的答案和当时的解释，今晚老师在 ask.js 写讲解，首页「老师答疑」里看
+  if (x.kind !== 'speak') {
+    $('fb').insertAdjacentHTML('beforeend', `<button class="fzb askb${(ST.ask || {})[x.id] ? ' on' : ''}" id="askb">${(ST.ask || {})[x.id] ? '✓ 已提问 · 今晚讲解' : '❓ 解释没看懂'}</button>`);
+    $('askb').onclick = () => {
+      ST.ask = ST.ask || {}; const on = !ST.ask[x.id];
+      if (on) { const plain = h => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); ST.ask[x.id] = { d: today(), q: plain(x.q ? (x.q.p ? x.q.p + ' / ' : '') + (x.q.q || '') + (x.q.after ? ' ' + x.q.after : '') + (x.q.d ? ' ' + x.q.d.map(l => l[1]).join(' / ') : '') : x.s ? x.s.k : '').slice(0, 300), my: said || (x.q && answer >= 0 ? x.q.ch[answer] : ''), right: plain(right || (x.q ? x.q.ch[x.q.a] : '')), ex: plain((x.q && x.q.ex) || '').slice(0, 300), tag: plain(x.tag || '') }; }
+      else delete ST.ask[x.id];
+      save(); push(); $('askb').classList.toggle('on', on); $('askb').textContent = on ? '✓ 已提问 · 今晚讲解' : '❓ 解释没看懂'; if (on) toast('记下了，今晚写讲解，首页「老师答疑」里看');
+    };
   }
   if (!ok && x.kind === 'speak') setTimeout(() => say(x.s.k, 0.8), 300);
   setGo(ok ? 'green' : 'red', '继续');
