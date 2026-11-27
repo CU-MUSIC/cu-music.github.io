@@ -982,11 +982,11 @@ function planCard() {
   return `<div class="plan" id="plan"><div class="ph"><h2>今天的 ${st.length} 步</h2><span>${nx ? `<b>${n}</b> / ${st.length} · 还要约 ${left} 分钟` : `<b>全部完成 ✓</b> · 学了 ${mToday()} 分钟`}</span></div>
     ${st.map((o, i) => `<button class="pst${o.done ? ' ok' : o === nx ? ' cur' : ''}" data-i="${i}"><span class="n">${o.done ? '✓' : i + 1}</span><span class="m"><b>${esc(o.name)}</b><small>${esc(o.why)}</small>${o.need > 1 && !o.done ? `<div class="pbar2"><i data-w="${o.cur / o.need * 100}"></i></div>` : ''}</span><em>${o.done ? '' : o.need > 1 ? o.cur + '/' + o.need : '约 ' + o.min + ' 分'}</em></button>`).join('')}
     ${nx ? `<button class="btn green big-go" id="planGo">开始第 ${st.indexOf(nx) + 1} 步</button>`
-      : `<div class="allok">🎉 今天该学的都学完了 · 想加练按场景选</div><div class="scn">
+      : `<div class="allok">🎉 4 步做完了 · 接下来都交给无尽模式</div><button class="btn green big-go" id="goEndless">♾️ 进入无尽模式</button><div class="sec" style="margin:14px 0 0">不方便的时候按场景选</div><div class="scn">
         <button data-x="R"><b>📖 上课</b><small>不出声 · 阅读 10 题（按水平：过渡 → 真题）</small></button>
         <button data-x="L"><b>🚌 公交</b><small>戴耳机 · 听力 8 题</small></button>
         <button data-x="G"><b>🏠 在家</b><small>${gNext() ? '下一课语法 · ' + esc(gNext().name) : '语法复习一课'}</small></button>
-        <button data-x="W"><b>📚 碎片</b><small>刷一轮词</small></button></div>`}<button class="btn blue endb" id="goEndless">♾️ 无尽模式 · 学词 → 马上用在句子里</button></div>`;
+        <button data-x="W"><b>📚 碎片</b><small>刷一轮词</small></button></div>`}</div>`;
 }
 function bindPlan() {
   const st = planSteps();
@@ -998,11 +998,12 @@ function bindPlan() {
 }
 function nextHtml() {   // 结束页：告诉下一步是什么
   const st = planSteps(), nx = st.find(o => !o.done), n = st.filter(o => o.done).length;
-  if (!nx) return `<div class="nxt"><small>今天的 ${st.length} 步 · 学了 ${mToday()} 分钟</small><b>全部完成 ✓</b><span>可以休息了，想多练就回首页再来</span></div>`;
+  if (!nx) return `<div class="nxt"><small>今天的 ${st.length} 步 · 学了 ${mToday()} 分钟</small><b>全部完成 ✓</b><span>剩下的时间交给无尽模式：学词 → 马上用在句子里</span></div>`;
   return `<div class="nxt"><small>今天 ${n} / ${st.length} · 下一步</small><b>第 ${st.indexOf(nx) + 1} 步：${esc(nx.name)}</b><span>${esc(nx.why)}</span></div>`;
 }
-function bindNext(primary) {   // primary = 结束页主按钮：有下一步就直接开始下一步
-  const nx = planNext(); if (!nx) return;
+function bindNext(primary) {   // primary = 结束页主按钮：有下一步就直接开始下一步；4 步都做完了就进无尽模式（11-27 用户定：先 4 步，剩下全用无尽模式）
+  const nx = planNext();
+  if (!nx) { if (S && S.mode === 'endless') return; primary.textContent = '♾️ 进入无尽模式'; primary.onclick = () => { S = null; startEndless(); }; return; }
   primary.textContent = '开始下一步'; primary.onclick = () => { S = null; nx.go(); };
 }
 function predSheet() {
@@ -1566,10 +1567,10 @@ function wdEnd() {
     <div class="r" style="margin-top:8px"><span>今日 ${ST.dayXp} / ${ST.goal} XP</span><em>${ST.dayXp >= ST.goal ? '达标 ✓' : '还差 ' + (ST.goal - ST.dayXp)}</em></div></div>
     ${(() => { const okRt = W.log.filter(x => x.ok).map(x => parseFloat(x.a.split(' · ').pop())).filter(v => v < 30), avg = okRt.length ? (okRt.reduce((a, b) => a + b, 0) / okRt.length).toFixed(1) : 0, sl = [...new Map(W.slow.map(x => [x.k, x])).values()]; return `<div class="reward"><div class="r"><span>平均反应 ${avg} 秒</span><em>秒认 = 3 秒内自己翻开</em></div>${sl.length ? `<div class="wslow">${sl.map(x => `<span><b class="ko">${esc(x.k)}</b> ${esc(WBY[x.k].z)} <i>${x.fz ? '蒙的' : (x.rt / 1000).toFixed(1) + 's'}</i></span>`).join('')}</div><small style="color:var(--tx3);font-size:13px">这些是等选项出来才想起来的，10 分钟后会再出</small>` : ''}</div>`; })()}
     ${nextHtml()}
-    ${planNext() && planNext().k !== 'w' ? '<button class="btn green" id="wdNx">开始下一步</button><button class="btn ghost" id="wdMore">再刷一轮词</button>' : '<button class="btn green" id="wdMore">' + (planNext() ? `再刷 ${WGOAL - Math.min(WGOAL, ST.wDay.n)} 个完成第 1 步` : '再刷一轮') + '</button>'}<button class="btn ghost" id="back">回首页</button>`;
+    ${!planNext() ? '<button class="btn green" id="wdEnd2">♾️ 进入无尽模式</button><button class="btn ghost" id="wdMore">再刷一轮词</button>' : planNext().k !== 'w' ? '<button class="btn green" id="wdNx">开始下一步</button><button class="btn ghost" id="wdMore">再刷一轮词</button>' : '<button class="btn green" id="wdMore">' + (planNext() ? `再刷 ${WGOAL - Math.min(WGOAL, ST.wDay.n)} 个完成第 1 步` : '再刷一轮') + '</button>'}<button class="btn ghost" id="back">回首页</button>`;
   W = null; show('done'); sfx(true, L2.lv > lvBefore || (dayBefore < ST.goal && ST.dayXp >= ST.goal) ? 'big' : 'win');
   setTimeout(() => { const e = $('wmFill'); if (e) e.style.width = e.dataset.w + '%'; }, 300);
-  $('wdMore').onclick = wdStart; if ($('wdNx')) $('wdNx').onclick = () => planNext().go(); $('back').onclick = () => { show('home'); renderHome(); };
+  $('wdMore').onclick = wdStart; if ($('wdNx')) $('wdNx').onclick = () => planNext().go(); if ($('wdEnd2')) $('wdEnd2').onclick = startEndless; $('back').onclick = () => { show('home'); renderHome(); };
 }
 $('wdQuit').onclick = wdEnd;
 document.addEventListener('keydown', e => {   // 刷词快捷键：1–4 选，回车 / 0 = 不会或继续，空格 = 再听一遍，Esc = 结束
