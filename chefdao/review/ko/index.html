@@ -784,8 +784,9 @@ function rNext(zhOnly) {   // 先把每套的 1–10 题做完，再做 11–20�
 }
 async function classRead() {   // 📖 上课：有配好中文的真题段就做真题，没有就做阅读梯子（过渡题为主，中级题按正确率加量）
   try { await rIndex(); } catch (e) {}
-  const nx = rNext(true); if (nx) return startReal(nx.n, nx.c);
-  toast('真题中文还在补，先做阅读梯子'); start('sec-R', buildSec('R', 10));
+  const h = ((ST.ab || {}).R3 || []).slice(-10), acc = h.length ? h.filter(Boolean).length / h.length : 0;
+  const nx = rNext(true); if (nx && (acc >= .6 || (ST.rpos || {})[nx.n + ':' + nx.c])) return startReal(nx.n, nx.c);   // 中级阅读最近对六成以上才上真题（或者有没做完的真题段）
+  start('sec-R', buildSec('R', 10));
 }
 const rU = s => esc(s).replace(/⟨/g, '<u class="ul">').replace(/⟩/g, '</u>').replace(/\(\s*\)/g, '<b class="fz">(　　)</b>');
 async function startReal(n, c) {
@@ -795,12 +796,13 @@ async function startReal(n, c) {
     let d; const pass = await rPass();
     try { d = await rLoad(n, pass); } catch (e) { localStorage.removeItem('ko:rp'); return toast('密码不对，再点一次重新输入'); }
     localStorage.setItem('ko:rp', pass);
-    const [lo, hi] = RCH[c], items = d.qs.filter(q => q.no >= lo && q.no <= hi).map(q => {
+    const [lo, hi] = RCH[c], skip = (ST.rpos || {})[n + ':' + c] || [], items = d.qs.filter(q => q.no >= lo && q.no <= hi && !skip.includes(q.no)).map(q => {
       const z = q.z || {}, long = q.t.length > 60;
       const head = `<div class="qi"><span class="ko">${rU(q.ins)}</span>${q.insz ? `<small>${q.insz}</small>` : ''}</div>${q.img ? `<img class="rimg" src="${q.img}" alt="">` : ''}`;
       return { kind: 'tq', id: `RR:${n}:${q.no}`, tag: `真题 · 第 ${n} 回 · 阅读第 ${q.no} 题`, rr: { n, c, no: q.no },
         q: { id: `RR:${n}:${q.no}`, sec: 'R', no: 'RR', q: head + (long ? `<div class="psg ko">${rU(q.t)}</div>` : ''), p: q.psg, after: long ? '' : rU(q.t) + (q.tz ? `<small class="qz">${q.tz}</small>` : ''), ch: q.o, a: q.a, ex: z.e || '', zs: [z.psg, z.t].filter(Boolean).join('\n'), cz: z.o || null } };
     });
+    if (skip.length) toast('接着上次做，还剩 ' + items.length + ' 题');
     start('real', items);
   } catch (e) { toast('真题没打开：' + (e.message || e)); }
 }
@@ -928,7 +930,7 @@ function planCard() {
     ${st.map((o, i) => `<button class="pst${o.done ? ' ok' : o === nx ? ' cur' : ''}" data-i="${i}"><span class="n">${o.done ? '✓' : i + 1}</span><span class="m"><b>${esc(o.name)}</b><small>${esc(o.why)}</small>${o.need > 1 && !o.done ? `<div class="pbar2"><i data-w="${o.cur / o.need * 100}"></i></div>` : ''}</span><em>${o.done ? '' : o.need > 1 ? o.cur + '/' + o.need : '约 ' + o.min + ' 分'}</em></button>`).join('')}
     ${nx ? `<button class="btn green big-go" id="planGo">开始第 ${st.indexOf(nx) + 1} 步</button>`
       : `<div class="allok">🎉 今天该学的都学完了 · 想加练按场景选</div><div class="scn">
-        <button data-x="R"><b>📖 上课</b><small>不出声 · 阅读 10 题（真题 / 过渡）</small></button>
+        <button data-x="R"><b>📖 上课</b><small>不出声 · 阅读 10 题（按水平：过渡 → 真题）</small></button>
         <button data-x="L"><b>🚌 公交</b><small>戴耳机 · 听力 8 题</small></button>
         <button data-x="G"><b>🏠 在家</b><small>${gNext() ? '下一课语法 · ' + esc(gNext().name) : '语法复习一课'}</small></button>
         <button data-x="W"><b>📚 碎片</b><small>刷一轮词</small></button></div>`}</div>`;
@@ -1016,9 +1018,10 @@ function start(mode, items) {
   S = { mode, items, i: 0, total: items.length, done: 0, combo: 0, best: 0, ok: 0, first: {}, log: [], t0: Date.now(), wrongIds: [] };
   show('lesson'); renderEx();
 }
-$('quit').onclick = () => {
-  if (S && S.done > 2 && !confirm('现在退出，这组的进度不会保存')) return;
-  stopAudio(); stopRec(); S = null; show('home'); renderHome();
+$('quit').onclick = () => {   // 退出：做过的题照样记分、记错题；真题记下做到哪，下次接着做
+  stopAudio(); stopRec();
+  if (S && Object.keys(S.first).length) { S.partial = true; return finish(); }
+  S = null; show('home'); renderHome();
 };
 function setBar() {
   const f = $('fill'); f.style.width = (S.done / S.total * 100) + '%';
@@ -1522,14 +1525,15 @@ document.addEventListener('keydown', e => {   // 刷词快捷键：1–4 选，�
 
 function finish() {
   const sec = Math.round((Date.now() - S.t0) / 1000), firstVals = Object.values(S.first), n = firstVals.length, okN = firstVals.filter(Boolean).length;
-  const acc = n ? Math.round(okN / n * 100) : 100, xp = 10 + okN + (n && okN === n ? 5 : 0), t = today();
+  const acc = n ? Math.round(okN / n * 100) : 100, xp = (S.partial ? 0 : 10) + okN + (!S.partial && n && okN === n ? 5 : 0), t = today();
   // 连续天数
   if (ST.last !== t) { ST.streak = ST.last === today(Date.now() - DAY) ? ST.streak + 1 : 1; ST.last = t; }
   if (ST.day !== t) { ST.day = t; ST.dayXp = 0; }
   const dayBefore = ST.dayXp, lvBefore = lvInfo(ST.xp).lv;
   ST.xp += xp; ST.dayXp += xp;
   const L2 = lvInfo(ST.xp), goalHit = dayBefore < ST.goal && ST.dayXp >= ST.goal, lvUp = L2.lv > lvBefore;
-  if (S.mode === 'daily' || S.mode === 'study') { ST.dailyDone = DAILY.date; pDay().s++; }
+  if (S.partial) { if (S.mode === 'real') { const r0 = S.items[0].rr, k = r0.n + ':' + r0.c; ST.rpos = ST.rpos || {}; ST.rpos[k] = [...new Set((ST.rpos[k] || []).concat(Object.keys(S.first).filter(id => id.startsWith('RR:')).map(id => +id.split(':')[2])))]; } }   // 中途退出：不算完成这一步
+  else if (S.mode === 'daily' || S.mode === 'study') { ST.dailyDone = DAILY.date; pDay().s++; }
   else if (/^(sec|type)-/.test(S.mode)) pDay().x++;
   else if (S.mode === 'gram') {
     pDay().g = (pDay().g || 0) + 1;
@@ -1538,7 +1542,7 @@ function finish() {
   }
   else if (S.mode === 'real') {   // 真题：记这一段的成绩；按题号算进预测（1–24 题 ≈ 3 级，25–50 题 ≈ 4 级）
     const r0 = S.items[0].rr, own = Object.entries(S.first).filter(([id]) => id.startsWith('RR:'));
-    ST.rp = ST.rp || {}; ST.rp[r0.n + ':' + r0.c] = own.filter(([, v]) => v).length + '/' + own.length;
+    ST.rp = ST.rp || {}; ST.rp[r0.n + ':' + r0.c] = own.filter(([, v]) => v).length + '/' + own.length; if (ST.rpos) delete ST.rpos[r0.n + ':' + r0.c];
     ST.ab = ST.ab || {}; own.filter(([id]) => !(S.hint || {})[id]).forEach(([id, v]) => { const k = +id.split(':')[2] <= 24 ? 'R3' : 'R4'; ST.ab[k] = (ST.ab[k] || []).concat(v ? 1 : 0).slice(-30); });
     S.rDone = { n: r0.n, c: r0.c, s: ST.rp[r0.n + ':' + r0.c] };
   }
@@ -1584,7 +1588,7 @@ function finish() {
   push({ lesson: S.mode, dur: sec, xp, items: S.log });
   const wrong = S.log.filter(l => !l.ok);
   $('done').innerHTML = `<div class="big-e">${acc === 100 ? '🏆' : acc >= 80 ? '🎉' : '💪'}</div>
-    <h2>${acc === 100 ? '全对！' : '这组练完了'}</h2>
+    <h2>${S.partial ? '进度已保存' : acc === 100 ? '全对！' : '这组练完了'}</h2>
     ${lvUp ? `<div class="burst lvup">⭐ 升到 Lv ${L2.lv}<small>下一级还要 ${L2.need} XP</small></div>` : ''}
     ${goalHit ? `<div class="burst goal" style="animation-delay:${lvUp ? '.25s' : '0s'}">🎯 今日目标达成<small>🔥 连续 ${ST.streak} 天</small></div>` : ''}
     <div class="stats"><div class="st a"><small>经验</small><b id="xpUp">+0</b></div><div class="st b"><small>正确率</small><b>${acc}%</b></div><div class="st c"><small>用时</small><b>${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</b></div></div>
@@ -1604,7 +1608,7 @@ function finish() {
     ${nextHtml()}
     <button class="btn green" id="back">继续</button>${planNext() ? '<button class="btn ghost" id="backH">回首页</button>' : ''}`;
   $('back').onclick = () => { S = null; show('home'); renderHome(); };
-  bindNext($('back')); if ($('backH')) $('backH').onclick = () => { S = null; show('home'); renderHome(); };
+  if (!S.partial) bindNext($('back')); if ($('backH')) $('backH').onclick = () => { S = null; show('home'); renderHome(); };
   if ($('goFocus')) $('goFocus').onclick = () => start('type-' + focus, buildType(focus));
   show('done'); sfx(true, lvUp || goalHit || S.gPassed ? 'big' : 'win');
   setTimeout(() => { ['dgFill', 'dlFill'].forEach(id => { const e = $(id); if (e) e.style.width = e.dataset.w + '%'; }); }, 300);
