@@ -9,7 +9,7 @@ self.addEventListener('push', e => e.waitUntil((async () => {
     const sub = await self.registration.pushManager.getSubscription();
     if (sub) { const j = await (await fetch(API + '/push/last?e=' + await sha16(sub.endpoint), { cache: 'no-store' })).json(); if (j.ok && j.title) n = { title: j.title, body: j.body || '', url: j.url || n.url }; }
   } catch (err) {}
-  await self.registration.showNotification(n.title, { body: n.body, icon: '/chat/admin/icon-192.png', data: { url: n.url }, tag: 'chat-' + Date.now() });
+  await self.registration.showNotification(n.title, { body: n.body, icon: '/chat/admin/icon-192.png?v=3', data: { url: n.url }, tag: 'chat-' + Date.now() });
 })()));
 self.addEventListener('notificationclick', e => {
   e.notification.close();
