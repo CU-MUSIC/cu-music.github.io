@@ -61,10 +61,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .gpz{font-size:20px;font-weight:800;line-height:1.7}.gpk{display:flex;gap:10px;align-items:center;font-size:20px;font-weight:700;margin-top:12px}.gpk .spk{flex:none;width:36px;height:36px}.gpk[hidden]{display:none}
 .gqs{font-size:22px;line-height:1.7;margin-bottom:8px}.ul{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px;text-decoration-color:var(--b)}
 .qi{font-size:18px;font-weight:800}.qi small{display:block;font-size:15px;font-weight:700;color:var(--tx3);margin-top:2px}
-.zs{font-size:16px;font-weight:800;line-height:1.6;margin:4px 0 2px}
+.zs{white-space:pre-line;font-size:16px;font-weight:800;line-height:1.6;margin:4px 0 2px}
 .scn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.scn button{text-align:left;padding:12px;border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;background:var(--card);animation:fadeUp .35s both}
 .scn button:nth-child(2){animation-delay:.05s}.scn button:nth-child(3){animation-delay:.1s}.scn button:nth-child(4){animation-delay:.15s}
 .scn b{display:block;font-size:16px}.scn small{display:block;font-size:13px;color:var(--tx3);line-height:1.5;margin-top:2px}
+.rimg{display:block;width:100%;max-width:560px;border-radius:12px;margin:10px 0;background:#fff}.qa{margin-top:12px;font-size:18px}.qa .qz,.qz{display:block;font-size:14px;color:var(--tx3);margin-top:2px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -749,6 +750,44 @@ function buildGram() {
   const rev = old.flatMap(o => [gpEx(o, o.ex[Math.random() * o.ex.length | 0], '3 级语法 · 复习'), gq(o, Math.random() * o.qs.length | 0, '3 级语法 · 复习')]);
   return [{ kind: 'gcard', id: 'G:' + g.id + '!card', g, n }].concat(quiz, prod, rev);
 }
+// ───────── 真题阅读：TOPIK 官网公开的 12 套 TOPIK II 阅读（只给自己学习用，站点上是密文，第一次输密码解密）─────────
+let RIDX = null; const RCACHE = {};
+const RCH = [[1, 10], [11, 20], [21, 30], [31, 40], [41, 50]];
+async function rIndex() { if (!RIDX) RIDX = await (await fetch('real/index.json?t=' + VER)).json(); return RIDX; }
+async function rKey(pass) { const ix = await rIndex(), salt = Uint8Array.from(atob(ix.salt), c => c.charCodeAt(0)); const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: ix.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']); }
+async function rLoad(n, pass) {
+  if (RCACHE[n]) return RCACHE[n];
+  const buf = new Uint8Array(await (await fetch('real/' + n + '.bin?t=' + VER)).arrayBuffer());
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, await rKey(pass), buf.slice(12));
+  return RCACHE[n] = JSON.parse(new TextDecoder().decode(pt));
+}
+function rPass() { return new Promise(res => {
+  const p = localStorage.getItem('ko:rp'); if (p) return res(p);
+  sheet(`<h3>真题密码</h3><p style="font-size:15px;color:var(--tx2);line-height:1.7;margin-bottom:12px">真题只给自己用，网站上是加密的。每台设备输一次，之后记住。</p><input id="rpIn" class="ko" autocomplete="off" autocapitalize="off" style="width:100%;font-size:20px;padding:12px;border:2px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx)"><button class="btn green" id="rpGo" style="margin-top:12px">确定</button>`);
+  $('rpIn').focus(); $('rpGo').onclick = () => { const v = $('rpIn').value.trim(); if (!v) return; $('sheet').classList.remove('on'); res(v); };
+}); }
+function rNext() {   // 先把每套的 1–10 题做完，再做 11–20……（难度从低到高）；同一段从新的回数开始
+  if (!RIDX) return null; const done = ST.rp || {};
+  for (let c = 0; c < RCH.length; c++) for (const r of RIDX.rounds) if (!done[r.n + ':' + c] && r.nos.some(no => no >= RCH[c][0] && no <= RCH[c][1])) return { n: r.n, c };
+  return null;
+}
+const rU = s => esc(s).replace(/⟨/g, '<u class="ul">').replace(/⟩/g, '</u>').replace(/\(\s*\)/g, '<b class="fz">(　　)</b>');
+async function startReal(n, c) {
+  try {
+    await rIndex(); if (n == null) { const nx = rNext(); if (!nx) return toast('12 套真题阅读都做完了'); n = nx.n; c = nx.c; }
+    toast('正在打开第 ' + n + ' 回真题…');
+    let d; const pass = await rPass();
+    try { d = await rLoad(n, pass); } catch (e) { localStorage.removeItem('ko:rp'); return toast('密码不对，再点一次重新输入'); }
+    localStorage.setItem('ko:rp', pass);
+    const [lo, hi] = RCH[c], items = d.qs.filter(q => q.no >= lo && q.no <= hi).map(q => {
+      const z = q.z || {}, long = q.t.length > 60;
+      const head = `<div class="qi"><span class="ko">${rU(q.ins)}</span>${q.insz ? `<small>${q.insz}</small>` : ''}</div>${q.img ? `<img class="rimg" src="${q.img}" alt="">` : ''}`;
+      return { kind: 'tq', id: `RR:${n}:${q.no}`, tag: `真题 · 第 ${n} 回 · 阅读第 ${q.no} 题`, rr: { n, c, no: q.no },
+        q: { id: `RR:${n}:${q.no}`, sec: 'R', no: 'RR', q: head + (long ? `<div class="psg ko">${rU(q.t)}</div>` : ''), p: q.psg, after: long ? '' : rU(q.t) + (q.tz ? `<small class="qz">${q.tz}</small>` : ''), ch: q.o, a: q.a, ex: z.e || '', zs: [z.psg, z.t].filter(Boolean).join('\n'), cz: z.o || null } };
+    });
+    start('real', items);
+  } catch (e) { toast('真题没打开：' + (e.message || e)); }
+}
 function buildType(no) {   // 专项突破：先看解题方法，再刷这一类（当前级以内，题少就放宽一级）
   const t = tier(), seen = ST.tseen || {};
   let pool = TQ.filter(q => q.no === no && lvOf(q) <= t); if (pool.length < 4) pool = TQ.filter(q => q.no === no && lvOf(q) <= t + 1);
@@ -812,6 +851,8 @@ function renderHome() {
   <div class="more${ST.moreOpen ? ' on' : ''}" id="more"><div>
   ${(() => { const w = weakTypes(), ts = typeStats(); return w.length ? `<div class="sec">薄弱题型 · 专项突破</div><div class="weak">${w.slice(0, 3).map(no => `<button class="wk" data-no="${no}"><b>${esc(NO[no] || no)}</b><small>最近 ${ts[no].n} 题对 ${ts[no].ok} 题</small><span>突破</span></button>`).join('')}</div>` : ''; })()}
   ${due ? `<button class="btn blue" id="goRev" style="margin-top:10px">错题复习 · ${due} 题</button>` : ''}
+  <div class="sec">真题阅读 · TOPIK II 公开真题 12 套</div>
+  <button class="btn blue" id="goReal">做下一段真题阅读 · 10 题</button>
   <div class="sec">TOPIK 分项</div>
   <div class="secs">${['L', 'R', 'W'].map(k => { const all = TQ.filter(q => q.sec === k && lvOf(q) <= tier()), d = all.filter(q => (ST.tseen || {})[q.id]).length; return `<button class="sb" data-s="${k}"><b>${SEC[k]}</b><small>${d}/${all.length} 题</small></button>`; }).join('')}</div>
   <button class="btn ghost" id="capBtn" style="margin-top:6px">${ST.cap ? '现在只练初级 · 点这里解锁中级' : '按级别自动升级 · 点这里只练初级'}</button>
@@ -827,6 +868,7 @@ function renderHome() {
   bindPlan();
   $('moreT').onclick = () => { ST.moreOpen = !ST.moreOpen; try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} $('more').classList.toggle('on', ST.moreOpen); $('moreT').textContent = '更多 ' + (ST.moreOpen ? '▴' : '▾'); };
   document.querySelectorAll('.sb').forEach(b => b.onclick = () => start('sec-' + b.dataset.s, buildSec(b.dataset.s, 8)));
+  if ($('goReal')) $('goReal').onclick = () => startReal();
   if ($('goMock')) $('goMock').onclick = () => start('mock', buildMock());
   $('goPlace').onclick = () => start('place', buildPlace());
   document.querySelectorAll('.wk').forEach(b => b.onclick = () => start('type-' + b.dataset.no, buildType(b.dataset.no)));
@@ -865,7 +907,7 @@ function planCard() {
     ${st.map((o, i) => `<button class="pst${o.done ? ' ok' : o === nx ? ' cur' : ''}" data-i="${i}"><span class="n">${o.done ? '✓' : i + 1}</span><span class="m"><b>${esc(o.name)}</b><small>${esc(o.why)}</small>${o.need > 1 && !o.done ? `<div class="pbar2"><i data-w="${o.cur / o.need * 100}"></i></div>` : ''}</span><em>${o.done ? '' : o.need > 1 ? o.cur + '/' + o.need : '约 ' + o.min + ' 分'}</em></button>`).join('')}
     ${nx ? `<button class="btn green big-go" id="planGo">开始第 ${st.indexOf(nx) + 1} 步</button>`
       : `<div class="allok">🎉 今天该学的都学完了 · 想加练按场景选</div><div class="scn">
-        <button data-x="R"><b>📖 上课</b><small>不出声 · 阅读 8 题</small></button>
+        <button data-x="R"><b>📖 上课</b><small>不出声 · 真题阅读 10 题</small></button>
         <button data-x="L"><b>🚌 公交</b><small>戴耳机 · 听力 8 题</small></button>
         <button data-x="G"><b>🏠 在家</b><small>${gNext() ? '下一课语法 · ' + esc(gNext().name) : '语法复习一课'}</small></button>
         <button data-x="W"><b>📚 碎片</b><small>刷一轮词</small></button></div>`}</div>`;
@@ -874,7 +916,7 @@ function bindPlan() {
   const st = planSteps();
   document.querySelectorAll('.pst').forEach(b => b.onclick = () => st[+b.dataset.i].go());
   if ($('planGo')) $('planGo').onclick = () => planNext().go();
-  document.querySelectorAll('.scn button').forEach(b => b.onclick = () => { const x = b.dataset.x; x === 'W' ? wdStart() : x === 'G' ? start('gram', buildGram()) : start('sec-' + x, buildSec(x, 8)); });   // 加练按场景：上课静音读、公交戴耳机听、在家学新语法
+  document.querySelectorAll('.scn button').forEach(b => b.onclick = () => { const x = b.dataset.x; x === 'W' ? wdStart() : x === 'G' ? start('gram', buildGram()) : x === 'R' ? startReal() : start('sec-' + x, buildSec(x, 8)); });   // 加练按场景：上课静音读、公交戴耳机听、在家学新语法
   requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll('.pbar2 i').forEach(e => e.style.width = e.dataset.w + '%')));
 }
 function nextHtml() {   // 结束页：告诉下一步是什么
@@ -1056,7 +1098,7 @@ function rTQ(x, st) {
   const q = x.q, L = q.sec === 'L';
   st.innerHTML = `<div class="tag" style="color:var(--b)">${esc(x.tag || NO[q.no] || SEC[q.sec])}</div><div class="q${q.p || L ? '' : ' ko'}">${q.q}</div>
     ${L ? `<div class="lis"><button class="big" id="pl">${ICON_SPK}</button><button class="slow" id="pls">🐢</button></div><div class="tr ko" id="tr" hidden>${q.d.map(([w, t]) => `<p><b>${w}</b> ${esc(t)}</p>`).join('')}</div>` : ''}
-    ${q.p ? `<div class="psg ko">${nl(q.p)}</div>` : ''}
+    ${q.p ? `<div class="psg ko">${nl(q.p)}</div>` : ''}${q.after ? `<div class="q ko qa">${q.after}</div>` : ''}
     <div class="chs">${q.ch.map((c, i) => `<button class="ch ko" data-i="${i}"><span class="n">${i + 1}</span><span class="tx">${esc(c)}</span><span class="x" title="排除这个选项" aria-label="排除">✕</span></button>`).join('')}</div>`;
   if (L) { $('pl').onclick = () => playDialog(q.d, $('pl')); $('pls').onclick = () => playDialog(q.d, $('pls'), 0.65); setTimeout(() => playDialog(q.d, $('pl')), 350); }
   bindStrike(st); st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; b.classList.remove('out'); st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); });
@@ -1435,6 +1477,12 @@ function finish() {
     const g = S.items[0] && S.items[0].g;
     if (g) { const own = Object.entries(S.first).filter(([id]) => id.startsWith('G:' + g.id + ':')), okc = own.filter(([, v]) => v).length; ST.gm = ST.gm || {}; ST.gm[g.id] = okc + '/' + own.length; if (own.length && okc / own.length >= 0.8 && !(ST.gmPass || []).includes(g.id)) { ST.gmPass = (ST.gmPass || []).concat(g.id); S.gPassed = g.name; } }
   }
+  else if (S.mode === 'real') {   // 真题：记这一段的成绩；按题号算进预测（1–24 题 ≈ 3 级，25–50 题 ≈ 4 级）
+    const r0 = S.items[0].rr, own = Object.entries(S.first).filter(([id]) => id.startsWith('RR:'));
+    ST.rp = ST.rp || {}; ST.rp[r0.n + ':' + r0.c] = own.filter(([, v]) => v).length + '/' + own.length;
+    ST.ab = ST.ab || {}; own.forEach(([id, v]) => { const k = +id.split(':')[2] <= 24 ? 'R3' : 'R4'; ST.ab[k] = (ST.ab[k] || []).concat(v ? 1 : 0).slice(-30); });
+    S.rDone = { n: r0.n, c: r0.c, s: ST.rp[r0.n + ':' + r0.c] };
+  }
   else if (LBY[S.mode]) ST.done[S.mode] = (ST.done[S.mode] || 0) + 1;
   mAdd(sec);
   // 间隔复习：错了马上进复习；复习里答对一次，间隔 1→3→7→14 天，满了就移出
@@ -1487,6 +1535,7 @@ function finish() {
     ${predAfter && predBefore && predAfter.rank.i > predBefore.rank.i ? `<div class="burst lvup">🏅 升段：${predAfter.rank.name}<small>${predAfter.rank.tag || '离考过更近一步'}</small></div>` : ''}
     ${predAfter ? (() => { const d = predBefore ? predAfter.II - predBefore.II : 0; return `<div class="pdone"><small>TOPIK II 预测分</small><b id="pdN" data-from="${predBefore ? predBefore.II : predAfter.II}" data-to="${predAfter.II}">${predBefore ? predBefore.II : predAfter.II}</b><span class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + (-d) : '持平'}</span><em>${predAfter.II >= 150 ? '已到 4 级线' : predAfter.II >= 120 ? '离 4 级还差 ' + (150 - predAfter.II) + ' 分' : '离 3 级还差 ' + (120 - predAfter.II) + ' 分'}</em></div>`; })() : ''}
     ${estHtml}
+    ${S.rDone ? `<div class="sec" style="text-align:left">真题第 ${S.rDone.n} 回 · 阅读 ${RCH[S.rDone.c][0]}–${RCH[S.rDone.c][1]} 题：对 ${S.rDone.s}</div>` : ''}
     ${S.gPassed ? `<div class="burst lvup">📘 语法过关：<span class="ko">${esc(S.gPassed)}</span><small>3 级语法 ${(ST.gmPass || []).length} / ${GR().length} · 明天学下一个</small></div>` : S.mode === 'gram' && S.items[0] && S.items[0].g ? `<div class="sec" style="text-align:left">这课 ${ST.gm[S.items[0].g.id]}，八成对才算过关，明天再来一次</div>` : ''}
     ${fz.length ? `<div class="sec" style="text-align:left">🤔 ${fz.length} 道模糊的题，明天再考一次</div>` : ''}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
