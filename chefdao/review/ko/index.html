@@ -433,7 +433,7 @@ const ICON_SPK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9.5v5
 const ICON_MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>';
 
 // ───────── 进度（本机 + 云端同步）─────────
-let ST = { xp: 0, streak: 0, last: null, day: null, dayXp: 0, goal: 30, done: {}, seen: {}, srs: {}, noSpeak: 0, ts: 0 };
+let ST = { xp: 0, streak: 0, last: null, day: null, dayXp: 0, goal: 150, done: {}, seen: {}, srs: {}, noSpeak: 0, ts: 0 };
 try { const s = JSON.parse(localStorage.getItem('ko:st') || 'null'); if (s) ST = { ...ST, ...s }; } catch (e) {}
 const save = () => { ST.ts = Date.now(); try { localStorage.setItem('ko:st', JSON.stringify(ST)); } catch (e) {} };
 let syncMsg = '';
@@ -498,7 +498,7 @@ function spark(arr) {
   const vs = arr.map(x => x.v), lo = Math.min(...vs) - 10, hi = Math.max(...vs) + 10, W = 120, H = 34, X = i => i / (vs.length - 1) * W, Y = v => H - (v - lo) / (hi - lo) * H;
   return `<svg class="spkl" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${[120, 150].filter(v => v > lo && v < hi).map(v => `<line x1="0" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" class="${v === 120 ? 'ln3' : 'ln4'}"/>`).join('')}<polyline points="${vs.map((v, i) => X(i) + ',' + Y(v)).join(' ')}"/></svg>`;
 }
-const GOALS = [[20, '1 组'], [40, '2 组'], [60, '3 组'], [100, '5 组']];   // 一组 10 题大约 15–25 XP
+const GOALS = [[100, '只做今天的 4 步'], [150, '4 步 + 1 组加练'], [250, '4 步 + 3 组加练'], [400, '学满 1 小时']];   // 11-27 按真实数据定：4 步约 100 XP，学 52 分钟约 280 XP
 let lastSync = +localStorage.getItem('ko:sync') || 0, syncState = '';
 function ago(t) { const m = Math.floor((Date.now() - t) / 6e4); if (m < 1) return '刚刚'; if (m < 60) return m + ' 分钟前'; const d = new Date(t); return (today(t) === today() ? '今天 ' : (d.getMonth() + 1) + '/' + d.getDate() + ' ') + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 function syncLine() { const e = $('syl'); if (!e) return; e.className = 'syl ' + syncState; e.innerHTML = '<i></i>' + (syncState === 'ing' ? '同步中…' : syncState === 'err' ? '没同步上 · 点这里重试' : lastSync ? '已同步 · ' + ago(lastSync) : '还没同步过'); }
@@ -713,8 +713,8 @@ function lvPool(sec) {   // 当前级优先，低一级垫底；写作 51–52 �
 }
 function pickFresh(sec, n, skip = new Set()) {
   const seen = ST.tseen || {}, pool = lvPool(sec).filter(q => !skip.has(q.id)), t = tier();
-  if (sec === 'L' && t >= 3) {   // 听力梯子：中级听不懂时多出过渡题（lv 2.5），中级题按最近正确率慢慢加量
-    const h = ((ST.ab || {}).L3 || []).slice(-10), acc = h.length >= 4 ? h.filter(Boolean).length / h.length : 0;
+  if ((sec === 'L' || sec === 'R') && t >= 3) {   // 听力 / 阅读梯子：中级看不懂时多出过渡题（lv 2.5），中级题按最近正确率慢慢加量
+    const h = ((ST.ab || {})[sec + '3'] || []).slice(-10), acc = h.length >= 4 ? h.filter(Boolean).length / h.length : 0;
     const n3 = Math.round(n * (acc < .5 ? .25 : acc < .7 ? .5 : acc < .85 ? .75 : 1)), nb = Math.round((n - n3) * .75);
     const by = f => { const p = pool.filter(f); return shuffle(p.filter(q => !seen[q.id])).concat(shuffle(p.filter(q => ST.srs[q.id])), shuffle(p)); };
     const used = new Set(), out = [];
@@ -777,10 +777,15 @@ function rPass() { return new Promise(res => {
   sheet(`<h3>真题密码</h3><p style="font-size:15px;color:var(--tx2);line-height:1.7;margin-bottom:12px">真题只给自己用，网站上是加密的。每台设备输一次，之后记住。</p><input id="rpIn" class="ko" autocomplete="off" autocapitalize="off" style="width:100%;font-size:20px;padding:12px;border:2px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx)"><button class="btn green" id="rpGo" style="margin-top:12px">确定</button>`);
   $('rpIn').focus(); $('rpGo').onclick = () => { const v = $('rpIn').value.trim(); if (!v) return; $('sheet').classList.remove('on'); res(v); };
 }); }
-function rNext() {   // 先把每套的 1–10 题做完，再做 11–20……（难度从低到高）；同一段从新的回数开始
+function rNext(zhOnly) {   // 先把每套的 1–10 题做完，再做 11–20……（难度从低到高）；zhOnly = 只挑已经配好中文的段（看不懂时能点提示）
   if (!RIDX) return null; const done = ST.rp || {};
-  for (let c = 0; c < RCH.length; c++) for (const r of RIDX.rounds) if (!done[r.n + ':' + c] && r.nos.some(no => no >= RCH[c][0] && no <= RCH[c][1])) return { n: r.n, c };
+  for (let c = 0; c < RCH.length; c++) for (const r of RIDX.rounds) { const nos = r.nos.filter(no => no >= RCH[c][0] && no <= RCH[c][1]); if (!done[r.n + ':' + c] && nos.length && (!zhOnly || nos.every(no => (r.zn || []).includes(no)))) return { n: r.n, c }; }
   return null;
+}
+async function classRead() {   // 📖 上课：有配好中文的真题段就做真题，没有就做阅读梯子（过渡题为主，中级题按正确率加量）
+  try { await rIndex(); } catch (e) {}
+  const nx = rNext(true); if (nx) return startReal(nx.n, nx.c);
+  toast('真题中文还在补，先做阅读梯子'); start('sec-R', buildSec('R', 10));
 }
 const rU = s => esc(s).replace(/⟨/g, '<u class="ul">').replace(/⟩/g, '</u>').replace(/\(\s*\)/g, '<b class="fz">(　　)</b>');
 async function startReal(n, c) {
@@ -845,6 +850,7 @@ function mkLink() {   // 晚上补进词库的生词：现在认得出原形了�
 }
 function renderHome() {
   capLift(); mkLink();
+  if (ST.goalV !== 2 && ST.ts) { ST.goalV = 2; if ((ST.goal || 0) < 100) ST.goal = 150; save(); push(); }   // 11-27 旧目标 20–60 太容易达成，统一抬到 150（存+同步，免得被云端旧值盖回去）
   const t = today(), dayXp = ST.day === t ? ST.dayXp : 0, pct = Math.min(1, dayXp / ST.goal), C = 2 * Math.PI * 15;
   const alive = ST.last === t || ST.last === today(Date.now() - DAY), streak = alive ? ST.streak : 0;
   const dailyDone = ST.dailyDone === DAILY.date, due = dueList().length;
@@ -922,7 +928,7 @@ function planCard() {
     ${st.map((o, i) => `<button class="pst${o.done ? ' ok' : o === nx ? ' cur' : ''}" data-i="${i}"><span class="n">${o.done ? '✓' : i + 1}</span><span class="m"><b>${esc(o.name)}</b><small>${esc(o.why)}</small>${o.need > 1 && !o.done ? `<div class="pbar2"><i data-w="${o.cur / o.need * 100}"></i></div>` : ''}</span><em>${o.done ? '' : o.need > 1 ? o.cur + '/' + o.need : '约 ' + o.min + ' 分'}</em></button>`).join('')}
     ${nx ? `<button class="btn green big-go" id="planGo">开始第 ${st.indexOf(nx) + 1} 步</button>`
       : `<div class="allok">🎉 今天该学的都学完了 · 想加练按场景选</div><div class="scn">
-        <button data-x="R"><b>📖 上课</b><small>不出声 · 真题阅读 10 题</small></button>
+        <button data-x="R"><b>📖 上课</b><small>不出声 · 阅读 10 题（真题 / 过渡）</small></button>
         <button data-x="L"><b>🚌 公交</b><small>戴耳机 · 听力 8 题</small></button>
         <button data-x="G"><b>🏠 在家</b><small>${gNext() ? '下一课语法 · ' + esc(gNext().name) : '语法复习一课'}</small></button>
         <button data-x="W"><b>📚 碎片</b><small>刷一轮词</small></button></div>`}</div>`;
@@ -931,7 +937,7 @@ function bindPlan() {
   const st = planSteps();
   document.querySelectorAll('.pst').forEach(b => b.onclick = () => st[+b.dataset.i].go());
   if ($('planGo')) $('planGo').onclick = () => planNext().go();
-  document.querySelectorAll('.scn button').forEach(b => b.onclick = () => { const x = b.dataset.x; x === 'W' ? wdStart() : x === 'G' ? start('gram', buildGram()) : x === 'R' ? startReal() : start('sec-' + x, buildSec(x, 8)); });   // 加练按场景：上课静音读、公交戴耳机听、在家学新语法
+  document.querySelectorAll('.scn button').forEach(b => b.onclick = () => { const x = b.dataset.x; x === 'W' ? wdStart() : x === 'G' ? start('gram', buildGram()) : x === 'R' ? classRead() : start('sec-' + x, buildSec(x, 8)); });   // 加练按场景：上课静音读、公交戴耳机听、在家学新语法
   requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll('.pbar2 i').forEach(e => e.style.width = e.dataset.w + '%')));
 }
 function nextHtml() {   // 结束页：告诉下一步是什么
@@ -963,8 +969,8 @@ function predSheet() {
   $('pWeak').onclick = () => { $('sheet').classList.remove('on'); start('sec-' + p.weak, buildSec(p.weak, 8)); };
 }
 function goalSheet() {
-  sheet(`<h3>每日目标</h3><p style="font-size:15px;color:var(--tx2);margin:0 0 12px;line-height:1.7">一组 10 题大约 15–25 XP，全对多 5 XP</p>
-    <div class="gopt">${GOALS.map(([g, d]) => `<button data-g="${g}" class="${ST.goal === g ? 'on' : ''}">${g} XP<small>约 ${d}</small></button>`).join('')}</div>`);
+  sheet(`<h3>每日目标</h3><p style="font-size:15px;color:var(--tx2);margin:0 0 12px;line-height:1.7">今天的 4 步大约 100 XP；刷词 1 个 1 XP，一组题 15–25 XP</p>
+    <div class="gopt">${GOALS.map(([g, d]) => `<button data-g="${g}" class="${ST.goal === g ? 'on' : ''}">${g} XP<small>${d}</small></button>`).join('')}</div>`);
   document.querySelectorAll('.gopt button').forEach(b => b.onclick = () => { ST.goal = +b.dataset.g; save(); push(); document.querySelectorAll('.gopt button').forEach(x => x.classList.toggle('on', x === b)); setTimeout(() => { $('sheet').classList.remove('on'); renderHome(); }, 250); toast('每日目标 ' + ST.goal + ' XP'); });
 }
 function topikCard() {
