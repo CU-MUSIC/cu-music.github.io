@@ -66,6 +66,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .scn button:nth-child(2){animation-delay:.05s}.scn button:nth-child(3){animation-delay:.1s}.scn button:nth-child(4){animation-delay:.15s}
 .scn b{display:block;font-size:16px}.scn small{display:block;font-size:13px;color:var(--tx3);line-height:1.5;margin-top:2px}
 .rimg{display:block;width:100%;max-width:560px;border-radius:12px;margin:10px 0;background:#fff}.qa{margin-top:12px;font-size:18px}.qa .qz,.qz{display:block;font-size:14px;color:var(--tx3);margin-top:2px}
+.hintb{display:block;margin:10px 0 4px;padding:6px 12px;border:2px dashed var(--bd);border-radius:12px;font-size:14px;font-weight:800;color:var(--tx2);background:none}
+.hintc{margin:10px 0;padding:12px 14px;border-radius:14px;background:var(--fill);font-size:16px;line-height:1.8}.hintc[hidden]{display:none}.hzz{color:var(--tx2);white-space:pre-line;margin-top:6px;font-size:15px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -710,6 +712,14 @@ function lvPool(sec) {   // 当前级优先，低一级垫底；写作 51–52 �
 }
 function pickFresh(sec, n, skip = new Set()) {
   const seen = ST.tseen || {}, pool = lvPool(sec).filter(q => !skip.has(q.id)), t = tier();
+  if (sec === 'L' && t >= 3) {   // 听力梯子：中级听不懂时多出过渡题（lv 2.5），中级题按最近正确率慢慢加量
+    const h = ((ST.ab || {}).L3 || []).slice(-10), acc = h.length >= 4 ? h.filter(Boolean).length / h.length : 0;
+    const n3 = Math.round(n * (acc < .5 ? .25 : acc < .7 ? .5 : acc < .85 ? .75 : 1)), nb = Math.round((n - n3) * .75);
+    const by = f => { const p = pool.filter(f); return shuffle(p.filter(q => !seen[q.id])).concat(shuffle(p.filter(q => ST.srs[q.id])), shuffle(p)); };
+    const used = new Set(), out = [];
+    [[by(q => lvOf(q) >= 3), n3], [by(q => lvOf(q) === 2.5), nb], [by(q => lvOf(q) <= 2), n]].forEach(([arr, k]) => [...new Set(arr)].filter(q => !used.has(q)).slice(0, Math.max(0, Math.min(k, n - out.length))).forEach(q => { used.add(q); out.push(q); }));
+    return shuffle(out);
+  }
   const order = shuffle(pool.filter(q => !seen[q.id] && lvOf(q) === t)).concat(shuffle(pool.filter(q => !seen[q.id])), shuffle(pool.filter(q => ST.srs[q.id])), shuffle(pool));
   return [...new Set(order)].slice(0, n);
 }
@@ -1101,6 +1111,10 @@ function rTQ(x, st) {
     ${q.p ? `<div class="psg ko">${nl(q.p)}</div>` : ''}${q.after ? `<div class="q ko qa">${q.after}</div>` : ''}
     <div class="chs">${q.ch.map((c, i) => `<button class="ch ko" data-i="${i}"><span class="n">${i + 1}</span><span class="tx">${esc(c)}</span><span class="x" title="排除这个选项" aria-label="排除">✕</span></button>`).join('')}</div>`;
   if (L) { $('pl').onclick = () => playDialog(q.d, $('pl')); $('pls').onclick = () => playDialog(q.d, $('pls'), 0.65); setTimeout(() => playDialog(q.d, $('pl')), 350); }
+  // 💡 提示：看不懂时先看中文（听力看原文 + 翻译）。用了提示：答对也不算进预测分，明天再考
+  const hz = L ? (q.d ? q.d.map(([w, t]) => `<b class="ko">${esc(w)}</b> ${esc(t)}`).join('<br>') + (q.tz ? `<div class="hzz">${nl(q.tz)}</div>` : '') : '') : (q.zs || q.tz) ? `<div class="hzz">${nl(esc(q.zs || q.tz))}</div>` : '';
+  if (hz) { st.insertAdjacentHTML('beforeend', `<button class="hintb" id="hintb">💡 看不懂？先看${L ? '原文和' : ''}中文</button><div class="hintc" id="hintc" hidden>${hz}</div>`);
+    $('hintb').onclick = () => { if (checked) return; S.hint = S.hint || {}; S.hint[x.id] = 1; const c = $('hintc'); c.hidden = false; c.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'ease-out' }); $('hintb').remove(); }; }
   bindStrike(st); st.querySelectorAll('.ch').forEach(b => b.onclick = () => { if (checked) return; b.classList.remove('out'); st.querySelectorAll('.ch').forEach(c => c.classList.toggle('sel', c === b)); answer = +b.dataset.i; setGo('green', '检查'); });
 }
 function rTU(x, st) {
@@ -1480,7 +1494,7 @@ function finish() {
   else if (S.mode === 'real') {   // 真题：记这一段的成绩；按题号算进预测（1–24 题 ≈ 3 级，25–50 题 ≈ 4 级）
     const r0 = S.items[0].rr, own = Object.entries(S.first).filter(([id]) => id.startsWith('RR:'));
     ST.rp = ST.rp || {}; ST.rp[r0.n + ':' + r0.c] = own.filter(([, v]) => v).length + '/' + own.length;
-    ST.ab = ST.ab || {}; own.forEach(([id, v]) => { const k = +id.split(':')[2] <= 24 ? 'R3' : 'R4'; ST.ab[k] = (ST.ab[k] || []).concat(v ? 1 : 0).slice(-30); });
+    ST.ab = ST.ab || {}; own.filter(([id]) => !(S.hint || {})[id]).forEach(([id, v]) => { const k = +id.split(':')[2] <= 24 ? 'R3' : 'R4'; ST.ab[k] = (ST.ab[k] || []).concat(v ? 1 : 0).slice(-30); });
     S.rDone = { n: r0.n, c: r0.c, s: ST.rp[r0.n + ':' + r0.c] };
   }
   else if (LBY[S.mode]) ST.done[S.mode] = (ST.done[S.mode] || 0) + 1;
@@ -1492,11 +1506,12 @@ function finish() {
     if (!ok) ST.srs[id] = { box: 0, due: Date.now(), n: (r ? r.n : 0) + 1 };
     else if (r) { if (r.box >= GAP.length) delete ST.srs[id]; else ST.srs[id] = { ...r, box: r.box + 1, due: Date.now() + GAP[r.box] * DAY }; }
   }
+  Object.keys(S.hint || {}).forEach(id => { S.fz = S.fz || {}; S.fz[id] = 1; const l = S.log.find(l => l.id === id); if (l) l.hint = l.fz = 1; });   // 看了提示 = 模糊
   const fz = Object.keys(S.fz || {}).filter(id => S.first[id]);
   fz.forEach(id => { const r = ST.srs[id]; ST.srs[id] = { box: 0, due: Date.now() + DAY, n: (r ? r.n : 0) + 1, fz: 1 }; });
   let estHtml = '';
   const predBefore = predict();
-  S.log.forEach(x => { if (x.t === 'tq') abAdd(x.id, x.ok); }); predMark();
+  S.log.forEach(x => { if (x.t === 'tq' && !x.hint) abAdd(x.id, x.ok); }); predMark();   // 看了提示的不算进预测
   const predAfter = predict();
   ST.typ = ST.typ || {};
   S.log.forEach(x => { const q = TBY[x.id]; if (q) ST.typ[q.no] = (ST.typ[q.no] || []).concat(x.ok && !x.fz ? 1 : 0).slice(-10); });   // 模糊的算弱项
