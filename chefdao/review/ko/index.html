@@ -62,6 +62,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .gqs{font-size:22px;line-height:1.7;margin-bottom:8px}.ul{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px;text-decoration-color:var(--b)}
 .qi{font-size:18px;font-weight:800}.qi small{display:block;font-size:15px;font-weight:700;color:var(--tx3);margin-top:2px}
 .zs{font-size:16px;font-weight:800;line-height:1.6;margin:4px 0 2px}
+.scn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.scn button{text-align:left;padding:12px;border:2px solid var(--bd);border-bottom-width:4px;border-radius:14px;background:var(--card);animation:fadeUp .35s both}
+.scn button:nth-child(2){animation-delay:.05s}.scn button:nth-child(3){animation-delay:.1s}.scn button:nth-child(4){animation-delay:.15s}
+.scn b{display:block;font-size:16px}.scn small{display:block;font-size:13px;color:var(--tx3);line-height:1.5;margin-top:2px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -861,14 +864,17 @@ function planCard() {
   return `<div class="plan" id="plan"><div class="ph"><h2>今天的 ${st.length} 步</h2><span>${nx ? `<b>${n}</b> / ${st.length} · 还要约 ${left} 分钟` : `<b>全部完成 ✓</b> · 学了 ${mToday()} 分钟`}</span></div>
     ${st.map((o, i) => `<button class="pst${o.done ? ' ok' : o === nx ? ' cur' : ''}" data-i="${i}"><span class="n">${o.done ? '✓' : i + 1}</span><span class="m"><b>${esc(o.name)}</b><small>${esc(o.why)}</small>${o.need > 1 && !o.done ? `<div class="pbar2"><i data-w="${o.cur / o.need * 100}"></i></div>` : ''}</span><em>${o.done ? '' : o.need > 1 ? o.cur + '/' + o.need : '约 ' + o.min + ' 分'}</em></button>`).join('')}
     ${nx ? `<button class="btn green big-go" id="planGo">开始第 ${st.indexOf(nx) + 1} 步</button>`
-      : `<div class="allok">🎉 今天该学的都学完了，明天见</div><div class="extra"><button class="btn ghost" id="exW">再刷一轮词</button><button class="btn ghost" id="exS">再做一组题</button></div>`}</div>`;
+      : `<div class="allok">🎉 今天该学的都学完了 · 想加练按场景选</div><div class="scn">
+        <button data-x="R"><b>📖 上课</b><small>不出声 · 阅读 8 题</small></button>
+        <button data-x="L"><b>🚌 公交</b><small>戴耳机 · 听力 8 题</small></button>
+        <button data-x="G"><b>🏠 在家</b><small>${gNext() ? '下一课语法 · ' + esc(gNext().name) : '语法复习一课'}</small></button>
+        <button data-x="W"><b>📚 碎片</b><small>刷一轮词</small></button></div>`}</div>`;
 }
 function bindPlan() {
   const st = planSteps();
   document.querySelectorAll('.pst').forEach(b => b.onclick = () => st[+b.dataset.i].go());
   if ($('planGo')) $('planGo').onclick = () => planNext().go();
-  if ($('exW')) $('exW').onclick = wdStart;
-  if ($('exS')) $('exS').onclick = () => start('study', buildStudy());
+  document.querySelectorAll('.scn button').forEach(b => b.onclick = () => { const x = b.dataset.x; x === 'W' ? wdStart() : x === 'G' ? start('gram', buildGram()) : start('sec-' + x, buildSec(x, 8)); });   // 加练按场景：上课静音读、公交戴耳机听、在家学新语法
   requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll('.pbar2 i').forEach(e => e.style.width = e.dataset.w + '%')));
 }
 function nextHtml() {   // 结束页：告诉下一步是什么
