@@ -6102,5 +6102,6 @@ document.addEventListener("DOMContentLoaded", function() {
 	if (qbEdit) { qbEditBar(); entryGo("book-mix"); }   // 跳过入口页，直接到混音选择器
 });
 </script>
+<script>if (location.hash === "#svc-daomen") addEventListener("load", function () { var g = document.getElementById("entry-gate"); if (g) g.style.display = "none"; setTimeout(function () { var e = document.getElementById("svc-daomen"); if (e) e.scrollIntoView({ behavior: "instant", block: "start" }); }, 300); });</script>
 </body>
 </html>
