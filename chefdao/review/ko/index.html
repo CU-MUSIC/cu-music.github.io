@@ -68,6 +68,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .rimg{display:block;width:100%;max-width:560px;border-radius:12px;margin:10px 0;background:#fff}.qa{margin-top:12px;font-size:18px}.qa .qz,.qz{display:block;font-size:14px;color:var(--tx3);margin-top:2px}
 .hintb{display:block;margin:10px 0 4px;padding:6px 12px;border:2px dashed var(--bd);border-radius:12px;font-size:14px;font-weight:800;color:var(--tx2);background:none}
 .hintc{margin:10px 0;padding:12px 14px;border-radius:14px;background:var(--fill);font-size:16px;line-height:1.8}.hintc[hidden]{display:none}.hzz{color:var(--tx2);white-space:pre-line;margin-top:6px;font-size:15px}
+.mw{cursor:pointer;border-radius:4px;transition:background .2s,box-shadow .2s}.mw:hover{background:var(--fill)}.mw.mk{background:rgba(255,150,0,.16);box-shadow:inset 0 -2px 0 #ff9600}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
@@ -838,8 +839,12 @@ function capLift() {   // 初级 1–2 级题最近正确率 ≥ 80%（至少 30
   delete ST.cap; ST.tier = Math.max(ST.tier || 1, 3); ST.lvh = []; ST.capLift = today(); save(); push();
   setTimeout(() => toast('初级题正确率 ' + Math.round(h.filter(Boolean).length / h.length * 100) + '%，解锁中级（TOPIK II 3 级）'), 600);
 }
+function mkLink() {   // 晚上补进词库的生词：现在认得出原形了，就放进刷词（今天考）
+  let n = 0; for (const [t, v] of Object.entries(ST.mk || {})) if (!v.b) { const b = wBase(t); if (b) { v.b = b; ST.w = ST.w || {}; if (!ST.w[b] || ST.w[b].b > 0) ST.w[b] = { b: 0, due: Date.now(), rt: 0 }; n++; } }
+  if (n) { save(); toast('你标的生词有 ' + n + ' 个补好了释义，已加进刷词'); }
+}
 function renderHome() {
-  capLift();
+  capLift(); mkLink();
   const t = today(), dayXp = ST.day === t ? ST.dayXp : 0, pct = Math.min(1, dayXp / ST.goal), C = 2 * Math.PI * 15;
   const alive = ST.last === t || ST.last === today(Date.now() - DAY), streak = alive ? ST.streak : 0;
   const dailyDone = ST.dailyDone === DAILY.date, due = dueList().length;
@@ -1023,8 +1028,42 @@ function renderEx() {
   $('idk').classList.toggle('on', ['tq', 'mc', 'listen', 'tw', 'k2z', 'z2k'].includes(x.kind));
   const st = $('stage'); st.classList.remove('in'); void st.offsetWidth; st.classList.add('in');
   const R = { gcard: rGCard, tu: rTU, tip: rTip, vocab: rVocab, mc: rMC, listen: rListen, k2z: rBuild, z2k: rBuild, speak: rSpeak, tq: rTQ, tw: rTW }[x.kind];
-  R(x, st);
+  R(x, st); mkWrap(st);
 }
+// ───────── 标生词：做题时点不认识的韩语词（橙色），能认出原形的马上进刷词（今天就考），认不出的记下来，今晚补释义加进词库 ─────────
+const JOSA = ['에서는', '에게서', '으로는', '에서', '에게', '한테', '까지', '부터', '처럼', '보다', '하고', '이랑', '으로', '은', '는', '이', '가', '을', '를', '에', '의', '도', '로', '와', '과', '만'];
+let CJREV = null;
+function wBase(t) {
+  if (WBY[t]) return t;
+  for (const j of JOSA) if (t.length > j.length && t.endsWith(j) && WBY[t.slice(0, -j.length)]) return t.slice(0, -j.length);
+  if (!CJREV) { CJREV = {}; for (const [k, f] of Object.entries(window.KO_CONJ || {})) Object.values(f).forEach(v => { CJREV[v.split(' ')[0]] = k; }); }
+  if (CJREV[t] && WBY[CJREV[t]]) return CJREV[t];
+  for (let i = t.length - 1; i >= 1; i--) { const v = t.slice(0, i) + '다'; if (WBY[v]) return v; }
+  return null;
+}
+function mkWrap(root) {   // 把题目里的韩语词包成可点的 span（选项在答完之后才能点，免得误选）
+  const sel = '.psg, .q.ko, .tr p, .hintc, .tz, .ca, .gqs' + (checked ? ', .ch .tx' : '');
+  root.querySelectorAll(sel).forEach(el => {
+    const walk = n => { [...n.childNodes].forEach(c => {
+      if (c.nodeType === 3 && /[가-힣]/.test(c.nodeValue)) { const f = document.createDocumentFragment(); c.nodeValue.split(/([가-힣]+)/).forEach(p => { if (!p) return; if (/^[가-힣]+$/.test(p)) { const sp = document.createElement('span'); sp.className = 'mw' + ((ST.mk || {})[p] ? ' mk' : ''); sp.textContent = p; f.appendChild(sp); } else f.appendChild(document.createTextNode(p)); }); c.replaceWith(f); }
+      else if (c.nodeType === 1 && !c.classList.contains('mw') && !/^(BUTTON|svg)$/i.test(c.tagName) && !/^[남여]$/.test(c.textContent)) walk(c);   // 对话前的「남/여」不算词
+    }); };
+    walk(el);
+  });
+}
+document.addEventListener('click', e => {
+  const w = e.target.closest('.mw'); if (!w || !S) return;
+  if (w.closest('.ch') && !checked) return;   // 没答之前点选项 = 选答案
+  e.stopPropagation(); e.preventDefault();
+  const t = w.textContent, b = wBase(t); ST.mk = ST.mk || {}; S.mk = S.mk || {};
+  if (ST.mk[t]) { delete ST.mk[t]; delete S.mk[t]; document.querySelectorAll('.mw').forEach(x => { if (x.textContent === t) x.classList.remove('mk'); }); save(); return toast('取消生词：' + t); }
+  const ctx = ((w.closest('p, .psg, .q, .tx, .hintc, .ca') || w).textContent || '').slice(0, 80);
+  ST.mk[t] = { b: b || '', d: today(), q: (S.items[S.i] || {}).id || '', ctx }; S.mk[t] = 1;
+  if (b) { ST.w = ST.w || {}; ST.w[b] = { b: 0, due: Date.now(), rt: 0 }; }
+  document.querySelectorAll('.mw').forEach(x => { if (x.textContent === t) x.classList.add('mk'); });
+  save(); hap('tap');
+  toast(b ? `${b} = ${WBY[b].z} · 已加进刷词` : `${t} · 已记下，今晚补释义`);
+}, true);
 const ava = () => `<div class="ava">${AVAS[(S.i * 7 + S.total) % AVAS.length]}</div>`;
 function bubble(k, newOnes) {
   return `<div class="bub ko"><button class="spk" data-say="${esc(k)}">${ICON_SPK}</button>${k.split(/(\s+)/).map(w => {
@@ -1244,7 +1283,7 @@ function check() {
   }
   if (!ok && x.kind === 'speak') setTimeout(() => say(x.s.k, 0.8), 300);
   setGo(ok ? 'green' : 'red', '继续');
-  S.done++; setBar();
+  S.done++; setBar(); mkWrap($('stage')); mkWrap($('fb'));
 }
 function next(okSkip, isCard) {
   if (isCard) { S.done++; }
@@ -1552,6 +1591,7 @@ function finish() {
     ${estHtml}
     ${S.rDone ? `<div class="sec" style="text-align:left">真题第 ${S.rDone.n} 回 · 阅读 ${RCH[S.rDone.c][0]}–${RCH[S.rDone.c][1]} 题：对 ${S.rDone.s}</div>` : ''}
     ${S.gPassed ? `<div class="burst lvup">📘 语法过关：<span class="ko">${esc(S.gPassed)}</span><small>3 级语法 ${(ST.gmPass || []).length} / ${GR().length} · 明天学下一个</small></div>` : S.mode === 'gram' && S.items[0] && S.items[0].g ? `<div class="sec" style="text-align:left">这课 ${ST.gm[S.items[0].g.id]}，八成对才算过关，明天再来一次</div>` : ''}
+    ${S.mk && Object.keys(S.mk).length ? `<div class="sec" style="text-align:left">📌 标了 ${Object.keys(S.mk).length} 个生词：${Object.keys(S.mk).map(esc).join('、')}</div>` : ''}
     ${fz.length ? `<div class="sec" style="text-align:left">🤔 ${fz.length} 道模糊的题，明天再考一次</div>` : ''}
     ${wrong.length ? `<div class="sec" style="text-align:left">这几题进了错题复习</div><div class="wl">${wrong.map(w => `<div class="ko">${esc(w.k)}</div>`).join('')}</div>` : ''}
     ${focus && !S.mode.startsWith('type-') ? `<div class="hero rev" style="text-align:left"><div class="meta">这组错得最多</div><h2>${esc(NO[focus] || focus)}</h2><p>先看 3 条解题方法，再专门刷这一类</p><button class="btn blue" id="goFocus">专项突破</button></div>` : ''}
