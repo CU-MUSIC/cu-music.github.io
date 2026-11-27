@@ -610,7 +610,7 @@ function say(text, rate = 0.9, el) {
 }
 let AC;
 // ───────── 震动（像多邻国）：安卓用 navigator.vibrate；iPhone 网页没有震动接口，用 iOS 18 的「开关」控件，每拨一下系统给一次轻震 ─────────
-let HAP = localStorage.getItem('ko:hap') !== '0', hapSw = null;
+let HAP = localStorage.getItem('ko:hap') !== '0', hapSw = null, hapT = 0;
 const HAPS = {   // 安卓：[震, 停, 震…] 毫秒；iPhone：几下、间隔多少毫秒
   tap: [[8], 1, 0], ok: [[14], 1, 0], combo: [[12, 50, 12, 50, 18], 3, 60], bad: [[28, 70, 28], 2, 90],
   win: [[12, 60, 12, 60, 30], 3, 80], big: [[15, 50, 15, 50, 15, 80, 45], 4, 70]
@@ -623,9 +623,11 @@ function hap(k) {
   if (!HAP) return; const h = HAPS[k]; if (!h) return;
   try { if (navigator.vibrate) { navigator.vibrate(h[0]); return; } } catch (e) {}
   if (!/iP(hone|ad|od)/.test(navigator.userAgent) && !(navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform))) return;
-  for (let i = 0; i < h[1]; i++) i ? setTimeout(iosTick, i * h[2]) : iosTick();
+  const skip = k !== 'tap' && Date.now() - hapT < 80 ? 1 : 0;   // 刚点过按钮（已经震了一下），答对 / 答错就不再重复第一下
+  if (k === 'tap') hapT = Date.now();
+  for (let i = skip; i < h[1]; i++) i ? setTimeout(iosTick, i * h[2]) : iosTick();
 }
-document.addEventListener('click', e => { if (e.target.closest('.ch, .ch .x, .wdthink, .fzb, .gopt button, .pst, #planGo, .wk, .sb')) hap('tap'); }, true);
+document.addEventListener('click', e => { if (e.target.closest('button, a, label, .ch, .wo, [data-say], [onclick]') && !e.target.closest('label[style*="-99px"]')) hap('tap'); }, true);   // 所有按钮点下去都轻震一下
 function sfx(ok, hk) {
   hap(hk || (ok ? 'ok' : 'bad'));   // 答对：柔和的木琴两连音（像多邻国）；答错：低沉轻一声。过低通滤掉刺耳的高频
   try {
