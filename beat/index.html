@@ -180,7 +180,7 @@ select.sort{height:38px;border-radius:19px;border:1px solid var(--border);backgr
 .ic.fav[aria-pressed="true"]{color:var(--red-hi)}
 .ic.fav[aria-pressed="true"] svg{fill:currentColor;animation:pop .4s var(--ease)}
 @keyframes pop{40%{transform:scale(1.25)}}
-.empty{text-align:center;color:var(--text-2);padding:60px 0;font-size:15px}
+.empty{text-align:center;color:var(--text-2);padding:60px 0;font-size:15px;animation:up .45s var(--ease) backwards}
 .empty button{margin-top:14px}
 footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var(--bar) + 40px + env(safe-area-inset-bottom));margin-top:-40px;letter-spacing:.04em}
 
@@ -251,7 +251,7 @@ footer{color:var(--text-3);font-size:13px;text-align:center;padding:0 0 calc(var
 .lic .ft .btn{height:48px;padding:0 28px}
 .lic .note{font-size:12.5px;color:var(--text-3);margin-top:10px;text-align:right}
 /* 求一首 */
-.ask-end{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0 0;padding:18px 20px;border-radius:16px;border:1px dashed var(--border-hi)}
+.ask-end{animation:up .5s var(--ease) backwards;animation-delay:.25s;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0 0;padding:18px 20px;border-radius:16px;border:1px dashed var(--border-hi)}
 .ask-end b{display:block;font-size:16px;font-weight:650}
 .ask-end span{display:block;font-size:13px;color:var(--text-3)}
 .rq{display:grid;gap:14px;margin-top:20px}
@@ -595,7 +595,7 @@ function render(){
   $('count').textContent = BEATS.length ? (filtered ? `${view.length} / ${BEATS.length}` : `${view.length}`) : '';
 
   if (!BEATS.length) { $('list').innerHTML = '<li class="empty">暂无伴奏</li>'; return; }
-  const askEnd = '<li class="ask-end"><div><b>没找到想要的？</b><span>告诉我们你想要的风格</span></div><button class="btn ghost press" data-req>求一首</button></li>';
+  const askEnd = '<li class="ask-end"><div><b>没找到想要的？</b><span>留下想要的风格，定制一首</span></div><button class="btn ghost press" data-req>求一首</button></li>';
   if (!view.length) { $('list').innerHTML = '<li class="empty">没有符合条件的伴奏<br><button class="btn ghost press" data-clearall>清除筛选</button> <button class="btn primary press" data-req>求一首</button></li>';
     $('list').querySelector('[data-clearall]').onclick = clearAll; return; }
 
@@ -774,7 +774,7 @@ lic.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && lic.classList.contains('show')) closeLic(); });
 $('licGo').onclick = () => {
   const b = licBeat, l = LICENSES[licI];
-  const text = `购买伴奏：《${b.title}》${ARTIST}\n授权：${l.name}（${l.price}，${l.files}）\ncumusic.work/beat#${b.id}`;
+  const text = `购买伴奏：《${b.title}》${ARTIST}\n授权：${l.name}（${l.price}，${l.files}）\nhttps://cumusic.work/beat/#${encodeURIComponent(b.id)}`;
   const done = () => { closeLic(); toast('已复制，可粘贴到微信'); };
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
   else fallback(text, done);
@@ -789,7 +789,7 @@ function fallback(text, done){
 const rq = document.createElement('div');
 rq.className = 'lic'; rq.setAttribute('role', 'dialog'); rq.setAttribute('aria-modal', 'true'); rq.setAttribute('aria-labelledby', 'rqT');
 rq.innerHTML = `<div class="box sm" style="width:min(520px,100%)">
-  <div class="hd"><div class="tt"><h2 id="rqT">求一首</h2><p>想要什么风格的伴奏，我们来做</p></div><button class="x" id="rqX" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="hd"><div class="tt"><h2 id="rqT">求一首</h2><p>按想要的风格定制伴奏</p></div><button class="x" id="rqX" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <form class="rq" id="rqF">
     <label>想要的风格或参考艺人<textarea id="rqW" maxlength="300" placeholder="比如：Travis Scott 那种暗一点的 trap，带钢琴" required></textarea></label>
     <div class="two"><label>BPM（选填）<input id="rqB" inputmode="numeric" maxlength="3" placeholder="140"></label>
