@@ -1336,3 +1336,4 @@ html.tune-on{overflow:hidden}
 @keyframes depUp{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes depOut{to{opacity:0}}
 @media (prefers-reduced-motion:reduce){#paySheet.dep,#paySheet.dep .pbox,#paySheet.dep .pbox.swap{animation:none}}
+#fee .fnote.swap{animation:etaIn .28s ease both}@media (prefers-reduced-motion:reduce){#fee .fnote.swap{animation:none}}

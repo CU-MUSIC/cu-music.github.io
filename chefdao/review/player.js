@@ -425,6 +425,13 @@ function renderDue() {
     + (owe.length > 1 ? '<div class="fdp">' + owe.map(x => '<span>' + esc(x.n) + ' ' + yuan(x.a) + '</span>').join('') + '</div>' : '')
     + '<div class="fds">结清后发送最终母带文件</div>';
 }
+// 报价单里「主唱 1 +¥758」这类分账行：feat 合作不分账时用开关藏起来。备注开头加「~」表示已隐藏，原文保留，随时能开回来
+const SPLIT_RE = /^主唱\s*\d+\s*[+\-−]?¥[\d,]+$/;
+const noteRaw = () => String(Q && Q.note || '').replace(/^~/, '');
+const splitOff = () => String(Q && Q.note || '').startsWith('~');
+const hasSplit = () => noteRaw().split('。')[0].split(/，\s*/).some(s => SPLIT_RE.test(s.trim()));
+const noteShown = () => { if (!splitOff()) return noteRaw();
+  const [head, ...rest] = noteRaw().split('。'); return [head.split(/，\s*/).filter(s => !SPLIT_RE.test(s.trim())).join('，'), ...rest].filter(Boolean).join('。'); };
 function renderFee() {
   renderDue();
   const el = $('#fee'); if (!Q) { el.hidden = true; el.innerHTML = ''; return; }
@@ -449,7 +456,7 @@ function renderFee() {
       <div class="fl">音频编辑</div><div class="fg">${opt('edit', i, p.e, p.dep)}</div>${desc(Q.menu.edit[p.e])}
       ${p.dep ? '' : `<button class="fok press" data-ok="${i}"${p.ok ? ' disabled' : ''}>${p.ok ? '已确定 ✓' : '确定'}</button>`}${feeOwnerP ? feeOwnerP(p, i) : ''}</div>`).join('')
     + `<div class="ft">${Q.people.every(hasFix) ? '' : `<div><span>基础混音</span><b>${yuan(Q.menu.base)} / 人</b></div><div><span>每人定金（开工）/ 尾款（交付）</span><b>${Q.half ? '各一半' : '金额越小定金越高'}</b></div>`}<div><span>合计</span><b>${yuan(total)}</b></div>${got ? `<div><span>已收</span><b>${yuan(got)}</b></div>` : ''}</div>`
-    + (Q.note ? `<div class="fnote">${esc(Q.note)}</div>` : '') + `<a class="fx" href="https://cumusic.work/chefdao/price" target="_blank" rel="noopener">价格明细 ›</a>`
+    + (noteShown() ? `<div class="fnote">${esc(noteShown())}</div>` : '') + `<a class="fx" href="https://cumusic.work/chefdao/price" target="_blank" rel="noopener">价格明细 ›</a>`
     + (feeOwner ? feeOwner(total) : '') + '</div>';
 }
 /* 费用单存成图片（你自己的设备）：画成一张竖图，电脑上复制到剪贴板直接去微信粘贴，手机上走系统分享 */
@@ -463,7 +470,7 @@ function feeCanvas() {
   const half = p => { const t = pPrice(p), d = Math.min(t, p.da ?? depOf(t)); return [d, t - d]; };
   const total = Q.people.reduce((s, p) => s + pPrice(p), 0);
   // 明细：报价单那串「项目 +¥金额，……。预计交付 …」拆成一行一项，金额靠右
-  const [itemsTxt, ...restTxt] = String(Q.note || '').split(/。/);
+  const [itemsTxt, ...restTxt] = noteShown().split(/。/);
   const items = itemsTxt ? itemsTxt.split(/，\s*/).filter(Boolean).map(s => { const m = /^(.*?)\s*([+\-−]?¥[\d,]+)$/.exec(s.trim()); return m ? [m[1], m[2].replace('-', '−')] : [s.trim(), '']; }) : [];
   // 加减到合计之后的行是每位歌手的分摊（主唱 1、主唱 2），单独列在「每位」下面，不带加号
   let run = 0, cut = -1; items.forEach(([, a], i) => { if (cut >= 0 || !a) return; const v = +a.replace(/[^\d]/g, ''); run += a[0] === '−' ? -v : v; if (run === total && i < items.length - 1) cut = i + 1; });
@@ -1684,12 +1691,13 @@ function ownerTools() {
       ['创意向', 160, '包含执行向，由制作方判断要不要加特殊效果、加在哪，设计人声层次和空间']],
     edit: [['不需要', 0, ''], ['音准', 100, '只修音准（叠唱不超过 2 条）'], ['节奏', 100, '只对齐节奏（叠唱不超过 2 条）'], ['标准', 160, '音准 + 节奏都修，适合演唱比较稳的素材'], ['深度', 240, '跑调、破音、气声不稳较多时的大量精修']] };
   const saveQ = async q => { try { await post('/radm/meta', { slug: S.slug, quote: q }); Q = q; feeOpen = true; renderFee(); busy(q ? '费用单已更新' : '费用单已删除'); } catch (e) { busy('没保存上，检查网络再试'); } };
-  feeOwner = () => `<div class="fown"><button data-own="img">存为图片</button><button data-own="people">改歌手</button><button data-own="paste">粘贴报价单</button><button data-own="del" class="dz">删除费用单</button></div>`;
+  feeOwner = () => `<div class="fown"><button data-own="img">存为图片</button>${hasSplit() ? `<button data-own="split">分账：${splitOff() ? '已隐藏' : '显示中'}</button>` : ''}<button data-own="people">改歌手</button><button data-own="paste">粘贴报价单</button><button data-own="del" class="dz">删除费用单</button></div>`;
   feeOwnerP = (p, i) => `<div class="fown fownp"><button data-own="dep" data-i="${i}">${p.dep ? '撤销定金' : '定金已收'}</button><button data-own="fin" data-i="${i}">${p.fin ? '撤销尾款' : '尾款已收'}</button><button data-own="fix" data-i="${i}">单独报价</button></div>`;
   $('#fee').addEventListener('click', e => {
     const b = e.target.closest('[data-own]'); if (!b) return;
     if (b.dataset.own === 'paste') return quotePaste();
-    if (b.dataset.own === 'img') return feeImage();   // 用新报价单整张替换
+    if (b.dataset.own === 'img') return feeImage();
+    if (b.dataset.own === 'split') return saveQ({ ...Q, note: splitOff() ? noteRaw() : '~' + noteRaw() }).then(() => { const n = $('#fee .fnote'); if (n) n.classList.add('swap'); });   // 用新报价单整张替换
     const k = b.dataset.own, q = JSON.parse(JSON.stringify(Q));
     if (k === 'dep' || k === 'fin') { const p = q.people[+b.dataset.i]; p[k] = !p[k]; if (k === 'dep' && p.dep) p.ok = true; }
     if (k === 'fix') {   // 服务名, 总价, 定金（不填定金就是一半）；清空就恢复按菜单选
