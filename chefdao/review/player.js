@@ -461,10 +461,13 @@ function renderFee() {
 }
 /* 费用单存成图片（你自己的设备）：画成一张竖图，电脑上复制到剪贴板直接去微信粘贴，手机上走系统分享 */
 function feeCanvas() {
-  const W = 1080, P = 72, sc = 1, F = '"PingFang SC","Hiragino Sans GB","Noto Sans SC",-apple-system,sans-serif';
-  const C = { bg: '#1a1c20', card: '#23262b', fg: '#ece9e3', t2: '#b5b1aa', dim: '#8a867f', line: '#33373e', acc: '#e2b866', ok: '#8fc49a' };
+  // 配色和版式照品牌海报规范：深绿底、细字、发丝线、中英双语，只用薄荷一个强调色
+  const W = 1080, P = 80, R = W - P, F = 'Inter,-apple-system,"PingFang SC","Hiragino Sans GB","Noto Sans SC",sans-serif', M = '"IBM Plex Mono","SF Mono",Menlo,"PingFang SC",monospace';
+  const C = { bg: '#18392b', fg: '#eeeee6', dim: 'rgba(238,238,230,.58)', faint: 'rgba(238,238,230,.4)', line: 'rgba(238,238,230,.2)', mint: '#9cc9b2', paper: '#f1f0ea', brand: '#2f6b4f' };
   const cv = document.createElement('canvas'), x = cv.getContext('2d');
-  const font = (s, w) => { x.font = (w || 400) + ' ' + s + 'px ' + F; };
+  const font = (s, w, fam) => { x.font = (w || 300) + ' ' + s + 'px ' + (fam || F); };
+  const text = (t, px, py, s, w, col, o) => { o = o || {}; font(s, w, o.mono ? M : F); x.fillStyle = col; if ('letterSpacing' in x) x.letterSpacing = (o.ls || 0) + 'px';
+    x.textAlign = o.right ? 'right' : 'left'; x.fillText(t, px, py); const tw = x.measureText(t).width; x.textAlign = 'left'; if ('letterSpacing' in x) x.letterSpacing = '0px'; return tw; };
   const wrap = (t, s, w, max) => { font(s, w); const out = []; let cur = '';
     for (const ch of String(t)) { if (x.measureText(cur + ch).width > max && cur) { out.push(cur); cur = ch; } else cur += ch; } if (cur) out.push(cur); return out; };
   const half = p => { const t = pPrice(p), d = Math.min(t, p.da ?? depOf(t)); return [d, t - d]; };
@@ -477,54 +480,45 @@ function feeCanvas() {
   const shares = cut >= 0 ? items.splice(cut).map(([n, a]) => [n, a.replace(/^\+/, '')]) : [];
   const extra = restTxt.join('。').trim();
   const ops = []; let y = P;   // 先排版记下每一步，算出总高度再画
-  const add = (h, f) => { const y0 = y; ops.push(() => f(y0)); y += h; };
-  add(40, y0 => { font(26, 600); x.fillStyle = C.dim; x.fillText('CU MUSIC · 费用单', P, y0 + 28); });
-  add(16, () => {});
-  wrap('《' + (S.title || '') + '》', 54, 600, W - P * 2).forEach(l => add(72, y0 => { font(54, 600); x.fillStyle = C.fg; x.fillText(l, P, y0 + 56); }));
-  if (S.artist) add(48, y0 => { font(30); x.fillStyle = C.t2; x.fillText(S.artist, P, y0 + 34); });
-  add(36, () => {});
+  const add = (h, f) => { const y0 = y; if (f) ops.push(() => f(y0)); y += h; };
+  const rule = () => add(1, y0 => { x.fillStyle = C.line; x.fillRect(P, y0, R - P, 1); });
+  const label = (zh, en) => add(70, y0 => { const w = text(zh, P, y0 + 48, 24, 400, C.dim); text(en, P + w + 16, y0 + 48, 19, 400, C.faint, { mono: 1, ls: 3 }); });
+  const row = (n, a, col) => { const ls = wrap(n, 30, 300, R - P - 220); add(22); ls.forEach((l, k) => add(44, y0 => { text(l, P, y0 + 32, 30, 300, C.fg); if (!k && a) text(a, R, y0 + 32, 32, 300, col || C.fg, { right: 1 }); })); add(22); rule(); };
+  add(40, y0 => { text('CHEFDAO AUDIO', P, y0 + 24, 20, 500, C.dim, { mono: 1, ls: 4 }); text('费用单 · ' + new Date().getFullYear(), R, y0 + 24, 20, 400, C.dim, { mono: 1, ls: 3, right: 1 }); });
+  add(56);
+  wrap(S.title || '费用单', 88, 200, R - P).forEach(l => add(106, y0 => text(l, P, y0 + 84, 88, 200, C.fg)));
+  if (S.artist) add(52, y0 => text(S.artist, P, y0 + 38, 30, 300, C.dim));
+  add(48); rule();
   Q.people.forEach(p => {
     const [d, f] = half(p), svc = hasFix(p) ? p.fixn : Q.menu.vocal[p.v][0] + ' / ' + Q.menu.edit[p.e][0];
-    const top = y;
-    add(28, () => {});
-    add(54, y0 => { font(36, 600); x.fillStyle = C.fg; x.fillText(p.n, P + 36, y0 + 40); x.textAlign = 'right'; x.fillText(yuan(pPrice(p)), W - P - 36, y0 + 40); x.textAlign = 'left'; });
-    wrap(svc, 28, 400, W - P * 2 - 72).forEach(l => add(44, y0 => { font(28); x.fillStyle = C.t2; x.fillText(l, P + 36, y0 + 32); }));
-    add(18, () => {});
-    add(64, y0 => {
-      const chip = (t, cx, hot, done) => { font(26, 600); const w = x.measureText(t).width + 40;
-        x.fillStyle = hot ? C.acc : done ? 'rgba(143,196,154,.16)' : 'rgba(236,233,227,.08)'; x.beginPath(); x.roundRect(cx, y0, w, 52, 26); x.fill();
-        x.fillStyle = hot ? '#1a1c20' : done ? C.ok : C.dim; x.fillText(t, cx + 20, y0 + 35); return cx + w + 14; };
-      let cx = chip('定金 ' + yuan(d) + (p.dep ? ' · 已收' : ' · 待付'), P + 36, !p.dep, p.dep);
-      chip('尾款 ' + yuan(f) + (p.fin ? ' · 已收' : ' · 交付时付'), cx, false, p.fin);
+    add(32);
+    add(56, y0 => { text(p.n, P, y0 + 40, 38, 400, C.fg); text(yuan(pPrice(p)), R, y0 + 42, 48, 200, C.fg, { right: 1 }); });
+    wrap(svc, 28, 300, R - P).forEach(l => add(42, y0 => text(l, P, y0 + 30, 28, 300, C.dim)));
+    add(24);
+    // 定金待付用唯一一块纸白色，收过的变成薄荷字；尾款只描细边
+    add(62, y0 => {
+      const pill = (t, px, hot, done) => { font(26, 400); const w = x.measureText(t).width + 48; x.beginPath(); x.roundRect(px + .5, y0 + .5, w, 58, 29);
+        if (hot) { x.fillStyle = C.paper; x.fill(); } else { x.strokeStyle = done ? C.mint : C.line; x.lineWidth = 1; x.stroke(); }
+        text(t, px + 24, y0 + 39, 26, hot ? 500 : 300, hot ? C.brand : done ? C.mint : C.dim); return px + w + 16; };
+      const nx = pill('定金 ' + yuan(d) + (p.dep ? ' · 已收' : ' · 待付'), P, !p.dep, p.dep);
+      pill('尾款 ' + yuan(f) + (p.fin ? ' · 已收' : ' · 交付时付'), nx, false, p.fin);
     });
-    add(28, () => {});
-    const h = y - top; ops.unshift(() => { x.fillStyle = C.card; x.beginPath(); x.roundRect(P, top, W - P * 2, h, 28); x.fill(); });
-    add(20, () => {});
+    add(36); rule();
   });
-  if (items.length) {
-    add(24, () => {});
-    add(48, y0 => { font(26, 600); x.fillStyle = C.dim; x.fillText('明细', P, y0 + 30); });
-    items.forEach(([n, a]) => { const ls = wrap(n, 28, 400, W - P * 2 - 200);
-      ls.forEach((l, k) => add(44, y0 => { font(28); x.fillStyle = C.t2; x.fillText(l, P, y0 + 32); if (!k && a) { x.textAlign = 'right'; x.fillStyle = a[0] === '−' ? C.ok : C.fg; x.fillText(a, W - P, y0 + 32); x.textAlign = 'left'; } })); });
-  }
-  if (shares.length) {
-    add(20, () => {});
-    add(48, y0 => { font(26, 600); x.fillStyle = C.dim; x.fillText('每位', P, y0 + 30); });
-    shares.forEach(([n, a]) => add(44, y0 => { font(28); x.fillStyle = C.t2; x.fillText(n, P, y0 + 32); x.textAlign = 'right'; x.fillStyle = C.fg; x.fillText(a, W - P, y0 + 32); x.textAlign = 'left'; }));
-  }
-  add(28, () => {});
-  add(2, y0 => { x.fillStyle = C.line; x.fillRect(P, y0, W - P * 2, 2); });
-  add(28, () => {});
-  add(76, y0 => { font(32, 600); x.fillStyle = C.t2; x.fillText('合计', P, y0 + 52); font(60, 700); x.fillStyle = C.fg; x.textAlign = 'right'; x.fillText(yuan(total), W - P, y0 + 58); x.textAlign = 'left'; });
+  if (items.length) { add(24); label('明细', 'DETAILS'); rule(); items.forEach(([n, a]) => row(n, a, a[0] === '−' ? C.mint : C.fg)); }
+  if (shares.length) { add(24); label('每位', 'PER ARTIST'); rule(); shares.forEach(([n, a]) => row(n, a)); }
+  add(40);
+  add(104, y0 => { const w = text('合计', P, y0 + 76, 30, 400, C.fg); text('TOTAL', P + w + 16, y0 + 76, 19, 400, C.faint, { mono: 1, ls: 3 }); text(yuan(total), R, y0 + 84, 92, 200, C.fg, { right: 1 }); });
   const owe = Q.people.reduce((s, p) => { const [d] = half(p); return s + (p.dep ? 0 : d); }, 0);
-  if (owe) add(56, y0 => { font(30, 600); x.fillStyle = C.acc; x.fillText('开工前请付定金', P, y0 + 40); x.textAlign = 'right'; x.fillText(yuan(owe), W - P, y0 + 40); x.textAlign = 'left'; });
-  if (extra) { add(16, () => {}); wrap(extra, 28, 400, W - P * 2).forEach(l => add(44, y0 => { font(28); x.fillStyle = C.t2; x.fillText(l, P, y0 + 32); })); }
-  add(40, () => {});
-  add(40, y0 => { const d = new Date(); font(24); x.fillStyle = C.dim; x.fillText(d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate() + ' · 价格明细 cumusic.work/chefdao/price', P, y0 + 28); });
-  y += P - 20;
-  cv.width = W * sc; cv.height = y * sc; x.scale(sc, sc);
-  x.fillStyle = C.bg; x.fillRect(0, 0, W, y); x.textBaseline = 'alphabetic';
-  ops.forEach(f => f());
+  if (owe) add(56, y0 => { text('开工前请付定金', P, y0 + 40, 30, 400, C.mint); text(yuan(owe), R, y0 + 40, 34, 300, C.mint, { right: 1 }); });
+  if (extra) { add(12); wrap(extra, 28, 300, R - P).forEach(l => add(44, y0 => text(l, P, y0 + 32, 28, 300, C.dim))); }
+  add(72);
+  add(34, y0 => { const d = new Date(); text('cumusic.work/chefdao/price', P, y0 + 24, 19, 400, C.faint, { mono: 1, ls: 2 }); text(d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate(), R, y0 + 24, 19, 400, C.faint, { mono: 1, ls: 2, right: 1 }); });
+  y += P - 12;
+  cv.width = W; cv.height = Math.max(y, 1440);   // 至少 3:4，短单子下面留白
+  const H = cv.height; x.fillStyle = C.bg; x.fillRect(0, 0, W, H);
+  x.save(); x.translate(W * .12, -H * .1); x.scale(1, 700 / 1100); const g = x.createRadialGradient(0, 0, 0, 0, 0, 1100); g.addColorStop(0, 'rgba(156,201,178,.1)'); g.addColorStop(.7, 'rgba(156,201,178,0)'); x.fillStyle = g; x.fillRect(-W, -400, W * 3, H * 2); x.restore();
+  x.textBaseline = 'alphabetic'; ops.forEach(f => f());
   return cv;
 }
 async function feeImage() {
