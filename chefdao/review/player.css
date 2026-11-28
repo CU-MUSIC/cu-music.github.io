@@ -1330,3 +1330,9 @@ html.tune-on{overflow:hidden}
 .refsw button em{font-style:normal;display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--fill-3);font-size:10.5px;flex:none;transition:background .2s,color .2s}
 .refsw button.on{background:var(--text);color:var(--bg);border-color:transparent}
 .refsw button.on em{background:var(--bg);color:var(--text)}
+/* 定金提醒（depAsk）：沿用 #paySheet 卡片，淡入上移，关闭时淡出 */
+#paySheet.dep{animation:qfade .24s ease both}#paySheet.dep .pbox{animation:depUp .34s cubic-bezier(.2,.8,.2,1) both}
+#paySheet.dep.out{animation:depOut .2s ease both}#paySheet.dep .pbox.swap{animation:etaIn .28s ease both}
+@keyframes depUp{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes depOut{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){#paySheet.dep,#paySheet.dep .pbox,#paySheet.dep .pbox.swap{animation:none}}

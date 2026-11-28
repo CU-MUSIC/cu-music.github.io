@@ -452,6 +452,112 @@ function renderFee() {
     + (Q.note ? `<div class="fnote">${esc(Q.note)}</div>` : '') + `<a class="fx" href="https://cumusic.work/chefdao/price" target="_blank" rel="noopener">价格明细 ›</a>`
     + (feeOwner ? feeOwner(total) : '') + '</div>';
 }
+/* 费用单存成图片（你自己的设备）：画成一张竖图，电脑上复制到剪贴板直接去微信粘贴，手机上走系统分享 */
+function feeCanvas() {
+  const W = 1080, P = 72, sc = 1, F = '"PingFang SC","Hiragino Sans GB","Noto Sans SC",-apple-system,sans-serif';
+  const C = { bg: '#1a1c20', card: '#23262b', fg: '#ece9e3', t2: '#b5b1aa', dim: '#8a867f', line: '#33373e', acc: '#e2b866', ok: '#8fc49a' };
+  const cv = document.createElement('canvas'), x = cv.getContext('2d');
+  const font = (s, w) => { x.font = (w || 400) + ' ' + s + 'px ' + F; };
+  const wrap = (t, s, w, max) => { font(s, w); const out = []; let cur = '';
+    for (const ch of String(t)) { if (x.measureText(cur + ch).width > max && cur) { out.push(cur); cur = ch; } else cur += ch; } if (cur) out.push(cur); return out; };
+  const half = p => { const t = pPrice(p), d = Math.min(t, p.da ?? depOf(t)); return [d, t - d]; };
+  const total = Q.people.reduce((s, p) => s + pPrice(p), 0);
+  // 明细：报价单那串「项目 +¥金额，……。预计交付 …」拆成一行一项，金额靠右
+  const [itemsTxt, ...restTxt] = String(Q.note || '').split(/。/);
+  const items = itemsTxt ? itemsTxt.split(/，\s*/).filter(Boolean).map(s => { const m = /^(.*?)\s*([+\-−]?¥[\d,]+)$/.exec(s.trim()); return m ? [m[1], m[2].replace('-', '−')] : [s.trim(), '']; }) : [];
+  // 加减到合计之后的行是每位歌手的分摊（主唱 1、主唱 2），单独列在「每位」下面，不带加号
+  let run = 0, cut = -1; items.forEach(([, a], i) => { if (cut >= 0 || !a) return; const v = +a.replace(/[^\d]/g, ''); run += a[0] === '−' ? -v : v; if (run === total && i < items.length - 1) cut = i + 1; });
+  const shares = cut >= 0 ? items.splice(cut).map(([n, a]) => [n, a.replace(/^\+/, '')]) : [];
+  const extra = restTxt.join('。').trim();
+  const ops = []; let y = P;   // 先排版记下每一步，算出总高度再画
+  const add = (h, f) => { const y0 = y; ops.push(() => f(y0)); y += h; };
+  add(40, y0 => { font(26, 600); x.fillStyle = C.dim; x.fillText('CU MUSIC · 费用单', P, y0 + 28); });
+  add(16, () => {});
+  wrap('《' + (S.title || '') + '》', 54, 600, W - P * 2).forEach(l => add(72, y0 => { font(54, 600); x.fillStyle = C.fg; x.fillText(l, P, y0 + 56); }));
+  if (S.artist) add(48, y0 => { font(30); x.fillStyle = C.t2; x.fillText(S.artist, P, y0 + 34); });
+  add(36, () => {});
+  Q.people.forEach(p => {
+    const [d, f] = half(p), svc = hasFix(p) ? p.fixn : Q.menu.vocal[p.v][0] + ' / ' + Q.menu.edit[p.e][0];
+    const top = y;
+    add(28, () => {});
+    add(54, y0 => { font(36, 600); x.fillStyle = C.fg; x.fillText(p.n, P + 36, y0 + 40); x.textAlign = 'right'; x.fillText(yuan(pPrice(p)), W - P - 36, y0 + 40); x.textAlign = 'left'; });
+    wrap(svc, 28, 400, W - P * 2 - 72).forEach(l => add(44, y0 => { font(28); x.fillStyle = C.t2; x.fillText(l, P + 36, y0 + 32); }));
+    add(18, () => {});
+    add(64, y0 => {
+      const chip = (t, cx, hot, done) => { font(26, 600); const w = x.measureText(t).width + 40;
+        x.fillStyle = hot ? C.acc : done ? 'rgba(143,196,154,.16)' : 'rgba(236,233,227,.08)'; x.beginPath(); x.roundRect(cx, y0, w, 52, 26); x.fill();
+        x.fillStyle = hot ? '#1a1c20' : done ? C.ok : C.dim; x.fillText(t, cx + 20, y0 + 35); return cx + w + 14; };
+      let cx = chip('定金 ' + yuan(d) + (p.dep ? ' · 已收' : ' · 待付'), P + 36, !p.dep, p.dep);
+      chip('尾款 ' + yuan(f) + (p.fin ? ' · 已收' : ' · 交付时付'), cx, false, p.fin);
+    });
+    add(28, () => {});
+    const h = y - top; ops.unshift(() => { x.fillStyle = C.card; x.beginPath(); x.roundRect(P, top, W - P * 2, h, 28); x.fill(); });
+    add(20, () => {});
+  });
+  if (items.length) {
+    add(24, () => {});
+    add(48, y0 => { font(26, 600); x.fillStyle = C.dim; x.fillText('明细', P, y0 + 30); });
+    items.forEach(([n, a]) => { const ls = wrap(n, 28, 400, W - P * 2 - 200);
+      ls.forEach((l, k) => add(44, y0 => { font(28); x.fillStyle = C.t2; x.fillText(l, P, y0 + 32); if (!k && a) { x.textAlign = 'right'; x.fillStyle = a[0] === '−' ? C.ok : C.fg; x.fillText(a, W - P, y0 + 32); x.textAlign = 'left'; } })); });
+  }
+  if (shares.length) {
+    add(20, () => {});
+    add(48, y0 => { font(26, 600); x.fillStyle = C.dim; x.fillText('每位', P, y0 + 30); });
+    shares.forEach(([n, a]) => add(44, y0 => { font(28); x.fillStyle = C.t2; x.fillText(n, P, y0 + 32); x.textAlign = 'right'; x.fillStyle = C.fg; x.fillText(a, W - P, y0 + 32); x.textAlign = 'left'; }));
+  }
+  add(28, () => {});
+  add(2, y0 => { x.fillStyle = C.line; x.fillRect(P, y0, W - P * 2, 2); });
+  add(28, () => {});
+  add(76, y0 => { font(32, 600); x.fillStyle = C.t2; x.fillText('合计', P, y0 + 52); font(60, 700); x.fillStyle = C.fg; x.textAlign = 'right'; x.fillText(yuan(total), W - P, y0 + 58); x.textAlign = 'left'; });
+  const owe = Q.people.reduce((s, p) => { const [d] = half(p); return s + (p.dep ? 0 : d); }, 0);
+  if (owe) add(56, y0 => { font(30, 600); x.fillStyle = C.acc; x.fillText('开工前请付定金', P, y0 + 40); x.textAlign = 'right'; x.fillText(yuan(owe), W - P, y0 + 40); x.textAlign = 'left'; });
+  if (extra) { add(16, () => {}); wrap(extra, 28, 400, W - P * 2).forEach(l => add(44, y0 => { font(28); x.fillStyle = C.t2; x.fillText(l, P, y0 + 32); })); }
+  add(40, () => {});
+  add(40, y0 => { const d = new Date(); font(24); x.fillStyle = C.dim; x.fillText(d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate() + ' · 价格明细 cumusic.work/chefdao/price', P, y0 + 28); });
+  y += P - 20;
+  cv.width = W * sc; cv.height = y * sc; x.scale(sc, sc);
+  x.fillStyle = C.bg; x.fillRect(0, 0, W, y); x.textBaseline = 'alphabetic';
+  ops.forEach(f => f());
+  return cv;
+}
+async function feeImage() {
+  if (!Q) return;
+  const name = ((S.title || '费用单') + ' 费用单.png').replace(/[\\/:*?"<>|]/g, '_');
+  const blobP = new Promise(ok => feeCanvas().toBlob(ok, 'image/png'));
+  try {
+    if (matchMedia('(pointer:coarse)').matches) { const f = new File([await blobP], name, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; } }
+    else if (navigator.clipboard && window.ClipboardItem) { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobP })]); hud('费用单图片已复制，去微信直接粘贴', 3200); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const u = URL.createObjectURL(await blobP), a2 = document.createElement('a'); a2.href = u; a2.download = name; document.body.appendChild(a2); a2.click(); a2.remove(); setTimeout(() => URL.revokeObjectURL(u), 30000); hud('费用单图片已保存', 2600);
+}
+/* 定金提醒（客户设备）：费用已确定、定金还没收，进页面时弹一次收款码；每次打开页面提醒一次，点了「已付定金」就不再弹 */
+function depAsk() {
+  if (IS_OWNER || !Q || S.helper || document.getElementById('paySheet')) return;
+  const due = Q.people.filter(p => p.ok && !p.dep && !p.fin).map(p => { const t = pPrice(p); return { n: p.n, a: Math.min(t, p.da ?? depOf(t)) }; });
+  const sum = due.reduce((s, d) => s + d.a, 0), k = 'dep:told:' + S.slug + ':' + sum;
+  if (!sum || store.get(k)) return;
+  try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) {}
+  const el = document.createElement('div'); el.id = 'paySheet'; el.className = 'dep';
+  el.innerHTML = '<div class="pbox"><b>定金待付</b><p class="pthx">定金到账后安排排期</p><div class="pamt"><span>定金</span><b>' + yuan(sum) + '</b></div>'
+    + (due.length > 1 ? '<div class="pdim">' + due.map(x => esc(x.n) + ' ' + yuan(x.a)).join(' · ') + '</div>' : '')
+    + '<img src="../pay.jpg?v=20261115a" alt="微信 / 支付宝收款码"><p class="dim">保存图片后，用微信或支付宝扫一扫</p><button class="press psv" id="paySave">保存收款码</button><button class="press pgo" id="payGo">已付定金</button><button class="press pno" id="payX">稍后再说</button></div>';
+  document.body.appendChild(el);
+  const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 220); };
+  el.onclick = e => { if (e.target === el) close(); };
+  $('#payX').onclick = close;
+  $('#paySave').onclick = async () => {
+    try { const blob = await (await fetch('../pay.jpg?v=20261115a')).blob(), f = new File([blob], '刀大厨收款码.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; }
+      const u = URL.createObjectURL(blob), a2 = document.createElement('a'); a2.href = u; a2.download = '刀大厨收款码.jpg'; document.body.appendChild(a2); a2.click(); a2.remove(); setTimeout(() => URL.revokeObjectURL(u), 30000); hud('收款码已保存', 2500);
+    } catch (e) { if (e && e.name === 'AbortError') return; hud('没保存成功，长按图片也可以保存', 3500); } };
+  $('#payGo').onclick = () => {
+    store.set(k, '1');
+    beacon(S.title + ' · 客户点了已付定金', '<p><b>' + esc(meLabel()) + '</b> 点了「已付定金」' + yuan(sum) + '，请核对到账后在费用单点「定金已收」</p><p>《' + esc(S.title) + '》</p>');
+    const bx = el.querySelector('.pbox'); bx.classList.add('swap');
+    bx.innerHTML = '<b>已记录</b><p>确认到账后安排排期。</p><button class="press pno" id="payX2">关闭</button>'; $('#payX2').onclick = close;
+  };
+}
 $('#fee').addEventListener('click', async e => {
   if (e.target.closest('#feeH')) { feeOpen = !feeOpen; return renderFee(); }
   const o = e.target.closest('.fo');
@@ -526,7 +632,7 @@ async function loadPlaylist() {
 }
 function enterApp(quick) {
   setTimeout(prefetchOthers, 600);
-  loadPlaylist(); renderFee();
+  loadPlaylist(); renderFee(); setTimeout(depAsk, 1400);
   if (quick) {
     started = true; t0 = -1e9;   // 波形直接满格，不做长出来的动画
     $('#app').removeAttribute('aria-hidden'); $('#app').classList.add('in'); $('#lock').remove(); markSeg(); updateCta();
@@ -1578,11 +1684,12 @@ function ownerTools() {
       ['创意向', 160, '包含执行向，由制作方判断要不要加特殊效果、加在哪，设计人声层次和空间']],
     edit: [['不需要', 0, ''], ['音准', 100, '只修音准（叠唱不超过 2 条）'], ['节奏', 100, '只对齐节奏（叠唱不超过 2 条）'], ['标准', 160, '音准 + 节奏都修，适合演唱比较稳的素材'], ['深度', 240, '跑调、破音、气声不稳较多时的大量精修']] };
   const saveQ = async q => { try { await post('/radm/meta', { slug: S.slug, quote: q }); Q = q; feeOpen = true; renderFee(); busy(q ? '费用单已更新' : '费用单已删除'); } catch (e) { busy('没保存上，检查网络再试'); } };
-  feeOwner = () => `<div class="fown"><button data-own="people">改歌手</button><button data-own="paste">粘贴报价单</button><button data-own="del" class="dz">删除费用单</button></div>`;
+  feeOwner = () => `<div class="fown"><button data-own="img">存为图片</button><button data-own="people">改歌手</button><button data-own="paste">粘贴报价单</button><button data-own="del" class="dz">删除费用单</button></div>`;
   feeOwnerP = (p, i) => `<div class="fown fownp"><button data-own="dep" data-i="${i}">${p.dep ? '撤销定金' : '定金已收'}</button><button data-own="fin" data-i="${i}">${p.fin ? '撤销尾款' : '尾款已收'}</button><button data-own="fix" data-i="${i}">单独报价</button></div>`;
   $('#fee').addEventListener('click', e => {
     const b = e.target.closest('[data-own]'); if (!b) return;
-    if (b.dataset.own === 'paste') return quotePaste();   // 用新报价单整张替换
+    if (b.dataset.own === 'paste') return quotePaste();
+    if (b.dataset.own === 'img') return feeImage();   // 用新报价单整张替换
     const k = b.dataset.own, q = JSON.parse(JSON.stringify(Q));
     if (k === 'dep' || k === 'fin') { const p = q.people[+b.dataset.i]; p[k] = !p[k]; if (k === 'dep' && p.dep) p.ok = true; }
     if (k === 'fix') {   // 服务名, 总价, 定金（不填定金就是一半）；清空就恢复按菜单选
