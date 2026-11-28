@@ -460,10 +460,10 @@ function renderFee() {
     + (feeOwner ? feeOwner(total) : '') + '</div>';
 }
 /* 费用单存成图片（你自己的设备）：画成一张竖图，电脑上复制到剪贴板直接去微信粘贴，手机上走系统分享 */
-function feeCanvas() {
-  // 配色和版式照品牌海报规范：深绿底、细字、发丝线、中英双语，只用薄荷一个强调色
+function feeCanvas(qr) {
+  // 黑底米白细字、发丝线、中英双语，只用薄荷绿一个强调色；还有钱没付时下面带收款码
   const W = 1080, P = 80, R = W - P, F = 'Inter,-apple-system,"PingFang SC","Hiragino Sans GB","Noto Sans SC",sans-serif', M = '"IBM Plex Mono","SF Mono",Menlo,"PingFang SC",monospace';
-  const C = { bg: '#18392b', fg: '#eeeee6', dim: 'rgba(238,238,230,.58)', faint: 'rgba(238,238,230,.4)', line: 'rgba(238,238,230,.2)', mint: '#9cc9b2', paper: '#f1f0ea', brand: '#2f6b4f' };
+  const C = { bg: '#0e0e0f', fg: '#eeede9', dim: 'rgba(238,237,233,.6)', faint: 'rgba(238,237,233,.4)', line: 'rgba(238,237,233,.16)', mint: '#9cc9b2', ink: '#0e1a14' };
   const cv = document.createElement('canvas'), x = cv.getContext('2d');
   const font = (s, w, fam) => { x.font = (w || 300) + ' ' + s + 'px ' + (fam || F); };
   const text = (t, px, py, s, w, col, o) => { o = o || {}; font(s, w, o.mono ? M : F); x.fillStyle = col; if ('letterSpacing' in x) x.letterSpacing = (o.ls || 0) + 'px';
@@ -484,7 +484,7 @@ function feeCanvas() {
   const rule = () => add(1, y0 => { x.fillStyle = C.line; x.fillRect(P, y0, R - P, 1); });
   const label = (zh, en) => add(70, y0 => { const w = text(zh, P, y0 + 48, 24, 400, C.dim); text(en, P + w + 16, y0 + 48, 19, 400, C.faint, { mono: 1, ls: 3 }); });
   const row = (n, a, col) => { const ls = wrap(n, 30, 300, R - P - 220); add(22); ls.forEach((l, k) => add(44, y0 => { text(l, P, y0 + 32, 30, 300, C.fg); if (!k && a) text(a, R, y0 + 32, 32, 300, col || C.fg, { right: 1 }); })); add(22); rule(); };
-  add(40, y0 => { text('CHEFDAO AUDIO', P, y0 + 24, 20, 500, C.dim, { mono: 1, ls: 4 }); text('费用单 · ' + new Date().getFullYear(), R, y0 + 24, 20, 400, C.dim, { mono: 1, ls: 3, right: 1 }); });
+  add(40, y0 => { x.fillStyle = C.mint; x.beginPath(); x.arc(P + 6, y0 + 17, 6, 0, 7); x.fill(); text('CHEFDAO AUDIO', P + 26, y0 + 24, 20, 500, C.dim, { mono: 1, ls: 4 }); text('费用单 · ' + new Date().getFullYear(), R, y0 + 24, 20, 400, C.dim, { mono: 1, ls: 3, right: 1 }); });
   add(56);
   wrap(S.title || '费用单', 88, 200, R - P).forEach(l => add(106, y0 => text(l, P, y0 + 84, 88, 200, C.fg)));
   if (S.artist) add(52, y0 => text(S.artist, P, y0 + 38, 30, 300, C.dim));
@@ -495,11 +495,11 @@ function feeCanvas() {
     add(56, y0 => { text(p.n, P, y0 + 40, 38, 400, C.fg); text(yuan(pPrice(p)), R, y0 + 42, 48, 200, C.fg, { right: 1 }); });
     wrap(svc, 28, 300, R - P).forEach(l => add(42, y0 => text(l, P, y0 + 30, 28, 300, C.dim)));
     add(24);
-    // 定金待付用唯一一块纸白色，收过的变成薄荷字；尾款只描细边
+    // 定金待付用唯一一块实心薄荷绿，收过的变成薄荷描边；尾款只描细边
     add(62, y0 => {
       const pill = (t, px, hot, done) => { font(26, 400); const w = x.measureText(t).width + 48; x.beginPath(); x.roundRect(px + .5, y0 + .5, w, 58, 29);
-        if (hot) { x.fillStyle = C.paper; x.fill(); } else { x.strokeStyle = done ? C.mint : C.line; x.lineWidth = 1; x.stroke(); }
-        text(t, px + 24, y0 + 39, 26, hot ? 500 : 300, hot ? C.brand : done ? C.mint : C.dim); return px + w + 16; };
+        if (hot) { x.fillStyle = C.mint; x.fill(); } else { x.strokeStyle = done ? C.mint : C.line; x.lineWidth = 1; x.stroke(); }
+        text(t, px + 24, y0 + 39, 26, hot ? 500 : 300, hot ? C.ink : done ? C.mint : C.dim); return px + w + 16; };
       const nx = pill('定金 ' + yuan(d) + (p.dep ? ' · 已收' : ' · 待付'), P, !p.dep, p.dep);
       pill('尾款 ' + yuan(f) + (p.fin ? ' · 已收' : ' · 交付时付'), nx, false, p.fin);
     });
@@ -510,21 +510,31 @@ function feeCanvas() {
   add(40);
   add(104, y0 => { const w = text('合计', P, y0 + 76, 30, 400, C.fg); text('TOTAL', P + w + 16, y0 + 76, 19, 400, C.faint, { mono: 1, ls: 3 }); text(yuan(total), R, y0 + 84, 92, 200, C.fg, { right: 1 }); });
   const owe = Q.people.reduce((s, p) => { const [d] = half(p); return s + (p.dep ? 0 : d); }, 0);
-  if (owe) add(56, y0 => { text('开工前请付定金', P, y0 + 40, 30, 400, C.mint); text(yuan(owe), R, y0 + 40, 34, 300, C.mint, { right: 1 }); });
-  if (extra) { add(12); wrap(extra, 28, 300, R - P).forEach(l => add(44, y0 => text(l, P, y0 + 32, 28, 300, C.dim))); }
+  if (extra) wrap(extra, 28, 300, R - P).forEach(l => add(44, y0 => text(l, P, y0 + 32, 28, 300, C.dim)));
+  // 先收定金；定金都收齐了还欠尾款，就写尾款
+  const bal = Q.people.reduce((s, p) => { const [, f] = half(p); return s + (p.fin ? 0 : f); }, 0), due = owe || bal;
+  if (due) {
+    add(40); rule(); add(32);
+    add(56, y0 => { text(owe ? '开工前请付定金' : '应付尾款', P, y0 + 40, 32, 400, C.mint); text(yuan(due), R, y0 + 44, 48, 300, C.mint, { right: 1 }); });
+    if (qr) { const qw = 680, qh = Math.round(qw * qr.height / qr.width), qx = (W - qw) / 2;
+      add(32);
+      add(qh, y0 => { x.save(); x.beginPath(); x.roundRect(qx, y0, qw, qh, 28); x.clip(); x.drawImage(qr, qx, y0, qw, qh); x.restore(); });
+      add(60, y0 => { x.textAlign = 'center'; font(24, 300); x.fillStyle = C.dim; x.fillText('微信或支付宝扫码付款', W / 2, y0 + 44); x.textAlign = 'left'; });
+    }
+  }
   add(72);
   add(34, y0 => { const d = new Date(); text('cumusic.work/chefdao/price', P, y0 + 24, 19, 400, C.faint, { mono: 1, ls: 2 }); text(d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate(), R, y0 + 24, 19, 400, C.faint, { mono: 1, ls: 2, right: 1 }); });
   y += P - 12;
   cv.width = W; cv.height = Math.max(y, 1440);   // 至少 3:4，短单子下面留白
   const H = cv.height; x.fillStyle = C.bg; x.fillRect(0, 0, W, H);
-  x.save(); x.translate(W * .12, -H * .1); x.scale(1, 700 / 1100); const g = x.createRadialGradient(0, 0, 0, 0, 0, 1100); g.addColorStop(0, 'rgba(156,201,178,.1)'); g.addColorStop(.7, 'rgba(156,201,178,0)'); x.fillStyle = g; x.fillRect(-W, -400, W * 3, H * 2); x.restore();
   x.textBaseline = 'alphabetic'; ops.forEach(f => f());
   return cv;
 }
 async function feeImage() {
   if (!Q) return;
   const name = ((S.title || '费用单') + ' 费用单.png').replace(/[\\/:*?"<>|]/g, '_');
-  const blobP = new Promise(ok => feeCanvas().toBlob(ok, 'image/png'));
+  // 收款码先载入再画；载入失败就出不带码的图。整段包成 Promise，电脑复制到剪贴板时仍算这次点击
+  const blobP = new Promise(ok => { const im = new Image(); im.onload = () => feeCanvas(im).toBlob(ok, 'image/png'); im.onerror = () => feeCanvas().toBlob(ok, 'image/png'); im.src = '../pay.jpg?v=20261115a'; });
   try {
     if (matchMedia('(pointer:coarse)').matches) { const f = new File([await blobP], name, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; } }
